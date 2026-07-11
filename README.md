@@ -1,5 +1,7 @@
 # Crónicas del Nexo
 
+**▶ Juega ahora en el navegador: https://sefiro888.github.io/magicfable/**
+
 Vertical slice para PC de un juego táctico de cartas de fantasía oscura.
 Dos mazos de 50 cartas —**Furia de la Caldera** y **Secretos del Arcano**—
 se enfrentan en **El Santuario de las Runas Quebradas**: una arena rúnica
