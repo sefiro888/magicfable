@@ -21,10 +21,10 @@ carta). Este documento fija la dirección global de la experiencia.
 
 | Uso | Color |
 | --- | --- |
-| Fondo/abismo | `#05070d` |
-| Piedra del Santuario | `#141827` – `#232838` |
-| Oro ceremonial (anillo, HUD) | `#d7b467` / `#f1d68f` |
-| Energía arcana / Esencia Celeste | `#79c8ff` / `#a8ecff` |
+| Cielo cósmico / abismo | `#070b1c` con nebulosas azul-violeta |
+| Piedra del Santuario (cálida) | `#332c29` – `#665c55` |
+| Latón / oro ceremonial (balaustrada, anillo, HUD) | `#8a6a30` / `#d7b467` / `#f1d68f` |
+| Energía arcana / Esencia Celeste (portal, círculos rúnicos) | `#79c8ff` / `#a8ecff` |
 | Fuego / Esencia Carmesí | `#ff8a3d` / `#e04a2e` |
 | Marfil de texto | `#f5eddc` |
 

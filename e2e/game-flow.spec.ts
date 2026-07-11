@@ -27,7 +27,7 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
   await page.getByRole('button', { name: 'Conservar las cinco' }).click()
   await expect(page.getByText('Turno 1 · Principal')).toBeVisible()
   await page.getByRole('button', { name: /Fuente de Furia\. Esencia — Fuente\./ }).first().click()
-  await expect(page.getByText('1 / 1')).toBeVisible()
+  await expect(page.getByText('1 / 1').first()).toBeVisible()
   await expect(page.getByText('Fuente de Furia entra en la reserva.')).toBeVisible()
 
   await page.getByRole('button', { name: 'Finalizar turno' }).click()

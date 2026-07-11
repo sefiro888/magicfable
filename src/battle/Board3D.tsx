@@ -30,8 +30,8 @@ const boardZ = (y: number) => (y - 2) * 1.18
 
 function BoardCell({ position, valid, occupied, scorched, onClick }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false)
-  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? '#465267' : scorched ? '#4a2018' : '#242e40'
-  const emissive = valid ? '#1b6384' : scorched ? '#68240f' : '#101a2b'
+  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : '#464038'
+  const emissive = valid ? '#1b6384' : scorched ? '#68240f' : '#26201a'
   return (
     <mesh
       position={[boardX(position.x), 0, boardZ(position.y)]}
@@ -203,13 +203,13 @@ function Scene(props: Board3DProps) {
   const scorchedCells = props.state.tileEffects.filter((tile) => tile.kind === 'scorched')
   return (
     <>
-      <color attach="background" args={['#05070d']} />
-      <fog attach="fog" args={['#05070d', 9, 26]} />
-      <ambientLight intensity={1.15} color="#a8b9dc" />
-      <hemisphereLight intensity={0.8} color="#c6dcff" groundColor="#3b2117" />
-      <spotLight position={[-4, 8, 5]} intensity={62} angle={0.58} penumbra={0.8} castShadow={props.quality !== 'low'} color="#ffe3b2" />
-      <pointLight position={[4, 2, -4]} color="#50bfff" intensity={22} distance={9} />
-      <pointLight position={[-4, 2, 4]} color="#ff653d" intensity={20} distance={9} />
+      <color attach="background" args={['#070b1c']} />
+      <fog attach="fog" args={['#0a0f22', 10, 30]} />
+      <ambientLight intensity={1.45} color="#bfc7de" />
+      <hemisphereLight intensity={0.85} color="#c9dcff" groundColor="#4a3420" />
+      <spotLight position={[-4, 8, 5]} intensity={66} angle={0.58} penumbra={0.8} castShadow={props.quality !== 'low'} color="#ffe3b2" />
+      <pointLight position={[4, 2, -4]} color="#50bfff" intensity={20} distance={9} />
+      <pointLight position={[-4, 2, 4]} color="#ffb46a" intensity={16} distance={9} />
       <Sanctuary quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
       {Array.from({ length: 25 }, (_, index) => {
         const position = { x: index % 5, y: Math.floor(index / 5) }

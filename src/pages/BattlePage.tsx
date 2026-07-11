@@ -403,6 +403,15 @@ export function BattlePage() {
               Saltar animaciones ({pendingCount})
             </button>
           )}
+          <div className={styles.essencePill} aria-label={`Esencia disponible: ${mana.available} de ${mana.total}`}>
+            <span className={styles.essenceSigil} aria-hidden="true">◆</span>
+            <strong>{mana.available} / {mana.total}</strong>
+            <span className={styles.essencePips} aria-hidden="true">
+              {player.resources.slice(0, 10).map((resource) => (
+                <span key={resource.instanceId} data-faction={resource.faction} data-exhausted={resource.exhausted} />
+              ))}
+            </span>
+          </div>
         </div>
         <aside className={styles.leftPanel}>
           <section className={styles.panelSection}>

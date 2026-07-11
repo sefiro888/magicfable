@@ -183,6 +183,209 @@ export const monolithTexture = (seed: number): CanvasTexture => {
   return finishTexture(key, canvas);
 };
 
+/** Losas de piedra cálida con incrustaciones doradas, para la plataforma celeste. */
+export const stoneFloorTexture = (): CanvasTexture => {
+  const cached = cache.get('stone-floor');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x50494544);
+  const center = size / 2;
+
+  const base = context.createRadialGradient(center, center, size * 0.06, center, center, size * 0.62);
+  base.addColorStop(0, '#665c55');
+  base.addColorStop(0.55, '#4c443f');
+  base.addColorStop(1, '#332c29');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+
+  // Moteado mineral.
+  for (let index = 0; index < 2600; index += 1) {
+    const luminance = 40 + random() * 34;
+    context.fillStyle = `rgba(${luminance + 12}, ${luminance + 6}, ${luminance}, ${0.12 + random() * 0.18})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 2.4, 1 + random() * 2.4);
+  }
+
+  // Juntas de losas en anillos concéntricos + radios, como en la referencia.
+  context.strokeStyle = 'rgba(12, 10, 9, 0.6)';
+  context.lineWidth = 3;
+  for (let ring = 1; ring <= 5; ring += 1) {
+    context.beginPath();
+    context.arc(center, center, ring * size * 0.095, 0, Math.PI * 2);
+    context.stroke();
+  }
+  const spokes = 26;
+  for (let index = 0; index < spokes; index += 1) {
+    const angle = (index / spokes) * Math.PI * 2;
+    context.beginPath();
+    context.moveTo(center + Math.cos(angle) * size * 0.11, center + Math.sin(angle) * size * 0.11);
+    context.lineTo(center + Math.cos(angle) * size * 0.5, center + Math.sin(angle) * size * 0.5);
+    context.stroke();
+  }
+
+  // Incrustaciones doradas (se leen también en el emissiveMap).
+  context.strokeStyle = 'rgba(212, 168, 92, 0.55)';
+  context.shadowColor = 'rgba(232, 190, 110, 0.55)';
+  context.shadowBlur = 6;
+  context.lineWidth = 3.4;
+  for (const radius of [0.155, 0.345, 0.475]) {
+    context.beginPath();
+    context.arc(center, center, size * radius, 0, Math.PI * 2);
+    context.stroke();
+  }
+  context.lineWidth = 2;
+  for (let index = 0; index < 8; index += 1) {
+    const angle = (index / 8) * Math.PI * 2 + Math.PI / 8;
+    context.beginPath();
+    context.moveTo(center + Math.cos(angle) * size * 0.16, center + Math.sin(angle) * size * 0.16);
+    context.lineTo(center + Math.cos(angle) * size * 0.47, center + Math.sin(angle) * size * 0.47);
+    context.stroke();
+  }
+  context.shadowBlur = 0;
+  return finishTexture('stone-floor', canvas);
+};
+
+/** Círculo rúnico azul incandescente (fondo transparente) para incrustar en el suelo. */
+export const runicCircleTexture = (): CanvasTexture => {
+  const cached = cache.get('runic-circle');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x43495243);
+  const center = size / 2;
+  context.clearRect(0, 0, size, size);
+
+  context.strokeStyle = 'rgba(120, 200, 255, 0.95)';
+  context.shadowColor = 'rgba(120, 200, 255, 0.9)';
+  context.shadowBlur = 14;
+  context.lineWidth = 5;
+  context.beginPath();
+  context.arc(center, center, size * 0.42, 0, Math.PI * 2);
+  context.stroke();
+  context.lineWidth = 2.6;
+  context.beginPath();
+  context.arc(center, center, size * 0.34, 0, Math.PI * 2);
+  context.stroke();
+  context.beginPath();
+  context.arc(center, center, size * 0.12, 0, Math.PI * 2);
+  context.stroke();
+
+  // Glifos entre los anillos y triángulos internos.
+  const glyphs = 12;
+  for (let index = 0; index < glyphs; index += 1) {
+    const angle = (index / glyphs) * Math.PI * 2;
+    drawGlyph(context, center + Math.cos(angle) * size * 0.38, center + Math.sin(angle) * size * 0.38, 20, random);
+  }
+  context.beginPath();
+  for (let index = 0; index <= 3; index += 1) {
+    const angle = (index / 3) * Math.PI * 2 - Math.PI / 2;
+    const x = center + Math.cos(angle) * size * 0.3;
+    const y = center + Math.sin(angle) * size * 0.3;
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  }
+  context.stroke();
+  context.shadowBlur = 0;
+  return finishTexture('runic-circle', canvas);
+};
+
+/** Espiral del portal arcano (se anima rotando el plano que la usa). */
+export const portalSwirlTexture = (): CanvasTexture => {
+  const cached = cache.get('portal-swirl');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const center = size / 2;
+  context.clearRect(0, 0, size, size);
+  const glowBase = context.createRadialGradient(center, center, 0, center, center, center);
+  glowBase.addColorStop(0, 'rgba(220, 245, 255, 0.9)');
+  glowBase.addColorStop(0.35, 'rgba(90, 170, 255, 0.55)');
+  glowBase.addColorStop(0.8, 'rgba(30, 70, 180, 0.25)');
+  glowBase.addColorStop(1, 'rgba(10, 25, 90, 0)');
+  context.fillStyle = glowBase;
+  context.fillRect(0, 0, size, size);
+  context.strokeStyle = 'rgba(190, 230, 255, 0.8)';
+  context.shadowColor = 'rgba(150, 210, 255, 0.9)';
+  context.shadowBlur = 10;
+  for (let arm = 0; arm < 4; arm += 1) {
+    context.lineWidth = 6 - arm;
+    context.beginPath();
+    const offset = (arm / 4) * Math.PI * 2;
+    for (let step = 0; step <= 90; step += 1) {
+      const progress = step / 90;
+      const angle = offset + progress * Math.PI * 3.4;
+      const radius = progress * center * 0.92;
+      const x = center + Math.cos(angle) * radius;
+      const y = center + Math.sin(angle) * radius;
+      if (step === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+  context.shadowBlur = 0;
+  return finishTexture('portal-swirl', canvas);
+};
+
+/** Cielo cósmico: nebulosas y polvo estelar para la esfera de fondo. */
+export const nebulaTexture = (): CanvasTexture => {
+  const cached = cache.get('nebula');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4e454255);
+  context.fillStyle = '#070b1c';
+  context.fillRect(0, 0, size, size);
+  const blobs: readonly (readonly [string, number])[] = [
+    ['rgba(64, 66, 148, 0.34)', 220],
+    ['rgba(108, 62, 158, 0.27)', 190],
+    ['rgba(40, 90, 190, 0.3)', 240],
+    ['rgba(150, 90, 190, 0.18)', 150],
+    ['rgba(70, 130, 220, 0.24)', 200],
+  ];
+  for (const [color, radius] of blobs) {
+    for (let index = 0; index < 5; index += 1) {
+      const x = random() * size;
+      const y = random() * size;
+      const r = radius * (0.6 + random() * 0.8);
+      const gradient = context.createRadialGradient(x, y, 0, x, y, r);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, 'rgba(7, 11, 28, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+  }
+  for (let index = 0; index < 900; index += 1) {
+    const brightness = 0.25 + random() * 0.75;
+    context.fillStyle = `rgba(255, 255, 255, ${brightness * 0.8})`;
+    const radius = random() < 0.06 ? 1.6 : 0.9;
+    context.beginPath();
+    context.arc(random() * size, random() * size, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+  return finishTexture('nebula', canvas);
+};
+
+/** Nube suave para los bancos de niebla bajo la plataforma. */
+export const cloudTexture = (): CanvasTexture => {
+  const cached = cache.get('cloud');
+  if (cached) return cached;
+  const size = 256;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x434c4f55);
+  context.clearRect(0, 0, size, size);
+  for (let index = 0; index < 18; index += 1) {
+    const x = size * (0.2 + random() * 0.6);
+    const y = size * (0.35 + random() * 0.3);
+    const radius = size * (0.1 + random() * 0.16);
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, 'rgba(216, 224, 244, 0.5)');
+    gradient.addColorStop(1, 'rgba(216, 224, 244, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+  return finishTexture('cloud', canvas);
+};
+
 /** Halo radial suave para llamas, brasas y auras. */
 export const glowTexture = (tint: 'ember' | 'arcane' | 'gold'): CanvasTexture => {
   const key = `glow-${tint}`;
