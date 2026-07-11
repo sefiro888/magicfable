@@ -1,6 +1,7 @@
 import { CARD_BY_ID } from './cards';
 import { COMMANDER_BY_ID, expandDeck } from './decks';
 import { payMana, restoreMana } from './mana';
+import type { ManaCost } from './types';
 import { deriveSeed, shuffleSeeded } from './random';
 import { validateDeck } from './deck-validation';
 import type {
@@ -91,6 +92,8 @@ const createPlayer = (
     spellsCastThisTurn: 0,
     towerLootUsedThisTurn: false,
     forgeBuffUsedThisTurn: false,
+    nexusDamagedThisTurn: false,
+    unitDiscountPending: false,
     mulliganTaken: false,
     stats: { cardsPlayed: 0, damageDealt: 0 },
   };
@@ -282,23 +285,42 @@ const damagePiece = (
 ): MatchState => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
   if (!target || amount <= 0) return state;
-  let next: MatchState = {
-    ...state,
-    board: state.board.map((piece) =>
-      piece.instanceId === pieceId ? { ...piece, currentHealth: piece.currentHealth - amount } : piece,
+  const targetDefinition = pieceDefinition(target);
+  const reduction = targetDefinition?.effects.find(
+    (effect) => effect.kind === 'passive' && effect.id === 'first-damage-reduction',
+  );
+  let reducedBy = 0;
+  if (reduction?.kind === 'passive' && target.reductionUsedOnTurn !== state.turn) {
+    reducedBy = Math.min(amount, reduction.value ?? 1);
+  }
+  const finalAmount = amount - reducedBy;
+  let next: MatchState =
+    reducedBy > 0
+      ? updatePiece(state, pieceId, (piece) => ({ ...piece, reductionUsedOnTurn: state.turn }))
+      : state;
+  if (reducedBy > 0) {
+    next = enqueue(next, {
+      type: 'shield', targetId: pieceId, amount: reducedBy, effectId: 'water-shield', durationMs: 260,
+    });
+  }
+  if (finalAmount <= 0) return next;
+  next = {
+    ...next,
+    board: next.board.map((piece) =>
+      piece.instanceId === pieceId ? { ...piece, currentHealth: piece.currentHealth - finalAmount } : piece,
     ),
   };
   if (sourceOwner) {
     const source = next.players[sourceOwner];
     next = withPlayer(next, sourceOwner, {
       ...source,
-      stats: { ...source.stats, damageDealt: source.stats.damageDealt + amount },
+      stats: { ...source.stats, damageDealt: source.stats.damageDealt + finalAmount },
     });
   }
   next = enqueue(next, {
-    type: 'damage', targetId: pieceId, amount, effectId, durationMs: 300,
+    type: 'damage', targetId: pieceId, amount: finalAmount, effectId, durationMs: 300,
   });
-  if (target.currentHealth - amount <= 0) {
+  if (target.currentHealth - finalAmount <= 0) {
     const owner = next.players[target.owner];
     next = withPlayer(
       { ...next, board: next.board.filter((piece) => piece.instanceId !== pieceId) },
@@ -342,6 +364,7 @@ const spellNeedsPiece = (card: CardDefinition): boolean =>
       effect.kind === 'damage' ||
       effect.kind === 'freeze' ||
       effect.kind === 'scorch' ||
+      effect.kind === 'refresh-move' ||
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
   );
 
@@ -400,10 +423,40 @@ const resolveSpell = (
       draws += effect.amount;
     } else if (effect.kind === 'discard') {
       discards += effect.amount;
+    } else if (effect.kind === 'scry') {
+      next = enqueue(next, {
+        type: 'spell', actorId: caster, amount: effect.amount, effectId: 'scry-top-cards', durationMs: 300,
+      });
     } else if (effect.kind === 'heal-nexus') {
       const player = next.players[caster];
       const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 25;
       next = withPlayer(next, caster, { ...player, nexusHealth: Math.min(maximum, player.nexusHealth + effect.amount) });
+    } else if (effect.kind === 'refresh-move' && targetPiece?.owner === caster) {
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({
+        ...piece,
+        movedThisTurn: false,
+        enteredOnTurn: Math.min(piece.enteredOnTurn, state.turn - 1),
+      }));
+      next = enqueue(next, {
+        type: 'spell', targetId: targetPiece.instanceId, effectId: 'astral-refresh', durationMs: 320,
+      });
+    } else if (effect.kind === 'splash-weakest-enemy') {
+      const enemy = opponentOf(caster);
+      const candidates = next.board
+        .filter(
+          (piece) =>
+            piece.owner === enemy &&
+            piece.instanceId !== initialTarget?.instanceId &&
+            pieceDefinition(piece)?.type === 'unit',
+        )
+        .sort(
+          (left, right) =>
+            left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId),
+        );
+      const weakest = candidates[0];
+      if (weakest) {
+        next = damagePiece(next, weakest.instanceId, effect.amount, caster, card.vfx.impactEffect);
+      }
     } else if (effect.kind === 'passive' && effect.id === 'target-attack-until-end' && targetPiece?.owner === caster) {
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece,
@@ -505,7 +558,34 @@ const cardTargetIsValid = (
     (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
   );
   if (friendlyBuff && piece.owner !== playerId) return false;
+  const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move');
+  if (refreshMove && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) return false;
   return true;
+};
+
+/**
+ * Coste efectivo de una carta tras aplicar descuentos activos:
+ * Archivo Viviente (hechizos) y la pasiva de Kaela (unidades).
+ */
+export const effectiveCost = (
+  state: MatchState,
+  playerId: PlayerId,
+  card: CardDefinition,
+): ManaCost => {
+  let generic = card.cost.generic;
+  if (card.type === 'instant' || card.type === 'persistent') {
+    for (const piece of state.board) {
+      if (piece.owner !== playerId) continue;
+      const discount = CARD_BY_ID[piece.cardId]?.effects.find(
+        (effect) => effect.kind === 'passive' && effect.id === 'spell-generic-discount',
+      );
+      if (discount?.kind === 'passive') generic = Math.max(0, generic - (discount.value ?? 1));
+    }
+  }
+  if (card.type === 'unit' && state.players[playerId].unitDiscountPending) {
+    generic = Math.max(0, generic - 1);
+  }
+  return { generic, colored: card.cost.colored };
 };
 
 export const playCard = (
@@ -537,12 +617,15 @@ export const playCard = (
     return fail(state, 'target-required', 'El hechizo necesita un objetivo válido.');
   }
 
-  const payment = payMana(player.resources, card.cost);
-  if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay maná disponible suficiente.');
+  const cost = effectiveCost(state, playerId, card);
+  const payment = payMana(player.resources, cost);
+  if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay Esencia disponible suficiente.');
   const receivesForgeBuff =
     card.type === 'unit' &&
     !player.forgeBuffUsedThisTurn &&
     state.board.some((piece) => piece.owner === playerId && piece.cardId === 'forja-carmesi');
+  const usedUnitDiscount =
+    card.type === 'unit' && player.unitDiscountPending && card.cost.generic > 0;
   let nextPlayer: PlayerState = {
     ...player,
     hand: player.hand.filter((candidate) => candidate.instanceId !== cardInstanceId),
@@ -552,6 +635,7 @@ export const playCard = (
         ? player.spellsCastThisTurn + 1
         : player.spellsCastThisTurn,
     forgeBuffUsedThisTurn: player.forgeBuffUsedThisTurn || receivesForgeBuff,
+    unitDiscountPending: player.unitDiscountPending && !usedUnitDiscount,
     stats: { ...player.stats, cardsPlayed: player.stats.cardsPlayed + 1 },
   };
   let next = withPlayer(state, playerId, nextPlayer);
@@ -607,9 +691,13 @@ export const playCard = (
     }
     const commander = COMMANDER_BY_ID[next.players[playerId].commanderId];
     if (commander?.id === 'oriel-custodio-septima-runa' && next.players[playerId].spellsCastThisTurn === 2) {
-      next = enqueue(next, {
-        type: 'spell', actorId: playerId, amount: 1, effectId: 'commander-scry', durationMs: 260,
-      });
+      const topCard = next.players[playerId].deck[0];
+      if (topCard) {
+        next = enqueue(next, {
+          type: 'reveal', actorId: playerId, targetId: topCard.instanceId,
+          amount: 1, effectId: 'commander-scry', durationMs: 900,
+        });
+      }
     }
   }
   return success(next);
@@ -690,8 +778,15 @@ export const attackNexus = (
   const enemyId = opponentOf(playerId);
   const enemy = state.players[enemyId];
   const source = state.players[playerId];
+  const kaelaTriggers =
+    COMMANDER_BY_ID[enemy.commanderId]?.id === 'kaela-corazon-caldera' && !enemy.nexusDamagedThisTurn;
   let next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
-  next = withPlayer(next, enemyId, { ...enemy, nexusHealth: Math.max(0, enemy.nexusHealth - amount) });
+  next = withPlayer(next, enemyId, {
+    ...enemy,
+    nexusHealth: Math.max(0, enemy.nexusHealth - amount),
+    nexusDamagedThisTurn: true,
+    unitDiscountPending: enemy.unitDiscountPending || kaelaTriggers,
+  });
   next = withPlayer(next, playerId, {
     ...source,
     stats: { ...source.stats, damageDealt: source.stats.damageDealt + amount },
@@ -732,11 +827,13 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         spellsCastThisTurn: 0,
         towerLootUsedThisTurn: false,
         forgeBuffUsedThisTurn: false,
+        nexusDamagedThisTurn: false,
       },
       [nextPlayerId]: {
         ...incoming,
         resources: restoreMana(incoming.resources),
         resourcePlayedThisTurn: false,
+        nexusDamagedThisTurn: false,
       },
     },
     board: state.board.map((piece) => ({

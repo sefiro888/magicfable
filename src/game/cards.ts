@@ -60,7 +60,7 @@ const furyCards: readonly CardDefinition[] = [
   defineCard({
     id: 'fuente-furia', name: 'Fuente de Furia', faction: 'fury', type: 'mana', subtype: 'Fuente',
     rarity: 'common', cost: factionCost('fury', 0),
-    rules: 'Agota esta fuente: genera 1 punto de Furia.',
+    rules: 'Agota esta fuente: genera 1 de Esencia Carmesí.',
     flavor: 'Bajo la montaña, el corazón del mundo todavía arde.',
     keywords: [], collectorNumber: 1, aiTags: ['resource'], unique: false, effects: [],
     vfx: { persistentEffect: 'fury-source-embers' }, sfx: { play: 'resource-fury' },
@@ -156,10 +156,10 @@ const furyCards: readonly CardDefinition[] = [
   defineCard({
     id: 'temblor-rojo', name: 'Temblor Rojo', faction: 'fury', type: 'persistent', subtype: 'Cataclismo',
     rarity: 'rare', cost: factionCost('fury', 2, 2),
-    rules: 'Inflige 3 de daño a una unidad. Al final del turno, inflige 1 de daño a otra unidad enemiga.',
+    rules: 'Inflige 3 de daño a una unidad. Después, la réplica inflige 1 de daño a la unidad enemiga más debilitada restante.',
     flavor: 'La tierra aprende a rugir antes de abrirse.',
     keywords: [], collectorNumber: 12, aiTags: ['removal', 'damage'], unique: false,
-    effects: [{ kind: 'damage', amount: 3, target: 'enemy-piece' }],
+    effects: [{ kind: 'damage', amount: 3, target: 'enemy-piece' }, { kind: 'splash-weakest-enemy', amount: 1 }],
     vfx: { impactEffect: 'chain-eruption', persistentEffect: 'magma-chain' },
   }),
 ];
@@ -168,7 +168,7 @@ const arcaneCards: readonly CardDefinition[] = [
   defineCard({
     id: 'fuente-arcana', name: 'Fuente Arcana', faction: 'arcane', type: 'mana', subtype: 'Fuente',
     rarity: 'common', cost: factionCost('arcane', 0),
-    rules: 'Agota esta fuente: genera 1 punto Arcano.',
+    rules: 'Agota esta fuente: genera 1 de Esencia Celeste.',
     flavor: 'Cada cristal conserva una pregunta que el mundo aún no sabe responder.',
     keywords: [], collectorNumber: 13, aiTags: ['resource'], unique: false, effects: [],
     vfx: { persistentEffect: 'arcane-source-runes' }, sfx: { play: 'resource-arcane' },
@@ -238,11 +238,11 @@ const arcaneCards: readonly CardDefinition[] = [
   }),
   defineCard({
     id: 'niebla-espejada', name: 'Niebla Espejada', faction: 'arcane', type: 'persistent', subtype: 'Encantamiento',
-    rarity: 'rare', cost: factionCost('arcane', 2, 1), resistance: 3,
-    rules: 'La primera vez que fueras a robar cada turno, mira también la siguiente carta.',
+    rarity: 'rare', cost: factionCost('arcane', 2, 1),
+    rules: 'Observa las tres primeras cartas de tu mazo y colócalas en el orden que quieras. Después, roba una carta.',
     flavor: 'Cada reflejo oculta a quien lo está mirando.',
-    keywords: [], collectorNumber: 21, aiTags: ['relic', 'scry'], unique: false,
-    effects: [{ kind: 'passive', id: 'draw-scry', value: 1 }],
+    keywords: [], collectorNumber: 21, aiTags: ['scry', 'draw'], unique: false,
+    effects: [{ kind: 'scry', amount: 3 }, { kind: 'draw', amount: 1 }],
     vfx: { summonEffect: 'mirror-unfold', persistentEffect: 'probability-shimmer' },
   }),
   defineCard({
@@ -266,10 +266,10 @@ const arcaneCards: readonly CardDefinition[] = [
   defineCard({
     id: 'convergencia-astral', name: 'Convergencia Astral', faction: 'arcane', type: 'persistent', subtype: 'Portal',
     rarity: 'uncommon', cost: factionCost('arcane', 1, 2),
-    rules: 'Mueve una unidad aliada a una casilla libre adyacente a su posición.',
+    rules: 'Una unidad aliada puede moverse de nuevo este turno, aunque acabe de entrar en juego.',
     flavor: 'Cuando las estrellas coinciden, la distancia pierde toda autoridad.',
     keywords: [], collectorNumber: 24, aiTags: ['movement', 'control'], unique: false,
-    effects: [{ kind: 'passive', id: 'reposition-friendly', value: 1 }],
+    effects: [{ kind: 'refresh-move' }],
     vfx: { impactEffect: 'folded-threshold', persistentEffect: 'portal-ripple' },
   }),
 ];

@@ -54,6 +54,8 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('buff-self-on-attack'), attack: z.number().int().positive() }),
   z.object({ kind: z.literal('scry'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('scorch'), duration: z.number().int().positive() }),
+  z.object({ kind: z.literal('refresh-move') }),
+  z.object({ kind: z.literal('splash-weakest-enemy'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('passive'), id: z.string().min(1), value: z.number().optional() }),
 ]);
 

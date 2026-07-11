@@ -1,6 +1,7 @@
 import { CARD_BY_ID } from './cards';
 import {
   applyAction,
+  effectiveCost,
   getValidAttacks,
   getValidDeploymentPositions,
   getValidMoves,
@@ -49,6 +50,16 @@ const chooseEnemyTarget = (state: MatchState, card: CardDefinition): BoardPiece 
 };
 
 const targetForCard = (state: MatchState, card: CardDefinition): SpellTarget | undefined => {
+  const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move');
+  if (refreshMove) {
+    const movedAlly = state.board
+      .filter(
+        (piece) =>
+          piece.owner === 'ai' && piece.movedThisTurn && CARD_BY_ID[piece.cardId]?.type === 'unit',
+      )
+      .sort((left, right) => left.instanceId.localeCompare(right.instanceId))[0];
+    return movedAlly ? { kind: 'piece', pieceId: movedAlly.instanceId } : undefined;
+  }
   const friendlyBuff = card.effects.some(
     (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
   );
@@ -85,7 +96,7 @@ const chooseDeployment = (state: MatchState): Position | undefined => {
 const actionForCard = (state: MatchState, instance: CardInstance): GameAction | undefined => {
   const card = CARD_BY_ID[instance.cardId];
   if (!card || card.type === 'mana' || card.type === 'relic') return undefined;
-  if (!planManaPayment(state.players.ai.resources, card.cost).payable) return undefined;
+  if (!planManaPayment(state.players.ai.resources, effectiveCost(state, 'ai', card)).payable) return undefined;
   if (card.type === 'unit' || card.type === 'structure') {
     const position = chooseDeployment(state);
     return position
@@ -98,6 +109,7 @@ const actionForCard = (state: MatchState, instance: CardInstance): GameAction | 
       effect.kind === 'damage' ||
       effect.kind === 'freeze' ||
       effect.kind === 'scorch' ||
+      effect.kind === 'refresh-move' ||
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
   );
   if (needsPiece && (!target || target.kind !== 'piece')) return undefined;

@@ -71,6 +71,8 @@ export type CardEffect =
   | { readonly kind: 'buff-self-on-attack'; readonly attack: number }
   | { readonly kind: 'scry'; readonly amount: number }
   | { readonly kind: 'scorch'; readonly duration: number }
+  | { readonly kind: 'refresh-move' }
+  | { readonly kind: 'splash-weakest-enemy'; readonly amount: number }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 export interface CardDefinition {
@@ -168,6 +170,8 @@ export interface BoardPiece {
   readonly movedThisTurn: boolean;
   readonly attackedThisTurn: boolean;
   readonly enteredOnTurn: number;
+  /** Turno en el que la pieza ya consumió su reducción de primer daño (pasiva del Gólem Azur). */
+  readonly reductionUsedOnTurn?: number;
   readonly statuses: readonly PieceStatus[];
 }
 
@@ -188,6 +192,10 @@ export interface PlayerState {
   readonly spellsCastThisTurn: number;
   readonly towerLootUsedThisTurn: boolean;
   readonly forgeBuffUsedThisTurn: boolean;
+  /** Marca de la pasiva de Kaela: el Nexo ya recibió su primer daño este turno. */
+  readonly nexusDamagedThisTurn: boolean;
+  /** Pasiva de Kaela armada: la siguiente unidad cuesta 1 genérico menos. */
+  readonly unitDiscountPending: boolean;
   readonly mulliganTaken: boolean;
   readonly stats: PlayerStats;
 }
@@ -203,8 +211,10 @@ export type AnimationEventType =
   | 'move'
   | 'attack'
   | 'damage'
+  | 'shield'
   | 'destroy'
   | 'freeze'
+  | 'reveal'
   | 'nexus-damage'
   | 'turn'
   | 'victory';
