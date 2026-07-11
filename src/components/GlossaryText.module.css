@@ -1,0 +1,63 @@
+.glossaryText { display: inline; }
+
+.term {
+  position: relative;
+  display: inline;
+  border-bottom: 1px dotted currentColor;
+  border-radius: 2px;
+  color: color-mix(in srgb, currentColor 72%, #236d91);
+  font-weight: 800;
+  cursor: help;
+  outline: none;
+}
+
+.term:focus-visible {
+  border-bottom-style: solid;
+  box-shadow: 0 0 0 2px #f4d57e;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 500;
+  bottom: calc(100% + 0.55rem);
+  left: 50%;
+  display: grid;
+  width: max-content;
+  max-width: min(20rem, 70vw);
+  gap: 0.22rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(239, 210, 137, 0.65);
+  border-radius: 0.55rem;
+  color: #f8efdc;
+  background: rgba(12, 14, 22, 0.98);
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.68);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(-50%, 0.25rem);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 0.35rem solid transparent;
+  border-top-color: rgba(239, 210, 137, 0.75);
+  transform: translateX(-50%);
+}
+
+.tooltip strong { color: #f2d184; font-family: Georgia, 'Times New Roman', serif; font-size: 1.05em; }
+.term:hover .tooltip,
+.term:focus .tooltip,
+.term:focus-within .tooltip { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip { transition: none; }
+}

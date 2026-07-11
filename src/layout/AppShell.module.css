@@ -1,0 +1,81 @@
+.shell { min-height: 100vh; position: relative; }
+.header {
+  height: 76px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto minmax(260px, 1fr);
+  align-items: center;
+  padding: 0 38px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--line);
+  background: rgba(8, 10, 16, 0.82);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 8px 30px rgba(0,0,0,.22);
+}
+.brand { display: flex; align-items: center; gap: 12px; width: max-content; }
+.brandMark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: var(--gold-bright);
+  border: 1px solid var(--line-bright);
+  transform: rotate(45deg);
+  background: radial-gradient(circle, rgba(107, 167, 215, .35), rgba(153, 77, 27, .15));
+  box-shadow: inset 0 0 16px rgba(236, 197, 111, .16), 0 0 20px rgba(91, 148, 220, .12);
+}
+.brandMark span { transform: rotate(-45deg); font-family: var(--display); font-size: 21px; }
+.brandText strong { display: block; font-family: var(--display); letter-spacing: .16em; font-size: 15px; }
+.brandText small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; letter-spacing: .28em; text-transform: uppercase; }
+.nav { display: flex; height: 100%; align-items: stretch; gap: 5px; }
+.navLink {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0 17px;
+  color: #aba79f;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: color .2s ease;
+}
+.navLink:hover, .navLink[data-active="true"] { color: var(--ivory); }
+.navLink::after {
+  content: "";
+  position: absolute;
+  left: 17px;
+  right: 17px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--gold-bright);
+  transform: scaleX(0);
+  transition: transform .2s ease;
+  box-shadow: 0 0 12px var(--gold);
+}
+.navLink[data-active="true"]::after { transform: scaleX(1); }
+.actions { justify-self: end; display: flex; align-items: center; gap: 10px; }
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(255,255,255,.025);
+  color: #d9ceba;
+  cursor: pointer;
+}
+.iconButton:hover { border-color: var(--line-bright); background: rgba(215,180,103,.08); }
+.main { min-height: calc(100vh - 76px); }
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 38px;
+  color: #77756f;
+  border-top: 1px solid rgba(255,255,255,.05);
+  font-size: 11px;
+  letter-spacing: .05em;
+}

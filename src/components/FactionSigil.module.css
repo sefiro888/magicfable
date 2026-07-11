@@ -1,0 +1,42 @@
+.sigil {
+  --sigil-size: 1.5rem;
+  display: inline-grid;
+  width: var(--sigil-size);
+  height: var(--sigil-size);
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--sigil-color);
+  filter: drop-shadow(0 0 0.3rem color-mix(in srgb, currentColor 42%, transparent));
+}
+
+.sigil svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.sigil .inner {
+  fill: none;
+  stroke: color-mix(in srgb, currentColor 48%, #fff);
+  stroke-width: 2;
+}
+
+.small { --sigil-size: 0.95rem; }
+.medium { --sigil-size: 1.5rem; }
+.large { --sigil-size: 2.35rem; }
+
+.fury { --sigil-color: #ff7940; }
+.arcane { --sigil-color: #72dfff; }
+.nature { --sigil-color: #91d36c; }
+.order { --sigil-color: #efd58b; }
+.shadow { --sigil-color: #a77ac5; }
+.void { --sigil-color: #c77dff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sigil { filter: none; }
+}

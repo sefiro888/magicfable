@@ -1,0 +1,43 @@
+.page { max-width: 1280px; margin: 0 auto; padding: 58px 32px 100px; }
+.header { display: flex; justify-content: space-between; align-items: end; }
+.header small { color: var(--gold); font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
+.header h1 { margin: 9px 0 0; font-family: var(--display); font-size: 48px; font-weight: 500; }
+.tabs { display: flex; gap: 8px; }
+.tab { padding: 10px 16px; border: 1px solid var(--line); background: rgba(255,255,255,.025); color: #aaa69e; cursor: pointer; }
+.tab[data-active="true"] { border-color: var(--line-bright); color: var(--ivory); background: rgba(215,180,103,.09); }
+.layout { margin-top: 30px; display: grid; grid-template-columns: 340px 1fr; gap: 22px; }
+.summary, .editor { border: 1px solid var(--line); background: var(--panel); box-shadow: var(--shadow); }
+.summary { padding: 28px; align-self: start; position: sticky; top: 104px; }
+.factionMark { width: 58px; height: 58px; display: grid; place-items: center; border: 1px solid var(--line-bright); color: var(--gold-bright); font-size: 27px; transform: rotate(45deg); background: rgba(215,180,103,.07); }
+.factionMark span { transform: rotate(-45deg); }
+.summary h2 { margin: 25px 0 4px; font-family: var(--display); font-size: 30px; font-weight: 500; }
+.commander { color: var(--gold); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.commanderRule { margin: 21px 0; padding: 14px; border-left: 2px solid var(--gold); color: #a9a59c; font-size: 12px; line-height: 1.55; background: rgba(255,255,255,.022); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid rgba(255,255,255,.08); }
+.stat { padding: 14px 7px; text-align: center; border-right: 1px solid rgba(255,255,255,.08); }
+.stat:last-child { border-right: 0; }
+.stat strong { display: block; font-family: var(--display); font-size: 21px; color: var(--gold-bright); }
+.stat span { color: #79766f; font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+.valid { margin-top: 18px; padding: 11px 12px; border: 1px solid rgba(83,196,130,.3); color: var(--success); background: rgba(53,142,89,.08); font-size: 12px; }
+.invalid { margin-top: 18px; padding: 11px 12px; border: 1px solid rgba(255,101,90,.3); color: var(--danger); background: rgba(163,52,47,.08); font-size: 12px; }
+.issues { margin: 9px 0 0; padding-left: 18px; color: #c5918d; font-size: 11px; line-height: 1.5; }
+.saveRow { display: flex; gap: 8px; margin-top: 18px; }
+.save, .reset { flex: 1; padding: 10px; cursor: pointer; }
+.save { color: #160f05; border: 1px solid #e6c673; background: linear-gradient(#e3c373,#aa792f); font-weight: 800; }
+.reset { border: 1px solid rgba(255,255,255,.13); color: #aaa69e; background: transparent; }
+.saved { display: block; margin-top: 9px; color: var(--success); font-size: 10px; }
+.editorHeader { padding: 20px 23px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.editorHeader h3 { margin: 0; font-family: var(--display); font-weight: 500; font-size: 21px; }
+.editorHeader span { color: #817e77; font-size: 11px; }
+.list { display: grid; }
+.entry { min-height: 76px; display: grid; grid-template-columns: 52px 1fr auto auto; align-items: center; gap: 15px; padding: 10px 18px; border-bottom: 1px solid rgba(255,255,255,.065); }
+.entry:last-child { border-bottom: 0; }
+.entry:hover { background: rgba(255,255,255,.02); }
+.art { width: 52px; height: 56px; object-fit: cover; border: 1px solid rgba(255,255,255,.14); background: #11131a; }
+.entry h4 { margin: 0 0 4px; font-family: var(--display); font-size: 16px; font-weight: 500; }
+.entry p { margin: 0; color: #7e7b74; font-size: 10px; text-transform: uppercase; letter-spacing: .09em; }
+.cost { color: #aaa69f; font-size: 11px; min-width: 85px; text-align: right; }
+.counter { display: grid; grid-template-columns: 28px 30px 28px; align-items: center; border: 1px solid rgba(255,255,255,.12); }
+.counter button { height: 28px; border: 0; background: rgba(255,255,255,.035); cursor: pointer; }
+.counter button:hover { background: rgba(215,180,103,.12); }
+.counter span { text-align: center; font-family: var(--display); color: var(--gold-bright); }

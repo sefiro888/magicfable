@@ -1,0 +1,15 @@
+.viewport { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #1a1e2a, #080a10 75%); }
+.fallback { height: 100%; display: grid; place-items: center; color: var(--muted); }
+.cardLabel {
+  width: 86px;
+  pointer-events: none;
+  transform: translateY(-42px);
+  text-align: center;
+  font-size: 9px;
+  font-weight: 800;
+  text-shadow: 0 2px 4px #000, 0 0 5px #000;
+  white-space: nowrap;
+}
+.cardStats { display: flex; justify-content: center; gap: 5px; margin-top: 2px; }
+.cardStats span { min-width: 19px; padding: 2px 4px; border-radius: 7px; background: rgba(5,6,9,.88); border: 1px solid rgba(255,255,255,.22); }
+.nexusLabel { width: 100px; text-align: center; color: var(--gold-bright); font: 700 10px var(--display); text-shadow: 0 2px 6px #000; pointer-events: none; }

@@ -1,0 +1,23 @@
+.page { max-width: 920px; margin: 0 auto; padding: 70px 32px 110px; }
+.header small { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
+.header h1 { margin: 9px 0 8px; font-family: var(--display); font-size: 48px; font-weight: 500; }
+.header p { margin: 0; color: var(--muted); }
+.panel { margin-top: 38px; border: 1px solid var(--line); background: var(--panel); box-shadow: var(--shadow); }
+.section { padding: 28px 32px; border-bottom: 1px solid var(--line); }
+.section:last-child { border-bottom: 0; }
+.section h2 { margin: 0 0 5px; font-family: var(--display); font-size: 22px; font-weight: 500; }
+.section > p { margin: 0 0 22px; color: #8f8c85; font-size: 13px; }
+.control { display: grid; grid-template-columns: 210px 1fr 44px; align-items: center; gap: 18px; margin: 17px 0; }
+.control label { color: #d5d0c5; font-size: 13px; }
+.control output { color: var(--gold-bright); text-align: right; font-size: 12px; }
+.control input[type="range"] { appearance: none; height: 4px; border-radius: 9px; background: #363641; accent-color: var(--gold); }
+.control input[type="range"]::-webkit-slider-thumb { appearance: none; width: 15px; height: 15px; border: 2px solid #f0d18b; border-radius: 50%; background: #5f4721; box-shadow: 0 0 10px rgba(238,205,125,.35); }
+.toggleRow { display: flex; justify-content: space-between; align-items: center; margin-top: 17px; }
+.toggleRow span strong { display: block; font-size: 13px; }
+.toggleRow span small { display: block; color: #85827b; margin-top: 4px; }
+.toggle { width: 50px; height: 26px; position: relative; border: 1px solid var(--line); border-radius: 99px; background: #252630; cursor: pointer; }
+.toggle::after { content: ""; position: absolute; width: 18px; height: 18px; top: 3px; left: 4px; border-radius: 50%; background: #77756e; transition: .2s; }
+.toggle[data-on="true"] { background: rgba(197,149,61,.24); border-color: var(--line-bright); }
+.toggle[data-on="true"]::after { left: 26px; background: var(--gold-bright); box-shadow: 0 0 10px var(--gold); }
+.reset { margin-top: 24px; padding: 11px 16px; border: 1px solid rgba(255,255,255,.14); background: transparent; color: #b9b5ad; cursor: pointer; }
+.reset:hover { border-color: var(--gold); color: var(--ivory); }
