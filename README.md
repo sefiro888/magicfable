@@ -5,7 +5,7 @@
 Vertical slice para PC de un juego táctico de cartas de fantasía oscura.
 Dos mazos de 50 cartas —**Furia de la Caldera** y **Secretos del Arcano**—
 se enfrentan en **El Santuario de las Runas Quebradas**: una arena rúnica
-de 5 × 5 suspendida sobre el abismo. La carta permanece como pieza física
+de 8 × 8 suspendida sobre el abismo. La carta permanece como pieza física
 sobre la casilla; nunca se sustituye por una miniatura.
 
 ## Puesta en marcha

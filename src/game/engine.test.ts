@@ -147,7 +147,7 @@ describe('fuentes y despliegue', () => {
       resources: resources('fury', 2),
     });
     const result = applyAction(state, {
-      type: 'play-card', playerId: 'player', cardInstanceId: 'berserker', position: { x: 2, y: 4 },
+      type: 'play-card', playerId: 'player', cardInstanceId: 'berserker', position: { x: 2, y: 7 },
     });
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe('insufficient-mana');
@@ -166,10 +166,10 @@ describe('fuentes y despliegue', () => {
     });
     expect(invalid.ok).toBe(false);
     const result = applyAction(state, {
-      type: 'play-card', playerId: 'player', cardInstanceId: 'hound', position: { x: 2, y: 4 },
+      type: 'play-card', playerId: 'player', cardInstanceId: 'hound', position: { x: 2, y: 7 },
     });
     expect(result.ok).toBe(true);
-    expect(result.state.board[0]).toMatchObject({ cardId: 'sabueso-brasa', currentHealth: 1, position: { x: 2, y: 4 } });
+    expect(result.state.board[0]).toMatchObject({ cardId: 'sabueso-brasa', currentHealth: 1, position: { x: 2, y: 7 } });
     expect(result.state.players.player.resources[0]?.exhausted).toBe(true);
     expect(result.state.animations.map((event) => event.type)).toEqual(['mana-flow', 'summon']);
   });
@@ -177,14 +177,14 @@ describe('fuentes y despliegue', () => {
   it('Forja Carmesí potencia solo la primera unidad aunque esa unidad sea destruida', () => {
     let state: MatchState = {
       ...freshMatch(),
-      board: [makePiece('forge', 'forja-carmesi', 'player', { x: 0, y: 4 })],
+      board: [makePiece('forge', 'forja-carmesi', 'player', { x: 0, y: 7 })],
     };
     state = withPlayer(state, 'player', {
       hand: [handCard('sabueso-brasa', 'first'), handCard('sabueso-brasa', 'second')],
       resources: resources('fury', 2),
     });
     const first = applyAction(state, {
-      type: 'play-card', playerId: 'player', cardInstanceId: 'first', position: { x: 1, y: 4 },
+      type: 'play-card', playerId: 'player', cardInstanceId: 'first', position: { x: 1, y: 7 },
     });
     expect(first.ok).toBe(true);
     expect(first.state.board.find((piece) => piece.instanceId === 'first')?.attackModifier).toBe(1);
@@ -200,7 +200,7 @@ describe('fuentes y despliegue', () => {
       },
     };
     const second = applyAction(afterDestruction, {
-      type: 'play-card', playerId: 'player', cardInstanceId: 'second', position: { x: 2, y: 4 },
+      type: 'play-card', playerId: 'player', cardInstanceId: 'second', position: { x: 2, y: 7 },
     });
     expect(second.ok).toBe(true);
     expect(second.state.board.find((piece) => piece.instanceId === 'second')?.attackModifier).toBe(0);
@@ -216,7 +216,7 @@ describe('movimiento táctico', () => {
         makePiece('blocker', 'centinela-cristal', 'ai', { x: 2, y: 3 }),
       ],
     };
-    expect(getValidMoves(state, 'runner')).not.toContainEqual({ x: 2, y: 4 });
+    expect(getValidMoves(state, 'runner')).not.toContainEqual({ x: 2, y: 7 });
     expect(getValidMoves(state, 'runner')).toContainEqual({ x: 1, y: 2 });
     const moved = applyAction(state, { type: 'move', playerId: 'player', pieceId: 'runner', to: { x: 1, y: 2 } });
     expect(moved.ok).toBe(true);
@@ -230,12 +230,12 @@ describe('movimiento táctico', () => {
     const state: MatchState = {
       ...freshMatch(),
       board: [
-        makePiece('normal', 'berserker-ignivoro', 'player', { x: 1, y: 4 }, { enteredOnTurn: 1 }),
-        makePiece('impulse', 'sabueso-brasa', 'player', { x: 3, y: 4 }, { enteredOnTurn: 1 }),
+        makePiece('normal', 'berserker-ignivoro', 'player', { x: 1, y: 7 }, { enteredOnTurn: 1 }),
+        makePiece('impulse', 'sabueso-brasa', 'player', { x: 3, y: 7 }, { enteredOnTurn: 1 }),
       ],
     };
     expect(getValidMoves(state, 'normal')).toEqual([]);
-    expect(getValidMoves(state, 'impulse')).toContainEqual({ x: 3, y: 3 });
+    expect(getValidMoves(state, 'impulse')).toContainEqual({ x: 3, y: 6 });
   });
 });
 
@@ -295,15 +295,15 @@ describe('efectos de cartas principales', () => {
     let state: MatchState = {
       ...freshMatch(),
       board: [
-        makePiece('enemy', 'centinela-cristal', 'ai', { x: 1, y: 4 }),
-        makePiece('ally', 'berserker-ignivoro', 'player', { x: 3, y: 4 }),
+        makePiece('enemy', 'centinela-cristal', 'ai', { x: 1, y: 7 }),
+        makePiece('ally', 'berserker-ignivoro', 'player', { x: 3, y: 7 }),
       ],
     };
     state = withPlayer(state, 'player', {
       hand: [handCard('dragon-caldera', 'dragon-hand')], resources: resources('fury', 7),
     });
     const result = applyAction(state, {
-      type: 'play-card', playerId: 'player', cardInstanceId: 'dragon-hand', position: { x: 2, y: 4 },
+      type: 'play-card', playerId: 'player', cardInstanceId: 'dragon-hand', position: { x: 2, y: 7 },
     });
     expect(result.ok).toBe(true);
     expect(result.state.board.find((piece) => piece.instanceId === 'enemy')?.currentHealth).toBe(1);
@@ -375,7 +375,7 @@ describe('efectos de cartas principales', () => {
       hand: [handCard('centinela-cristal', 'sentinel')], resources: resources('arcane', 2),
     });
     const summoned = applyAction(summonState, {
-      type: 'play-card', playerId: 'player', cardInstanceId: 'sentinel', position: { x: 2, y: 4 },
+      type: 'play-card', playerId: 'player', cardInstanceId: 'sentinel', position: { x: 2, y: 7 },
     });
     expect(summoned.ok).toBe(true);
     expect(summoned.state.animations.some((event) => event.effectId === 'scry-top-cards' && event.amount === 2)).toBe(true);
@@ -383,7 +383,7 @@ describe('efectos de cartas principales', () => {
     let state: MatchState = {
       ...freshMatch(),
       board: [
-        makePiece('tower', 'torre-horizonte', 'player', { x: 0, y: 4 }),
+        makePiece('tower', 'torre-horizonte', 'player', { x: 0, y: 7 }),
         makePiece('victim', 'centinela-cristal', 'ai', { x: 2, y: 2 }),
       ],
     };

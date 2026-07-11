@@ -3,15 +3,12 @@ import { useMemo, useRef } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, PointLight } from 'three'
 import type { AnimationEvent, Position } from '../game'
+import {
+  gridToWorldX as boardX,
+  gridToWorldZ as boardZ,
+  NEXUS_WORLD as NEXUS_POSITION,
+} from './grid/gridCoordinates'
 import { glowTexture } from './textures'
-
-const boardX = (x: number) => (x - 2) * 1.18
-const boardZ = (y: number) => (y - 2) * 1.18
-
-const NEXUS_POSITION: Readonly<Record<string, readonly [number, number]>> = {
-  'player-nexus': [0, 3.3],
-  'ai-nexus': [0, -3.3],
-}
 
 /** Deduce el tono cromático del efecto a partir de su identificador declarativo. */
 const toneOf = (effectId?: string): string => {

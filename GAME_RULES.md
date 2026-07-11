@@ -51,7 +51,7 @@ Cada facción canaliza una variante:
 
 ## 4. El tablero
 
-- Rejilla de **5 × 5** casillas sobre la plataforma del Santuario.
+- Rejilla de **8 × 8** casillas (64 en total) sobre la plataforma del Santuario.
 - Tu fila de despliegue es la más cercana a tu Nexo; la de la IA, la opuesta.
 - Una casilla solo admite una pieza (unidad o estructura).
 - Tu **Nexo** está detrás de tu fila; solo puede ser atacado si el atacante

@@ -1,4 +1,5 @@
 export * from './types';
+export * from './board';
 export * from './schemas';
 export * from './factions';
 export * from './cards';

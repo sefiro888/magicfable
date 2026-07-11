@@ -26,7 +26,7 @@ export function HomePage() {
       </section>
 
       <div className={styles.featureStrip} aria-label="Características del prototipo">
-        <div className={styles.feature}><strong>5 × 5</strong><span>Tablero táctico</span></div>
+        <div className={styles.feature}><strong>8 × 8</strong><span>Tablero táctico</span></div>
         <div className={styles.feature}><strong>24</strong><span>Cartas originales</span></div>
         <div className={styles.feature}><strong>2 × 50</strong><span>Mazos completos</span></div>
         <div className={styles.feature}><strong>25</strong><span>Vida del Nexo</span></div>
