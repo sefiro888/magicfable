@@ -525,7 +525,7 @@ export const playResource = (
   const instance = player.hand.find((card) => card.instanceId === cardInstanceId);
   if (!instance) return fail(state, 'card-not-found', 'La carta no está en la mano.');
   const card = CARD_BY_ID[instance.cardId];
-  if (!card || card.type !== 'mana') return fail(state, 'invalid-card-type', 'La carta no es una fuente de maná.');
+  if (!card || card.type !== 'mana') return fail(state, 'invalid-card-type', 'La carta no es una fuente de Esencia.');
   let next = withPlayer(state, playerId, {
     ...player,
     hand: player.hand.filter((candidate) => candidate.instanceId !== cardInstanceId),

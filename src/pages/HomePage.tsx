@@ -16,7 +16,7 @@ export function HomePage() {
         <motion.div className={styles.heroContent} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .65 }}>
           <div className={styles.eyebrow}>Juego táctico de cartas</div>
           <h1 className={styles.title}>CRÓNICAS <span>DEL NEXO</span></h1>
-          <p className={styles.lead}>Domina el maná, despliega tus cartas sobre un tablero vivo y quiebra el Nexo de tu rival.</p>
+          <p className={styles.lead}>Canaliza la Esencia, despliega tus cartas sobre un tablero vivo y quiebra el Nexo de tu rival.</p>
           <div className={styles.buttons}>
             <Link className={styles.primary} to="/play">Iniciar partida</Link>
             <Link className={styles.secondary} to="/gallery">Explorar cartas</Link>

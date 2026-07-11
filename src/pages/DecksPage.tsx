@@ -56,7 +56,7 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
           <div className={styles.factionMark}><span>{selected.faction === 'fury' ? '♨' : '◇'}</span></div>
           <h2>{selected.name}</h2><div className={styles.commander}>{commander?.name} · {commander?.title}</div>
           <p className={styles.commanderRule}>{commander?.rules}</p>
-          <div className={styles.stats}><div className={styles.stat}><strong>{validation.totalCards}</strong><span>Total</span></div><div className={styles.stat}><strong>{validation.manaCards}</strong><span>Maná</span></div><div className={styles.stat}><strong>{validation.nonManaCards}</strong><span>Acción</span></div></div>
+          <div className={styles.stats}><div className={styles.stat}><strong>{validation.totalCards}</strong><span>Total</span></div><div className={styles.stat}><strong>{validation.manaCards}</strong><span>Esencia</span></div><div className={styles.stat}><strong>{validation.nonManaCards}</strong><span>Acción</span></div></div>
           {validation.valid ? <div className={styles.valid}>✓ Mazo válido para jugar</div> : <div className={styles.invalid}>Mazo no válido<ul className={styles.issues}>{validation.issues.slice(0, 4).map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul></div>}
           <div className={styles.saveRow}><button className={styles.save} onClick={save}>Guardar local</button><button className={styles.reset} onClick={reset}>Restaurar</button></div>
           {saved && <span className={styles.saved}>Borrador guardado en este dispositivo.</span>}

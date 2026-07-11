@@ -24,7 +24,7 @@ export const FACTIONS = [
   {
     id: 'nature',
     name: 'Naturaleza',
-    description: 'Crecimiento, curación y reservas de maná abundantes.',
+    description: 'Crecimiento, curación y reservas de Esencia abundantes.',
     color: '#39753a',
     accentColor: '#a7db67',
     icon: 'leaf',
