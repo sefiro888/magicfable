@@ -21,3 +21,8 @@
 .toggle[data-on="true"]::after { left: 26px; background: var(--gold-bright); box-shadow: 0 0 10px var(--gold); }
 .reset { margin-top: 24px; padding: 11px 16px; border: 1px solid rgba(255,255,255,.14); background: transparent; color: #b9b5ad; cursor: pointer; }
 .reset:hover { border-color: var(--gold); color: var(--ivory); }
+.control output { min-width: 44px; }
+.control:has(.select) { grid-template-columns: 210px 220px 1fr; }
+.control:has(.select) output { text-align: left; color: #8f8c85; }
+.select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--ivory); background: #191b24; font-size: 13px; cursor: pointer; }
+.select:hover { border-color: var(--line-bright); }

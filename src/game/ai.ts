@@ -187,6 +187,52 @@ const actWithPiece = (state: MatchState, pieceId: string): MatchState => {
   return next;
 };
 
+/**
+ * Decide la SIGUIENTE acción individual de la IA para el estado actual.
+ * Permite reproducir el turno rival paso a paso, con una animación por acción.
+ * Devuelve siempre una acción legal según las validaciones locales; si no queda
+ * nada útil por hacer, devuelve el fin de turno.
+ */
+export const chooseNextAiAction = (
+  state: MatchState,
+  skippedCardIds: ReadonlySet<string> = new Set(),
+): GameAction => {
+  const endTurn: GameAction = { type: 'end-turn', playerId: 'ai' };
+  if (state.activePlayer !== 'ai' || state.phase === 'finished') return endTurn;
+
+  const resource = state.players.ai.hand.find((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana');
+  if (resource && !state.players.ai.resourcePlayedThisTurn && !skippedCardIds.has(resource.instanceId)) {
+    return { type: 'play-resource', playerId: 'ai', cardInstanceId: resource.instanceId };
+  }
+
+  const cardAction = chooseCardAction(state, skippedCardIds);
+  if (cardAction) return cardAction;
+
+  const pieces = state.board
+    .filter((piece) => piece.owner === 'ai')
+    .sort((left, right) => left.instanceId.localeCompare(right.instanceId));
+  for (const piece of pieces) {
+    const attacks = getValidAttacks(state, piece.instanceId);
+    if (attacks.canAttackNexus) {
+      return { type: 'attack-nexus', playerId: 'ai', attackerId: piece.instanceId };
+    }
+    if (attacks.pieceIds.length > 0) {
+      const targetId = [...attacks.pieceIds].sort(
+        (left, right) => targetScore(state, right) - targetScore(state, left) || left.localeCompare(right),
+      )[0];
+      if (targetId) {
+        return { type: 'attack-piece', playerId: 'ai', attackerId: piece.instanceId, defenderId: targetId };
+      }
+    }
+  }
+  for (const piece of pieces) {
+    if (piece.movedThisTurn) continue;
+    const move = chooseMove(state, piece.instanceId);
+    if (move) return { type: 'move', playerId: 'ai', pieceId: piece.instanceId, to: move };
+  }
+  return endTurn;
+};
+
 /** Runs a complete, bounded and deterministic AI turn, always yielding control when possible. */
 export const runAiTurn = (state: MatchState): MatchState => {
   if (state.activePlayer !== 'ai' || state.phase === 'finished') return state;

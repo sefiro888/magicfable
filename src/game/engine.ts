@@ -300,7 +300,7 @@ const damagePiece = (
       : state;
   if (reducedBy > 0) {
     next = enqueue(next, {
-      type: 'shield', targetId: pieceId, amount: reducedBy, effectId: 'water-shield', durationMs: 260,
+      type: 'shield', targetId: pieceId, to: target.position, amount: reducedBy, effectId: 'water-shield', durationMs: 260,
     });
   }
   if (finalAmount <= 0) return next;
@@ -318,7 +318,7 @@ const damagePiece = (
     });
   }
   next = enqueue(next, {
-    type: 'damage', targetId: pieceId, amount: finalAmount, effectId, durationMs: 300,
+    type: 'damage', targetId: pieceId, to: target.position, amount: finalAmount, effectId, durationMs: 300,
   });
   if (target.currentHealth - finalAmount <= 0) {
     const owner = next.players[target.owner];
@@ -329,7 +329,7 @@ const damagePiece = (
     );
     const definition = pieceDefinition(target);
     next = enqueue(next, {
-      type: 'destroy', targetId: pieceId, effectId: definition?.vfx.deathEffect ?? 'card-destroy', durationMs: 420,
+      type: 'destroy', targetId: pieceId, to: target.position, effectId: definition?.vfx.deathEffect ?? 'card-destroy', durationMs: 420,
     });
   }
   return next;
@@ -340,13 +340,14 @@ const addStatus = (
   pieceId: string,
   duration: number,
 ): MatchState => {
-  if (!state.board.some((piece) => piece.instanceId === pieceId)) return state;
+  const target = state.board.find((piece) => piece.instanceId === pieceId);
+  if (!target) return state;
   const expiresOnTurn = state.turn + Math.max(1, duration) * 2;
   let next = updatePiece(state, pieceId, (piece) => ({
     ...piece,
     statuses: [{ kind: 'frozen', expiresOnTurn }],
   }));
-  next = enqueue(next, { type: 'freeze', targetId: pieceId, effectId: 'freeze-lock', durationMs: 360 });
+  next = enqueue(next, { type: 'freeze', targetId: pieceId, to: target.position, effectId: 'freeze-lock', durationMs: 360 });
   return next;
 };
 
@@ -673,8 +674,10 @@ export const playCard = (
       ...nextPlayer,
       discard: [...nextPlayer.discard, instance],
     });
+    const spellTargetPiece = requireTargetPiece(next, target);
     next = enqueue(next, {
       type: 'spell', actorId: playerId, targetId: target?.kind === 'piece' ? target.pieceId : undefined,
+      to: spellTargetPiece?.position,
       effectId: card.vfx.impactEffect ?? card.vfx.persistentEffect, durationMs: 420,
     });
     next = resolveSpell(next, playerId, card, target);

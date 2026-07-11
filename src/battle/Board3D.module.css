@@ -1,4 +1,4 @@
-.viewport { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #1a1e2a, #080a10 75%); }
+.viewport { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #1a1e2a, #05070d 75%); }
 .fallback { height: 100%; display: grid; place-items: center; color: var(--muted); }
 .cardLabel {
   width: 86px;
@@ -10,6 +10,20 @@
   text-shadow: 0 2px 4px #000, 0 0 5px #000;
   white-space: nowrap;
 }
+.cardName[data-frozen] { color: #bdeaff; }
+.cardName[data-spent] { color: #a9a497; }
 .cardStats { display: flex; justify-content: center; gap: 5px; margin-top: 2px; }
-.cardStats span { min-width: 19px; padding: 2px 4px; border-radius: 7px; background: rgba(5,6,9,.88); border: 1px solid rgba(255,255,255,.22); }
-.nexusLabel { width: 100px; text-align: center; color: var(--gold-bright); font: 700 10px var(--display); text-shadow: 0 2px 6px #000; pointer-events: none; }
+.cardStats span { min-width: 19px; padding: 2px 4px; border-radius: 7px; background: rgba(5, 6, 9, 0.88); border: 1px solid rgba(255, 255, 255, 0.22); }
+.attackStat { color: #ffca94; }
+.healthStat { color: #b8f2c8; }
+.damagedStat { color: #ff8a80; border-color: rgba(255, 110, 100, 0.55) !important; }
+.frozenStat { color: #a8ecff; border-color: rgba(140, 220, 255, 0.55) !important; }
+.spentStat { color: #a9a497; }
+.nexusLabel { width: 110px; text-align: center; color: var(--gold-bright); font: 700 10px var(--display); text-shadow: 0 2px 6px #000; pointer-events: none; }
+.nexusLabel [data-targetable] { color: #ffd257; animation: nexusPulse 1.1s ease-in-out infinite; }
+@keyframes nexusPulse {
+  50% { text-shadow: 0 2px 6px #000, 0 0 14px rgba(255, 210, 87, 0.85); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexusLabel [data-targetable] { animation: none; }
+}

@@ -1,5 +1,17 @@
-import { usePreferences } from '../store/preferences'
+import { usePreferences, type GraphicsQuality } from '../store/preferences'
 import styles from './SettingsPage.module.css'
+
+const QUALITY_OPTIONS: readonly { value: GraphicsQuality; label: string; hint: string }[] = [
+  { value: 'low', label: 'Bajo', hint: 'Sin sombras ni partículas; máxima fluidez.' },
+  { value: 'medium', label: 'Medio', hint: 'Equilibrio recomendado para equipos de gama media.' },
+  { value: 'high', label: 'Alto', hint: 'Sombras, partículas y resolución completas.' },
+]
+
+const SPEED_OPTIONS = [
+  { value: 1, label: 'Normal' },
+  { value: 1.5, label: 'Rápida' },
+  { value: 2, label: 'Muy rápida' },
+] as const
 
 export function SettingsPage() {
   const settings = usePreferences()
@@ -23,6 +35,37 @@ export function SettingsPage() {
             </div>
           ))}
           <div className={styles.toggleRow}><span><strong>Silenciar todo</strong><small>Conserva tus niveles de mezcla.</small></span><button className={styles.toggle} data-on={settings.muted} onClick={() => settings.setMuted(!settings.muted)} aria-label="Silenciar todo" aria-pressed={settings.muted} /></div>
+        </section>
+        <section className={styles.section}>
+          <h2>Gráficos</h2><p>El Santuario se adapta a tu equipo sin perder legibilidad.</p>
+          <div className={styles.control}>
+            <label htmlFor="quality">Calidad visual</label>
+            <select
+              id="quality"
+              className={styles.select}
+              value={settings.graphicsQuality}
+              onChange={(event) => settings.setGraphicsQuality(event.target.value as GraphicsQuality)}
+            >
+              {QUALITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <output>{QUALITY_OPTIONS.find((option) => option.value === settings.graphicsQuality)?.hint}</output>
+          </div>
+          <div className={styles.control}>
+            <label htmlFor="animationSpeed">Velocidad de animaciones</label>
+            <select
+              id="animationSpeed"
+              className={styles.select}
+              value={settings.animationSpeed}
+              onChange={(event) => settings.setAnimationSpeed(Number(event.target.value) as 1 | 1.5 | 2)}
+            >
+              {SPEED_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <output>×{settings.animationSpeed}</output>
+          </div>
         </section>
         <section className={styles.section}>
           <h2>Accesibilidad y ritmo</h2><p>Ajusta la presentación sin alterar las reglas.</p>

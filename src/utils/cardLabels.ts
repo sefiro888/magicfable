@@ -10,7 +10,7 @@ export const FACTION_LABELS: Record<FactionId, string> = {
 }
 
 export const TYPE_LABELS: Record<CardType, string> = {
-  mana: 'Maná',
+  mana: 'Esencia',
   unit: 'Unidad',
   instant: 'Hechizo inmediato',
   persistent: 'Hechizo persistente',

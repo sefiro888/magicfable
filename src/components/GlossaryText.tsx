@@ -11,10 +11,16 @@ export interface GlossaryEntry {
 
 export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
   {
+    id: 'esencia',
+    terms: ['Esencia Carmesí', 'Esencia Celeste', 'Esencia'],
+    label: 'Esencia',
+    definition: 'La energía de las runas quebradas. Cada fuente produce 1 de Esencia de su variante por turno; los costes de color solo se pagan con su variante.',
+  },
+  {
     id: 'agotar',
     terms: ['Agota', 'Agotar', 'Agotada', 'Agotado', 'Agotadas', 'Agotados'],
     label: 'Agotar',
-    definition: 'Gira o marca una fuente como usada. No volverá a generar maná hasta que se restaure.',
+    definition: 'Gira o marca una fuente como usada. No volverá a generar Esencia hasta que se restaure.',
   },
   {
     id: 'impulso',

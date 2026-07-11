@@ -46,7 +46,7 @@ interface ResolvedStatus {
 }
 
 export const CARD_TYPE_LABELS: Readonly<Record<CardType, string>> = {
-  mana: 'Maná',
+  mana: 'Esencia',
   unit: 'Unidad',
   instant: 'Hechizo inmediato',
   persistent: 'Hechizo persistente',
