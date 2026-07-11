@@ -6,6 +6,7 @@ import type { Group, Mesh, MeshStandardMaterial } from 'three'
 import { CARD_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality } from '../store/preferences'
+import { withBase } from '../utils/assets'
 import { EventEffects } from './EventEffects'
 import { Sanctuary } from './Sanctuary'
 import styles from './Board3D.module.css'
@@ -54,7 +55,7 @@ function BoardCell({ position, valid, occupied, scorched, onClick }: { position:
 
 function BoardCard({ piece, selected, targetable, active, onClick, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; active: boolean; onClick: () => void; reducedMotion: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
-  const texture = useTexture(card?.art.fallback ?? '/assets/cards/art/fuente-furia.svg')
+  const texture = useTexture(withBase(card?.art.fallback ?? '/assets/cards/art/fuente-furia.svg'))
   const group = useRef<Group>(null)
   const frame = useRef<Mesh>(null)
   const [hovered, setHovered] = useState(false)

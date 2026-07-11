@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
 
 import type { CardDefinition, CardType, FactionId, ManaCost } from '../game/types';
+import { withBase } from '../utils/assets';
 import { FactionSigil, FACTION_LABELS } from './FactionSigil';
 import { GlossaryText } from './GlossaryText';
 import { RarityGem, RARITY_LABELS } from './RarityGem';
@@ -102,7 +103,7 @@ const buildPlaceholder = (card: CardDefinition): string => {
 function CardArtwork({ card, eager }: { readonly card: CardDefinition; readonly eager: boolean }) {
   const placeholder = useMemo(() => buildPlaceholder(card), [card]);
   const sources = useMemo(
-    () => [card.art.fallback, card.art.webp, placeholder].filter((source, index, list) => list.indexOf(source) === index),
+    () => [withBase(card.art.fallback), withBase(card.art.webp), placeholder].filter((source, index, list) => list.indexOf(source) === index),
     [card.art.fallback, card.art.webp, placeholder],
   );
   const [sourceIndex, setSourceIndex] = useState(0);

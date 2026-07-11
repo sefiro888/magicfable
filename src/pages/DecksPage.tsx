@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, validateDeck } from '../game'
 import type { DeckDefinition, DeckEntry } from '../game'
 import { usePreferences } from '../store/preferences'
+import { withBase } from '../utils/assets'
 import styles from './DecksPage.module.css'
 
 function loadEntries(deck: DeckDefinition): DeckEntry[] {
@@ -68,7 +69,7 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
             if (!card) return null
             const colorCost = Object.values(card.cost.colored).reduce((total, amount) => total + (amount ?? 0), 0)
             return <article className={styles.entry} key={entry.cardId}>
-              <img className={styles.art} src={card.art.fallback} alt="" />
+              <img className={styles.art} src={withBase(card.art.fallback)} alt="" />
               <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}{card.unique ? ' · única' : ''}</p></div>
               <span className={styles.cost}>{card.type === 'mana' ? 'Fuente' : `Coste ${card.cost.generic + colorCost}`}</span>
               <div className={styles.counter}><button onClick={() => changeCount(entry.cardId, -1)} aria-label={`Quitar ${card.name}`}>−</button><span>{entry.count}</span><button onClick={() => changeCount(entry.cardId, 1)} aria-label={`Añadir ${card.name}`}>+</button></div>

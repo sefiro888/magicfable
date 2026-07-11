@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS } from '../game'
 import { usePreferences } from '../store/preferences'
 import { playSynthCue } from '../services/audio'
+import { withBase } from '../utils/assets'
 import styles from './PlayPage.module.css'
 
 const showcase: Record<string, readonly string[]> = {
@@ -34,7 +35,10 @@ export function PlayPage() {
             <button key={candidate.id} className={`${styles.deck} ${styles[candidate.faction]}`} data-selected={selected} onClick={() => preferences.setSelectedDeck(candidate.id)} aria-pressed={selected}>
               {selected && <span className={styles.selected}>Seleccionado</span>}
               <div className={styles.deckArt} aria-hidden="true">
-                {showcase[candidate.faction]?.map((cardId) => <img key={cardId} src={CARD_BY_ID[cardId]?.art.fallback} alt="" />)}
+                {showcase[candidate.faction]?.map((cardId) => {
+                  const art = CARD_BY_ID[cardId]?.art.fallback
+                  return art ? <img key={cardId} src={withBase(art)} alt="" /> : null
+                })}
               </div>
               <h2>{candidate.name}</h2>
               <div className={styles.commander}>{commander?.name} · {commander?.title}</div>
