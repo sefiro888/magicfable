@@ -1,4 +1,55 @@
-# SCENARIO_GUIDE — El Santuario de las Runas Quebradas
+# SCENARIO_GUIDE — Escenarios de batalla
+
+El juego incluye dos escenarios seleccionables en Ajustes → Gráficos.
+
+---
+
+# 1. AETHER CITADEL (predeterminado)
+
+## Concepto
+
+Ciudadela flotante de piedra gris azulada con incrustaciones doradas,
+suspendida sobre un mar de nubes al amanecer. Plaza central de batalla
+(donde vive el tablero 8×8), plazas laterales con círculos rúnicos,
+gran portal arcano al noroeste, cristales azules monumentales, torres,
+puentes con arcos y acantilados flotantes.
+Referencia visual: `docs/references/aether-citadel-reference.png`.
+
+## Pipeline (Blender → GLB → R3F)
+
+- **Fuente**: `tools/blender/generate_aether_citadel.py` — script Python
+  100 % reproducible; construye 14 colecciones modulares con nombre
+  (CentralBattlePlatform, LeftPortalPlatform, RightCrystalPlatform,
+  FrontPlatform, RearPlatform, MainBridges, SecondaryBridges, PortalFrame,
+  CrystalPedestals, Columns, DistantTowers, FloatingCliffs,
+  DecorativeRuins, GoldenInlays), materiales PBR, cámara de control y
+  render de comparación.
+- **Regenerar**:
+  `"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python tools/blender/generate_aether_citadel.py`
+- **Salidas**: `public/assets/scenarios/aether-citadel.glb` (~1,8 MB),
+  `assets-source/blender/aether-citadel.blend`,
+  `artifacts/blender/aether-citadel-render.png`.
+- **Convención**: 1 unidad = 1 unidad de juego; el «norte» del juego
+  (lado IA, three −Z) es Blender +Y; la tapa de la plaza central queda
+  en y=0 para que las casillas se apoyen sobre ella.
+
+## Capa dinámica (src/battle/scenarios/AetherCitadel.tsx)
+
+Sobre el GLB estático, React Three Fiber añade: cielo de amanecer
+procedural (canvas), sol cálido con sombras, vórtice doble del portal en
+rotación, halos pulsantes sobre los cristales, mar de nubes a la deriva,
+motas doradas y niebla de profundidad. Reacciona a los golpes al Nexo
+(flare de portal y cristales) y respeta calidad gráfica y movimiento
+reducido. Si el GLB no puede cargarse, cae al Santuario automáticamente.
+
+## Presupuesto técnico verificado
+
+GLB 1,8 MB · 246 mallas · 8 materiales · 49 FPS en calidad alta a
+1600×900 (Chromium/ANGLE) · cero errores de consola.
+
+---
+
+# 2. EL SANTUARIO DE LAS RUNAS QUEBRADAS
 
 ## Concepto
 

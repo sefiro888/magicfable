@@ -17,6 +17,7 @@ de `AnimationEvent` ya resueltos que la capa visual reproduce.
                            ↓
 ┌───────────────────────────────────────────────────────────┐
 │ MOTOR PURO                    ←  IA (ai.ts)               │
+│  board.ts (config lógica 8×8: límites, filas, centro)     │
 │  engine.ts (acciones, efectos, coste efectivo)            │
 │  mana.ts (pagos) · random.ts (PRNG sembrado)              │
 │  deck-validation.ts                                       │
@@ -27,20 +28,27 @@ de `AnimationEvent` ya resueltos que la capa visual reproduce.
 ┌───────────────────────────────────────────────────────────┐
 │ ORQUESTACIÓN (Zustand)                                    │
 │  store/match.ts  → drena animations a pendingAnimations   │
-│  store/preferences.ts → persistencia local (v2)           │
+│  store/preferences.ts → persistencia local (v3)           │
 └──────────────────────────┬────────────────────────────────┘
                            ↓
 ┌───────────────────────────────────────────────────────────┐
 │ PRESENTACIÓN                                              │
 │  pages/BattlePage.tsx → director de animaciones,          │
 │    mano en abanico, modales (mulligan/scry/inspección)    │
-│  battle/Board3D.tsx  → escena R3F interactiva             │
-│  battle/Sanctuary.tsx → escenografía del Santuario        │
+│  battle/grid/gridCoordinates.ts → cuadrícula→mundo,       │
+│    Nexos, cámara (única fuente de verdad visual)          │
+│  battle/Board3D.tsx  → escena R3F interactiva (64 celdas) │
+│  battle/scenarios/AetherCitadel.tsx → GLB de Blender +    │
+│    amanecer, portal animado, cristales, nubes             │
+│  battle/scenarios/SanctuaryScenario.tsx → alternativo     │
 │  battle/EventEffects.tsx → VFX por tipo de evento         │
 │  battle/textures.ts  → texturas procedurales (canvas)     │
 │  services/audio.ts   → señales sintetizadas               │
 │  components/Card.tsx → marco de carta único y reutilizado │
 └───────────────────────────────────────────────────────────┘
+
+Assets 3D: tools/blender/generate_aether_citadel.py (reproducible)
+  → assets-source/blender/*.blend → public/assets/scenarios/*.glb
 ```
 
 ## Flujo de una acción
@@ -79,7 +87,8 @@ de `AnimationEvent` ya resueltos que la capa visual reproduce.
 | Una carta | `cards.ts` (+ SVG en `public/assets/cards/art/`) |
 | Un efecto de regla nuevo | `types.ts` (CardEffect) + `schemas.ts` + `engine.ts` + prueba |
 | Un efecto visual nuevo | `EventEffects.tsx` (nuevo caso) o tono en `toneOf` |
-| Un escenario | Nuevo módulo hermano de `Sanctuary.tsx` + selector |
+| Un escenario | Nuevo módulo en `battle/scenarios/` (mismas props que AetherCitadel) + opción en preferencias/Ajustes; si necesita GLB, script en `tools/blender/` |
+| Cambiar el tamaño del tablero | `src/game/board.ts` (lógica) + `battle/grid/gridCoordinates.ts` (mundo); nada más |
 | Una facción | `factions.ts` + cartas + variante de Esencia en labels |
 | Un sonido real | `public/assets/audio/` + sustituir síntesis en `audio.ts` |
 | Otra IA | Implementar `chooseNextAiAction` alternativo |
