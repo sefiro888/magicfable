@@ -27,16 +27,16 @@ function DawnAtmosphere({ quality }: { quality: GraphicsQuality }) {
   return (
     <>
       <color attach="background" args={['#3b4468']} />
-      <fog attach="fog" args={['#8b97b8', 30, 95]} />
+      <fog attach="fog" args={['#7885a8', 26, 88]} />
       <mesh rotation={[0, 0.9, 0]}>
         <sphereGeometry args={[70, 32, 20]} />
         <meshBasicMaterial map={dawnSkyTexture()} side={1} fog={false} />
       </mesh>
-      <ambientLight intensity={0.7} color="#aeb9d8" />
-      <hemisphereLight intensity={0.5} color="#d8e2ff" groundColor="#5a4a3a" />
+      <ambientLight intensity={0.55} color="#aeb9d8" />
+      <hemisphereLight intensity={0.45} color="#d8e2ff" groundColor="#5a4a3a" />
       <directionalLight
         position={[-16, 15, -11]}
-        intensity={3.6}
+        intensity={4.3}
         color="#ffcf96"
         castShadow={quality !== 'low'}
         shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
@@ -101,11 +101,11 @@ function DawnClouds({ quality, reducedMotion }: { quality: GraphicsQuality; redu
   const group = useRef<Group>(null)
   const clouds = useMemo(
     () =>
-      Array.from({ length: quality === 'high' ? 14 : 9 }, (_, index) => ({
-        angle: (index / (quality === 'high' ? 14 : 9)) * Math.PI * 2 + index * 0.9,
-        radius: 15 + (index % 5) * 3.2,
-        y: -4.2 + (index % 3) * 1.6,
-        scale: 8 + (index % 4) * 3.4,
+      Array.from({ length: quality === 'high' ? 20 : 12 }, (_, index) => ({
+        angle: (index / (quality === 'high' ? 20 : 12)) * Math.PI * 2 + index * 0.9,
+        radius: 13 + (index % 5) * 2.6,
+        y: -3.4 + (index % 3) * 1.3,
+        scale: 10 + (index % 4) * 4.2,
         speed: 0.004 + (index % 3) * 0.003,
         warm: index % 3 === 0,
       })),
@@ -132,8 +132,8 @@ function DawnClouds({ quality, reducedMotion }: { quality: GraphicsQuality; redu
           <spriteMaterial
             map={cloudTexture()}
             transparent
-            opacity={cloud.warm ? 0.5 : 0.4}
-            color={cloud.warm ? '#ffd9b0' : '#dfe6f5'}
+            opacity={cloud.warm ? 0.72 : 0.58}
+            color={cloud.warm ? '#ffd9b0' : '#e8eefb'}
             depthWrite={false}
             fog={false}
           />
