@@ -365,6 +365,63 @@ export const nebulaTexture = (): CanvasTexture => {
   return finishTexture('nebula', canvas);
 };
 
+/** Cielo de amanecer para Aether Citadel: horizonte cálido, cénit azul y nubes lejanas. */
+export const dawnSkyTexture = (): CanvasTexture => {
+  const cached = cache.get('dawn-sky');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x44415741);
+
+  const sky = context.createLinearGradient(0, 0, 0, size);
+  sky.addColorStop(0, '#2c3a66');
+  sky.addColorStop(0.42, '#51649c');
+  sky.addColorStop(0.62, '#8b93b8');
+  sky.addColorStop(0.74, '#d9a878');
+  sky.addColorStop(0.85, '#f2c48d');
+  sky.addColorStop(1, '#8a7290');
+  context.fillStyle = sky;
+  context.fillRect(0, 0, size, size);
+
+  // Resplandor del sol bajo en el horizonte.
+  const sun = context.createRadialGradient(size * 0.31, size * 0.76, 0, size * 0.31, size * 0.76, size * 0.34);
+  sun.addColorStop(0, 'rgba(255, 236, 200, 0.95)');
+  sun.addColorStop(0.35, 'rgba(255, 202, 138, 0.5)');
+  sun.addColorStop(1, 'rgba(255, 190, 120, 0)');
+  context.fillStyle = sun;
+  context.fillRect(0, 0, size, size);
+
+  // Bandas de nubes lejanas iluminadas por debajo.
+  for (let band = 0; band < 26; band += 1) {
+    const y = size * (0.55 + random() * 0.36);
+    const width = size * (0.12 + random() * 0.3);
+    const height = size * (0.012 + random() * 0.02);
+    const x = random() * size;
+    const warm = y > size * 0.7;
+    const gradient = context.createRadialGradient(x, y, 0, x, y, width);
+    gradient.addColorStop(0, warm ? 'rgba(255, 214, 168, 0.34)' : 'rgba(206, 216, 240, 0.26)');
+    gradient.addColorStop(1, 'rgba(200, 200, 230, 0)');
+    context.fillStyle = gradient;
+    context.save();
+    context.translate(x, y);
+    context.scale(1, height / width);
+    context.beginPath();
+    context.arc(0, 0, width, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  // Estrellas tenues que sobreviven al amanecer en el cénit.
+  for (let index = 0; index < 160; index += 1) {
+    const y = random() * size * 0.4;
+    context.fillStyle = `rgba(255, 255, 255, ${0.14 + random() * 0.3})`;
+    context.beginPath();
+    context.arc(random() * size, y, 0.9, 0, Math.PI * 2);
+    context.fill();
+  }
+  return finishTexture('dawn-sky', canvas);
+};
+
 /** Nube suave para los bancos de niebla bajo la plataforma. */
 export const cloudTexture = (): CanvasTexture => {
   const cached = cache.get('cloud');

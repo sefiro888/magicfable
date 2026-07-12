@@ -56,7 +56,7 @@ Leyenda de veredicto: ✅ funciona y se conserva · 🔧 funciona pero se mejora
 - **El sistema de recursos** (20 fuentes en 50 cartas, 1 por turno, colores):
   es comprensible, estratégico (¿fuente o presión?), evita el «mana screw»
   extremo gracias al mulligan y densidad 40 %, y escala a nuevas facciones.
-- **El tablero 5 × 5**: es la identidad diferencial frente a Magic/Hearthstone.
+- **El tablero táctico** (8 × 8 desde julio de 2026; 5 × 5 en el slice original): es la identidad diferencial frente a Magic/Hearthstone.
   El encargo pide identidad propia; esta ya existe y funciona.
 - **El formato de mazo 50 = 20 + 30** con máximo 4 copias (1 si única).
 - **La estructura de datos de cartas** (CardDefinition + Zod): cumple todo lo

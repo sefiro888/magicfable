@@ -77,7 +77,7 @@ describe('IA básica determinista', () => {
         player: { ...base.players.player, nexusHealth: 2 },
         ai: { ...base.players.ai, hand: [], deck: [] },
       },
-      board: [aiPiece('hound', 'sabueso-brasa', 2, 4)],
+      board: [aiPiece('hound', 'sabueso-brasa', 2, 7)],
       animations: [],
     };
     const result = runAiTurn(state);

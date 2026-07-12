@@ -124,7 +124,7 @@ describe('Kaela — descuento tras daño al Nexo', () => {
     state = {
       ...state,
       activePlayer: 'ai',
-      board: [makePiece('asaltante', 'sabueso-brasa', 'ai', { x: 2, y: 4 })],
+      board: [makePiece('asaltante', 'sabueso-brasa', 'ai', { x: 2, y: 7 })],
     };
     const hit = applyAction(state, { type: 'attack-nexus', playerId: 'ai', attackerId: 'asaltante' });
     expect(hit.ok).toBe(true);
@@ -140,7 +140,7 @@ describe('Kaela — descuento tras daño al Nexo', () => {
     const berserker = CARD_BY_ID['berserker-ignivoro']!;
     expect(effectiveCost(playerTurn, 'player', berserker).generic).toBe(0);
     const played = applyAction(playerTurn, {
-      type: 'play-card', playerId: 'player', cardInstanceId: 'hand-berserker-ignivoro', position: { x: 0, y: 4 },
+      type: 'play-card', playerId: 'player', cardInstanceId: 'hand-berserker-ignivoro', position: { x: 0, y: 7 },
     });
     expect(played.ok).toBe(true);
     expect(played.state.players.player.unitDiscountPending).toBe(false);
@@ -216,7 +216,7 @@ describe('Convergencia Astral — refrescar movimiento', () => {
       ...state,
       board: [
         makePiece('enemiga', 'sabueso-brasa', 'ai', { x: 2, y: 1 }),
-        makePiece('forja', 'forja-carmesi', 'player', { x: 1, y: 4 }),
+        makePiece('forja', 'forja-carmesi', 'player', { x: 1, y: 7 }),
       ],
     };
     state = withPlayer(state, 'player', {

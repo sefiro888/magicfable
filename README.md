@@ -2,10 +2,11 @@
 
 **▶ Juega ahora en el navegador: https://sefiro888.github.io/magicfable/**
 
-Vertical slice para PC de un juego táctico de cartas de fantasía oscura.
+Vertical slice para PC de un juego táctico de cartas de fantasía épica.
 Dos mazos de 50 cartas —**Furia de la Caldera** y **Secretos del Arcano**—
-se enfrentan en **El Santuario de las Runas Quebradas**: una arena rúnica
-de 5 × 5 suspendida sobre el abismo. La carta permanece como pieza física
+se enfrentan sobre un tablero de **8 × 8** en **Aether Citadel**, una
+ciudadela flotante al amanecer (o en el escenario alternativo **El
+Santuario de las Runas Quebradas**). La carta permanece como pieza física
 sobre la casilla; nunca se sustituye por una miniatura.
 
 ## Puesta en marcha
@@ -28,10 +29,14 @@ npm run test:e2e   # flujo completo con Playwright (requiere: npx playwright ins
 
 - Partida completa contra IA: mulligan, Esencia, despliegue, movimiento,
   combate, victoria por Nexo y resumen final.
-- **El Santuario de las Runas Quebradas**: plataforma rúnica procedural,
-  anillo de runas reactivo, monolitos quebrados, braseros, ruinas
-  flotantes, estrellas y partículas — todo generado por código, sin assets
-  externos.
+- **Aether Citadel** (escenario predeterminado): ciudadela flotante
+  generada con Blender desde un script reproducible
+  (`tools/blender/generate_aether_citadel.py`) y exportada a GLB (1,8 MB):
+  plaza de batalla con anillo rúnico dorado, portal arcano animado,
+  cristales monumentales, torres, puentes y mar de nubes al amanecer.
+- **El Santuario de las Runas Quebradas** (escenario alternativo):
+  plataforma rúnica 100 % procedural con anillo reactivo, braseros y
+  cielo cósmico — seleccionable en Ajustes.
 - **Director de animaciones**: la cola de eventos del motor se reproduce en
   secuencia (invocación, proyectiles, impactos, hielo, destrucción, ondas
   de Nexo, victoria) con sonido por evento, velocidad ajustable y omisión.

@@ -1,3 +1,4 @@
+import { BOARD_SIZE, deploymentRow, isInsideBoard, nexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import { COMMANDER_BY_ID, expandDeck } from './decks';
 import { payMana, restoreMana } from './mana';
@@ -20,7 +21,6 @@ import type {
   SpellTarget,
 } from './types';
 
-export const BOARD_SIZE = 5;
 export const OPENING_HAND_SIZE = 5;
 
 export interface ValidAttacks {
@@ -31,18 +31,8 @@ export interface ValidAttacks {
 type AnimationDraft = Omit<AnimationEvent, 'id'>;
 
 const opponentOf = (playerId: PlayerId): PlayerId => (playerId === 'player' ? 'ai' : 'player');
-const deploymentRow = (playerId: PlayerId): number => (playerId === 'player' ? BOARD_SIZE - 1 : 0);
-const nexusRow = (playerId: PlayerId): number => (playerId === 'player' ? BOARD_SIZE : -1);
 const distance = (from: Position, to: Position): number =>
   Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
-
-export const isInsideBoard = (position: Position): boolean =>
-  Number.isInteger(position.x) &&
-  Number.isInteger(position.y) &&
-  position.x >= 0 &&
-  position.x < BOARD_SIZE &&
-  position.y >= 0 &&
-  position.y < BOARD_SIZE;
 
 const withPlayer = (state: MatchState, playerId: PlayerId, player: PlayerState): MatchState => ({
   ...state,

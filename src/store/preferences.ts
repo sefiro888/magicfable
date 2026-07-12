@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high'
+export type ScenarioId = 'aether-citadel' | 'sanctuary'
 
 export interface PreferencesState {
   masterVolume: number
@@ -12,6 +13,8 @@ export interface PreferencesState {
   aiDelayMs: number
   selectedDeckId: string
   graphicsQuality: GraphicsQuality
+  /** Escenario 3D de la batalla. */
+  scenario: ScenarioId
   /** Multiplicador de velocidad de las animaciones de partida (1 = normal). */
   animationSpeed: 1 | 1.5 | 2
   setVolume: (channel: 'masterVolume' | 'musicVolume' | 'effectsVolume', value: number) => void
@@ -20,6 +23,7 @@ export interface PreferencesState {
   setAiDelay: (delay: number) => void
   setSelectedDeck: (deckId: string) => void
   setGraphicsQuality: (quality: GraphicsQuality) => void
+  setScenario: (scenario: ScenarioId) => void
   setAnimationSpeed: (speed: 1 | 1.5 | 2) => void
   reset: () => void
 }
@@ -33,6 +37,7 @@ const defaults = {
   aiDelayMs: 520,
   selectedDeckId: 'furia-caldera',
   graphicsQuality: 'medium' as GraphicsQuality,
+  scenario: 'aether-citadel' as ScenarioId,
   animationSpeed: 1 as const,
 }
 
@@ -46,12 +51,13 @@ export const usePreferences = create<PreferencesState>()(
       setAiDelay: (aiDelayMs) => set({ aiDelayMs }),
       setSelectedDeck: (selectedDeckId) => set({ selectedDeckId }),
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
+      setScenario: (scenario) => set({ scenario }),
       setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
       reset: () => set(defaults),
     }),
     {
       name: 'cronicas-nexo-preferences',
-      version: 2,
+      version: 3,
       migrate: (persisted) => ({ ...defaults, ...(persisted as Partial<PreferencesState>) }),
     },
   ),

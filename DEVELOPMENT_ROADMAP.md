@@ -1,9 +1,33 @@
 # DEVELOPMENT_ROADMAP — Hoja de ruta
 
-Complementa a `docs/roadmap.md` (hitos M0–M4 originales). Estado tras la
-fase «Santuario» (2026-07-11):
+Complementa a `docs/roadmap.md` (hitos M0–M4 originales).
 
-## Hecho (esta fase)
+## Hecho — fase «Aether Citadel + 8×8» (2026-07-12)
+
+- ✅ Tablero migrado a **8×8** (64 casillas): configuración lógica única en
+  `src/game/board.ts`, IA sin valores codificados, coordenadas visuales
+  compartidas en `battle/grid/gridCoordinates.ts`, 70 pruebas.
+- ✅ **Aether Citadel**: escenario GLB generado con Blender 5.1 desde
+  script reproducible (3 iteraciones documentadas), integrado con
+  useGLTF + Suspense + fallback, portal animado, cristales, nubes y
+  amanecer; 1,8 MB; 49 FPS en alta.
+- ✅ Selector de escenario en Ajustes; el Santuario se conserva íntegro.
+- ✅ Capturas deterministas en 3 resoluciones y 3 calidades
+  (`artifacts/visual-comparison/`, no versionadas).
+
+### Recomendaciones de balance para 8×8 (NO aplicadas)
+
+El tablero grande alarga la marcha: una unidad con movimiento 1 tarda
+~7 turnos en cruzar (antes ~4). Sugerencias a evaluar en una fase de
+balance dedicada, por orden de menor a mayor impacto:
+
+1. Subir el movimiento base de las unidades de 1 a 2 (manteniendo 1 en
+   estructuras pesadas como el Ariete como rasgo).
+2. Impulso pasa a ser «mueve hasta 2 este turno» para unidades rápidas.
+3. Alcance de lanceras/arqueras +1 para que la fila 2 tenga papel.
+4. O bien: filas de despliegue adelantadas (y=1 e y=6) sin tocar cartas.
+
+## Hecho — fase «Santuario» (2026-07-11)
 
 - ✅ Auditoría completa y documentación de raíz (10 documentos).
 - ✅ Motor honesto: las 8 pasivas/efectos rotos implementados con pruebas.

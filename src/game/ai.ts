@@ -1,3 +1,4 @@
+import { distanceToCenter, distanceToEnemyNexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import {
   applyAction,
@@ -87,7 +88,7 @@ const chooseDeployment = (state: MatchState): Position | undefined => {
   return [...positions].sort((left, right) => {
     const proximity = (position: Position): number =>
       enemyPieces.length === 0
-        ? Math.abs(position.x - 2)
+        ? distanceToCenter(position.x)
         : Math.min(...enemyPieces.map((piece) => Math.abs(position.x - piece.position.x)));
     return proximity(left) - proximity(right) || left.x - right.x;
   })[0];
@@ -143,8 +144,9 @@ const targetScore = (state: MatchState, pieceId: string): number => {
 const chooseMove = (state: MatchState, pieceId: string): Position | undefined => {
   const moves = getValidMoves(state, pieceId);
   return [...moves].sort((left, right) => {
-    const leftDistance = 5 - left.y;
-    const rightDistance = 5 - right.y;
+    // La IA avanza hacia el Nexo del jugador (fila BOARD_SIZE).
+    const leftDistance = distanceToEnemyNexusRow('ai', left.y);
+    const rightDistance = distanceToEnemyNexusRow('ai', right.y);
     const leftTargets = state.board.filter((piece) => piece.owner === 'player' && Math.abs(piece.position.x - left.x) + Math.abs(piece.position.y - left.y) === 1).length;
     const rightTargets = state.board.filter((piece) => piece.owner === 'player' && Math.abs(piece.position.x - right.x) + Math.abs(piece.position.y - right.y) === 1).length;
     return rightTargets - leftTargets || leftDistance - rightDistance || left.x - right.x;
