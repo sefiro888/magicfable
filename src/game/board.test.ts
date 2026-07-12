@@ -13,7 +13,7 @@ import {
   nexusRow,
 } from './board';
 import { STARTER_DECKS } from './decks';
-import { applyAction, createMatch, endTurn, getValidDeploymentPositions } from './engine';
+import { applyAction, createMatch, endTurn, getValidDeploymentPositions, getValidMoves } from './engine';
 import type { MatchState } from './types';
 
 const freshMatch = (seed = 42): MatchState => createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, seed);
@@ -177,6 +177,32 @@ describe('la IA sobre el tablero 8×8', () => {
       expect([3, 4]).toContain(action.position.x);
       expect(action.position.y).toBe(0);
     }
+  });
+
+  it('el movimiento 2 avanza en línea recta con ruta libre, sin diagonales', () => {
+    const base = freshMatch();
+    const state: MatchState = {
+      ...base,
+      board: [
+        {
+          instanceId: 'sabueso', cardId: 'sabueso-brasa', owner: 'player', position: { x: 3, y: 7 },
+          currentHealth: 1, attackModifier: 0, movedThisTurn: false, attackedThisTurn: false,
+          enteredOnTurn: 0, statuses: [],
+        },
+        {
+          instanceId: 'bloqueo', cardId: 'golem-azur', owner: 'player', position: { x: 2, y: 7 },
+          currentHealth: 5, attackModifier: 0, movedThisTurn: false, attackedThisTurn: false,
+          enteredOnTurn: 0, statuses: [],
+        },
+      ],
+    };
+    const moves = getValidMoves(state, 'sabueso');
+    expect(moves).toContainEqual({ x: 3, y: 5 }); // dos casillas rectas
+    expect(moves).toContainEqual({ x: 5, y: 7 }); // dos a un lado libre
+    expect(moves).not.toContainEqual({ x: 2, y: 6 }); // diagonal prohibida
+    expect(moves).not.toContainEqual({ x: 1, y: 7 }); // ruta bloqueada por el Gólem
+    // El Gólem pesado conserva MOV 1.
+    expect(getValidMoves(state, 'bloqueo')).not.toContainEqual({ x: 2, y: 5 });
   });
 
   it('completa un turno entero y una simulación corta sin bucles en 8×8', () => {

@@ -15,17 +15,21 @@ Complementa a `docs/roadmap.md` (hitos M0–M4 originales).
 - ✅ Capturas deterministas en 3 resoluciones y 3 calidades
   (`artifacts/visual-comparison/`, no versionadas).
 
-### Recomendaciones de balance para 8×8 (NO aplicadas)
+### Balance del 8×8 — recomendación 1 APLICADA (2026-07-12)
 
-El tablero grande alarga la marcha: una unidad con movimiento 1 tarda
-~7 turnos en cruzar (antes ~4). Sugerencias a evaluar en una fase de
-balance dedicada, por orden de menor a mayor impacto:
+El tablero grande alargaba la marcha (~7 turnos hasta el contacto). Se
+aplicó la opción de menor impacto y mayor sabor:
 
-1. Subir el movimiento base de las unidades de 1 a 2 (manteniendo 1 en
-   estructuras pesadas como el Ariete como rasgo).
-2. Impulso pasa a ser «mueve hasta 2 este turno» para unidades rápidas.
-3. Alcance de lanceras/arqueras +1 para que la fila 2 tenga papel.
-4. O bien: filas de despliegue adelantadas (y=1 e y=6) sin tocar cartas.
+- ✅ **MOV 2** para las unidades ágiles: Sabueso, Berserker, Dragón,
+  Fénix, Tejedora y Duelista (la Lancera ya lo tenía).
+- ✅ **MOV 1 conservado** como rasgo de peso: Ariete, Gólem, Centinela y
+  Archivo Viviente.
+- El movimiento sigue siendo en línea recta ortogonal con ruta libre
+  (sin diagonales), verificado con prueba dedicada.
+
+Pendientes de una futura pasada de balance (no aplicadas): Impulso a
+«mueve hasta 2», alcance +1 en tiradoras, o filas de despliegue en
+y=1/y=6.
 
 ## Hecho — fase «Santuario» (2026-07-11)
 

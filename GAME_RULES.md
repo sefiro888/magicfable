@@ -59,9 +59,10 @@ Cada facción canaliza una variante:
 
 ## 5. Piezas
 
-- **Unidades**: tienen Ataque (ATQ) y Vida (VID). Mueven en ortogonal
-  (movimiento 1 salvo que indiquen otro valor) con la ruta libre; atacan a
-  distancia ≤ alcance (1 salvo indicación) con línea recta libre.
+- **Unidades**: tienen Ataque (ATQ) y Vida (VID). Mueven en línea recta
+  ortogonal hasta su valor MOV con la ruta libre (las unidades ágiles del
+  set tienen MOV 2; las pesadas —Ariete, Gólem, Centinela, Archivo— MOV 1);
+  atacan a distancia ≤ alcance (1 salvo indicación) con línea recta libre.
 - **Estructuras**: no se mueven ni atacan; tienen Resistencia (RES). Ocupan
   y bloquean la casilla.
 - Una pieza recién jugada **no puede actuar ese turno** (mareo de

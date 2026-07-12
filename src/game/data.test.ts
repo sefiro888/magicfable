@@ -44,7 +44,7 @@ describe('catálogo del Nexo', () => {
 
   it('conserva las cifras y reglas esenciales de las cartas de ejemplo', () => {
     expect(CARD_BY_ID['sabueso-brasa']).toMatchObject({
-      faction: 'fury', type: 'unit', attack: 2, health: 1, movement: 1,
+      faction: 'fury', type: 'unit', attack: 2, health: 1, movement: 2,
       cost: { generic: 0, colored: { fury: 1 } },
     });
     expect(CARD_BY_ID['berserker-ignivoro']).toMatchObject({

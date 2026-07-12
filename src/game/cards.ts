@@ -67,7 +67,7 @@ const furyCards: readonly CardDefinition[] = [
   }),
   defineCard({
     id: 'sabueso-brasa', name: 'Sabueso de Brasa', faction: 'fury', type: 'unit', subtype: 'Bestia',
-    rarity: 'common', cost: factionCost('fury', 1), attack: 2, health: 1, range: 1, movement: 1,
+    rarity: 'common', cost: factionCost('fury', 1), attack: 2, health: 1, range: 1, movement: 2,
     rules: 'Impulso: puede moverse el turno en que entra en juego.',
     flavor: 'No persigue el olor de la sangre, sino el miedo que la precede.',
     keywords: ['impulse'], collectorNumber: 2, aiTags: ['aggressive', 'fast'], unique: false, effects: [],
@@ -75,7 +75,7 @@ const furyCards: readonly CardDefinition[] = [
   }),
   defineCard({
     id: 'berserker-ignivoro', name: 'Berserker Ignívoro', faction: 'fury', type: 'unit', subtype: 'Guerrero',
-    rarity: 'uncommon', cost: factionCost('fury', 2, 1), attack: 3, health: 3, range: 1, movement: 1,
+    rarity: 'uncommon', cost: factionCost('fury', 2, 1), attack: 3, health: 3, range: 1, movement: 2,
     rules: 'Cuando ataque por primera vez cada turno, obtiene +1 Ataque durante ese combate.',
     flavor: 'Cada cicatriz es una puerta por la que vuelve a entrar el fuego.',
     keywords: [], collectorNumber: 3, aiTags: ['aggressive', 'combat'], unique: false,
@@ -84,7 +84,7 @@ const furyCards: readonly CardDefinition[] = [
   }),
   defineCard({
     id: 'dragon-caldera', name: 'Dragón de la Caldera', faction: 'fury', type: 'unit', subtype: 'Dragón',
-    rarity: 'mythic', cost: factionCost('fury', 2, 5), attack: 7, health: 6, range: 1, movement: 1,
+    rarity: 'mythic', cost: factionCost('fury', 2, 5), attack: 7, health: 6, range: 1, movement: 2,
     rules: 'Al entrar en juego, inflige 2 de daño a todas las demás cartas de las casillas adyacentes.',
     flavor: 'La Caldera no entró en erupción. Simplemente abrió los ojos.',
     keywords: [], collectorNumber: 4, aiTags: ['finisher', 'area-damage'], unique: true,
@@ -119,7 +119,7 @@ const furyCards: readonly CardDefinition[] = [
   }),
   defineCard({
     id: 'fenix-pavesa', name: 'Fénix de Pavesa', faction: 'fury', type: 'unit', subtype: 'Ave ígnea',
-    rarity: 'uncommon', cost: factionCost('fury', 1, 2), attack: 2, health: 3, range: 2, movement: 1,
+    rarity: 'uncommon', cost: factionCost('fury', 1, 2), attack: 2, health: 3, range: 2, movement: 2,
     rules: 'Al entrar en juego, inflige 1 de daño a una carta enemiga adyacente.',
     flavor: 'Cada una de sus plumas recuerda un incendio distinto.',
     keywords: [], collectorNumber: 8, aiTags: ['ranged', 'damage'], unique: false,
@@ -184,7 +184,7 @@ const arcaneCards: readonly CardDefinition[] = [
   }),
   defineCard({
     id: 'tejedora-escarcha', name: 'Tejedora de Escarcha', faction: 'arcane', type: 'unit', subtype: 'Hechicera',
-    rarity: 'uncommon', cost: factionCost('arcane', 2, 1), attack: 2, health: 3, range: 2, movement: 1,
+    rarity: 'uncommon', cost: factionCost('arcane', 2, 1), attack: 2, health: 3, range: 2, movement: 2,
     rules: 'Cuando dañe a una unidad, esa unidad no podrá moverse durante su próximo turno.',
     flavor: 'Con un gesto detiene el agua. Con una palabra, detiene ejércitos.',
     keywords: [], collectorNumber: 15, aiTags: ['ranged', 'control'], unique: false,
@@ -220,7 +220,7 @@ const arcaneCards: readonly CardDefinition[] = [
   }),
   defineCard({
     id: 'duelista-prisma', name: 'Duelista del Prisma', faction: 'arcane', type: 'unit', subtype: 'Místico',
-    rarity: 'common', cost: factionCost('arcane', 1), attack: 1, health: 2, range: 1, movement: 1,
+    rarity: 'common', cost: factionCost('arcane', 1), attack: 1, health: 2, range: 1, movement: 2,
     rules: 'Al entrar en juego, roba una carta y luego descarta una carta.',
     flavor: 'Su hoja elige un color distinto para cada adversario.',
     keywords: [], collectorNumber: 19, aiTags: ['draw', 'utility'], unique: false,
