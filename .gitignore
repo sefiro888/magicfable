@@ -6,3 +6,7 @@ test-results/
 *.tsbuildinfo
 .DS_Store
 *.log
+
+# Backups automáticos de Blender
+*.blend1
+*.blend2
