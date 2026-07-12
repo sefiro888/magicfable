@@ -48,7 +48,8 @@ export const LEGACY_FOOTPRINT = 5.9
 export const SCENERY_SCALE = BOARD_WORLD_SIZE / LEGACY_FOOTPRINT
 
 /** Encuadre de cámara recomendado para la huella actual. */
-export const CAMERA_POSITION: readonly [number, number, number] = [0, 9.6, 9.3]
+export const CAMERA_POSITION: readonly [number, number, number] = [0, 10.9, 10.5]
 export const CAMERA_FOV = 44
-export const CAMERA_MIN_DISTANCE = 9.6
-export const CAMERA_MAX_DISTANCE = 13.4
+export const CAMERA_TARGET: readonly [number, number, number] = [0, 0, -0.6]
+export const CAMERA_MIN_DISTANCE = 10.2
+export const CAMERA_MAX_DISTANCE = 16.2

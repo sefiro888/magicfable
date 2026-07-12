@@ -396,6 +396,7 @@ export function BattlePage() {
             onNexus={onNexus}
             reducedMotion={preferences.reducedMotion}
             quality={preferences.graphicsQuality}
+            scenario={preferences.scenario}
             activeEvent={currentEvent}
           />
           {banner && <div className={styles.turnBanner} role="status">{banner}</div>}

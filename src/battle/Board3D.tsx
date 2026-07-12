@@ -5,7 +5,7 @@ import { MathUtils, Vector3 } from 'three'
 import type { Group, Mesh, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
-import type { GraphicsQuality } from '../store/preferences'
+import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
 import { EventEffects } from './EventEffects'
 import {
@@ -13,14 +13,15 @@ import {
   CAMERA_MAX_DISTANCE,
   CAMERA_MIN_DISTANCE,
   CAMERA_POSITION,
+  CAMERA_TARGET,
   CELL_SIZE,
   gridToWorldX,
   gridToWorldZ,
   nexusWorldZ,
-  SCENERY_SCALE,
   TILE_SIZE,
 } from './grid/gridCoordinates'
-import { Sanctuary } from './Sanctuary'
+import { AetherCitadel } from './scenarios/AetherCitadel'
+import { SanctuaryScenario } from './scenarios/SanctuaryScenario'
 import styles from './Board3D.module.css'
 
 interface Board3DProps {
@@ -33,6 +34,7 @@ interface Board3DProps {
   onNexus: (playerId: PlayerId) => void
   reducedMotion: boolean
   quality: GraphicsQuality
+  scenario: ScenarioId
   /** Evento visual en reproducción, entregado por el director de animaciones. */
   activeEvent?: AnimationEvent
 }
@@ -44,25 +46,29 @@ const boardZ = gridToWorldZ
 /** Las cartas se diseñaron para un paso de casilla de 1.18; se reescalan al actual. */
 const CARD_SCALE = CELL_SIZE / 1.18
 
-function BoardCell({ position, valid, occupied, scorched, onClick }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; onClick: () => void }) {
+function BoardCell({ position, valid, occupied, scorched, subtle, onClick }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false)
-  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : '#464038'
-  const emissive = valid ? '#1b6384' : scorched ? '#68240f' : '#26201a'
+  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? (subtle ? '#8f96ab' : '#645b44') : scorched ? '#4a2018' : subtle ? '#6b7186' : '#464038'
+  const emissive = valid ? '#1b6384' : scorched ? '#68240f' : subtle ? '#2a3040' : '#26201a'
+  // Sobre Aether Citadel la piedra del GLB es el suelo: la casilla neutra es casi invisible.
+  const idleOpacity = subtle ? (hovered ? 0.42 : 0.14) : 1
   return (
     <mesh
       position={[boardX(position.x), 0, boardZ(position.y)]}
-      receiveShadow
+      receiveShadow={!subtle}
       onClick={(event) => { event.stopPropagation(); onClick() }}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      <boxGeometry args={[TILE_SIZE, valid ? 0.13 : 0.08, TILE_SIZE]} />
+      <boxGeometry args={[TILE_SIZE, valid ? 0.13 : subtle ? 0.045 : 0.08, TILE_SIZE]} />
       <meshStandardMaterial
         color={color}
         roughness={0.66}
         metalness={0.18}
         emissive={emissive}
         emissiveIntensity={valid ? 1.05 : scorched ? 0.9 : 0.62}
+        transparent={subtle && !valid && !scorched}
+        opacity={valid || scorched ? 1 : idleOpacity}
       />
     </mesh>
   )
@@ -217,21 +223,32 @@ function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMo
   return null
 }
 
-function Scene(props: Board3DProps) {
-  const scorchedCells = props.state.tileEffects.filter((tile) => tile.kind === 'scorched')
+/** Base mínima mientras el GLB de Aether Citadel se descarga. */
+function LoadingStage() {
   return (
     <>
-      <color attach="background" args={['#070b1c']} />
-      <fog attach="fog" args={['#0a0f22', 10, 30]} />
-      <ambientLight intensity={1.45} color="#bfc7de" />
-      <hemisphereLight intensity={0.85} color="#c9dcff" groundColor="#4a3420" />
-      <spotLight position={[-4, 8, 5]} intensity={66} angle={0.58} penumbra={0.8} castShadow={props.quality !== 'low'} color="#ffe3b2" />
-      <pointLight position={[4, 2, -4]} color="#50bfff" intensity={20} distance={9} />
-      <pointLight position={[-4, 2, 4]} color="#ffb46a" intensity={16} distance={9} />
-      {/* Sanctuary se diseñó para la huella 5×5: se reescala a la huella actual. */}
-      <group scale={SCENERY_SCALE}>
-        <Sanctuary quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
-      </group>
+      <color attach="background" args={['#3b4468']} />
+      <ambientLight intensity={1.3} color="#aeb9d8" />
+      <mesh position={[0, -0.58, 0]}>
+        <boxGeometry args={[11.6, 1.1, 11.6]} />
+        <meshStandardMaterial color="#5f6577" roughness={0.9} />
+      </mesh>
+    </>
+  )
+}
+
+function Scene(props: Board3DProps) {
+  const scorchedCells = props.state.tileEffects.filter((tile) => tile.kind === 'scorched')
+  const subtleCells = props.scenario === 'aether-citadel'
+  return (
+    <>
+      <Suspense fallback={<LoadingStage />}>
+        {props.scenario === 'aether-citadel' ? (
+          <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : (
+          <SanctuaryScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        )}
+      </Suspense>
       {Array.from({ length: BOARD_CELL_COUNT }, (_, index) => {
         const position = { x: index % BOARD_SIZE, y: Math.floor(index / BOARD_SIZE) }
         return (
@@ -241,6 +258,7 @@ function Scene(props: Board3DProps) {
             valid={props.validCells.some((cell) => isSameCell(cell, position))}
             occupied={props.state.board.some((piece) => isSameCell(piece.position, position))}
             scorched={scorchedCells.some((tile) => isSameCell(tile.position, position))}
+            subtle={subtleCells}
             onClick={() => props.onCell(position)}
           />
         )
@@ -262,7 +280,7 @@ function Scene(props: Board3DProps) {
       <Nexus playerId="ai" health={props.state.players.ai.nexusHealth} targetable={props.validTargets.includes('ai-nexus')} onClick={() => props.onNexus('ai')} />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
-      <OrbitControls makeDefault enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[0, 0, 0]} />
+      <OrbitControls makeDefault enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[...CAMERA_TARGET]} />
     </>
   )
 }
