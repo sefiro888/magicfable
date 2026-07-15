@@ -366,6 +366,72 @@ export const nebulaTexture = (): CanvasTexture => {
 };
 
 /**
+ * Losa individual de pavimento para las casillas del tablero: piedra clara
+ * con grano fino, borde biselado oscurecido y alguna grieta. Dos variantes
+ * cacheadas para romper la repetición.
+ */
+export const slabTexture = (variant: 0 | 1 = 0): CanvasTexture => {
+  const key = `slab-${variant}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const size = 256;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x534c4142 + variant * 977);
+
+  const base = context.createLinearGradient(0, 0, size, size);
+  base.addColorStop(0, variant === 0 ? '#a9a7ab' : '#a2a1a8');
+  base.addColorStop(0.5, variant === 0 ? '#98979e' : '#9c9aa0');
+  base.addColorStop(1, variant === 0 ? '#8e8d95' : '#93929a');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+
+  // Grano mineral fino.
+  for (let grain = 0; grain < 1500; grain += 1) {
+    const luminance = 110 + random() * 90;
+    context.fillStyle = `rgba(${luminance}, ${luminance}, ${luminance + 6}, ${0.05 + random() * 0.1})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 1.8, 1 + random() * 1.8);
+  }
+  // Vetas suaves diagonales.
+  context.strokeStyle = 'rgba(120, 118, 128, 0.18)';
+  context.lineWidth = 1.4;
+  for (let vein = 0; vein < 7; vein += 1) {
+    context.beginPath();
+    let x = random() * size;
+    let y = 0;
+    context.moveTo(x, y);
+    while (y < size) {
+      x += (random() - 0.5) * 26;
+      y += 18 + random() * 22;
+      context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+  // Alguna grieta discreta.
+  if (variant === 1) {
+    context.strokeStyle = 'rgba(58, 56, 66, 0.4)';
+    context.lineWidth = 1.6;
+    context.beginPath();
+    let x = size * 0.2;
+    let y = size * 0.85;
+    context.moveTo(x, y);
+    for (let segment = 0; segment < 5; segment += 1) {
+      x += 14 + random() * 22;
+      y -= 8 + random() * 18;
+      context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+  // Borde biselado: oscurecido perimetral suave.
+  context.strokeStyle = 'rgba(44, 44, 54, 0.38)';
+  context.lineWidth = 7;
+  context.strokeRect(0, 0, size, size);
+  context.strokeStyle = 'rgba(230, 228, 235, 0.18)';
+  context.lineWidth = 3;
+  context.strokeRect(5, 5, size - 10, size - 10);
+  return finishTexture(key, canvas);
+};
+
+/**
  * Sillería de piedra tileable para revestir la arquitectura del GLB en
  * runtime: hiladas de bloques con juntas desfasadas, variación tonal por
  * bloque, desgaste y regueros de intemperie. Sirve como map y bumpMap.

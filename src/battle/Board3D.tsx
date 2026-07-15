@@ -22,6 +22,7 @@ import {
 } from './grid/gridCoordinates'
 import { AetherCitadel } from './scenarios/AetherCitadel'
 import { SanctuaryScenario } from './scenarios/SanctuaryScenario'
+import { slabTexture } from './textures'
 import styles from './Board3D.module.css'
 
 interface Board3DProps {
@@ -46,29 +47,55 @@ const boardZ = gridToWorldZ
 /** Las cartas se diseñaron para un paso de casilla de 1.18; se reescalan al actual. */
 const CARD_SCALE = CELL_SIZE / 1.18
 
+/** Tinte determinista por casilla para romper la repetición del pavimento. */
+const SLAB_TINTS = ['#ffffff', '#f1efe9', '#e8e9f1'] as const
+
 function BoardCell({ position, valid, occupied, scorched, subtle, onClick }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false)
-  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? (subtle ? '#8f96ab' : '#645b44') : scorched ? '#4a2018' : subtle ? '#6b7186' : '#464038'
-  const emissive = valid ? '#1b6384' : scorched ? '#68240f' : subtle ? '#2a3040' : '#26201a'
-  // Sobre Aether Citadel la piedra del GLB es el suelo: la casilla neutra es casi invisible.
-  const idleOpacity = subtle ? (hovered ? 0.42 : 0.14) : 1
+  if (subtle) {
+    // Aether Citadel: la casilla ES una losa de pavimento opaca, a ras de la
+    // plaza; la junta oscura entre losas es la piedra del GLB que asoma.
+    const slab = slabTexture(((position.x + position.y) % 2) as 0 | 1)
+    const tint = SLAB_TINTS[(position.x * 7 + position.y * 13) % 3]!
+    const color = valid ? (hovered ? '#ffe9a8' : '#8fd4ff') : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
+    const emissive = valid ? '#1f6f9e' : scorched ? '#7a2c12' : hovered && !occupied ? '#4a3c22' : '#000000'
+    return (
+      <mesh
+        position={[boardX(position.x), valid ? 0.035 : 0.012, boardZ(position.y)]}
+        receiveShadow
+        onClick={(event) => { event.stopPropagation(); onClick() }}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+      >
+        <boxGeometry args={[TILE_SIZE, 0.06, TILE_SIZE]} />
+        <meshStandardMaterial
+          map={slab}
+          color={color}
+          roughness={0.88}
+          metalness={0.06}
+          emissive={emissive}
+          emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : 0}
+        />
+      </mesh>
+    )
+  }
+  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : '#464038'
+  const emissive = valid ? '#1b6384' : scorched ? '#68240f' : '#26201a'
   return (
     <mesh
       position={[boardX(position.x), 0, boardZ(position.y)]}
-      receiveShadow={!subtle}
+      receiveShadow
       onClick={(event) => { event.stopPropagation(); onClick() }}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      <boxGeometry args={[TILE_SIZE, valid ? 0.13 : subtle ? 0.045 : 0.08, TILE_SIZE]} />
+      <boxGeometry args={[TILE_SIZE, valid ? 0.13 : 0.08, TILE_SIZE]} />
       <meshStandardMaterial
         color={color}
         roughness={0.66}
         metalness={0.18}
         emissive={emissive}
         emissiveIntensity={valid ? 1.05 : scorched ? 0.9 : 0.62}
-        transparent={subtle && !valid && !scorched}
-        opacity={valid || scorched ? 1 : idleOpacity}
       />
     </mesh>
   )
