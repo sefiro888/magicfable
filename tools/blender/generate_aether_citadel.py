@@ -304,15 +304,53 @@ def crystal_cluster(prefix, col, mats, center, scale=1.0):
 
 
 def tower_module(prefix, col, mats, location, height, radius):
+    """Torre gótica de dos cuerpos con balcón, aguja y faro de cristal."""
     x, y = location
     cylinder(f"{prefix}Shaft", col, mats["ruin"], radius, height, (x, y, height / 2),
-             vertices=10, radius2=radius * 0.7)
-    cylinder(f"{prefix}Crown", col, mats["stone_dark"], radius * 0.85, height * 0.16,
-             (x, y, height + height * 0.07), vertices=10)
-    cylinder(f"{prefix}Spire", col, mats["ruin"], radius * 0.55, height * 0.5,
-             (x, y, height * 1.32), vertices=8, radius2=0.02)
+             vertices=10, radius2=radius * 0.74)
+    # Balcón intermedio y cuerpo superior más esbelto.
+    cylinder(f"{prefix}Balcony", col, mats["stone_dark"], radius * 1.12, height * 0.07,
+             (x, y, height * 0.66), vertices=10)
+    cylinder(f"{prefix}Upper", col, mats["ruin"], radius * 0.62, height * 0.5,
+             (x, y, height * 0.94), vertices=10, radius2=radius * 0.42)
+    cylinder(f"{prefix}Crown", col, mats["stone_dark"], radius * 0.7, height * 0.12,
+             (x, y, height * 1.24), vertices=10)
+    cylinder(f"{prefix}Spire", col, mats["ruin"], radius * 0.42, height * 0.55,
+             (x, y, height * 1.55), vertices=8, radius2=0.02)
+    # Contrafuertes en la base.
+    for corner in range(4):
+        angle = corner / 4 * math.tau + 0.4
+        box(f"{prefix}Buttress{corner}", col, mats["stone_dark"],
+            (radius * 0.34, radius * 0.34, height * 0.32),
+            (x + math.cos(angle) * radius * 0.95, y + math.sin(angle) * radius * 0.95,
+             height * 0.16), bevel=0.03)
     crystal(f"{prefix}Beacon", col, mats["crystal"], radius * 0.2, radius * 0.8,
-            (x, y, height * 1.62))
+            (x, y, height * 1.88))
+
+
+def arcade_module(prefix, col, mats, center, size, bays=5):
+    """Arquería bajo el borde de una plaza: pilastras y arcos colgantes."""
+    cx, cy = center
+    half = size / 2
+    step = size / bays
+    # Solo las fachadas que ve la cámara: sur, oeste y este. Hundidas bajo
+    # el borde para que únicamente asome la media luna del arco.
+    sides = [
+        (0, -half, 0),            # frente (sur)
+        (-half, 0, math.pi / 2),  # oeste
+        (half, 0, -math.pi / 2),  # este
+    ]
+    for side_index, (ox, oy, yaw) in enumerate(sides):
+        # Dintel corrido bajo el borde y pilastras colgantes: columnata.
+        box(f"{prefix}S{side_index}Lintel", col, mats["stone_dark"],
+            (size * 0.98, 0.5, 0.34), (cx + ox, cy + oy, -0.86),
+            rotation=(0, 0, yaw), bevel=0.05)
+        for bay in range(bays):
+            along = -half + step * (bay + 0.5)
+            px = cx + ox + math.cos(yaw) * along
+            py = cy + oy + math.sin(yaw) * along
+            box(f"{prefix}S{side_index}Pilaster{bay}", col, mats["stone_dark"],
+                (0.4, 0.44, 1.5), (px, py, -1.72), rotation=(0, 0, yaw), bevel=0.04)
 
 
 # ---------------------------------------------------------------------------
@@ -365,8 +403,9 @@ def build_citadel() -> None:
     bridge_module("BridgeW", secondary, mats, (-5.8, -1.0), (-7.3, -1.0), 2.3)
     bridge_module("BridgeSE", secondary, mats, (4.6, -5.8), (5.9, -7.2), 2.0)
 
-    # Columnas perimetrales de la plaza central.
+    # Columnas perimetrales y arquería colgante de la plaza central.
     column_ring("CentralCols", collection("Columns"), mats, (0, 0), size * 0.56, 8, height=1.0)
+    arcade_module("CentralArcade", collection("DecorativeRuins"), mats, (0, 0), size * 0.98, bays=5)
 
     # Ruinas decorativas cercanas.
     ruins = collection("DecorativeRuins")

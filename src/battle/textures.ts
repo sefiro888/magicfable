@@ -365,6 +365,77 @@ export const nebulaTexture = (): CanvasTexture => {
   return finishTexture('nebula', canvas);
 };
 
+/**
+ * Sillería de piedra tileable para revestir la arquitectura del GLB en
+ * runtime: hiladas de bloques con juntas desfasadas, variación tonal por
+ * bloque, desgaste y regueros de intemperie. Sirve como map y bumpMap.
+ */
+export const masonryTexture = (): CanvasTexture => {
+  const cached = cache.get('masonry');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4d41534f);
+
+  context.fillStyle = '#9a9aa2';
+  context.fillRect(0, 0, size, size);
+
+  const rows = 8;
+  const rowHeight = size / rows;
+  for (let row = 0; row < rows; row += 1) {
+    const offset = row % 2 === 0 ? 0 : rowHeight * 0.9;
+    const blocks = 4 + (row % 2);
+    const blockWidth = size / blocks;
+    for (let block = -1; block <= blocks; block += 1) {
+      const x = block * blockWidth + offset;
+      const y = row * rowHeight;
+      // Tono base por bloque con deriva fría/cálida sutil.
+      const value = 128 + (random() - 0.5) * 44;
+      const warm = (random() - 0.5) * 10;
+      context.fillStyle = `rgb(${value + warm}, ${value + warm * 0.4}, ${value - warm + 8})`;
+      context.fillRect(x + 2, y + 2, blockWidth - 4, rowHeight - 4);
+      // Sombreado inferior del bloque (bisel).
+      context.fillStyle = 'rgba(30, 30, 40, 0.28)';
+      context.fillRect(x + 2, y + rowHeight - 7, blockWidth - 4, 5);
+      context.fillStyle = 'rgba(255, 255, 255, 0.10)';
+      context.fillRect(x + 2, y + 2, blockWidth - 4, 3);
+      // Moteado interior.
+      for (let grain = 0; grain < 26; grain += 1) {
+        const luminance = 70 + random() * 120;
+        context.fillStyle = `rgba(${luminance}, ${luminance}, ${luminance + 8}, ${0.05 + random() * 0.1})`;
+        context.fillRect(x + 3 + random() * (blockWidth - 8), y + 3 + random() * (rowHeight - 8), 1 + random() * 2.4, 1 + random() * 2);
+      }
+      // Desconchones ocasionales.
+      if (random() > 0.72) {
+        context.fillStyle = 'rgba(52, 52, 62, 0.35)';
+        context.beginPath();
+        context.arc(x + random() * blockWidth, y + random() * rowHeight, 3 + random() * 7, 0, Math.PI * 2);
+        context.fill();
+      }
+    }
+    // Junta horizontal.
+    context.fillStyle = 'rgba(24, 24, 32, 0.85)';
+    context.fillRect(0, row * rowHeight - 1, size, 3);
+  }
+  // Regueros verticales de intemperie.
+  for (let streak = 0; streak < 14; streak += 1) {
+    const x = random() * size;
+    const height = size * (0.2 + random() * 0.5);
+    const y = random() * (size - height);
+    const gradient = context.createLinearGradient(0, y, 0, y + height);
+    gradient.addColorStop(0, 'rgba(40, 42, 52, 0)');
+    gradient.addColorStop(0.4, `rgba(40, 42, 52, ${0.10 + random() * 0.12})`);
+    gradient.addColorStop(1, 'rgba(40, 42, 52, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(x, y, 2 + random() * 5, height);
+  }
+
+  const texture = finishTexture('masonry', canvas);
+  texture.wrapS = 1000; // RepeatWrapping
+  texture.wrapT = 1000;
+  return texture;
+};
+
 /** Cielo de amanecer para Aether Citadel: horizonte cálido, cénit azul y nubes lejanas. */
 export const dawnSkyTexture = (): CanvasTexture => {
   const cached = cache.get('dawn-sky');

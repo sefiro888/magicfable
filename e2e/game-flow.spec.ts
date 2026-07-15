@@ -1,9 +1,26 @@
 import { expect, test } from '@playwright/test'
 
 test('recorre la galería y comienza una partida contra la IA', async ({ page }) => {
+  test.setTimeout(90_000)
   const consoleErrors: string[] = []
   page.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text())
+  })
+
+  // El e2e valida el flujo de juego, no los gráficos: calidad baja y
+  // movimiento reducido para que el WebGL por software no agote el tiempo.
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'cronicas-nexo-preferences',
+      JSON.stringify({
+        state: {
+          masterVolume: 0, musicVolume: 0, effectsVolume: 0, muted: true,
+          reducedMotion: true, aiDelayMs: 200, selectedDeckId: 'furia-caldera',
+          graphicsQuality: 'low', scenario: 'aether-citadel', animationSpeed: 2,
+        },
+        version: 3,
+      }),
+    )
   })
 
   await page.goto('/')

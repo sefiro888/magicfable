@@ -1,12 +1,12 @@
 import { Sparkles, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react'
-import { AdditiveBlending, DoubleSide } from 'three'
-import type { Group, Mesh, Object3D, PointLight } from 'three'
+import { AdditiveBlending, DoubleSide, MeshPhysicalMaterial, RepeatWrapping } from 'three'
+import type { Group, Mesh, MeshStandardMaterial, Object3D, PointLight } from 'three'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
 import { withBase } from '../../utils/assets'
-import { cloudTexture, dawnSkyTexture, glowTexture, portalSwirlTexture } from '../textures'
+import { cloudTexture, dawnSkyTexture, glowTexture, masonryTexture, portalSwirlTexture } from '../textures'
 import { SanctuaryScenario } from './SanctuaryScenario'
 
 const CITADEL_URL = withBase('/assets/scenarios/aether-citadel.glb')
@@ -28,15 +28,16 @@ function DawnAtmosphere({ quality }: { quality: GraphicsQuality }) {
     <>
       <color attach="background" args={['#3b4468']} />
       <fog attach="fog" args={['#7885a8', 26, 88]} />
-      <mesh rotation={[0, 0.9, 0]}>
+      <mesh rotation={[0, -2.2, 0]}>
         <sphereGeometry args={[70, 32, 20]} />
         <meshBasicMaterial map={dawnSkyTexture()} side={1} fog={false} />
       </mesh>
-      <ambientLight intensity={0.55} color="#aeb9d8" />
-      <hemisphereLight intensity={0.45} color="#d8e2ff" groundColor="#5a4a3a" />
+      <ambientLight intensity={0.48} color="#aeb9d8" />
+      <hemisphereLight intensity={0.4} color="#d8e2ff" groundColor="#5a4a3a" />
+      {/* Sol de amanecer desde arriba-derecha, como en la referencia. */}
       <directionalLight
-        position={[-16, 15, -11]}
-        intensity={4.3}
+        position={[15, 14, -8]}
+        intensity={4.8}
         color="#ffcf96"
         castShadow={quality !== 'low'}
         shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
@@ -46,7 +47,8 @@ function DawnAtmosphere({ quality }: { quality: GraphicsQuality }) {
         shadow-camera-top={9}
         shadow-camera-bottom={-9}
       />
-      <directionalLight position={[14, 9, 12]} intensity={0.55} color="#8fa8e8" />
+      {/* Relleno frío desde el lado del portal. */}
+      <directionalLight position={[-14, 9, 10]} intensity={0.6} color="#8fa8e8" />
     </>
   )
 }
@@ -121,37 +123,110 @@ function DawnClouds({ quality, reducedMotion }: { quality: GraphicsQuality; redu
     })
   })
   if (quality === 'low') return null
+  const foreground: readonly (readonly [number, number, number, number, boolean])[] = [
+    [-7.5, -1.7, 9.5, 15, true],
+    [0.5, -2.1, 11.5, 18, false],
+    [8, -1.5, 9, 14, true],
+    [-13, -1.2, 4, 12, false],
+    [13.5, -1.3, 3.5, 13, true],
+  ]
   return (
-    <group ref={group}>
-      {clouds.map((cloud, index) => (
-        <sprite
-          key={index}
-          position={[Math.cos(cloud.angle) * cloud.radius, cloud.y, Math.sin(cloud.angle) * cloud.radius]}
-          scale={[cloud.scale, cloud.scale * 0.42, 1]}
-        >
+    <>
+      <group ref={group}>
+        {clouds.map((cloud, index) => (
+          <sprite
+            key={index}
+            position={[Math.cos(cloud.angle) * cloud.radius, cloud.y, Math.sin(cloud.angle) * cloud.radius]}
+            scale={[cloud.scale, cloud.scale * 0.42, 1]}
+          >
+            <spriteMaterial
+              map={cloudTexture()}
+              transparent
+              opacity={cloud.warm ? 0.72 : 0.58}
+              color={cloud.warm ? '#ffd9b0' : '#e8eefb'}
+              depthWrite={false}
+              fog={false}
+            />
+          </sprite>
+        ))}
+      </group>
+      {/* Banco de nubes estático en primer plano, pegado a los bordes. */}
+      {foreground.map(([x, y, z, scale, warm], index) => (
+        <sprite key={`fg-${index}`} position={[x, y, z]} scale={[scale, scale * 0.38, 1]}>
           <spriteMaterial
             map={cloudTexture()}
             transparent
-            opacity={cloud.warm ? 0.72 : 0.58}
-            color={cloud.warm ? '#ffd9b0' : '#e8eefb'}
+            opacity={warm ? 0.85 : 0.7}
+            color={warm ? '#ffdfba' : '#eef2fc'}
             depthWrite={false}
             fog={false}
           />
         </sprite>
       ))}
-    </group>
+    </>
   )
 }
 
-/** La arquitectura estática exportada desde Blender. */
+/**
+ * La arquitectura estática exportada desde Blender, revestida en runtime:
+ * el glTF trae materiales PBR planos y aquí se les aplica la sillería
+ * procedural, dorados emisivos y cristales físicos translúcidos.
+ */
 function CitadelModel({ quality }: { quality: GraphicsQuality }) {
   const { scene } = useGLTF(CITADEL_URL)
   useEffect(() => {
+    const masonry = masonryTexture()
+    masonry.wrapS = RepeatWrapping
+    masonry.wrapT = RepeatWrapping
+    const dressed = new Set<string>()
     scene.traverse((object) => {
       const mesh = object as Mesh
-      if (mesh.isMesh) {
-        mesh.receiveShadow = quality !== 'low'
-        mesh.castShadow = false
+      if (!mesh.isMesh) return
+      mesh.receiveShadow = quality !== 'low'
+      mesh.castShadow = quality === 'high' && /Tower|Portal(Pylon|ArchOuter)|Col\d|Pedestal/.test(mesh.name)
+      const material = mesh.material as MeshStandardMaterial
+      if (!material?.name) return
+      // Cristales: material físico translúcido, uno por malla para el brillo interno.
+      if (material.name === 'AC_CrystalBlue') {
+        if (!(mesh.material instanceof MeshPhysicalMaterial)) {
+          mesh.material = new MeshPhysicalMaterial({
+            color: '#8ecbff',
+            roughness: 0.08,
+            metalness: 0.05,
+            transmission: 0.55,
+            thickness: 1.2,
+            ior: 1.45,
+            emissive: '#2f7fe8',
+            emissiveIntensity: 1.35,
+            transparent: true,
+            opacity: 0.96,
+          })
+        }
+        return
+      }
+      if (dressed.has(material.name)) return
+      dressed.add(material.name)
+      if (/AC_StoneMain|AC_StoneLight|AC_RockUnder/.test(material.name)) {
+        // Sillería solo en superficies grandes; en cilindros finos los UV
+        // estiran los bloques y arruinan la lectura.
+        const repeat = material.name === 'AC_RockUnder' ? 1.6 : 2.4
+        material.map = masonry
+        material.bumpMap = masonry
+        material.bumpScale = 2.5
+        material.map.repeat.set(repeat, repeat)
+        // El mapa multiplica al color base: se aclara para que la sillería respire.
+        material.color.multiplyScalar(2.1)
+        material.needsUpdate = true
+      } else if (/AC_StoneDark|AC_RuinFar/.test(material.name)) {
+        material.color.multiplyScalar(1.2)
+        material.needsUpdate = true
+      } else if (material.name === 'AC_GoldInlay') {
+        material.emissiveIntensity = 1.05
+        material.roughness = 0.24
+        material.needsUpdate = true
+      } else if (material.name === 'AC_PortalCore') {
+        material.emissiveIntensity = 5.5
+        material.needsUpdate = true
       }
     })
   }, [scene, quality])
