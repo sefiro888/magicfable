@@ -17,11 +17,11 @@ describe('catálogo del Nexo', () => {
     ]);
   });
 
-  it('contiene exactamente 24 diseños únicos, 12 por facción jugable', () => {
-    expect(CARDS).toHaveLength(24);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(24);
-    expect(cardsForFaction('fury')).toHaveLength(12);
-    expect(cardsForFaction('arcane')).toHaveLength(12);
+  it('contiene exactamente 34 diseños únicos, 17 por facción jugable', () => {
+    expect(CARDS).toHaveLength(34);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(34);
+    expect(cardsForFaction('fury')).toHaveLength(17);
+    expect(cardsForFaction('arcane')).toHaveLength(17);
     expect(CARDS.every((card) => card.faction === 'fury' || card.faction === 'arcane')).toBe(true);
   });
 

@@ -25,6 +25,11 @@ const ARTIST_CREDITS: Readonly<Record<string, string>> = Object.freeze({
   'pacto-ascuas': 'F. Lera, O. Vey & Taller de Ritual Intimo',
   'altar-combustion': 'H. Nadir, S. Coto & Taller Simbolista',
   'temblor-rojo': 'D. Salvat, J. Roca & Taller de Paisaje Cataclismico',
+  'erupcion-volcanica': 'N. Beltran, E. Ros & Taller de Atmosfera Negra Expandida',
+  'gigante-magma': 'L. Valcazar, J. Fuentes & Taller de Titan Igneo',
+  'draco-magma': 'S. Aranda, D. Korr & Taller de Dragón Abismal',
+  'infiltrado-volcanico': 'V. Sanz, T. Noir & Taller de Sombra Ardiente',
+  'elemental-tormenta': 'N. Beltran, E. Ros & Taller de Clima Elemental',
   'fuente-arcana': 'M. Olarte, L. Vesper & Taller de Acuarela Luminica',
   'centinela-cristal': 'E. Rivas, N. Calve & Taller de Prisma Mineral',
   'tejedora-escarcha': 'I. Llorens, A. Vela & Taller de Figura Elegante',
@@ -37,6 +42,11 @@ const ARTIST_CREDITS: Readonly<Record<string, string>> = Object.freeze({
   'eco-cronomante': 'J. Auren, P. Sibil & Taller Simbolista Arcano',
   'archivo-viviente': 'M. Doria, H. Clave & Taller de Biblioteca Imposible',
   'convergencia-astral': 'K. Morat, I. Serna & Taller de Geometria Cosmica',
+  'congelacion-rapida': 'Q. Soria, L. Mael & Taller de Hielo Explosivo',
+  'dragon-escarcha': 'E. Rivas, N. Calve & Taller de Dragón Glacial',
+  'guardian-escarchado': 'R. Navas, E. Aro & Taller de Centinela Perenne',
+  'destello-runico': 'T. Nerea, B. Voss & Taller de Magia Refulgente',
+  'mago-celestial': 'M. Olarte, L. Vesper & Taller de Mago Estelar',
 });
 
 const defineCard = (seed: CardSeed): CardDefinition => {
@@ -162,6 +172,51 @@ const furyCards: readonly CardDefinition[] = [
     effects: [{ kind: 'damage', amount: 3, target: 'enemy-piece' }, { kind: 'splash-weakest-enemy', amount: 1 }],
     vfx: { impactEffect: 'chain-eruption', persistentEffect: 'magma-chain' },
   }),
+  defineCard({
+    id: 'erupcion-volcanica', name: 'Erupción Volcánica', faction: 'fury', type: 'instant', subtype: 'Catástrofe',
+    rarity: 'uncommon', cost: factionCost('fury', 1, 2),
+    rules: 'Inflige 2 de daño a cada unidad enemiga. Las casillas afectadas permanecen abrasadas.',
+    flavor: 'El cielo se parte cuando la tierra elige hablar.',
+    keywords: [], collectorNumber: 25, aiTags: ['removal', 'area-damage'], unique: false,
+    effects: [{ kind: 'damage', amount: 2, target: 'enemy-piece' }, { kind: 'scorch', duration: 1 }],
+    vfx: { impactEffect: 'volcanic-burst', persistentEffect: 'lava-shockwave' },
+  }),
+  defineCard({
+    id: 'gigante-magma', name: 'Gigante de Magma', faction: 'fury', type: 'unit', subtype: 'Gigante',
+    rarity: 'rare', cost: factionCost('fury', 3, 2), attack: 5, health: 6, range: 1, movement: 1,
+    rules: 'Las casillas adyacentes permanecen abrasadas.',
+    flavor: 'Cada paso deja un valle de fuego donde antes había tierra fértil.',
+    keywords: [], collectorNumber: 26, aiTags: ['durable', 'area-control'], unique: false,
+    effects: [{ kind: 'passive', id: 'scorch-adjacents' }],
+    vfx: { summonEffect: 'magma-rise', persistentEffect: 'heat-aura' },
+  }),
+  defineCard({
+    id: 'draco-magma', name: 'Draco de Magma', faction: 'fury', type: 'unit', subtype: 'Dragón',
+    rarity: 'mythic', cost: factionCost('fury', 2, 4), attack: 6, health: 5, range: 2, movement: 2,
+    rules: 'Impulso. Cuando ataca, las casillas adyacentes al objetivo reciben daño de fuego.',
+    flavor: 'Su aliento convierte arena en cristal, en un instante.',
+    keywords: ['impulse'], collectorNumber: 27, aiTags: ['finisher', 'ranged'], unique: false,
+    effects: [{ kind: 'adjacent-damage', amount: 1, includeAllies: false }],
+    vfx: { summonEffect: 'dragon-awaken', attackEffect: 'magma-beam', deathEffect: 'dragon-collapse' },
+  }),
+  defineCard({
+    id: 'infiltrado-volcanico', name: 'Infiltrado Volcánico', faction: 'fury', type: 'unit', subtype: 'Bandido',
+    rarity: 'common', cost: factionCost('fury', 1), attack: 2, health: 2, range: 1, movement: 2,
+    rules: 'Impulso: puede moverse el turno en que entra en juego. +1 Ataque contra unidades solitarias.',
+    flavor: 'Aparece donde nadie lo espera y desaparece en el humo.',
+    keywords: ['impulse'], collectorNumber: 28, aiTags: ['aggressive', 'assassin'], unique: false,
+    effects: [{ kind: 'passive', id: 'bonus-damage-isolated-target', value: 1 }],
+    vfx: { summonEffect: 'smoke-rise', attackEffect: 'cinder-strike' },
+  }),
+  defineCard({
+    id: 'elemental-tormenta', name: 'Elemental de Tormenta', faction: 'fury', type: 'unit', subtype: 'Elemental',
+    rarity: 'uncommon', cost: factionCost('fury', 1, 2), attack: 2, health: 4, range: 2, movement: 2,
+    rules: 'Rango 2. Cuando ataca, inflige 1 de daño adicional a la unidad objetivo.',
+    flavor: 'Nubes ardientes que gritan en lengua de trueno y ceniza.',
+    keywords: [], collectorNumber: 34, aiTags: ['ranged', 'damage'], unique: false,
+    effects: [{ kind: 'damage', amount: 1, target: 'enemy-piece' }],
+    vfx: { summonEffect: 'storm-gather', attackEffect: 'lightning-strike', impactEffect: 'thunder-boom' },
+  }),
 ];
 
 const arcaneCards: readonly CardDefinition[] = [
@@ -272,12 +327,57 @@ const arcaneCards: readonly CardDefinition[] = [
     effects: [{ kind: 'refresh-move' }],
     vfx: { impactEffect: 'folded-threshold', persistentEffect: 'portal-ripple' },
   }),
+  defineCard({
+    id: 'congelacion-rapida', name: 'Congelación Rápida', faction: 'arcane', type: 'instant', subtype: 'Encantamiento',
+    rarity: 'common', cost: factionCost('arcane', 1, 1),
+    rules: 'Congela una unidad enemiga durante 1 turno. No puede moverse ni atacar.',
+    flavor: 'El tiempo se quiebra bajo el hielo.',
+    keywords: [], collectorNumber: 29, aiTags: ['freeze', 'control'], unique: false,
+    effects: [{ kind: 'freeze', duration: 1 }],
+    vfx: { impactEffect: 'instant-freeze', persistentEffect: 'ice-shards' },
+  }),
+  defineCard({
+    id: 'dragon-escarcha', name: 'Dragón de Escarcha', faction: 'arcane', type: 'unit', subtype: 'Dragón',
+    rarity: 'mythic', cost: factionCost('arcane', 2, 4), attack: 5, health: 7, range: 2, movement: 2,
+    rules: 'Cuando ataca, congela el objetivo durante el siguiente turno. Las unidades congeladas no pueden atacar.',
+    flavor: 'Su cola barre el horizonte dejando nieve donde antes ardía.',
+    keywords: [], collectorNumber: 30, aiTags: ['finisher', 'control'], unique: false,
+    effects: [{ kind: 'freeze', duration: 1 }],
+    vfx: { summonEffect: 'frost-awaken', attackEffect: 'ice-beam', deathEffect: 'snowstorm' },
+  }),
+  defineCard({
+    id: 'guardian-escarchado', name: 'Guardián Escarchado', faction: 'arcane', type: 'unit', subtype: 'Constructo',
+    rarity: 'uncommon', cost: factionCost('arcane', 1, 2), attack: 1, health: 5, range: 1, movement: 1, resistance: 3,
+    rules: 'Las unidades enemigas adyacentes no pueden atacar.',
+    flavor: 'Ni se mueve ni cede. Simplemente espera a que todo se paralice.',
+    keywords: ['guard'], collectorNumber: 31, aiTags: ['defense', 'freeze'], unique: false,
+    effects: [{ kind: 'passive', id: 'pacify-adjacent-enemies' }],
+    vfx: { summonEffect: 'ice-wall', persistentEffect: 'permafrost-aura' },
+  }),
+  defineCard({
+    id: 'destello-runico', name: 'Destello Rúnico', faction: 'arcane', type: 'instant', subtype: 'Hechizo',
+    rarity: 'uncommon', cost: factionCost('arcane', 1, 1),
+    rules: 'Inflige 2 de daño a una unidad enemiga. Roba una carta.',
+    flavor: 'Cada runa que desata revela un secreto del universo.',
+    keywords: [], collectorNumber: 32, aiTags: ['damage', 'draw'], unique: false,
+    effects: [{ kind: 'damage', amount: 2, target: 'enemy-piece' }, { kind: 'draw', amount: 1 }],
+    vfx: { impactEffect: 'rune-flash', persistentEffect: 'knowledge-surge' },
+  }),
+  defineCard({
+    id: 'mago-celestial', name: 'Mago Celestial', faction: 'arcane', type: 'unit', subtype: 'Mago',
+    rarity: 'rare', cost: factionCost('arcane', 1, 3), attack: 3, health: 3, range: 3, movement: 1,
+    rules: 'Rango 3. Gana +1 Ataque cuando ataca desde casillas no adyacentes.',
+    flavor: 'Ve más allá de las nubes, donde habita el lenguaje de los dioses.',
+    keywords: [], collectorNumber: 33, aiTags: ['ranged', 'spell-synergy'], unique: false,
+    effects: [{ kind: 'passive', id: 'ranged-attack-bonus', value: 1 }],
+    vfx: { summonEffect: 'celestial-descent', attackEffect: 'starlight-bolt', persistentEffect: 'cosmic-aura' },
+  }),
 ];
 
 export const CARDS = Object.freeze([...furyCards, ...arcaneCards]) as readonly CardDefinition[];
 
-if (CARDS.length !== 24 || new Set(CARDS.map((card) => card.id)).size !== 24) {
-  throw new Error('El conjunto NEX-01 debe contener exactamente 24 cartas con identificadores únicos.');
+if (CARDS.length !== 34 || new Set(CARDS.map((card) => card.id)).size !== 34) {
+  throw new Error('El conjunto NEX-01 debe contener exactamente 34 cartas con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(
