@@ -9,20 +9,21 @@ import { CardDefinitionSchema, CommanderDefinitionSchema, DeckDefinitionSchema }
 import type { DeckDefinition } from './types';
 
 describe('catálogo del Nexo', () => {
-  it('declara seis facciones y solo habilita Furia y Arcano', () => {
+  it('declara seis facciones, todas habilitadas', () => {
     expect(FACTIONS).toHaveLength(6);
-    expect(PLAYABLE_FACTIONS.map((faction) => faction.id)).toEqual(['fury', 'arcane']);
-    expect(FACTIONS.filter((faction) => !faction.unlocked).map((faction) => faction.id)).toEqual([
-      'nature', 'order', 'shadow', 'void',
-    ]);
+    expect(PLAYABLE_FACTIONS.map((faction) => faction.id)).toEqual(['fury', 'arcane', 'nature', 'order', 'shadow', 'void']);
+    expect(FACTIONS.filter((faction) => !faction.unlocked)).toHaveLength(0);
   });
 
-  it('contiene exactamente 34 diseños únicos, 17 por facción jugable', () => {
-    expect(CARDS).toHaveLength(34);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(34);
+  it('contiene exactamente 66 diseños únicos, distribuidos por 6 facciones (11 cada una)', () => {
+    expect(CARDS).toHaveLength(66);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(66);
     expect(cardsForFaction('fury')).toHaveLength(17);
     expect(cardsForFaction('arcane')).toHaveLength(17);
-    expect(CARDS.every((card) => card.faction === 'fury' || card.faction === 'arcane')).toBe(true);
+    expect(cardsForFaction('nature')).toHaveLength(8);
+    expect(cardsForFaction('order')).toHaveLength(8);
+    expect(cardsForFaction('shadow')).toHaveLength(8);
+    expect(cardsForFaction('void')).toHaveLength(8);
   });
 
   it('incluye las doce cartas obligatorias', () => {

@@ -28,7 +28,7 @@ export const FACTIONS = [
     color: '#39753a',
     accentColor: '#a7db67',
     icon: 'leaf',
-    unlocked: false,
+    unlocked: true,
     themes: ['curación', 'crecimiento', 'resistencia'],
   },
   {
@@ -38,7 +38,7 @@ export const FACTIONS = [
     color: '#d8caa4',
     accentColor: '#f2cf68',
     icon: 'sun-shield',
-    unlocked: false,
+    unlocked: true,
     themes: ['defensa', 'soldados', 'muros'],
   },
   {
@@ -48,7 +48,7 @@ export const FACTIONS = [
     color: '#261d2d',
     accentColor: '#8d51aa',
     icon: 'eclipse',
-    unlocked: false,
+    unlocked: true,
     themes: ['veneno', 'cementerio', 'robo de vida'],
   },
   {
@@ -58,7 +58,7 @@ export const FACTIONS = [
     color: '#59327d',
     accentColor: '#c775ff',
     icon: 'portal',
-    unlocked: false,
+    unlocked: true,
     themes: ['portales', 'teletransporte', 'distorsión'],
   },
 ] as const satisfies readonly FactionDefinition[];
