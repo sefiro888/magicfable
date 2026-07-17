@@ -103,7 +103,7 @@ const buildPlaceholder = (card: CardDefinition): string => {
 function CardArtwork({ card, eager }: { readonly card: CardDefinition; readonly eager: boolean }) {
   const placeholder = useMemo(() => buildPlaceholder(card), [card]);
   const sources = useMemo(
-    () => [withBase(card.art.fallback), withBase(card.art.webp), placeholder].filter((source, index, list) => list.indexOf(source) === index),
+    () => [withBase(card.art.webp), withBase(card.art.fallback), placeholder].filter((source, index, list) => list.indexOf(source) === index),
     [card.art.fallback, card.art.webp, placeholder],
   );
   const [sourceIndex, setSourceIndex] = useState(0);

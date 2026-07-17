@@ -40,13 +40,13 @@ describe('Card', () => {
     expect(onInspect).toHaveBeenCalledWith(source);
   });
 
-  it('uses the SVG artwork first and keeps a generated placeholder fallback', () => {
+  it('prioriza el arte WebP final, con SVG y placeholder como reservas', () => {
     render(<Card card={source} />);
     const art = screen.getByAltText(source.art.alt);
 
-    expect(art).toHaveAttribute('src', source.art.fallback);
+    expect(art).toHaveAttribute('src', source.art.webp);
     fireEvent.error(art);
-    expect(art.getAttribute('src')).toContain(source.art.webp);
+    expect(art.getAttribute('src')).toContain(source.art.fallback);
     fireEvent.error(art);
     expect(art.getAttribute('src')).toContain('data:image/svg+xml');
   });

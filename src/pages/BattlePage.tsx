@@ -419,7 +419,7 @@ export function BattlePage() {
           <section className={styles.panelSection}>
             <span className={styles.panelLabel}>Comandante</span>
             <div className={styles.commander}>
-              <img className={styles.portrait} src={commander ? withBase(commander.art.fallback) : undefined} alt="" />
+              <img className={styles.portrait} src={commander ? withBase(commander.art.webp) : undefined} alt="" />
               <div><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
             </div>
             <div className={styles.lifeRow}><span>Vida del Nexo</span><span className={styles.life}>♥ {player.nexusHealth}</span></div>
@@ -574,7 +574,7 @@ export function BattlePage() {
                     aria-pressed={selected}
                     onClick={() => setMulliganIds((current) => current.includes(instance.instanceId) ? current.filter((id) => id !== instance.instanceId) : [...current, instance.instanceId])}
                   >
-                    <img src={withBase(card.art.fallback)} alt="" />
+                    <img src={withBase(card.art.webp)} alt="" />
                     <strong>{card.name}</strong>
                     <span>{selected ? 'Cambiar' : 'Conservar'}</span>
                   </button>
@@ -591,7 +591,7 @@ export function BattlePage() {
       {inspected && (
         <div className={styles.inspectBackdrop} role="dialog" aria-modal="true" aria-label={`Inspección de ${inspected.name}`} onClick={() => store.inspect(undefined)}>
           <article className={styles.inspect} onClick={(event) => event.stopPropagation()}>
-            <img src={withBase(inspected.art.fallback)} alt={inspected.art.alt} />
+            <img src={withBase(inspected.art.webp)} alt={inspected.art.alt} />
             <div>
               <small>{FACTION_LABELS[inspected.faction]} · {RARITY_LABELS[inspected.rarity]}</small>
               <h2>{inspected.name}</h2>

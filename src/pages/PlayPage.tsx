@@ -36,7 +36,7 @@ export function PlayPage() {
               {selected && <span className={styles.selected}>Seleccionado</span>}
               <div className={styles.deckArt} aria-hidden="true">
                 {showcase[candidate.faction]?.map((cardId) => {
-                  const art = CARD_BY_ID[cardId]?.art.fallback
+                  const art = CARD_BY_ID[cardId]?.art.webp
                   return art ? <img key={cardId} src={withBase(art)} alt="" /> : null
                 })}
               </div>
@@ -48,7 +48,7 @@ export function PlayPage() {
           )
         })}
       </div>
-      <div className={styles.startRow}><button className={styles.start} onClick={start}>Entrar al tablero</button><span className={styles.note}>Nexo a 25 · tablero 5 × 5</span></div>
+      <div className={styles.startRow}><button className={styles.start} onClick={start}>Entrar al tablero</button><span className={styles.note}>Nexo a 25 · tablero 8 × 8</span></div>
       <div className={styles.locked}><span>Próximas crónicas</span><div className={styles.lockedFactions}><span>◆ Naturaleza</span><span>☼ Orden</span><span>◐ Sombra</span><span>◎ Vacío</span></div></div>
     </div>
   )

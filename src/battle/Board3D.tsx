@@ -105,7 +105,7 @@ function BoardCell({ position, valid, occupied, scorched, subtle, onClick }: { p
 
 function BoardCard({ piece, selected, targetable, active, onClick, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; active: boolean; onClick: () => void; reducedMotion: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
-  const texture = useTexture(withBase(card?.art.fallback ?? '/assets/cards/art/fuente-furia.svg'))
+  const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
   const frame = useRef<Mesh>(null)
   const [hovered, setHovered] = useState(false)

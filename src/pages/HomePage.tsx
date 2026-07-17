@@ -9,10 +9,10 @@ export function HomePage() {
       <section className={styles.hero}>
         <div className={styles.runes} aria-hidden="true" />
         <motion.figure className={`${styles.cardFan} ${styles.cardLeft}`} initial={{ x: -80, opacity: 0, rotate: -20 }} animate={{ x: 0, opacity: .9, rotate: -13 }} transition={{ duration: .8 }} aria-hidden="true">
-          <img src={withBase('/assets/cards/art/dragon-caldera.svg')} alt="" />
+          <img src={withBase('/assets/cards/art/dragon-caldera.webp')} alt="" />
         </motion.figure>
         <motion.figure className={`${styles.cardFan} ${styles.cardRight}`} initial={{ x: 80, opacity: 0, rotate: 20 }} animate={{ x: 0, opacity: .9, rotate: 13 }} transition={{ duration: .8 }} aria-hidden="true">
-          <img src={withBase('/assets/cards/art/tejedora-escarcha.svg')} alt="" />
+          <img src={withBase('/assets/cards/art/tejedora-escarcha.webp')} alt="" />
         </motion.figure>
         <motion.div className={styles.heroContent} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .65 }}>
           <div className={styles.eyebrow}>Juego táctico de cartas</div>

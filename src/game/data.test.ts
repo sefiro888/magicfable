@@ -36,6 +36,8 @@ describe('catálogo del Nexo', () => {
       expect(card.art.webp).toBe(`/assets/cards/art/${card.id}.webp`);
       expect(card.art.fallback).toBe(`/assets/cards/art/${card.id}.svg`);
       expect(existsSync(join(process.cwd(), 'public', card.art.fallback))).toBe(true);
+      // Arte final integrado: todo id del set debe tener su WebP real.
+      expect(existsSync(join(process.cwd(), 'public', card.art.webp)), `${card.id}.webp`).toBe(true);
       expect(card.rules.length).toBeGreaterThan(10);
       expect(card.flavor.length).toBeGreaterThan(10);
       expect(Object.values(card.vfx).some(Boolean)).toBe(true);
