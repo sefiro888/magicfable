@@ -364,7 +364,8 @@ def build_citadel() -> None:
     central = collection("CentralBattlePlatform")
     size = PARAMS["central_size"]
     platform_module("Central", central, mats, (0, 0), (size, size))
-    golden_circle("CentralRunic", collection("GoldenInlays"), mats, (0, 0), size * 0.34, 0.015)
+    # El círculo rúnico central es una incrustación plana dibujada en la capa
+    # R3F (goldFloorInlayTexture): aquí ya no se generan aros 3D.
 
     # Plataforma del portal (noroeste, como en la referencia).
     portal_platform = collection("LeftPortalPlatform")

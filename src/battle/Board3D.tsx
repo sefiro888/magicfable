@@ -53,9 +53,9 @@ const SLAB_TINTS = ['#ffffff', '#f1efe9', '#e8e9f1'] as const
 function BoardCell({ position, valid, occupied, scorched, subtle, onClick }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false)
   if (subtle) {
-    // Aether Citadel: la casilla ES una losa de pavimento opaca, a ras de la
-    // plaza; la junta oscura entre losas es la piedra del GLB que asoma.
-    const slab = slabTexture(((position.x + position.y) % 2) as 0 | 1)
+    // Aether Citadel: la casilla ES una losa de roca tallada, opaca y a ras
+    // de la plaza; la junta oscura entre losas es la piedra del GLB que asoma.
+    const slab = slabTexture(((position.x * 3 + position.y * 5) % 4) as 0 | 1 | 2 | 3)
     const tint = SLAB_TINTS[(position.x * 7 + position.y * 13) % 3]!
     const color = valid ? (hovered ? '#ffe9a8' : '#8fd4ff') : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
     const emissive = valid ? '#1f6f9e' : scorched ? '#7a2c12' : hovered && !occupied ? '#4a3c22' : '#000000'
@@ -70,9 +70,11 @@ function BoardCell({ position, valid, occupied, scorched, subtle, onClick }: { p
         <boxGeometry args={[TILE_SIZE, 0.06, TILE_SIZE]} />
         <meshStandardMaterial
           map={slab}
+          bumpMap={slab}
+          bumpScale={6}
           color={color}
-          roughness={0.88}
-          metalness={0.06}
+          roughness={0.9}
+          metalness={0.05}
           emissive={emissive}
           emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : 0}
         />

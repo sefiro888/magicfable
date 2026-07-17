@@ -6,7 +6,7 @@ import type { Group, Mesh, MeshStandardMaterial, Object3D, PointLight } from 'th
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
 import { withBase } from '../../utils/assets'
-import { cloudTexture, dawnSkyTexture, glowTexture, masonryTexture, portalSwirlTexture } from '../textures'
+import { cloudTexture, dawnSkyTexture, glowTexture, goldFloorInlayTexture, masonryTexture, portalSwirlTexture } from '../textures'
 import { SanctuaryScenario } from './SanctuaryScenario'
 
 const CITADEL_URL = withBase('/assets/scenarios/aether-citadel.glb')
@@ -260,6 +260,22 @@ export function AetherCitadel({ quality, reducedMotion, event }: AetherCitadelPr
     <ScenarioBoundary fallback={<SanctuaryScenario quality={quality} reducedMotion={reducedMotion} event={event} />}>
       <DawnAtmosphere quality={quality} />
       <CitadelModel quality={quality} />
+      {/* Incrustación dorada grabada en el mandil de la plaza, alrededor del
+          tablero: sustituye a los antiguos aros flotantes. */}
+      <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[11.6, 11.6]} />
+        <meshStandardMaterial
+          map={goldFloorInlayTexture()}
+          transparent
+          depthWrite={false}
+          roughness={0.35}
+          metalness={0.85}
+          emissive="#8a6420"
+          emissiveIntensity={0.55}
+          polygonOffset
+          polygonOffsetFactor={-1}
+        />
+      </mesh>
       <PortalVortex reducedMotion={reducedMotion} flare={flare} />
       <CrystalGlow position={[RIGHT_CRYSTAL.x, RIGHT_CRYSTAL.y, RIGHT_CRYSTAL.z]} scale={3.4} flare={flare} reducedMotion={reducedMotion} />
       <CrystalGlow position={[WEST_CRYSTAL.x, WEST_CRYSTAL.y, WEST_CRYSTAL.z]} scale={2.6} flare={flare} reducedMotion={reducedMotion} />

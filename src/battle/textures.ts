@@ -365,12 +365,45 @@ export const nebulaTexture = (): CanvasTexture => {
   return finishTexture('nebula', canvas);
 };
 
+/** Traza una grieta ramificada con sombra y brillo desplazado (relieve). */
+const carveCrack = (
+  context: CanvasRenderingContext2D,
+  random: () => number,
+  startX: number,
+  startY: number,
+  segments: number,
+) => {
+  const points: [number, number][] = [[startX, startY]];
+  let x = startX;
+  let y = startY;
+  for (let segment = 0; segment < segments; segment += 1) {
+    x += (random() - 0.5) * 52;
+    y += 16 + random() * 30;
+    points.push([x, y]);
+  }
+  // Luz desplazada (labio superior de la grieta) y surco oscuro encima.
+  for (const [offset, style, width] of [
+    [1.8, 'rgba(235, 232, 240, 0.5)', 2.2],
+    [0, 'rgba(28, 26, 36, 0.85)', 2.6],
+  ] as const) {
+    context.strokeStyle = style;
+    context.lineWidth = width;
+    context.beginPath();
+    points.forEach(([px, py], index) => {
+      if (index === 0) context.moveTo(px + offset, py + offset);
+      else context.lineTo(px + offset, py + offset);
+    });
+    context.stroke();
+  }
+};
+
 /**
- * Losa individual de pavimento para las casillas del tablero: piedra clara
- * con grano fino, borde biselado oscurecido y alguna grieta. Dos variantes
- * cacheadas para romper la repetición.
+ * Losa de pavimento tallada para las casillas del tablero: roca con
+ * estratos, cincelado profundo, grietas con relieve, esquinas melladas y
+ * runas grabadas en algunas variantes. Cuatro variantes cacheadas.
+ * Sirve como map y como bumpMap (el contraste alto alimenta el relieve).
  */
-export const slabTexture = (variant: 0 | 1 = 0): CanvasTexture => {
+export const slabTexture = (variant: 0 | 1 | 2 | 3 = 0): CanvasTexture => {
   const key = `slab-${variant}`;
   const cached = cache.get(key);
   if (cached) return cached;
@@ -378,57 +411,185 @@ export const slabTexture = (variant: 0 | 1 = 0): CanvasTexture => {
   const [canvas, context] = makeCanvas(size);
   const random = seededRandom(0x534c4142 + variant * 977);
 
+  // Base de roca gris azulada con manchas minerales (sin bandas de madera).
   const base = context.createLinearGradient(0, 0, size, size);
-  base.addColorStop(0, variant === 0 ? '#a9a7ab' : '#a2a1a8');
-  base.addColorStop(0.5, variant === 0 ? '#98979e' : '#9c9aa0');
-  base.addColorStop(1, variant === 0 ? '#8e8d95' : '#93929a');
+  base.addColorStop(0, '#a6a8b4');
+  base.addColorStop(0.5, '#90929f');
+  base.addColorStop(1, '#7f8290');
   context.fillStyle = base;
   context.fillRect(0, 0, size, size);
+  for (let patch = 0; patch < 8; patch += 1) {
+    const px = random() * size;
+    const py = random() * size;
+    const radius = 30 + random() * 70;
+    const dark = random() > 0.45;
+    const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+    gradient.addColorStop(0, dark
+      ? `rgba(62, 62, 76, ${0.10 + random() * 0.1})`
+      : `rgba(214, 214, 224, ${0.08 + random() * 0.09})`);
+    gradient.addColorStop(1, 'rgba(120, 120, 136, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+  }
 
-  // Grano mineral fino.
-  for (let grain = 0; grain < 1500; grain += 1) {
-    const luminance = 110 + random() * 90;
-    context.fillStyle = `rgba(${luminance}, ${luminance}, ${luminance + 6}, ${0.05 + random() * 0.1})`;
-    context.fillRect(random() * size, random() * size, 1 + random() * 1.8, 1 + random() * 1.8);
+  // Grano mineral grueso.
+  for (let grain = 0; grain < 2400; grain += 1) {
+    const luminance = 96 + random() * 110;
+    context.fillStyle = `rgba(${luminance}, ${luminance - 2}, ${luminance + 8}, ${0.06 + random() * 0.14})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 2.6, 1 + random() * 2.2);
   }
-  // Vetas suaves diagonales.
-  context.strokeStyle = 'rgba(120, 118, 128, 0.18)';
-  context.lineWidth = 1.4;
-  for (let vein = 0; vein < 7; vein += 1) {
-    context.beginPath();
-    let x = random() * size;
-    let y = 0;
-    context.moveTo(x, y);
-    while (y < size) {
-      x += (random() - 0.5) * 26;
-      y += 18 + random() * 22;
-      context.lineTo(x, y);
+
+  // Marcas de cincel: trazos cortos paralelos en dos zonas.
+  for (let zone = 0; zone < 2; zone += 1) {
+    const zx = random() * size * 0.6;
+    const zy = random() * size * 0.6;
+    const angle = random() * Math.PI;
+    for (let mark = 0; mark < 7; mark += 1) {
+      const mx = zx + Math.cos(angle + 1.57) * mark * 9;
+      const my = zy + Math.sin(angle + 1.57) * mark * 9;
+      context.strokeStyle = 'rgba(40, 38, 50, 0.4)';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(mx, my);
+      context.lineTo(mx + Math.cos(angle) * (14 + random() * 12), my + Math.sin(angle) * (14 + random() * 12));
+      context.stroke();
+      context.strokeStyle = 'rgba(226, 224, 232, 0.3)';
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(mx + 1.4, my + 1.4);
+      context.lineTo(mx + 1.4 + Math.cos(angle) * 12, my + 1.4 + Math.sin(angle) * 12);
+      context.stroke();
     }
-    context.stroke();
   }
-  // Alguna grieta discreta.
+
+  // Una grieta ramificada con relieve (dos solo en la variante 1).
+  carveCrack(context, random, size * (0.2 + random() * 0.45), size * 0.1, 3 + Math.floor(random() * 2));
   if (variant === 1) {
-    context.strokeStyle = 'rgba(58, 56, 66, 0.4)';
-    context.lineWidth = 1.6;
+    carveCrack(context, random, size * (0.55 + random() * 0.3), size * 0.45, 3);
+  }
+
+  // Runa grabada discreta solo en una de las cuatro variantes.
+  if (variant === 3) {
+    context.strokeStyle = 'rgba(40, 38, 52, 0.5)';
+    context.lineWidth = 3;
+    context.shadowColor = 'rgba(238, 235, 244, 0.35)';
+    context.shadowBlur = 0;
+    context.shadowOffsetX = 1.6;
+    context.shadowOffsetY = 1.6;
+    drawGlyph(context, size / 2, size / 2, 40, random);
     context.beginPath();
-    let x = size * 0.2;
-    let y = size * 0.85;
-    context.moveTo(x, y);
-    for (let segment = 0; segment < 5; segment += 1) {
-      x += 14 + random() * 22;
-      y -= 8 + random() * 18;
-      context.lineTo(x, y);
+    context.arc(size / 2, size / 2, 52, 0, Math.PI * 2);
+    context.stroke();
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
+  }
+
+  // Esquinas melladas (desconchones triangulares oscuros).
+  for (const [cx, cy] of [[0, 0], [size, 0], [0, size], [size, size]] as const) {
+    if (random() > 0.55) continue;
+    const reach = 14 + random() * 26;
+    context.fillStyle = 'rgba(46, 44, 56, 0.55)';
+    context.beginPath();
+    context.moveTo(cx, cy);
+    context.lineTo(cx + (cx === 0 ? reach : -reach), cy);
+    context.lineTo(cx, cy + (cy === 0 ? reach : -reach));
+    context.closePath();
+    context.fill();
+  }
+
+  // Bisel perimetral profundo: surco oscuro + labio iluminado.
+  context.strokeStyle = 'rgba(26, 25, 34, 0.72)';
+  context.lineWidth = 10;
+  context.strokeRect(0, 0, size, size);
+  context.strokeStyle = 'rgba(238, 235, 244, 0.34)';
+  context.lineWidth = 3;
+  context.strokeRect(8, 8, size - 16, size - 16);
+  return finishTexture(key, canvas);
+};
+
+/**
+ * Incrustación dorada grabada en el suelo de la plaza: anillos concéntricos
+ * con filigrana, corona de runas y rayos cardinales. Fondo transparente;
+ * se apoya plano sobre la piedra (nada de aros flotantes).
+ */
+export const goldFloorInlayTexture = (): CanvasTexture => {
+  const cached = cache.get('gold-floor-inlay');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x494e4c59);
+  const center = size / 2;
+  context.clearRect(0, 0, size, size);
+
+  const gold = (alpha: number) => `rgba(226, 182, 96, ${alpha})`;
+  const goldDark = (alpha: number) => `rgba(146, 108, 42, ${alpha})`;
+
+  const ring = (radius: number, width: number, alpha = 0.95) => {
+    // Sombra de grabado bajo el oro y trazo dorado encima.
+    context.strokeStyle = goldDark(alpha * 0.9);
+    context.lineWidth = width + 3;
+    context.beginPath();
+    context.arc(center, center + 1.5, radius, 0, Math.PI * 2);
+    context.stroke();
+    context.strokeStyle = gold(alpha);
+    context.lineWidth = width;
+    context.beginPath();
+    context.arc(center, center, radius, 0, Math.PI * 2);
+    context.stroke();
+  };
+
+  // Banda principal (vive en el mandil de la plaza, alrededor del tablero).
+  ring(size * 0.455, 7);
+  ring(size * 0.418, 3);
+  ring(size * 0.372, 5);
+  ring(size * 0.345, 2, 0.8);
+
+  // Corona de runas entre las bandas.
+  context.strokeStyle = gold(0.9);
+  context.lineWidth = 3;
+  const glyphs = 28;
+  for (let index = 0; index < glyphs; index += 1) {
+    if (index % 7 === 3) continue; // runas quebradas: huecos deliberados
+    const angle = (index / glyphs) * Math.PI * 2;
+    drawGlyph(context, center + Math.cos(angle) * size * 0.394, center + Math.sin(angle) * size * 0.394, 20, random);
+  }
+
+  // Rayos cardinales y diagonales con remate de rombo.
+  for (let ray = 0; ray < 8; ray += 1) {
+    const angle = (ray / 8) * Math.PI * 2;
+    const inner = size * 0.345;
+    const outer = size * 0.47;
+    context.strokeStyle = gold(ray % 2 === 0 ? 0.95 : 0.6);
+    context.lineWidth = ray % 2 === 0 ? 5 : 2.5;
+    context.beginPath();
+    context.moveTo(center + Math.cos(angle) * inner, center + Math.sin(angle) * inner);
+    context.lineTo(center + Math.cos(angle) * outer, center + Math.sin(angle) * outer);
+    context.stroke();
+    if (ray % 2 === 0) {
+      const dx = center + Math.cos(angle) * (outer + 8);
+      const dy = center + Math.sin(angle) * (outer + 8);
+      context.fillStyle = gold(0.95);
+      context.save();
+      context.translate(dx, dy);
+      context.rotate(angle + Math.PI / 4);
+      context.fillRect(-7, -7, 14, 14);
+      context.restore();
     }
+  }
+
+  // Filigrana de arcos pequeños en la banda exterior.
+  context.strokeStyle = gold(0.55);
+  context.lineWidth = 2;
+  const petals = 56;
+  for (let index = 0; index < petals; index += 1) {
+    const angle = (index / petals) * Math.PI * 2;
+    const px = center + Math.cos(angle) * size * 0.437;
+    const py = center + Math.sin(angle) * size * 0.437;
+    context.beginPath();
+    context.arc(px, py, 9, angle + Math.PI * 0.25, angle + Math.PI * 1.2);
     context.stroke();
   }
-  // Borde biselado: oscurecido perimetral suave.
-  context.strokeStyle = 'rgba(44, 44, 54, 0.38)';
-  context.lineWidth = 7;
-  context.strokeRect(0, 0, size, size);
-  context.strokeStyle = 'rgba(230, 228, 235, 0.18)';
-  context.lineWidth = 3;
-  context.strokeRect(5, 5, size - 10, size - 10);
-  return finishTexture(key, canvas);
+  return finishTexture('gold-floor-inlay', canvas);
 };
 
 /**
