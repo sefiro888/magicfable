@@ -1,8 +1,8 @@
-import { Html, OrbitControls, useTexture } from '@react-three/drei'
+import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { MathUtils, Vector3 } from 'three'
-import type { Group, Mesh, MeshStandardMaterial } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
@@ -30,6 +30,8 @@ interface Board3DProps {
   selectedPieceId?: string
   validCells: readonly Position[]
   validTargets: readonly string[]
+  /** Unidades propias con acciones disponibles: reciben el anillo de listas. */
+  readyPieceIds: ReadonlySet<string>
   onCell: (position: Position) => void
   onPiece: (pieceId: string) => void
   onNexus: (playerId: PlayerId) => void
@@ -40,9 +42,15 @@ interface Board3DProps {
   activeEvent?: AnimationEvent
 }
 
-const isSameCell = (a: Position, b: Position) => a.x === b.x && a.y === b.y
 const boardX = gridToWorldX
 const boardZ = gridToWorldZ
+
+/** Posiciones de las 64 casillas, estables entre renders para memoizar celdas. */
+const CELL_POSITIONS: readonly Position[] = Array.from({ length: BOARD_CELL_COUNT }, (_, index) => ({
+  x: index % BOARD_SIZE,
+  y: Math.floor(index / BOARD_SIZE),
+}))
+const cellKey = (position: Position) => `${position.x},${position.y}`
 
 /** Las cartas se diseñaron para un paso de casilla de 1.18; se reescalan al actual. */
 const CARD_SCALE = CELL_SIZE / 1.18
@@ -50,8 +58,15 @@ const CARD_SCALE = CELL_SIZE / 1.18
 /** Tinte determinista por casilla para romper la repetición del pavimento. */
 const SLAB_TINTS = ['#ffffff', '#f1efe9', '#e8e9f1'] as const
 
-function BoardCell({ position, valid, occupied, scorched, subtle, onClick }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; onClick: () => void }) {
+/**
+ * Casilla del tablero. Memoizada: con los conjuntos precalculados y el handler
+ * estable solo se re-renderiza cuando cambia su propio estado (válida,
+ * ocupada, abrasada), no en cada evento visual de la partida.
+ */
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, onCell }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; onCell: (position: Position) => void }) {
   const [hovered, setHovered] = useState(false)
+  useCursor(hovered && valid)
+  const onClick = () => onCell(position)
   if (subtle) {
     // Aether Citadel: la casilla ES una losa de roca tallada, opaca y a ras
     // de la plaza; la junta oscura entre losas es la piedra del GLB que asoma.
@@ -101,14 +116,21 @@ function BoardCell({ position, valid, occupied, scorched, subtle, onClick }: { p
       />
     </mesh>
   )
-}
+})
 
-function BoardCard({ piece, selected, targetable, active, onClick, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; active: boolean; onClick: () => void; reducedMotion: boolean }) {
+/**
+ * Carta física sobre el tablero. Memoizada: el deslizamiento y los pulsos
+ * viven en useFrame, así que el re-render solo hace falta cuando cambian
+ * la pieza o sus marcas (selección, objetivo, disponibilidad).
+ */
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, onPiece, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; onPiece: (pieceId: string) => void; reducedMotion: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
   const frame = useRef<Mesh>(null)
+  const readyRing = useRef<Mesh>(null)
   const [hovered, setHovered] = useState(false)
+  useCursor(hovered)
   const target = useMemo(() => ({ x: boardX(piece.position.x), z: boardZ(piece.position.y) }), [piece.position.x, piece.position.y])
   const frozen = piece.statuses.some((status) => status.kind === 'frozen')
   const spent = active && piece.attackedThisTurn
@@ -127,8 +149,13 @@ function BoardCard({ piece, selected, targetable, active, onClick, reducedMotion
       const material = frame.current.material as MeshStandardMaterial
       if (targetable) material.emissiveIntensity = 0.55 + Math.sin(clock.elapsedTime * 5.2) * 0.28
     }
+    if (readyRing.current) {
+      const material = readyRing.current.material as MeshBasicMaterial
+      material.opacity = reducedMotion ? 0.32 : 0.24 + (Math.sin(clock.elapsedTime * 2.1) + 1) * 0.09
+    }
   })
   if (!card) return null
+  const onClick = () => onPiece(piece.instanceId)
   const maxHealth = card.health ?? card.resistance ?? 1
   const damaged = piece.currentHealth < maxHealth
   const frameColor = card.faction === 'fury' ? '#5a2116' : '#173858'
@@ -169,6 +196,12 @@ function BoardCard({ piece, selected, targetable, active, onClick, reducedMotion
             <meshBasicMaterial color={glowColor} transparent opacity={0.85} depthWrite={false} />
           </mesh>
         )}
+        {ready && !selected && (
+          <mesh ref={readyRing} position={[0, -0.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.56, 0.63, 36]} />
+            <meshBasicMaterial color="#efe3bd" transparent opacity={0.3} depthWrite={false} />
+          </mesh>
+        )}
       </group>
       <Html center position={[0, 0.15, 0]} distanceFactor={8.6} className={styles.cardLabel}>
         <div className={styles.cardName} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
@@ -181,11 +214,13 @@ function BoardCard({ piece, selected, targetable, active, onClick, reducedMotion
       </Html>
     </group>
   )
-}
+})
 
 function Nexus({ playerId, health, targetable, onClick }: { playerId: PlayerId; health: number; targetable: boolean; onClick: () => void }) {
   const group = useRef<Group>(null)
   const crystal = useRef<Mesh>(null)
+  const [hovered, setHovered] = useState(false)
+  useCursor(hovered && targetable)
   useFrame(({ clock }) => {
     if (group.current) group.current.rotation.y = clock.elapsedTime * (playerId === 'player' ? 0.18 : -0.18)
     if (crystal.current) {
@@ -202,7 +237,13 @@ function Nexus({ playerId, health, targetable, onClick }: { playerId: PlayerId; 
         <cylinderGeometry args={[0.72, 0.9, 0.34, 8]} />
         <meshStandardMaterial color="#1a1f2e" roughness={0.85} metalness={0.1} emissive="#0c101c" emissiveIntensity={0.5} />
       </mesh>
-      <group ref={group} position={[0, 0.62, 0]} onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}>
+      <group
+        ref={group}
+        position={[0, 0.62, 0]}
+        onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+      >
         <mesh ref={crystal} castShadow>
           <octahedronGeometry args={[0.46, 1]} />
           <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.25} roughness={0.18} metalness={0.28} />
@@ -267,7 +308,15 @@ function LoadingStage() {
 }
 
 function Scene(props: Board3DProps) {
-  const scorchedCells = props.state.tileEffects.filter((tile) => tile.kind === 'scorched')
+  // Conjuntos O(1) precalculados una vez por cambio de estado: evitan el
+  // barrido .some() por cada una de las 64 casillas en cada render.
+  const validSet = useMemo(() => new Set(props.validCells.map(cellKey)), [props.validCells])
+  const occupiedSet = useMemo(() => new Set(props.state.board.map((piece) => cellKey(piece.position))), [props.state.board])
+  const scorchedSet = useMemo(
+    () => new Set(props.state.tileEffects.filter((tile) => tile.kind === 'scorched').map((tile) => cellKey(tile.position))),
+    [props.state.tileEffects],
+  )
+  const targetSet = useMemo(() => new Set(props.validTargets), [props.validTargets])
   const subtleCells = props.scenario === 'aether-citadel'
   return (
     <>
@@ -278,17 +327,17 @@ function Scene(props: Board3DProps) {
           <SanctuaryScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         )}
       </Suspense>
-      {Array.from({ length: BOARD_CELL_COUNT }, (_, index) => {
-        const position = { x: index % BOARD_SIZE, y: Math.floor(index / BOARD_SIZE) }
+      {CELL_POSITIONS.map((position) => {
+        const key = cellKey(position)
         return (
           <BoardCell
-            key={index}
+            key={key}
             position={position}
-            valid={props.validCells.some((cell) => isSameCell(cell, position))}
-            occupied={props.state.board.some((piece) => isSameCell(piece.position, position))}
-            scorched={scorchedCells.some((tile) => isSameCell(tile.position, position))}
+            valid={validSet.has(key)}
+            occupied={occupiedSet.has(key)}
+            scorched={scorchedSet.has(key)}
             subtle={subtleCells}
-            onClick={() => props.onCell(position)}
+            onCell={props.onCell}
           />
         )
       })}
@@ -298,9 +347,10 @@ function Scene(props: Board3DProps) {
             key={piece.instanceId}
             piece={piece}
             selected={piece.instanceId === props.selectedPieceId}
-            targetable={props.validTargets.includes(piece.instanceId)}
+            targetable={targetSet.has(piece.instanceId)}
+            ready={props.readyPieceIds.has(piece.instanceId)}
             active={piece.owner === props.state.activePlayer}
-            onClick={() => props.onPiece(piece.instanceId)}
+            onPiece={props.onPiece}
             reducedMotion={props.reducedMotion}
           />
         ))}

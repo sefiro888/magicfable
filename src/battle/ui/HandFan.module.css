@@ -1,0 +1,30 @@
+.hand { height: 100%; min-width: 0; position: relative; display: flex; justify-content: center; align-items: flex-start; padding: 4px 12px 0; overflow: visible; }
+.fanCard {
+  flex: 0 0 auto;
+  margin: 0 var(--fan-overlap, -34px);
+  transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 46px));
+  transform-origin: 50% 128%;
+  transition: transform 0.22s cubic-bezier(0.25, 0.8, 0.35, 1), filter 0.2s ease;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.5));
+  will-change: transform;
+}
+/* El pequeño retraso al entrar estabiliza el abanico cuando el ratón lo barre. */
+.fanCard:hover, .fanCard:focus-within {
+  transform: rotate(0deg) translateY(-34px) scale(1.07);
+  transition-delay: 0.04s;
+  z-index: 60 !important;
+}
+.fanCard[data-selected='true'] {
+  transform: rotate(0deg) translateY(-44px) scale(1.09);
+  transition-delay: 0s;
+  z-index: 61 !important;
+  filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(228, 192, 105, 0.42));
+}
+@media (prefers-reduced-motion: reduce) {
+  .fanCard { transition: none; }
+}
+@media (max-height: 820px) {
+  .fanCard { transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 58px)); }
+  .fanCard:hover, .fanCard:focus-within { transform: rotate(0deg) translateY(-28px) scale(1.05); }
+  .fanCard[data-selected='true'] { transform: rotate(0deg) translateY(-36px) scale(1.07); }
+}

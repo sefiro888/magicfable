@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   CARD_BY_ID,
@@ -20,6 +20,8 @@ import {
   type Position,
 } from '../game'
 import { Board3D } from '../battle/Board3D'
+import { HandFan } from '../battle/ui/HandFan'
+import { HistoryLog } from '../battle/ui/HistoryLog'
 import { Card } from '../components'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
@@ -78,6 +80,19 @@ const cueForEvent = (event: AnimationEvent): SoundCue | undefined => {
 }
 
 const MAX_AI_STEPS = 72
+
+/**
+ * Ritmo de reproducción por tipo de evento: la contabilidad (robos, fuentes,
+ * flujo de maná) corre más deprisa que los golpes para que los turnos fluyan
+ * sin perder la lectura de las acciones importantes.
+ */
+const EVENT_PACE: Readonly<Partial<Record<AnimationEvent['type'], number>>> = {
+  draw: 0.6,
+  resource: 0.6,
+  'mana-flow': 0.5,
+  reveal: 0.85,
+  turn: 0.9,
+}
 
 export function BattlePage() {
   const navigate = useNavigate()
@@ -138,9 +153,10 @@ export function BattlePage() {
         if (revealed) setRevealedCardId(revealed.cardId)
       }
     }, 0)
+    const pace = EVENT_PACE[currentEvent.type] ?? 1
     const duration = preferences.reducedMotion
       ? 40
-      : Math.max(80, currentEvent.durationMs / preferences.animationSpeed)
+      : Math.max(70, (currentEvent.durationMs * pace) / preferences.animationSpeed)
     const timer = window.setTimeout(() => useMatchStore.getState().finishEvent(), duration)
     return () => {
       window.clearTimeout(sideChannel)
@@ -190,9 +206,16 @@ export function BattlePage() {
         aiSkipped.current = new Set()
       }
       stateNow.setAiThinking(false)
-    }, Math.max(160, preferences.aiDelayMs / 2))
+    }, Math.max(140, preferences.aiDelayMs / 3))
     return () => window.clearTimeout(timer)
   }, [match?.activePlayer, match?.turn, match?.winner, queueBusy, scryOpen, preferences.aiDelayMs, pendingCount])
+
+  // Los avisos de acción inválida se disuelven solos para no exigir un clic.
+  useEffect(() => {
+    if (!store.message) return
+    const timer = window.setTimeout(() => useMatchStore.getState().setMessage(undefined), 3600)
+    return () => window.clearTimeout(timer)
+  }, [store.message])
 
   useEffect(() => {
     const cancel = (event: KeyboardEvent) => {
@@ -223,7 +246,10 @@ export function BattlePage() {
   const selectedCard = selectedInstance ? CARD_BY_ID[selectedInstance.cardId] : undefined
   const selectedPiece = match?.board.find((piece) => piece.instanceId === store.selectedPieceId)
   const selectedBoardCard = selectedPiece ? CARD_BY_ID[selectedPiece.cardId] : undefined
-  const moves = match && selectedPiece ? getValidMoves(match, selectedPiece.instanceId) : []
+  const moves = useMemo(
+    () => (match && selectedPiece ? getValidMoves(match, selectedPiece.instanceId) : []),
+    [match, selectedPiece],
+  )
   const attacks = useMemo(
     () => (match && selectedPiece
       ? getValidAttacks(match, selectedPiece.instanceId)
@@ -264,17 +290,35 @@ export function BattlePage() {
     return attacks.canAttackNexus && !selectedCard ? [...base, 'ai-nexus'] : base
   }, [selectedCard, spellTargets, attacks])
 
-  if (!match || !player || !ai) return <div className={styles.battle} />
+  // Unidades propias que aún pueden mover o atacar: reciben un anillo de
+  // disponibilidad en el tablero. Se recalcula solo cuando cambia la partida.
+  const readyPieceIds = useMemo(() => {
+    const ready = new Set<string>()
+    if (!match || match.activePlayer !== 'player' || match.winner) return ready
+    for (const piece of match.board) {
+      if (piece.owner !== 'player') continue
+      if (CARD_BY_ID[piece.cardId]?.type !== 'unit') continue
+      if (getValidMoves(match, piece.instanceId).length > 0) {
+        ready.add(piece.instanceId)
+        continue
+      }
+      const options = getValidAttacks(match, piece.instanceId)
+      if (options.pieceIds.length > 0 || options.canAttackNexus) ready.add(piece.instanceId)
+    }
+    return ready
+  }, [match])
 
-  const doAction = (action: GameAction) => store.dispatch(action)
-  const finishSelection = () => { store.selectHand(undefined); store.selectPiece(undefined) }
+  // Handlers estables (useCallback): permiten memoizar las celdas y cartas del
+  // tablero 3D para que la reproducción de eventos no re-renderice el canvas.
+  const doAction = useCallback((action: GameAction) => useMatchStore.getState().dispatch(action), [])
+  const finishSelection = useCallback(() => {
+    const state = useMatchStore.getState()
+    state.selectHand(undefined)
+    state.selectPiece(undefined)
+  }, [])
 
-  const playSelectedWithoutTarget = () => {
-    if (!selectedInstance || !selectedCard) return
-    if (doAction({ type: 'play-card', playerId: 'player', cardInstanceId: selectedInstance.instanceId, target: { kind: 'none' } })) finishSelection()
-  }
-
-  const onHandSelect = (instanceId: string) => {
+  const onHandSelect = useCallback((instanceId: string) => {
+    if (!match || !player) return
     if (match.activePlayer !== 'player' || match.winner || queueBusy) return
     const instance = player.hand.find((candidate) => candidate.instanceId === instanceId)
     const card = instance ? CARD_BY_ID[instance.cardId] : undefined
@@ -283,10 +327,12 @@ export function BattlePage() {
       if (doAction({ type: 'play-resource', playerId: 'player', cardInstanceId: instanceId })) finishSelection()
       return
     }
-    store.selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
-  }
+    useMatchStore.getState().selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
+  }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection])
 
-  const onCell = (position: Position) => {
+  const inspectCard = useCallback((cardId?: string) => useMatchStore.getState().inspect(cardId), [])
+
+  const onCell = useCallback((position: Position) => {
     if (selectedInstance && selectedCard && isBoardCard(selectedCard)) {
       if (doAction({ type: 'play-card', playerId: 'player', cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' } })) finishSelection()
       return
@@ -294,9 +340,10 @@ export function BattlePage() {
     if (selectedPiece && moves.some((cell) => cell.x === position.x && cell.y === position.y)) {
       if (doAction({ type: 'move', playerId: 'player', pieceId: selectedPiece.instanceId, to: position })) finishSelection()
     }
-  }
+  }, [selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection])
 
-  const onPiece = (pieceId: string) => {
+  const onPiece = useCallback((pieceId: string) => {
+    if (!match) return
     const piece = match.board.find((candidate) => candidate.instanceId === pieceId)
     if (!piece || match.activePlayer !== 'player') return
     if (selectedInstance && selectedCard && !isBoardCard(selectedCard)) {
@@ -307,18 +354,26 @@ export function BattlePage() {
       if (doAction({ type: 'attack-piece', playerId: 'player', attackerId: selectedPiece.instanceId, defenderId: pieceId })) finishSelection()
       return
     }
-    if (piece.owner === 'player') store.selectPiece(store.selectedPieceId === pieceId ? undefined : pieceId)
-    else store.inspect(piece.cardId)
-  }
+    const state = useMatchStore.getState()
+    if (piece.owner === 'player') state.selectPiece(state.selectedPieceId === pieceId ? undefined : pieceId)
+    else state.inspect(piece.cardId)
+  }, [match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection])
 
-  const onNexus = (playerId: PlayerId) => {
+  const onNexus = useCallback((playerId: PlayerId) => {
     if (playerId === 'ai' && selectedPiece && attacks.canAttackNexus) {
       if (doAction({ type: 'attack-nexus', playerId: 'player', attackerId: selectedPiece.instanceId })) finishSelection()
     }
-  }
+  }, [selectedPiece, attacks, doAction, finishSelection])
 
-  const endTurn = () => {
+  const endTurn = useCallback(() => {
     if (doAction({ type: 'end-turn', playerId: 'player' })) finishSelection()
+  }, [doAction, finishSelection])
+
+  if (!match || !player || !ai) return <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'} />
+
+  const playSelectedWithoutTarget = () => {
+    if (!selectedInstance || !selectedCard) return
+    if (doAction({ type: 'play-card', playerId: 'player', cardInstanceId: selectedInstance.instanceId, target: { kind: 'none' } })) finishSelection()
   }
 
   const repeat = () => {
@@ -366,12 +421,55 @@ export function BattlePage() {
 
   const activeInfo = selectedCard ?? selectedBoardCard
   const canCastDirectly = selectedCard && !isBoardCard(selectedCard) && !requiresPieceTarget(selectedCard)
-  const handCount = player.hand.length
   const revealedCard = revealedCardId ? CARD_BY_ID[revealedCardId] : undefined
-  const playerFactionEssence = ESSENCE_LABELS[commander?.faction ?? 'fury'] ?? 'Esencia'
+
+  /** Estado visual del botón de turno: listo, resolviendo, turno rival o fin. */
+  const turnState = match.winner ? 'over' : match.activePlayer !== 'player' ? 'enemy' : queueBusy ? 'busy' : 'ready'
+
+  /** Línea compacta de estadísticas de la carta o unidad seleccionada. */
+  const contextStats = (() => {
+    const parts: string[] = []
+    if (selectedPiece && selectedBoardCard) {
+      if (selectedBoardCard.attack !== undefined) parts.push(`ATQ ${Math.max(0, selectedBoardCard.attack + selectedPiece.attackModifier)}`)
+      parts.push(`VID ${selectedPiece.currentHealth}`)
+      if (selectedBoardCard.range !== undefined) parts.push(`ALC ${selectedBoardCard.range}`)
+      if (selectedBoardCard.movement !== undefined) parts.push(`MOV ${selectedBoardCard.movement}`)
+    } else if (selectedCard) {
+      if (selectedCard.attack !== undefined) parts.push(`ATQ ${selectedCard.attack}`)
+      if (selectedCard.health !== undefined) parts.push(`VID ${selectedCard.health}`)
+      if (selectedCard.resistance !== undefined) parts.push(`RES ${selectedCard.resistance}`)
+      if (selectedCard.range !== undefined) parts.push(`ALC ${selectedCard.range}`)
+      if (selectedCard.movement !== undefined) parts.push(`MOV ${selectedCard.movement}`)
+    }
+    return parts.length > 0 ? parts.join(' · ') : undefined
+  })()
+
+  /** Guía inmediata: qué puede hacer el jugador con la selección actual. */
+  const actionHint = (() => {
+    if (match.winner) return undefined
+    if (match.activePlayer !== 'player') return 'Turno rival: observa sus movimientos.'
+    if (selectedCard) {
+      if (payment && !payment.payable) return 'No tienes Esencia suficiente para esta carta.'
+      if (isBoardCard(selectedCard)) return 'Elige una casilla iluminada en azul para desplegar.'
+      if (requiresPieceTarget(selectedCard)) return 'Selecciona un objetivo resaltado en dorado.'
+      return 'Pulsa «Resolver carta» para lanzarla.'
+    }
+    if (selectedPiece) {
+      const frozen = selectedPiece.statuses.some((status) => status.kind === 'frozen')
+      if (frozen) return 'Unidad congelada: no puede actuar este turno.'
+      const canMove = moves.length > 0
+      const canAttack = attacks.pieceIds.length > 0 || attacks.canAttackNexus
+      if (canMove && canAttack) return 'Casillas azules: mover · Objetivos dorados: atacar.'
+      if (canMove) return 'Elige una casilla azul para mover.'
+      if (canAttack) return 'Elige un objetivo dorado para atacar.'
+      if (selectedPiece.movedThisTurn || selectedPiece.attackedThisTurn) return 'Esta unidad ya ha agotado sus acciones este turno.'
+      return 'Esta unidad no tiene acciones disponibles ahora mismo.'
+    }
+    return 'Selecciona una carta de tu mano o una unidad aliada.'
+  })()
 
   return (
-    <div className={styles.battle}>
+    <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
       <header className={styles.topbar}>
         <button className={styles.exit} onClick={() => navigate('/play')}>← Abandonar el Santuario</button>
         <div className={styles.turn}>
@@ -391,6 +489,7 @@ export function BattlePage() {
             selectedPieceId={store.selectedPieceId}
             validCells={validCells}
             validTargets={boardTargets}
+            readyPieceIds={readyPieceIds}
             onCell={onCell}
             onPiece={onPiece}
             onNexus={onNexus}
@@ -400,17 +499,22 @@ export function BattlePage() {
             activeEvent={currentEvent}
           />
           {banner && <div className={styles.turnBanner} role="status">{banner}</div>}
-          {queueBusy && pendingCount > 2 && (
+          {queueBusy && pendingCount >= 2 && (
             <button className={styles.skipQueue} onClick={() => store.skipAnimations()}>
               Saltar animaciones ({pendingCount})
             </button>
           )}
           <div className={styles.essencePill} aria-label={`Esencia disponible: ${mana.available} de ${mana.total}`}>
             <span className={styles.essenceSigil} aria-hidden="true">◆</span>
-            <strong>{mana.available} / {mana.total}</strong>
+            <strong key={`${mana.available}/${mana.total}`} className={styles.essenceCount}>{mana.available} / {mana.total}</strong>
             <span className={styles.essencePips} aria-hidden="true">
-              {player.resources.slice(0, 10).map((resource) => (
-                <span key={resource.instanceId} data-faction={resource.faction} data-exhausted={resource.exhausted} />
+              {player.resources.slice(0, 12).map((resource) => (
+                <span
+                  key={resource.instanceId}
+                  data-faction={resource.faction}
+                  data-exhausted={resource.exhausted}
+                  data-spend={(payment?.payable && payment.resourceIds.includes(resource.instanceId)) || undefined}
+                />
               ))}
             </span>
           </div>
@@ -422,98 +526,62 @@ export function BattlePage() {
               <img className={styles.portrait} src={commander ? withBase(commander.art.webp) : undefined} alt="" />
               <div><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
             </div>
-            <div className={styles.lifeRow}><span>Vida del Nexo</span><span className={styles.life}>♥ {player.nexusHealth}</span></div>
             {player.unitDiscountPending && <p className={styles.commanderBoon}>Pasiva activa: tu siguiente unidad cuesta 1 menos.</p>}
           </section>
           <section className={styles.panelSection}>
-            <span className={styles.panelLabel}>Reserva de Esencia</span>
-            <div className={styles.manaHeader}>
-              <strong>{mana.available} / {mana.total}</strong>
-              <small>{mana.exhausted} agotadas</small>
+            <div className={styles.lifeRow}>
+              <span>Vida del Nexo</span>
+              <span key={player.nexusHealth} className={styles.life}>♥ {player.nexusHealth}</span>
             </div>
-            <div className={styles.crystals}>
-              {player.resources.map((resource) => (
-                <span
-                  key={resource.instanceId}
-                  className={styles.crystal}
-                  data-faction={resource.faction}
-                  data-exhausted={resource.exhausted}
-                  data-spend={payment?.resourceIds.includes(resource.instanceId)}
-                  title={resource.exhausted ? `${ESSENCE_LABELS[resource.faction]} agotada` : `${ESSENCE_LABELS[resource.faction]} disponible`}
-                />
-              ))}
-            </div>
-          </section>
-          <section className={styles.panelSection}>
             <div className={styles.deckCounters}>
-              <div className={styles.counter}><strong>{player.deck.length}</strong><span>Mazo</span></div>
-              <div className={styles.counter}><strong>{player.discard.length}</strong><span>Descarte</span></div>
+              <div className={styles.counter}><strong key={player.deck.length}>{player.deck.length}</strong><span>Mazo</span></div>
+              <div className={styles.counter}><strong key={player.discard.length}>{player.discard.length}</strong><span>Descarte</span></div>
             </div>
+            <p className={styles.essenceNote} title={ESSENCE_LABELS[commander?.faction ?? 'fury']}>
+              Esencia: <strong>{mana.available} / {mana.total}</strong>{mana.exhausted > 0 ? ` · ${mana.exhausted} agotadas` : ''}
+            </p>
           </section>
         </aside>
         <aside className={styles.rightPanel}>
           <section className={`${styles.panelSection} ${styles.context}`}>
-            <span className={styles.panelLabel}>Contexto</span>
+            <span className={styles.panelLabel}>{activeInfo ? 'Selección' : 'Contexto'}</span>
             {activeInfo ? (
               <>
                 <h3>{activeInfo.name}</h3>
-                <p>{activeInfo.rules}</p>
-                {selectedCard && !payment?.payable && <p className={styles.warning}>Falta Esencia para pagar esta carta.</p>}
-                {canCastDirectly && <button className={styles.cast} onClick={playSelectedWithoutTarget}>Resolver carta</button>}
+                {contextStats && <p className={styles.contextStats}>{contextStats}</p>}
+                <p className={styles.contextRules}>{activeInfo.rules}</p>
               </>
             ) : (
-              <>
-                <h3>Elige una carta</h3>
-                <p>Selecciona una carta de tu mano o una unidad aliada. El Santuario iluminará los destinos válidos.</p>
-              </>
+              <h3>Sin selección</h3>
+            )}
+            {actionHint && (
+              <p key={actionHint} className={styles.actionHint} data-warning={actionHint.startsWith('No tienes') || undefined} role="status">
+                {actionHint}
+              </p>
+            )}
+            {canCastDirectly && payment?.payable && (
+              <button className={styles.cast} onClick={playSelectedWithoutTarget}>Resolver carta</button>
             )}
           </section>
-          <section className={styles.log}>
-            <span className={styles.panelLabel}>Crónica de batalla</span>
-            <ul>{store.history.slice().reverse().map((entry, index) => <li key={`${entry}-${index}`}>{entry}</li>)}</ul>
-          </section>
-          <button className={styles.endTurn} onClick={endTurn} disabled={match.activePlayer !== 'player' || Boolean(match.winner) || queueBusy}>
-            Finalizar turno
-          </button>
+          <HistoryLog entries={store.history} />
+          <div className={styles.turnDock}>
+            <button
+              className={styles.endTurn}
+              data-state={turnState}
+              onClick={endTurn}
+              disabled={turnState !== 'ready'}
+              aria-label="Finalizar turno"
+            >
+              {turnState === 'enemy' ? 'Turno rival…' : turnState === 'busy' ? 'Resolviendo…' : turnState === 'over' ? 'Crónica concluida' : 'Finalizar turno'}
+            </button>
+          </div>
         </aside>
       </div>
 
       <footer className={styles.handBar}>
-        <div className={styles.playerNexus}>
-          <div className={styles.nexusOrb}>{player.nexusHealth}</div>
-          <div><strong>{commander?.name}</strong><small>{playerFactionEssence}</small></div>
-        </div>
-        <div className={styles.hand} aria-label="Tu mano">
-          {player.hand.map((instance, index) => {
-            const card = CARD_BY_ID[instance.cardId]
-            if (!card) return null
-            const playable = match.activePlayer === 'player' && !match.winner && (
-              card.type === 'mana'
-                ? !player.resourcePlayedThisTurn
-                : planManaPayment(player.resources, effectiveCost(match, 'player', card)).payable
-            )
-            const offset = index - (handCount - 1) / 2
-            const style = {
-              '--fan-rotation': `${offset * Math.min(4, 26 / Math.max(1, handCount))}deg`,
-              '--fan-lift': `${Math.abs(offset) * Math.abs(offset) * Math.min(5, 26 / Math.max(1, handCount))}px`,
-              zIndex: store.selectedHandId === instance.instanceId ? 30 : 10 + index,
-            } as React.CSSProperties
-            return (
-              <div key={instance.instanceId} className={styles.fanCard} style={style} data-selected={store.selectedHandId === instance.instanceId}>
-                <Card
-                  card={card}
-                  size="hand"
-                  selected={store.selectedHandId === instance.instanceId}
-                  playable={playable}
-                  onSelect={() => onHandSelect(instance.instanceId)}
-                  onInspect={() => store.inspect(card.id)}
-                />
-              </div>
-            )
-          })}
-        </div>
-        <div className={styles.hints}>
-          Clic: seleccionar/jugar<br />Clic derecho o I: inspeccionar<br />Esc: cancelar
+        <HandFan match={match} selectedHandId={store.selectedHandId} onSelect={onHandSelect} onInspect={inspectCard} />
+        <div className={styles.hints} aria-hidden="true">
+          Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar
         </div>
       </footer>
 

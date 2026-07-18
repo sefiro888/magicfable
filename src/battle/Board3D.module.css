@@ -1,19 +1,19 @@
 .viewport { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #1a1e2a, #05070d 75%); }
 .fallback { height: 100%; display: grid; place-items: center; color: var(--muted); }
 .cardLabel {
-  width: 86px;
+  width: 92px;
   pointer-events: none;
-  transform: translateY(-42px);
+  transform: translateY(-44px);
   text-align: center;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   text-shadow: 0 2px 4px #000, 0 0 5px #000;
   white-space: nowrap;
 }
 .cardName[data-frozen] { color: #bdeaff; }
 .cardName[data-spent] { color: #a9a497; }
-.cardStats { display: flex; justify-content: center; gap: 5px; margin-top: 2px; }
-.cardStats span { min-width: 19px; padding: 2px 4px; border-radius: 7px; background: rgba(5, 6, 9, 0.88); border: 1px solid rgba(255, 255, 255, 0.22); }
+.cardStats { display: flex; justify-content: center; gap: 5px; margin-top: 3px; }
+.cardStats span { min-width: 21px; padding: 2px 5px; border-radius: 7px; background: rgba(5, 6, 9, 0.92); border: 1px solid rgba(255, 255, 255, 0.26); font-size: 11px; }
 .attackStat { color: #ffca94; }
 .healthStat { color: #b8f2c8; }
 .damagedStat { color: #ff8a80; border-color: rgba(255, 110, 100, 0.55) !important; }
