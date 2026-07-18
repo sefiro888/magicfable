@@ -64,8 +64,8 @@
   position: relative;
   border: 1px solid #57503c;
   clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
-  color: #93907f;
-  background: linear-gradient(180deg, #23283a, #141827);
+  color: #6a6760;
+  background: linear-gradient(180deg, #1d2230, #0f1319);
   cursor: default;
   font-size: 11px;
   font-weight: 800;
