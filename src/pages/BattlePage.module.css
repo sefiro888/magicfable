@@ -225,18 +225,23 @@
 }
 .devPanel button:hover { border-color: #ffb066; }
 .message { position: absolute; z-index: 50; left: 50%; bottom: 171px; transform: translateX(-50%); max-width: 520px; padding: 10px 16px; border: 1px solid rgba(255,104,91,.45); color: #ffc1b9; background: rgba(64,21,21,.92); box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 11px; animation: hintIn .2s ease; }
-.inspectBackdrop, .resultBackdrop { position: absolute; z-index: 100; inset: 0; display: grid; place-items: center; background: rgba(3,4,7,.82); backdrop-filter: blur(10px); }
-.inspect { width: 720px; display: grid; grid-template-columns: 290px 1fr; gap: 25px; padding: 24px; border: 1px solid var(--line-bright); background: #11141d; box-shadow: 0 30px 90px #000; }
-.inspect img { width: 290px; height: 310px; object-fit: cover; border: 1px solid var(--line); }
-.inspect small { color: var(--gold); letter-spacing: .15em; text-transform: uppercase; }
-.inspect h2 { margin: 10px 0 4px; font-family: var(--display); font-size: 30px; font-weight: 500; }
-.inspectText { color: #d0c9bb; line-height: 1.55; }
-.flavor { padding-top: 14px; border-top: 1px solid var(--line); color: #8e8a81; font-family: var(--display); font-style: italic; line-height: 1.55; }
-.closeInspect { margin-top: 15px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.15); background: transparent; cursor: pointer; }
-.result { width: 530px; padding: 40px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; }
-.result small { color: var(--gold); font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
-.result h2 { margin: 13px 0 7px; font-family: var(--display); font-size: 43px; font-weight: 500; }
-.result > p { color: #8e8b84; }
+.inspectBackdrop, .resultBackdrop { position: absolute; z-index: 100; inset: 0; display: grid; place-items: center; background: rgba(3,4,7,.82); backdrop-filter: blur(10px); animation: backdropFadeIn .2s ease; }
+@keyframes backdropFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.inspect { width: 720px; display: grid; grid-template-columns: 290px 1fr; gap: 25px; padding: 24px; border: 2px solid var(--line-bright); background: linear-gradient(135deg, #0f1219 0%, #191d27 100%); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08); border-radius: 2px; animation: cardSlideUp .3s cubic-bezier(0.25, 0.8, 0.35, 1); }
+@keyframes cardSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.inspect img { width: 290px; height: 310px; object-fit: cover; border: 1px solid var(--line-bright); background: #17151a; }
+.inspect small { color: var(--gold-bright); letter-spacing: .15em; text-transform: uppercase; font-weight: 700; }
+.inspect h2 { margin: 10px 0 6px; font-family: var(--display); font-size: 30px; font-weight: 500; color: var(--ivory); }
+.inspect > p { color: #a39f97; font-size: 11px; }
+.inspectText { color: #e0d9c9; line-height: 1.6; font-size: 11px; }
+.flavor { padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); color: #9a9590; font-family: var(--display); font-style: italic; line-height: 1.6; font-size: 10px; }
+.closeInspect { margin-top: 18px; padding: 10px 16px; border: 1px solid var(--line-bright); color: var(--ivory); background: rgba(215, 180, 103, 0.08); cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; transition: all .2s ease; }
+.closeInspect:hover { background: rgba(215, 180, 103, 0.15); border-color: var(--gold-bright); }
+.result { width: 530px; padding: 40px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; animation: resultFadeIn .4s ease; }
+.result small { color: var(--gold-bright); font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
+.result h2 { margin: 13px 0 10px; font-family: var(--display); font-size: 48px; font-weight: 500; color: var(--ivory); }
+.result > p { color: #a39f97; font-size: 11px; line-height: 1.6; }
+@keyframes resultFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 .resultStats { display: grid; grid-template-columns: repeat(4,1fr); margin: 25px 0; border: 1px solid var(--line); }
 .resultStats div { padding: 14px 6px; border-right: 1px solid var(--line); }
 .resultStats div:last-child { border: 0; }
