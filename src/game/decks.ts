@@ -32,51 +32,6 @@ export const COMMANDERS = [
     },
     vfx: { persistentEffect: 'commander-rune-aura', impactEffect: 'commander-arcane-hit' },
   }) as CommanderDefinition,
-  CommanderDefinitionSchema.parse({
-    id: 'verdania-guardiana-raices',
-    name: 'Verdania',
-    title: 'Guardiana de las Raíces',
-    faction: 'nature',
-    nexusHealth: 25,
-    rules: 'Siempre que una unidad aliada entra en juego, gana +1 Vida si controlas una Arboleda o Fuente.',
-    flavor: 'El bosque antigua que recuerda tiempos antes de las montañas.',
-    art: {
-      webp: '/assets/cards/art/verdania-guardiana-raices.webp',
-      fallback: '/assets/cards/art/verdania-guardiana-raices.svg',
-      alt: 'Verdania rodeada de antiguos árboles y magia verdadera',
-    },
-    vfx: { persistentEffect: 'commander-nature-aura', impactEffect: 'commander-nature-hit' },
-  }) as CommanderDefinition,
-  CommanderDefinitionSchema.parse({
-    id: 'asterin-protector-luz',
-    name: 'Asterin',
-    title: 'Protector de la Luz Eterna',
-    faction: 'order',
-    nexusHealth: 25,
-    rules: 'Cuando una unidad aliada entra en juego, gana escudo preventivo 1. Tus estructuras tienen +2 Resistencia.',
-    flavor: 'Portador de la luz que juzga con justicia y protege sin error.',
-    art: {
-      webp: '/assets/cards/art/asterin-protector-luz.webp',
-      fallback: '/assets/cards/art/asterin-protector-luz.svg',
-      alt: 'Asterin con alas de luz celestial y armadura dorada',
-    },
-    vfx: { persistentEffect: 'commander-order-aura', impactEffect: 'commander-order-hit' },
-  }) as CommanderDefinition,
-  CommanderDefinitionSchema.parse({
-    id: 'malachar-reidor-sombra',
-    name: 'Malachar',
-    title: 'Reidores de la Sombra',
-    faction: 'shadow',
-    nexusHealth: 25,
-    rules: 'Tus unidades drenan 1 Vida adicional. Cuando una unidad aliada muere, robas una carta.',
-    flavor: 'Rey del vacío que sonríe mientras sus enemigos olvidan cómo vivir sin miedo.',
-    art: {
-      webp: '/assets/cards/art/malachar-reidor-sombra.webp',
-      fallback: '/assets/cards/art/malachar-reidor-sombra.svg',
-      alt: 'Malachar flotando en sombras púrpuras y neblina oscura',
-    },
-    vfx: { persistentEffect: 'commander-shadow-aura', impactEffect: 'commander-shadow-hit' },
-  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -125,58 +80,7 @@ const arcaneDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
-const natureDeck = DeckDefinitionSchema.parse({
-  id: 'sabiduria-bosque',
-  name: 'Sabiduría del Bosque',
-  faction: 'nature',
-  commanderId: 'verdania-guardiana-raices',
-  cards: [
-    { cardId: 'fuente-naturaleza', count: 20 },
-    { cardId: 'ciervo-sagrado', count: 4 },
-    { cardId: 'lobo-salvaje', count: 4 },
-    { cardId: 'oso-forestal', count: 4 },
-    { cardId: 'centauro-cazador', count: 4 },
-    { cardId: 'elfo-ancestral', count: 4 },
-    { cardId: 'arboleda-sagrada', count: 2 },
-    { cardId: 'crecimiento-salvaje', count: 4 },
-  ],
-}) as DeckDefinition;
-
-const orderDeck = DeckDefinitionSchema.parse({
-  id: 'orden-celestial',
-  name: 'Orden Celestial',
-  faction: 'order',
-  commanderId: 'asterin-protector-luz',
-  cards: [
-    { cardId: 'fuente-orden', count: 20 },
-    { cardId: 'angel-celestial', count: 4 },
-    { cardId: 'aguila-celestial', count: 4 },
-    { cardId: 'pegaso-celestial', count: 4 },
-    { cardId: 'paladin-glorioso', count: 4 },
-    { cardId: 'clerigo-luz', count: 4 },
-    { cardId: 'grifo-orden', count: 4 },
-    { cardId: 'juicio-divino', count: 2 },
-  ],
-}) as DeckDefinition;
-
-const shadowDeck = DeckDefinitionSchema.parse({
-  id: 'reidores-sombra',
-  name: 'Reidores de la Sombra',
-  faction: 'shadow',
-  commanderId: 'malachar-reidor-sombra',
-  cards: [
-    { cardId: 'fuente-sombra', count: 20 },
-    { cardId: 'murcielago-sombra', count: 4 },
-    { cardId: 'espectro-siniestro', count: 4 },
-    { cardId: 'esqueleto-guerrero', count: 4 },
-    { cardId: 'nigromante-oscuro', count: 4 },
-    { cardId: 'maldicion-sombra', count: 4 },
-    { cardId: 'vampiro-siniestro', count: 4 },
-    { cardId: 'pesadilla-mortal', count: 2 },
-  ],
-}) as DeckDefinition;
-
-export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck]) as readonly DeckDefinition[];
+export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(
   Object.fromEntries(STARTER_DECKS.map((deck) => [deck.id, deck])),

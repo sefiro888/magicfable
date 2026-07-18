@@ -62,9 +62,9 @@ describe('catálogo del Nexo', () => {
     });
   });
 
-  it('define cinco comandantes de 25 de vida con datos válidos', () => {
-    expect(COMMANDERS).toHaveLength(5);
-    expect(COMMANDERS.map((commander) => commander.nexusHealth)).toEqual([25, 25, 25, 25, 25]);
+  it('define dos comandantes de 25 de vida con datos válidos', () => {
+    expect(COMMANDERS).toHaveLength(2);
+    expect(COMMANDERS.map((commander) => commander.nexusHealth)).toEqual([25, 25]);
     for (const commander of COMMANDERS) {
       expect(CommanderDefinitionSchema.safeParse(commander).success).toBe(true);
     }
