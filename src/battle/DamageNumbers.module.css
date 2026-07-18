@@ -1,0 +1,22 @@
+.number {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 12px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  white-space: nowrap;
+  will-change: opacity;
+}
+.number[data-color='damage'] {
+  color: #ff6b5b;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(255, 80, 60, 0.6);
+}
+.number[data-color='heal'] {
+  color: #6cd79e;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(108, 215, 158, 0.5);
+}
+.number[data-color='shield'] {
+  color: #79c8ff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(121, 200, 255, 0.6);
+}

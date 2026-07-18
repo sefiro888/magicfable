@@ -7,6 +7,7 @@ import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
+import { DamageNumbers } from './DamageNumbers'
 import { EventEffects } from './EventEffects'
 import {
   CAMERA_FOV,
@@ -358,6 +359,7 @@ function Scene(props: Board3DProps) {
       <Nexus playerId="player" health={props.state.players.player.nexusHealth} targetable={false} onClick={() => props.onNexus('player')} />
       <Nexus playerId="ai" health={props.state.players.ai.nexusHealth} targetable={props.validTargets.includes('ai-nexus')} onClick={() => props.onNexus('ai')} />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
+      <DamageNumbers event={props.activeEvent} />
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <OrbitControls makeDefault enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[...CAMERA_TARGET]} />
     </>

@@ -1,6 +1,7 @@
 import { Sparkles, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { usePageVisibility } from '../usePageVisibility'
 import { AdditiveBlending, DoubleSide, MeshPhysicalMaterial, RepeatWrapping } from 'three'
 import type { Group, Mesh, MeshStandardMaterial, Object3D, PointLight } from 'three'
 import type { AnimationEvent } from '../../game'
@@ -58,8 +59,9 @@ function PortalVortex({ reducedMotion, flare }: { reducedMotion: boolean; flare:
   const outer = useRef<Mesh>(null)
   const inner = useRef<Mesh>(null)
   const light = useRef<PointLight>(null)
+  const visible = usePageVisibility()
   useFrame((_, delta) => {
-    if (!reducedMotion) {
+    if (!reducedMotion && visible.current) {
       if (outer.current) outer.current.rotation.z -= delta * 0.5
       if (inner.current) inner.current.rotation.z += delta * 0.85
     }
@@ -101,6 +103,7 @@ function CrystalGlow({ position, scale, flare, reducedMotion }: { position: read
 /** Mar de nubes al amanecer alrededor de la ciudadela. */
 function DawnClouds({ quality, reducedMotion }: { quality: GraphicsQuality; reducedMotion: boolean }) {
   const group = useRef<Group>(null)
+  const visible = usePageVisibility()
   const clouds = useMemo(
     () =>
       Array.from({ length: quality === 'high' ? 20 : 12 }, (_, index) => ({
@@ -115,7 +118,7 @@ function DawnClouds({ quality, reducedMotion }: { quality: GraphicsQuality; redu
   )
   useFrame(({ clock }) => {
     const node = group.current
-    if (!node || reducedMotion) return
+    if (!node || reducedMotion || !visible.current) return
     node.children.forEach((child, index) => {
       const cloud = clouds[index]!
       const angle = cloud.angle + clock.elapsedTime * cloud.speed
