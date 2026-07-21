@@ -41,8 +41,8 @@ export const COMMANDERS = [
     rules: 'Siempre que una unidad aliada entra en juego, gana +1 Vida.',
     flavor: 'El bosque antigua que recuerda tiempos antes de las montañas.',
     art: {
-      webp: '/assets/cards/art/kaela-corazon-caldera.webp',
-      fallback: '/assets/cards/art/kaela-corazon-caldera.svg',
+      webp: '/assets/cards/art/verdania-guardiana-raices.webp',
+      fallback: '/assets/cards/art/verdania-guardiana-raices.svg',
       alt: 'Verdania rodeada de antiguos árboles y magia verdadera',
     },
     vfx: { persistentEffect: 'commander-nature-aura', impactEffect: 'commander-nature-hit' },
@@ -56,8 +56,8 @@ export const COMMANDERS = [
     rules: 'Cuando una unidad aliada entra en juego, gana escudo preventivo 1.',
     flavor: 'Portador de la luz que juzga con justicia y protege sin error.',
     art: {
-      webp: '/assets/cards/art/oriel-custodio-septima-runa.webp',
-      fallback: '/assets/cards/art/oriel-custodio-septima-runa.svg',
+      webp: '/assets/cards/art/asterin-protector-luz.webp',
+      fallback: '/assets/cards/art/asterin-protector-luz.svg',
       alt: 'Asterin con alas de luz celestial y armadura dorada',
     },
     vfx: { persistentEffect: 'commander-order-aura', impactEffect: 'commander-order-hit' },
@@ -71,8 +71,8 @@ export const COMMANDERS = [
     rules: 'Tus unidades drenan 1 Vida adicional cuando atacan.',
     flavor: 'Rey del vacío que sonríe mientras sus enemigos olvidan cómo vivir sin miedo.',
     art: {
-      webp: '/assets/cards/art/kaela-corazon-caldera.webp',
-      fallback: '/assets/cards/art/kaela-corazon-caldera.svg',
+      webp: '/assets/cards/art/malachar-reidor-sombra.webp',
+      fallback: '/assets/cards/art/malachar-reidor-sombra.svg',
       alt: 'Malachar flotando en sombras púrpuras y neblina oscura',
     },
     vfx: { persistentEffect: 'commander-shadow-aura', impactEffect: 'commander-shadow-hit' },
@@ -86,8 +86,8 @@ export const COMMANDERS = [
     rules: 'La primera unidad que despliegues cada turno entra sin mareo de invocación.',
     flavor: 'Donde el espacio se pliega, Nyxaris ya estaba esperando.',
     art: {
-      webp: '/assets/cards/art/oriel-custodio-septima-runa.webp',
-      fallback: '/assets/cards/art/oriel-custodio-septima-runa.svg',
+      webp: '/assets/cards/art/nyxaris-heraldo-vacio.webp',
+      fallback: '/assets/cards/art/nyxaris-heraldo-vacio.svg',
       alt: 'Nyxaris emergiendo de una fractura violeta en el espacio',
     },
     vfx: { persistentEffect: 'commander-void-aura', impactEffect: 'commander-void-hit' },
