@@ -445,7 +445,7 @@ describe('habilidades de comandante', () => {
     expect(deployed.state.board[0]?.statuses).toContainEqual({ kind: 'shielded', amount: 1 });
 
     // Un ataque enemigo de 2 solo debe restar 1 tras consumir el escudo.
-    let combat: MatchState = {
+    const combat: MatchState = {
       ...deployed.state,
       activePlayer: 'ai',
       board: [

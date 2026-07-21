@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
   chooseNextAiAction,
@@ -96,8 +96,16 @@ const EVENT_PACE: Readonly<Partial<Record<AnimationEvent['type'], number>>> = {
 
 export function BattlePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const preferences = usePreferences()
   const store = useMatchStore()
+  // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
+  const forcedSeed = useMemo(() => {
+    const raw = searchParams.get('seed')
+    if (raw === null) return undefined
+    const parsed = Number.parseInt(raw, 10)
+    return Number.isFinite(parsed) ? parsed >>> 0 : undefined
+  }, [searchParams])
   const [mulliganIds, setMulliganIds] = useState<readonly string[]>([])
   const [scryAmount, setScryAmount] = useState(0)
   const [scryOrder, setScryOrder] = useState<readonly string[]>([])
@@ -115,9 +123,9 @@ export function BattlePage() {
 
   useEffect(() => {
     if (!store.match) {
-      useMatchStore.getState().startMatch(preferences.selectedDeckId)
+      useMatchStore.getState().startMatch(preferences.selectedDeckId, forcedSeed)
     }
-  }, [preferences.selectedDeckId, store.match])
+  }, [preferences.selectedDeckId, store.match, forcedSeed])
 
   // ── Director de animaciones ────────────────────────────────────────────────
   // 1) Si no hay evento en reproducción, avanza la cola.
@@ -381,7 +389,7 @@ export function BattlePage() {
     setMulliganIds([])
     aiSteps.current = 0
     aiSkipped.current = new Set()
-    store.startMatch(preferences.selectedDeckId)
+    store.startMatch(preferences.selectedDeckId, forcedSeed)
   }
 
   const confirmMulligan = () => {

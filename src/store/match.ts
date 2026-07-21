@@ -24,7 +24,7 @@ interface MatchStore {
   pendingAnimations: readonly AnimationEvent[]
   /** Evento visual en reproducción en este instante. */
   currentEvent?: AnimationEvent
-  startMatch: (playerDeckId: string) => void
+  startMatch: (playerDeckId: string, seed?: number) => void
   dispatch: (action: GameAction) => boolean
   replaceMatch: (match: MatchState, message?: string) => void
   advanceEvent: () => void
@@ -69,11 +69,13 @@ const drainAnimations = (state: MatchState): { match: MatchState; events: readon
 
 export const useMatchStore = create<MatchStore>((set, get) => ({
   ...initialState,
-  startMatch: (playerDeckId) => {
-    const playerDeck = STARTER_DECKS.find((deck) => deck.id === playerDeckId) ?? STARTER_DECKS[0]
-    const aiDeck = STARTER_DECKS.find((deck) => deck.id !== playerDeck?.id) ?? STARTER_DECKS[1]
+  startMatch: (playerDeckId, seed) => {
+    const playerIndex = Math.max(0, STARTER_DECKS.findIndex((deck) => deck.id === playerDeckId))
+    const playerDeck = STARTER_DECKS[playerIndex]
+    // El rival avanza una posición en la lista para que cada facción tenga un oponente distinto.
+    const aiDeck = STARTER_DECKS[(playerIndex + 1) % STARTER_DECKS.length]
     if (!playerDeck || !aiDeck) throw new Error('Faltan mazos iniciales para crear la partida.')
-    const match = createMatch(playerDeck, aiDeck, 0x4e45584f)
+    const match = createMatch(playerDeck, aiDeck, seed ?? (Date.now() >>> 0))
     set({
       ...initialState,
       match: clearAnimationQueue(match),
