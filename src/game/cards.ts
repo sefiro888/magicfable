@@ -571,6 +571,60 @@ const orderCards: readonly CardDefinition[] = [
     effects: [{ kind: 'damage', amount: 99, target: 'enemy-piece' }, { kind: 'heal-nexus', amount: 2 }],
     vfx: { impactEffect: 'divine-judgment' },
   }),
+  defineCard({
+    id: 'lancero-alba', name: 'Lancero del Alba', faction: 'order', type: 'unit', subtype: 'Soldado',
+    rarity: 'common', cost: factionCost('order', 1, 1), attack: 2, health: 3, range: 1, movement: 1,
+    rules: 'La primera vez que recibe daño cada turno, lo reduce en 1.',
+    flavor: 'Aguanta la línea hasta que el sol termine de salir.',
+    keywords: [], collectorNumber: 73, aiTags: ['defense', 'durable'], unique: false,
+    effects: [{ kind: 'passive', id: 'first-damage-reduction', value: 1 }],
+    vfx: { summonEffect: 'dawn-muster', persistentEffect: 'shield-brace' },
+  }),
+  defineCard({
+    id: 'bastion-marmoreo', name: 'Bastión Marmóreo', faction: 'order', type: 'structure', subtype: 'Fortaleza',
+    rarity: 'rare', cost: factionCost('order', 2, 2), resistance: 7,
+    rules: 'Muro de mármol y oro que no cede terreno.',
+    flavor: 'Han caído tres reinos desde que se puso la primera piedra.',
+    keywords: [], collectorNumber: 74, aiTags: ['defense', 'wall'], unique: false,
+    effects: [],
+    vfx: { summonEffect: 'marble-rise', persistentEffect: 'gold-sigil-glow' },
+  }),
+  defineCard({
+    id: 'centinela-solar', name: 'Centinela Solar', faction: 'order', type: 'unit', subtype: 'Constructo',
+    rarity: 'uncommon', cost: factionCost('order', 2, 2), attack: 3, health: 4, range: 2, movement: 1,
+    rules: 'Vigila a distancia con su alabarda de sol.',
+    flavor: 'No duerme, no parpadea, no pregunta.',
+    keywords: [], collectorNumber: 75, aiTags: ['ranged', 'defense'], unique: false,
+    effects: [],
+    vfx: { summonEffect: 'solar-ignite', attackEffect: 'sun-lance' },
+  }),
+  defineCard({
+    id: 'bendicion-escudo', name: 'Bendición del Escudo', faction: 'order', type: 'instant', subtype: 'Conjuro',
+    rarity: 'common', cost: factionCost('order', 1, 1),
+    rules: 'Tu Nexo recupera 4 de Vida.',
+    flavor: 'La luz no detiene el golpe: repara lo que el golpe rompió.',
+    keywords: [], collectorNumber: 76, aiTags: ['heal'], unique: false,
+    effects: [{ kind: 'heal-nexus', amount: 4 }],
+    vfx: { impactEffect: 'shield-blessing' },
+  }),
+  defineCard({
+    id: 'heraldo-juicio', name: 'Heraldo del Juicio', faction: 'order', type: 'unit', subtype: 'Celestial',
+    rarity: 'rare', cost: factionCost('order', 2, 3), attack: 4, health: 3, range: 1, movement: 2,
+    rules: 'Al entrar en juego, inflige 2 de daño a una unidad enemiga adyacente.',
+    flavor: 'Aterriza una sola vez, y con eso basta.',
+    keywords: [], collectorNumber: 77, aiTags: ['removal', 'finisher'], unique: false,
+    effects: [{ kind: 'passive', id: 'entry-adjacent-enemy-damage', value: 2 }],
+    vfx: { summonEffect: 'judgment-descent', attackEffect: 'hammer-fall' },
+  }),
+  defineCard({
+    id: 'columna-luz', name: 'Columna de Luz', faction: 'order', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('order', 2, 2),
+    rules: 'Inflige 5 de daño a una pieza enemiga.',
+    flavor: 'El cielo se abre, señala, y cierra.',
+    keywords: [], collectorNumber: 78, aiTags: ['removal', 'damage'], unique: false,
+    effects: [{ kind: 'damage', amount: 5, target: 'enemy-piece' }],
+    vfx: { impactEffect: 'light-pillar' },
+  }),
 ];
 
 const shadowCards: readonly CardDefinition[] = [
@@ -644,6 +698,63 @@ const shadowCards: readonly CardDefinition[] = [
     keywords: [], collectorNumber: 58, aiTags: ['finisher', 'discard'], unique: false,
     effects: [{ kind: 'discard', amount: 2 }, { kind: 'passive', id: 'discarded-units-weaken', value: 1 }],
     vfx: { summonEffect: 'nightmare-rise', persistentEffect: 'dread-aura' },
+  }),
+  defineCard({
+    id: 'sabueso-tumba', name: 'Sabueso de la Tumba', faction: 'shadow', type: 'unit', subtype: 'Undead',
+    rarity: 'common', cost: factionCost('shadow', 1, 1), attack: 3, health: 1, range: 1, movement: 2,
+    rules: 'Impulso y Golpe Veloz: puede moverse y atacar el turno en que entra en juego.',
+    flavor: 'Ya no caza para comer. Caza porque no sabe parar.',
+    keywords: ['impulse', 'swift-strike'], collectorNumber: 79, aiTags: ['aggressive', 'fast'], unique: false,
+    effects: [],
+    vfx: { summonEffect: 'grave-howl', attackEffect: 'bone-lunge' },
+  }),
+  defineCard({
+    id: 'sacerdote-carrona', name: 'Sacerdote de la Carroña', faction: 'shadow', type: 'unit', subtype: 'Humanoid',
+    rarity: 'uncommon', cost: factionCost('shadow', 1, 2), attack: 2, health: 3, range: 1, movement: 1,
+    rules: 'Al entrar en juego, descartas una carta y robas una carta.',
+    flavor: 'Cambia lo que ya no sirve por lo que aún puede doler.',
+    keywords: [], collectorNumber: 80, aiTags: ['draw', 'discard'], unique: false,
+    effects: [{ kind: 'draw', amount: 1 }, { kind: 'discard', amount: 1 }],
+    vfx: { summonEffect: 'carrion-rite', persistentEffect: 'censer-smoke' },
+  }),
+  defineCard({
+    id: 'ritual-sanguino', name: 'Ritual Sanguino', faction: 'shadow', type: 'instant', subtype: 'Ritual',
+    rarity: 'uncommon', cost: factionCost('shadow', 1, 1),
+    rules: 'Tu Nexo recupera 4 de Vida y descartas una carta.',
+    flavor: 'Toda vida devuelta se cobra en otra parte.',
+    keywords: [], collectorNumber: 81, aiTags: ['heal', 'discard'], unique: false,
+    effects: [{ kind: 'heal-nexus', amount: 4 }, { kind: 'discard', amount: 1 }],
+    vfx: { impactEffect: 'blood-sigil' },
+  }),
+  defineCard({
+    id: 'cripta-olvidada', name: 'Cripta Olvidada', faction: 'shadow', type: 'structure', subtype: 'Mausoleo',
+    rarity: 'rare', cost: factionCost('shadow', 2, 1), resistance: 5,
+    rules: 'Tus hechizos cuestan 1 genérico menos.',
+    flavor: 'Nadie recuerda quién yace dentro. Ella sí recuerda a todos.',
+    keywords: [], collectorNumber: 82, aiTags: ['ramp', 'defense'], unique: false,
+    effects: [{ kind: 'passive', id: 'spell-generic-discount', value: 1 }],
+    vfx: { summonEffect: 'crypt-open', persistentEffect: 'wisp-leak' },
+  }),
+  defineCard({
+    id: 'guadana-espectral', name: 'Guadaña Espectral', faction: 'shadow', type: 'instant', subtype: 'Conjuro',
+    rarity: 'rare', cost: factionCost('shadow', 2, 2),
+    rules: 'Inflige 4 de daño a una pieza enemiga y 2 a la unidad enemiga más débil.',
+    flavor: 'El primer corte se ve venir. El segundo ya está dado.',
+    keywords: [], collectorNumber: 83, aiTags: ['removal', 'damage'], unique: false,
+    effects: [
+      { kind: 'damage', amount: 4, target: 'enemy-piece' },
+      { kind: 'splash-weakest-enemy', amount: 2 },
+    ],
+    vfx: { impactEffect: 'spectral-reap' },
+  }),
+  defineCard({
+    id: 'senor-osario', name: 'Señor del Osario', faction: 'shadow', type: 'unit', subtype: 'Undead',
+    rarity: 'mythic', cost: factionCost('shadow', 3, 3), attack: 5, health: 4, range: 1, movement: 1,
+    rules: 'Al entrar en juego, inflige 2 de daño a todas las unidades enemigas adyacentes.',
+    flavor: 'Su trono creció solo, hueso a hueso, mientras él esperaba sentado.',
+    keywords: [], collectorNumber: 84, aiTags: ['finisher', 'removal'], unique: false,
+    effects: [{ kind: 'adjacent-damage', amount: 2, includeAllies: false }],
+    vfx: { summonEffect: 'ossuary-throne', attackEffect: 'necrotic-cleave' },
   }),
 ];
 
@@ -719,12 +830,69 @@ const voidCards: readonly CardDefinition[] = [
     effects: [{ kind: 'passive', id: 'slow-enemies-on-attack', value: 1 }],
     vfx: { summonEffect: 'horror-screech', attackEffect: 'dread-beam' },
   }),
+  defineCard({
+    id: 'heraldo-fractura', name: 'Heraldo de la Fractura', faction: 'void', type: 'unit', subtype: 'Horror',
+    rarity: 'common', cost: factionCost('void', 1, 1), attack: 2, health: 2, range: 1, movement: 2,
+    rules: 'Impulso. Al entrar en juego, inflige 1 de daño a una unidad enemiga adyacente.',
+    flavor: 'No cruza la grieta: la grieta lo deja donde ya quería estar.',
+    keywords: ['impulse'], collectorNumber: 85, aiTags: ['aggressive', 'fast'], unique: false,
+    effects: [{ kind: 'passive', id: 'entry-adjacent-enemy-damage', value: 1 }],
+    vfx: { summonEffect: 'rift-step', attackEffect: 'shard-lash' },
+  }),
+  defineCard({
+    id: 'portal-inestable', name: 'Portal Inestable', faction: 'void', type: 'structure', subtype: 'Portal',
+    rarity: 'uncommon', cost: factionCost('void', 1, 1), resistance: 4,
+    rules: 'La primera vez que recibe daño cada turno, lo reduce en 1.',
+    flavor: 'Lo sujetan seis monolitos. Uno ya se está resquebrajando.',
+    keywords: [], collectorNumber: 86, aiTags: ['defense', 'utility'], unique: false,
+    effects: [{ kind: 'passive', id: 'first-damage-reduction', value: 1 }],
+    vfx: { summonEffect: 'portal-tear', persistentEffect: 'unstable-arc' },
+  }),
+  defineCard({
+    id: 'caminante-umbral', name: 'Caminante del Umbral', faction: 'void', type: 'unit', subtype: 'Horror',
+    rarity: 'uncommon', cost: factionCost('void', 2, 1), attack: 3, health: 3, range: 1, movement: 2,
+    rules: 'Golpe Veloz: puede atacar el turno en que entra en juego.',
+    flavor: 'Llega antes de haber salido.',
+    keywords: ['swift-strike'], collectorNumber: 87, aiTags: ['aggressive', 'evasion'], unique: false,
+    effects: [],
+    vfx: { summonEffect: 'threshold-blink', attackEffect: 'violet-edge' },
+  }),
+  defineCard({
+    id: 'colapso-dimensional', name: 'Colapso Dimensional', faction: 'void', type: 'instant', subtype: 'Conjuro',
+    rarity: 'rare', cost: factionCost('void', 2, 2),
+    rules: 'Inflige 3 de daño a una pieza y 3 a la unidad enemiga más débil.',
+    flavor: 'El espacio se arruga como papel y arrastra lo que había encima.',
+    keywords: [], collectorNumber: 88, aiTags: ['removal', 'damage'], unique: false,
+    effects: [
+      { kind: 'damage', amount: 3, target: 'any-piece' },
+      { kind: 'splash-weakest-enemy', amount: 3 },
+    ],
+    vfx: { impactEffect: 'dimensional-collapse' },
+  }),
+  defineCard({
+    id: 'tejedor-entropia', name: 'Tejedor de Entropía', faction: 'void', type: 'unit', subtype: 'Humanoid',
+    rarity: 'rare', cost: factionCost('void', 2, 2), attack: 2, health: 4, range: 2, movement: 1,
+    rules: 'Tus hechizos cuestan 1 genérico menos.',
+    flavor: 'Teje con hilos de lo que todavía no ha pasado.',
+    keywords: [], collectorNumber: 89, aiTags: ['ramp', 'ranged'], unique: false,
+    effects: [{ kind: 'passive', id: 'spell-generic-discount', value: 1 }],
+    vfx: { summonEffect: 'loom-weave', persistentEffect: 'probability-threads' },
+  }),
+  defineCard({
+    id: 'singularidad', name: 'Singularidad', faction: 'void', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('void', 1, 2),
+    rules: 'Congela una unidad enemiga durante 2 turnos y le inflige 2 de daño.',
+    flavor: 'Dentro de la esfera todo sigue cayendo. Fuera, nada se mueve.',
+    keywords: [], collectorNumber: 90, aiTags: ['control', 'freeze'], unique: false,
+    effects: [{ kind: 'freeze', duration: 2 }, { kind: 'damage', amount: 2, target: 'enemy-piece' }],
+    vfx: { impactEffect: 'singularity-halt' },
+  }),
 ];
 
 export const CARDS = Object.freeze([...furyCards, ...arcaneCards, ...natureCards, ...orderCards, ...shadowCards, ...voidCards]) as readonly CardDefinition[];
 
-if (CARDS.length !== 72 || new Set(CARDS.map((card) => card.id)).size !== 72) {
-  throw new Error('El conjunto NEX-01 debe contener exactamente 72 cartas con identificadores únicos.');
+if (CARDS.length !== 90 || new Set(CARDS.map((card) => card.id)).size !== 90) {
+  throw new Error('El conjunto NEX-01 debe contener exactamente 90 cartas con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(

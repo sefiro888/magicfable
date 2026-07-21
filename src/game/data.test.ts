@@ -15,15 +15,15 @@ describe('catálogo del Nexo', () => {
     expect(FACTIONS.filter((faction) => !faction.unlocked)).toHaveLength(0);
   });
 
-  it('contiene exactamente 72 diseños únicos repartidos entre las 6 facciones', () => {
-    expect(CARDS).toHaveLength(72);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(72);
+  it('contiene exactamente 90 diseños únicos repartidos entre las 6 facciones', () => {
+    expect(CARDS).toHaveLength(90);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(90);
     expect(cardsForFaction('fury')).toHaveLength(17);
     expect(cardsForFaction('arcane')).toHaveLength(17);
     expect(cardsForFaction('nature')).toHaveLength(14);
-    expect(cardsForFaction('order')).toHaveLength(8);
-    expect(cardsForFaction('shadow')).toHaveLength(8);
-    expect(cardsForFaction('void')).toHaveLength(8);
+    expect(cardsForFaction('order')).toHaveLength(14);
+    expect(cardsForFaction('shadow')).toHaveLength(14);
+    expect(cardsForFaction('void')).toHaveLength(14);
   });
 
   it('incluye las doce cartas obligatorias', () => {

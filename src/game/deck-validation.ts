@@ -69,11 +69,11 @@ export const validateDeck = (
         message: `${definition.name} no pertenece a ${deck.faction}.`,
       });
     }
-    if (definition.type !== 'mana' && !definition.unique && count > 5) {
+    if (definition.type !== 'mana' && !definition.unique && count > 4) {
       issues.push({
         code: 'too-many-copies',
         cardId,
-        message: `${definition.name} aparece ${count} veces; el máximo es 5.`,
+        message: `${definition.name} aparece ${count} veces; el máximo es 4.`,
       });
     }
     if (definition.unique && count > 1) {
