@@ -15,12 +15,12 @@ describe('catálogo del Nexo', () => {
     expect(FACTIONS.filter((faction) => !faction.unlocked)).toHaveLength(0);
   });
 
-  it('contiene exactamente 66 diseños únicos, distribuidos por 6 facciones (11 cada una)', () => {
-    expect(CARDS).toHaveLength(66);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(66);
+  it('contiene exactamente 72 diseños únicos repartidos entre las 6 facciones', () => {
+    expect(CARDS).toHaveLength(72);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(72);
     expect(cardsForFaction('fury')).toHaveLength(17);
     expect(cardsForFaction('arcane')).toHaveLength(17);
-    expect(cardsForFaction('nature')).toHaveLength(8);
+    expect(cardsForFaction('nature')).toHaveLength(14);
     expect(cardsForFaction('order')).toHaveLength(8);
     expect(cardsForFaction('shadow')).toHaveLength(8);
     expect(cardsForFaction('void')).toHaveLength(8);

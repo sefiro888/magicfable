@@ -444,6 +444,60 @@ const natureCards: readonly CardDefinition[] = [
     effects: [{ kind: 'draw', amount: 1 }, { kind: 'passive', id: 'instant-cost-discount', value: 1 }],
     vfx: { summonEffect: 'ancient-whisper', persistentEffect: 'elder-wisdom' },
   }),
+  defineCard({
+    id: 'guardian-robledal', name: 'Guardián del Robledal', faction: 'nature', type: 'unit', subtype: 'Treant',
+    rarity: 'uncommon', cost: factionCost('nature', 2, 2), attack: 2, health: 5, range: 1, movement: 1,
+    rules: 'La primera vez que recibe daño cada turno, lo reduce en 1.',
+    flavor: 'Lleva tanto tiempo en pie que el bosque creció a su alrededor.',
+    keywords: [], collectorNumber: 67, aiTags: ['durable', 'defense'], unique: false,
+    effects: [{ kind: 'passive', id: 'first-damage-reduction', value: 1 }],
+    vfx: { summonEffect: 'root-anchor', persistentEffect: 'bark-ward' },
+  }),
+  defineCard({
+    id: 'driada-manantial', name: 'Dríade del Manantial', faction: 'nature', type: 'unit', subtype: 'Espíritu',
+    rarity: 'common', cost: factionCost('nature', 1, 1), attack: 1, health: 3, range: 1, movement: 1,
+    rules: 'Cuando entra en juego, tu Nexo recupera 3 de Vida.',
+    flavor: 'El agua que custodia recuerda cómo era el mundo sin heridas.',
+    keywords: [], collectorNumber: 68, aiTags: ['heal', 'support'], unique: false,
+    effects: [{ kind: 'heal-nexus', amount: 3 }],
+    vfx: { summonEffect: 'spring-bloom', persistentEffect: 'water-glow' },
+  }),
+  defineCard({
+    id: 'jabali-embestida', name: 'Jabalí de Embestida', faction: 'nature', type: 'unit', subtype: 'Bestia',
+    rarity: 'uncommon', cost: factionCost('nature', 2, 2), attack: 4, health: 3, range: 1, movement: 2,
+    rules: 'Impulso y Golpe Veloz: puede moverse y atacar el turno en que entra en juego.',
+    flavor: 'No rodea los obstáculos. Los convierte en astillas.',
+    keywords: ['impulse', 'swift-strike'], collectorNumber: 69, aiTags: ['aggressive', 'fast'], unique: false,
+    effects: [],
+    vfx: { summonEffect: 'boar-snort', attackEffect: 'tusk-charge' },
+  }),
+  defineCard({
+    id: 'savia-restauradora', name: 'Savia Restauradora', faction: 'nature', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('nature', 2, 1),
+    rules: 'Tu Nexo recupera 5 de Vida y robas una carta.',
+    flavor: 'La herida se cierra, pero el árbol recuerda el corte.',
+    keywords: [], collectorNumber: 70, aiTags: ['heal', 'draw'], unique: false,
+    effects: [{ kind: 'heal-nexus', amount: 5 }, { kind: 'draw', amount: 1 }],
+    vfx: { impactEffect: 'golden-sap' },
+  }),
+  defineCard({
+    id: 'muralla-zarzas', name: 'Muralla de Zarzas', faction: 'nature', type: 'structure', subtype: 'Barrera',
+    rarity: 'uncommon', cost: factionCost('nature', 2, 1), resistance: 6,
+    rules: 'Al alzarse, inflige 2 de daño a una unidad enemiga adyacente.',
+    flavor: 'Crece más deprisa de lo que tarda un ejército en rodearla.',
+    keywords: [], collectorNumber: 71, aiTags: ['defense', 'wall'], unique: false,
+    effects: [{ kind: 'passive', id: 'entry-adjacent-enemy-damage', value: 2 }],
+    vfx: { summonEffect: 'bramble-surge', persistentEffect: 'thorn-bristle' },
+  }),
+  defineCard({
+    id: 'aliento-primavera', name: 'Aliento de Primavera', faction: 'nature', type: 'instant', subtype: 'Conjuro',
+    rarity: 'rare', cost: factionCost('nature', 2, 2),
+    rules: 'Una unidad aliada gana +3 de Ataque este turno y recupera su movimiento.',
+    flavor: 'Basta un soplo tibio para que la rama muerta vuelva a empujar.',
+    keywords: [], collectorNumber: 72, aiTags: ['buff', 'tempo'], unique: false,
+    effects: [{ kind: 'passive', id: 'target-attack-until-end', value: 3 }, { kind: 'refresh-move' }],
+    vfx: { impactEffect: 'spring-gust' },
+  }),
 ];
 
 const orderCards: readonly CardDefinition[] = [
@@ -669,8 +723,8 @@ const voidCards: readonly CardDefinition[] = [
 
 export const CARDS = Object.freeze([...furyCards, ...arcaneCards, ...natureCards, ...orderCards, ...shadowCards, ...voidCards]) as readonly CardDefinition[];
 
-if (CARDS.length !== 66 || new Set(CARDS.map((card) => card.id)).size !== 66) {
-  throw new Error('El conjunto NEX-01 debe contener exactamente 66 cartas con identificadores únicos.');
+if (CARDS.length !== 72 || new Set(CARDS.map((card) => card.id)).size !== 72) {
+  throw new Error('El conjunto NEX-01 debe contener exactamente 72 cartas con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(
