@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { runAiTurn } from './ai';
+import { chooseNextAiAction, runAiTurn } from './ai';
 import { CARD_BY_ID } from './cards';
 import { STARTER_DECKS } from './decks';
 import { applyAction, createMatch } from './engine';
@@ -84,6 +84,38 @@ describe('IA básica determinista', () => {
     expect(result.phase).toBe('finished');
     expect(result.winner).toBe('ai');
     expect(result.players.player.nexusHealth).toBe(0);
+  });
+
+  it('no gasta un hechizo de congelación cuando el rival solo tiene estructuras', () => {
+    const base = match();
+    const state: MatchState = {
+      ...base,
+      activePlayer: 'ai',
+      turn: 4,
+      players: {
+        ...base.players,
+        ai: {
+          ...base.players.ai,
+          hand: [{ instanceId: 'ai-freeze', cardId: 'congelacion-rapida' }],
+          deck: [],
+          resources: [
+            { instanceId: 'r1', cardId: 'fuente-arcana', faction: 'arcane', exhausted: false },
+            { instanceId: 'r2', cardId: 'fuente-arcana', faction: 'arcane', exhausted: false },
+          ],
+          resourcePlayedThisTurn: true,
+        },
+      },
+      board: [{
+        instanceId: 'player-tower', cardId: 'torre-horizonte', owner: 'player',
+        position: { x: 3, y: 7 }, currentHealth: 5, attackModifier: 0,
+        movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [],
+      }],
+      animations: [],
+    };
+    // Antes se proponía congelar la estructura: el motor rechazaba la acción y se perdía el paso.
+    const action = chooseNextAiAction(state);
+    expect(action.type).not.toBe('play-card');
+    expect(runAiTurn(state).players.ai.hand.map((card) => card.instanceId)).toContain('ai-freeze');
   });
 
   it('produce exactamente las mismas decisiones a partir del mismo estado y semilla', () => {

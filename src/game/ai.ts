@@ -38,7 +38,9 @@ const stableTieBreaker = (value: string, seed: number): number => {
 
 const chooseEnemyTarget = (state: MatchState, card: CardDefinition): BoardPiece | undefined => {
   const enemies = state.board.filter((piece) => piece.owner === 'player');
-  const allowed = card.id === 'lluvia-ceniza'
+  // El motor rechaza estos hechizos sobre estructuras; filtrar aquí evita gastar el turno en una acción inválida.
+  const unitsOnly = card.id === 'lluvia-ceniza' || card.effects.some((effect) => effect.kind === 'freeze');
+  const allowed = unitsOnly
     ? enemies.filter((piece) => CARD_BY_ID[piece.cardId]?.type === 'unit')
     : enemies;
   return [...allowed].sort((left, right) => {
