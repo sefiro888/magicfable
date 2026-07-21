@@ -77,6 +77,21 @@ export const COMMANDERS = [
     },
     vfx: { persistentEffect: 'commander-shadow-aura', impactEffect: 'commander-shadow-hit' },
   }) as CommanderDefinition,
+  CommanderDefinitionSchema.parse({
+    id: 'nyxaris-heraldo-vacio',
+    name: 'Nyxaris',
+    title: 'Heraldo del Vacío',
+    faction: 'void',
+    nexusHealth: 25,
+    rules: 'La primera unidad que despliegues cada turno entra sin mareo de invocación.',
+    flavor: 'Donde el espacio se pliega, Nyxaris ya estaba esperando.',
+    art: {
+      webp: '/assets/cards/art/oriel-custodio-septima-runa.webp',
+      fallback: '/assets/cards/art/oriel-custodio-septima-runa.svg',
+      alt: 'Nyxaris emergiendo de una fractura violeta en el espacio',
+    },
+    vfx: { persistentEffect: 'commander-void-aura', impactEffect: 'commander-void-hit' },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -176,7 +191,24 @@ const shadowDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
-export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck]) as readonly DeckDefinition[];
+const voidDeck = DeckDefinitionSchema.parse({
+  id: 'fractura-vacio',
+  name: 'Fractura del Vacío',
+  faction: 'void',
+  commanderId: 'nyxaris-heraldo-vacio',
+  cards: [
+    { cardId: 'fuente-vacio', count: 20 },
+    { cardId: 'basilisco-caos', count: 5 },
+    { cardId: 'quimera-caos', count: 5 },
+    { cardId: 'devorador-entropico', count: 5 },
+    { cardId: 'aniquilacion-vacio', count: 5 },
+    { cardId: 'paradoja-vacio', count: 5 },
+    { cardId: 'horror-abisal', count: 4 },
+    { cardId: 'leviatan-abismal', count: 1 },
+  ],
+}) as DeckDefinition;
+
+export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(
   Object.fromEntries(STARTER_DECKS.map((deck) => [deck.id, deck])),

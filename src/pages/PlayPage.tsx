@@ -12,6 +12,7 @@ const showcase: Record<string, readonly string[]> = {
   nature: ['ciervo-sagrado', 'oso-forestal', 'crecimiento-salvaje'],
   order:  ['angel-celestial', 'paladin-glorioso', 'juicio-divino'],
   shadow: ['murcielago-sombra', 'nigromante-oscuro', 'pesadilla-mortal'],
+  void:   ['basilisco-caos', 'leviatan-abismal', 'aniquilacion-vacio'],
 }
 
 const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
@@ -20,6 +21,7 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   nature: 'Crece sin prisa, cura tus unidades y aplasta al rival con la fuerza del bosque.',
   order:  'Forma una línea defensiva infranqueable y castiga con la justicia del Orden.',
   shadow: 'Drena la vida enemiga, revive desde el cementerio y conquista con el miedo.',
+  void:   'Distorsiona el espacio, aniquila estructuras y golpea antes de que te vean venir.',
 }
 
 export function PlayPage() {
@@ -60,7 +62,6 @@ export function PlayPage() {
         })}
       </div>
       <div className={styles.startRow}><button className={styles.start} onClick={start}>Entrar al tablero</button><span className={styles.note}>Nexo a 25 · tablero 8 × 8</span></div>
-      <div className={styles.locked}><span>Próximas crónicas</span><div className={styles.lockedFactions}><span>◎ Vacío</span></div></div>
     </div>
   )
 }

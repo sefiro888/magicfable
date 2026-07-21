@@ -195,6 +195,8 @@ export interface PlayerState {
   readonly nexusDamagedThisTurn: boolean;
   /** Pasiva de Kaela armada: la siguiente unidad cuesta 1 genérico menos. */
   readonly unitDiscountPending: boolean;
+  /** Pasiva de Nyxaris: la primera unidad del turno ya entró en juego. */
+  readonly firstUnitDeployedThisTurn: boolean;
   readonly mulliganTaken: boolean;
   readonly stats: PlayerStats;
 }

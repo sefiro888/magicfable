@@ -498,6 +498,26 @@ describe('habilidades de comandante', () => {
     expect(result.state.players.ai.nexusHealth).toBe(24);
   });
 
+  it('Nyxaris libra del mareo de invocación solo a la primera unidad del turno', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      commanderId: 'nyxaris-heraldo-vacio',
+      hand: [handCard('horror-abisal', 'first'), handCard('horror-abisal', 'second')],
+      resources: resources('void', 8),
+    });
+    const first = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'first', position: { x: 2, y: 7 },
+    });
+    expect(first.ok).toBe(true);
+    expect(getValidMoves(first.state, 'first').length).toBeGreaterThan(0);
+
+    const second = applyAction(first.state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'second', position: { x: 4, y: 7 },
+    });
+    expect(second.ok).toBe(true);
+    expect(getValidMoves(second.state, 'second')).toHaveLength(0);
+  });
+
   it('los comandantes sin pasiva de entrada no alteran la vida de sus unidades', () => {
     let state = freshMatch();
     state = withPlayer(state, 'player', {

@@ -84,6 +84,7 @@ const createPlayer = (
     forgeBuffUsedThisTurn: false,
     nexusDamagedThisTurn: false,
     unitDiscountPending: false,
+    firstUnitDeployedThisTurn: false,
     mulliganTaken: false,
     stats: { cardsPlayed: 0, damageDealt: 0 },
   };
@@ -683,6 +684,8 @@ export const playCard = (
     const commanderId = player.commanderId;
     const verdaniaBonus = commanderId === 'verdania-guardiana-raices' && card.type === 'unit' ? 1 : 0;
     const asterinShield = commanderId === 'asterin-protector-luz' && card.type === 'unit';
+    const nyxarisRush =
+      commanderId === 'nyxaris-heraldo-vacio' && card.type === 'unit' && !player.firstUnitDeployedThisTurn;
     const piece: BoardPiece = {
       instanceId: instance.instanceId,
       cardId: card.id,
@@ -692,10 +695,19 @@ export const playCard = (
       attackModifier: receivesForgeBuff ? 1 : 0,
       movedThisTurn: false,
       attackedThisTurn: false,
-      enteredOnTurn: state.turn,
+      enteredOnTurn: nyxarisRush ? state.turn - 1 : state.turn,
       statuses: asterinShield ? [{ kind: 'shielded', amount: 1 }] : [],
     };
     next = { ...next, board: [...next.board, piece] };
+    if (card.type === 'unit') {
+      next = withPlayer(next, playerId, { ...next.players[playerId], firstUnitDeployedThisTurn: true });
+    }
+    if (nyxarisRush) {
+      next = enqueue(next, {
+        type: 'summon', actorId: playerId, targetId: piece.instanceId, to: position,
+        effectId: 'commander-void-aura', durationMs: 300,
+      });
+    }
     next = enqueue(next, {
       type: 'summon', actorId: playerId, targetId: piece.instanceId, to: position,
       effectId: card.vfx.summonEffect, durationMs: 440,
@@ -879,12 +891,14 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         towerLootUsedThisTurn: false,
         forgeBuffUsedThisTurn: false,
         nexusDamagedThisTurn: false,
+        firstUnitDeployedThisTurn: false,
       },
       [nextPlayerId]: {
         ...incoming,
         resources: restoreMana(incoming.resources),
         resourcePlayedThisTurn: false,
         nexusDamagedThisTurn: false,
+        firstUnitDeployedThisTurn: false,
       },
     },
     board: state.board.map((piece) => ({
