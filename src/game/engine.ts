@@ -283,7 +283,9 @@ const damagePiece = (
   if (reduction?.kind === 'passive' && target.reductionUsedOnTurn !== state.turn) {
     reducedBy = Math.min(amount, reduction.value ?? 1);
   }
-  const finalAmount = amount - reducedBy;
+  const shield = target.statuses.find((status) => status.kind === 'shielded');
+  const absorbedByShield = shield?.kind === 'shielded' ? Math.min(amount - reducedBy, shield.amount) : 0;
+  const finalAmount = amount - reducedBy - absorbedByShield;
   let next: MatchState =
     reducedBy > 0
       ? updatePiece(state, pieceId, (piece) => ({ ...piece, reductionUsedOnTurn: state.turn }))
@@ -291,6 +293,18 @@ const damagePiece = (
   if (reducedBy > 0) {
     next = enqueue(next, {
       type: 'shield', targetId: pieceId, to: target.position, amount: reducedBy, effectId: 'water-shield', durationMs: 260,
+    });
+  }
+  if (absorbedByShield > 0 && shield?.kind === 'shielded') {
+    const remaining = shield.amount - absorbedByShield;
+    next = updatePiece(next, pieceId, (piece) => ({
+      ...piece,
+      statuses: remaining > 0
+        ? piece.statuses.map((status) => (status.kind === 'shielded' ? { kind: 'shielded', amount: remaining } : status))
+        : piece.statuses.filter((status) => status.kind !== 'shielded'),
+    }));
+    next = enqueue(next, {
+      type: 'shield', targetId: pieceId, to: target.position, amount: absorbedByShield, effectId: 'commander-order-shield', durationMs: 260,
     });
   }
   if (finalAmount <= 0) return next;
@@ -335,7 +349,7 @@ const addStatus = (
   const expiresOnTurn = state.turn + Math.max(1, duration) * 2;
   let next = updatePiece(state, pieceId, (piece) => ({
     ...piece,
-    statuses: [{ kind: 'frozen', expiresOnTurn }],
+    statuses: [...piece.statuses.filter((status) => status.kind !== 'frozen'), { kind: 'frozen', expiresOnTurn }],
   }));
   next = enqueue(next, { type: 'freeze', targetId: pieceId, to: target.position, effectId: 'freeze-lock', durationMs: 360 });
   return next;
@@ -492,6 +506,32 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
   return next;
 };
 
+/** Pasiva de Malachar: cada ataque de sus unidades roba 1 Vida al Nexo enemigo. */
+const applyMalacharDrain = (state: MatchState, attackerOwner: PlayerId): MatchState => {
+  if (state.players[attackerOwner].commanderId !== 'malachar-reidor-sombra') return state;
+  const enemyId = opponentOf(attackerOwner);
+  const enemy = state.players[enemyId];
+  if (enemy.nexusHealth <= 0) return state;
+  const owner = state.players[attackerOwner];
+  const maximum = COMMANDER_BY_ID[owner.commanderId]?.nexusHealth ?? 25;
+  let next = withPlayer(state, enemyId, { ...enemy, nexusHealth: Math.max(0, enemy.nexusHealth - 1) });
+  next = withPlayer(next, attackerOwner, {
+    ...next.players[attackerOwner],
+    nexusHealth: Math.min(maximum, owner.nexusHealth + 1),
+  });
+  next = enqueue(next, {
+    type: 'nexus-damage', actorId: attackerOwner, targetId: `${enemyId}-nexus`,
+    amount: 1, effectId: 'commander-shadow-drain', durationMs: 320,
+  });
+  if (next.players[enemyId].nexusHealth <= 0) {
+    next = { ...next, winner: attackerOwner, phase: 'finished' };
+    next = enqueue(next, {
+      type: 'victory', actorId: attackerOwner, targetId: `${enemyId}-nexus`, effectId: 'shadow-victory', durationMs: 900,
+    });
+  }
+  return next;
+};
+
 const validateTurn = (state: MatchState, playerId: PlayerId): ActionResult | undefined => {
   if (state.phase === 'finished') return fail(state, 'game-finished', 'La partida ya ha terminado.');
   if (state.activePlayer !== playerId) return fail(state, 'wrong-turn', 'No es el turno de ese jugador.');
@@ -640,23 +680,38 @@ export const playCard = (
   if (isPiece && position) {
     const maximumHealth = card.type === 'unit' ? card.health : card.resistance;
     if (maximumHealth === undefined) return fail(state, 'invalid-card-type', 'La carta no tiene resistencia válida.');
+    const commanderId = player.commanderId;
+    const verdaniaBonus = commanderId === 'verdania-guardiana-raices' && card.type === 'unit' ? 1 : 0;
+    const asterinShield = commanderId === 'asterin-protector-luz' && card.type === 'unit';
     const piece: BoardPiece = {
       instanceId: instance.instanceId,
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth,
+      currentHealth: maximumHealth + verdaniaBonus,
       attackModifier: receivesForgeBuff ? 1 : 0,
       movedThisTurn: false,
       attackedThisTurn: false,
       enteredOnTurn: state.turn,
-      statuses: [],
+      statuses: asterinShield ? [{ kind: 'shielded', amount: 1 }] : [],
     };
     next = { ...next, board: [...next.board, piece] };
     next = enqueue(next, {
       type: 'summon', actorId: playerId, targetId: piece.instanceId, to: position,
       effectId: card.vfx.summonEffect, durationMs: 440,
     });
+    if (verdaniaBonus > 0) {
+      next = enqueue(next, {
+        type: 'shield', actorId: playerId, targetId: piece.instanceId, to: position,
+        amount: verdaniaBonus, effectId: 'commander-nature-aura', durationMs: 300,
+      });
+    }
+    if (asterinShield) {
+      next = enqueue(next, {
+        type: 'shield', actorId: playerId, targetId: piece.instanceId, to: position,
+        amount: 1, effectId: 'commander-order-aura', durationMs: 300,
+      });
+    }
     next = resolveEntryEffects(next, piece, card);
   } else {
     nextPlayer = next.players[playerId];
@@ -749,6 +804,7 @@ export const attackPiece = (
   ) {
     next = addStatus(next, defenderId, 1);
   }
+  next = applyMalacharDrain(next, playerId);
   return success(next);
 };
 
@@ -796,7 +852,9 @@ export const attackNexus = (
     next = enqueue(next, {
       type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`, effectId: `${card.faction}-victory`, durationMs: 900,
     });
+    return success(next);
   }
+  next = applyMalacharDrain(next, playerId);
   return success(next);
 };
 
@@ -834,7 +892,7 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
       movedThisTurn: piece.owner === nextPlayerId ? false : piece.movedThisTurn,
       attackedThisTurn: piece.owner === nextPlayerId ? false : piece.attackedThisTurn,
       attackModifier: piece.owner === playerId ? 0 : piece.attackModifier,
-      statuses: piece.statuses.filter((status) => status.expiresOnTurn > nextTurn),
+      statuses: piece.statuses.filter((status) => status.kind !== 'frozen' || status.expiresOnTurn > nextTurn),
     })),
     tileEffects: state.tileEffects.filter((tile) => tile.expiresOnTurn > nextTurn),
   };

@@ -148,10 +148,9 @@ export interface CardInstance {
   readonly cardId: string;
 }
 
-export interface PieceStatus {
-  readonly kind: 'frozen';
-  readonly expiresOnTurn: number;
-}
+export type PieceStatus =
+  | { readonly kind: 'frozen'; readonly expiresOnTurn: number }
+  | { readonly kind: 'shielded'; readonly amount: number };
 
 export interface TileEffect {
   readonly kind: 'scorched';

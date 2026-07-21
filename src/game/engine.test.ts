@@ -25,10 +25,19 @@ const freshMatch = (seed = 42): MatchState => createMatch(STARTER_DECKS[0]!, STA
 
 const handCard = (cardId: string, instanceId = `hand-${cardId}`): CardInstance => ({ cardId, instanceId });
 
+const SOURCE_BY_FACTION: Record<FactionId, string> = {
+  fury: 'fuente-furia',
+  arcane: 'fuente-arcana',
+  nature: 'fuente-naturaleza',
+  order: 'fuente-orden',
+  shadow: 'fuente-sombra',
+  void: 'fuente-vacio',
+};
+
 const resources = (faction: FactionId, count: number, exhausted = false): readonly ResourceState[] =>
   Array.from({ length: count }, (_, index) => ({
     instanceId: `${faction}-mana-${index}`,
-    cardId: faction === 'fury' ? 'fuente-furia' : 'fuente-arcana',
+    cardId: SOURCE_BY_FACTION[faction],
     faction,
     exhausted,
   }));
@@ -402,6 +411,105 @@ describe('efectos de cartas principales', () => {
     expect(cast.state.players.player.discard.some((card) => card.instanceId === 'discard-me')).toBe(true);
     expect(cast.state.players.player.hand).toHaveLength(1);
     expect(cast.state.animations.some((event) => event.effectId === 'horizon-loot')).toBe(true);
+  });
+});
+
+describe('habilidades de comandante', () => {
+  it('Verdania da +1 Vida a cada unidad aliada que entra en juego', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      commanderId: 'verdania-guardiana-raices',
+      hand: [handCard('ciervo-sagrado', 'deer')],
+      resources: resources('nature', 2),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'deer', position: { x: 3, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    // El Ciervo Sagrado tiene 2 de vida base.
+    expect(result.state.board[0]?.currentHealth).toBe(3);
+    expect(result.state.animations.some((event) => event.effectId === 'commander-nature-aura')).toBe(true);
+  });
+
+  it('Asterin otorga escudo preventivo 1 que absorbe el primer daño', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      commanderId: 'asterin-protector-luz',
+      hand: [handCard('aguila-celestial', 'eagle')],
+      resources: resources('order', 3),
+    });
+    const deployed = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'eagle', position: { x: 3, y: 7 },
+    });
+    expect(deployed.ok).toBe(true);
+    expect(deployed.state.board[0]?.statuses).toContainEqual({ kind: 'shielded', amount: 1 });
+
+    // Un ataque enemigo de 2 solo debe restar 1 tras consumir el escudo.
+    let combat: MatchState = {
+      ...deployed.state,
+      activePlayer: 'ai',
+      board: [
+        { ...deployed.state.board[0]!, position: { x: 3, y: 1 } },
+        makePiece('ai-attacker', 'sabueso-brasa', 'ai', { x: 3, y: 0 }),
+      ],
+    };
+    const attack = applyAction(combat, {
+      type: 'attack-piece', playerId: 'ai', attackerId: 'ai-attacker', defenderId: 'eagle',
+    });
+    expect(attack.ok).toBe(true);
+    const eagle = attack.state.board.find((piece) => piece.instanceId === 'eagle');
+    // Águila 2 de vida, Sabueso 2 de ataque: el escudo absorbe 1, quedan 1.
+    expect(eagle?.currentHealth).toBe(1);
+    expect(eagle?.statuses.some((status) => status.kind === 'shielded')).toBe(false);
+  });
+
+  it('Malachar drena 1 Vida del Nexo enemigo cada vez que ataca', () => {
+    let state: MatchState = {
+      ...freshMatch(),
+      board: [
+        makePiece('shadow-unit', 'esqueleto-guerrero', 'player', { x: 3, y: 6 }),
+        makePiece('ai-target', 'centinela-cristal', 'ai', { x: 3, y: 5 }),
+      ],
+    };
+    state = withPlayer(state, 'player', { commanderId: 'malachar-reidor-sombra', nexusHealth: 20 });
+    const result = applyAction(state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'shadow-unit', defenderId: 'ai-target',
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.ai.nexusHealth).toBe(24);
+    expect(result.state.players.player.nexusHealth).toBe(21);
+    expect(result.state.animations.some((event) => event.effectId === 'commander-shadow-drain')).toBe(true);
+  });
+
+  it('el drenaje de Malachar no supera la vida máxima del propio Nexo', () => {
+    let state: MatchState = {
+      ...freshMatch(),
+      board: [
+        makePiece('shadow-unit', 'esqueleto-guerrero', 'player', { x: 3, y: 6 }),
+        makePiece('ai-target', 'centinela-cristal', 'ai', { x: 3, y: 5 }),
+      ],
+    };
+    state = withPlayer(state, 'player', { commanderId: 'malachar-reidor-sombra' });
+    const result = applyAction(state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'shadow-unit', defenderId: 'ai-target',
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.player.nexusHealth).toBe(25);
+    expect(result.state.players.ai.nexusHealth).toBe(24);
+  });
+
+  it('los comandantes sin pasiva de entrada no alteran la vida de sus unidades', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      hand: [handCard('sabueso-brasa', 'hound')],
+      resources: resources('fury', 1),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'hound', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.board[0]?.currentHealth).toBe(1);
+    expect(result.state.board[0]?.statuses).toEqual([]);
   });
 });
 
