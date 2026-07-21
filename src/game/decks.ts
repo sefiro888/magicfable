@@ -132,12 +132,12 @@ const natureDeck = DeckDefinitionSchema.parse({
   commanderId: 'verdania-guardiana-raices',
   cards: [
     { cardId: 'fuente-naturaleza', count: 20 },
-    { cardId: 'ciervo-sagrado', count: 4 },
-    { cardId: 'lobo-salvaje', count: 4 },
+    { cardId: 'ciervo-sagrado', count: 5 },
+    { cardId: 'lobo-salvaje', count: 5 },
     { cardId: 'oso-forestal', count: 4 },
     { cardId: 'centauro-cazador', count: 4 },
     { cardId: 'elfo-ancestral', count: 4 },
-    { cardId: 'arboleda-sagrada', count: 2 },
+    { cardId: 'arboleda-sagrada', count: 4 },
     { cardId: 'crecimiento-salvaje', count: 4 },
   ],
 }) as DeckDefinition;
@@ -149,12 +149,12 @@ const orderDeck = DeckDefinitionSchema.parse({
   commanderId: 'asterin-protector-luz',
   cards: [
     { cardId: 'fuente-orden', count: 20 },
-    { cardId: 'angel-celestial', count: 4 },
-    { cardId: 'aguila-celestial', count: 4 },
+    { cardId: 'angel-celestial', count: 5 },
+    { cardId: 'aguila-celestial', count: 5 },
     { cardId: 'pegaso-celestial', count: 4 },
     { cardId: 'paladin-glorioso', count: 4 },
     { cardId: 'clerigo-luz', count: 4 },
-    { cardId: 'grifo-orden', count: 2 },
+    { cardId: 'grifo-orden', count: 4 },
     { cardId: 'juicio-divino', count: 4 },
   ],
 }) as DeckDefinition;
@@ -166,12 +166,12 @@ const shadowDeck = DeckDefinitionSchema.parse({
   commanderId: 'malachar-reidor-sombra',
   cards: [
     { cardId: 'fuente-sombra', count: 20 },
-    { cardId: 'murcielago-sombra', count: 4 },
-    { cardId: 'espectro-siniestro', count: 4 },
+    { cardId: 'murcielago-sombra', count: 5 },
+    { cardId: 'espectro-siniestro', count: 5 },
     { cardId: 'esqueleto-guerrero', count: 4 },
     { cardId: 'nigromante-oscuro', count: 4 },
     { cardId: 'maldicion-sombra', count: 4 },
-    { cardId: 'vampiro-siniestro', count: 2 },
+    { cardId: 'vampiro-siniestro', count: 4 },
     { cardId: 'pesadilla-mortal', count: 4 },
   ],
 }) as DeckDefinition;
