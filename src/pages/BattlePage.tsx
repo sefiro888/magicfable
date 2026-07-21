@@ -11,6 +11,7 @@ import {
   mulliganOpeningHand,
   planManaPayment,
   reorderTopCards,
+  STARTER_DECKS,
   summarizeMana,
   type AnimationEvent,
   type CardDefinition,
@@ -26,6 +27,7 @@ import { Card } from '../components'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
 import { usePreferences } from '../store/preferences'
+import { summarizeRecords, useRecords } from '../store/records'
 import { withBase } from '../utils/assets'
 import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS } from '../utils/cardLabels'
 import styles from './BattlePage.module.css'
@@ -114,6 +116,8 @@ export function BattlePage() {
   const [devOpen, setDevOpen] = useState(false)
   const aiSteps = useRef(0)
   const aiSkipped = useRef(new Set<string>())
+  /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
+  const recordedSeed = useRef<number | undefined>(undefined)
 
   const match = store.match
   const currentEvent = store.currentEvent
@@ -177,6 +181,29 @@ export function BattlePage() {
     const timer = window.setTimeout(() => setBanner(undefined), 1400)
     return () => window.clearTimeout(timer)
   }, [banner])
+
+  // ── Historial: anota la partida una sola vez, al terminar de reproducirse ──
+  useEffect(() => {
+    const finished = store.match
+    if (!finished?.winner || queueBusy) return
+    if (recordedSeed.current === finished.seed) return
+    recordedSeed.current = finished.seed
+    const playerState = finished.players.player
+    const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
+    const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === finished.players.ai.commanderId)
+    useRecords.getState().addRecord({
+      finishedAt: Date.now(),
+      deckId: playerDeck?.id ?? preferences.selectedDeckId,
+      deckName: playerDeck?.name ?? 'Mazo desconocido',
+      commanderName: COMMANDER_BY_ID[playerState.commanderId]?.name ?? '—',
+      opponentDeckName: opponentDeck?.name ?? 'Rival desconocido',
+      won: finished.winner === 'player',
+      turns: finished.turn,
+      seconds: store.elapsedSeconds,
+      damageDealt: playerState.stats.damageDealt,
+      seed: finished.seed,
+    })
+  }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId])
 
   useEffect(() => {
     if (!revealedCardId) return
@@ -277,6 +304,8 @@ export function BattlePage() {
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
   const aiCommander = ai ? COMMANDER_BY_ID[ai.commanderId] : undefined
   const inspected = store.inspectedCardId ? CARD_BY_ID[store.inspectedCardId] : undefined
+  const storedRecords = useRecords((state) => state.records)
+  const tally = useMemo(() => summarizeRecords(storedRecords), [storedRecords])
   const spellTargets = useMemo(() => {
     if (!match || !selectedCard || !requiresPieceTarget(selectedCard)) return []
     const friendlyOnly = selectedCard.effects.some((effect) =>
@@ -389,6 +418,8 @@ export function BattlePage() {
     setMulliganIds([])
     aiSteps.current = 0
     aiSkipped.current = new Set()
+    // Con «?seed=N» la revancha repite semilla: sin esto la nueva partida no se anotaría.
+    recordedSeed.current = undefined
     store.startMatch(preferences.selectedDeckId, forcedSeed)
   }
 
@@ -693,6 +724,11 @@ export function BattlePage() {
               <div><strong>{player.stats.damageDealt}</strong><span>Daño</span></div>
               <div><strong>{player.stats.cardsPlayed}</strong><span>Jugadas</span></div>
             </div>
+            {tally.played > 1 && (
+              <p className={styles.resultTally}>
+                Llevas <strong>{tally.won}</strong> {tally.won === 1 ? 'victoria' : 'victorias'} de <strong>{tally.played}</strong> escaramuzas · {tally.winRate}%
+              </p>
+            )}
             <div className={styles.resultActions}>
               <button onClick={repeat}>Repetir</button>
               <Link to="/">Volver al inicio</Link>

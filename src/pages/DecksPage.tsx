@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, validateDeck } from '../game'
 import type { DeckDefinition, DeckEntry } from '../game'
+import { FactionSigil } from '../components/FactionSigil'
 import { usePreferences } from '../store/preferences'
+import { summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
 import { withBase } from '../utils/assets'
 import styles from './DecksPage.module.css'
 
@@ -54,7 +56,7 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
       </header>
       <div className={styles.layout}>
         <aside className={styles.summary}>
-          <div className={styles.factionMark}><span>{selected.faction === 'fury' ? '♨' : '◇'}</span></div>
+          <div className={styles.factionMark}><FactionSigil faction={selected.faction} size="large" decorative /></div>
           <h2>{selected.name}</h2><div className={styles.commander}>{commander?.name} · {commander?.title}</div>
           <p className={styles.commanderRule}>{commander?.rules}</p>
           <div className={styles.stats}><div className={styles.stat}><strong>{validation.totalCards}</strong><span>Total</span></div><div className={styles.stat}><strong>{validation.manaCards}</strong><span>Esencia</span></div><div className={styles.stat}><strong>{validation.nonManaCards}</strong><span>Acción</span></div></div>
@@ -77,6 +79,64 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
           })}</div>
         </section>
       </div>
+      <MatchHistory />
     </div>
+  )
+}
+
+const relativeDay = (timestamp: number): string => {
+  const days = Math.floor((Date.now() - timestamp) / 86_400_000)
+  if (days <= 0) return 'Hoy'
+  if (days === 1) return 'Ayer'
+  return `Hace ${days} días`
+}
+
+function MatchHistory() {
+  const records = useRecords((state) => state.records)
+  const clear = useRecords((state) => state.clear)
+  const tally = useMemo(() => summarizeRecords(records), [records])
+  const byDeck = useMemo(() => summarizeByDeck(records), [records])
+
+  if (records.length === 0) {
+    return (
+      <section className={styles.history}>
+        <header className={styles.historyHeader}><h3>Historial de escaramuzas</h3></header>
+        <p className={styles.historyEmpty}>Aún no has terminado ninguna partida. Al concluir una escaramuza aparecerá aquí.</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className={styles.history}>
+      <header className={styles.historyHeader}>
+        <h3>Historial de escaramuzas</h3>
+        <button className={styles.historyClear} onClick={clear}>Borrar historial</button>
+      </header>
+      <div className={styles.historyTally}>
+        <div className={styles.stat}><strong>{tally.played}</strong><span>Jugadas</span></div>
+        <div className={styles.stat}><strong>{tally.won}</strong><span>Victorias</span></div>
+        <div className={styles.stat}><strong>{tally.lost}</strong><span>Derrotas</span></div>
+        <div className={styles.stat}><strong>{tally.winRate}%</strong><span>Ratio</span></div>
+      </div>
+      {byDeck.length > 1 && (
+        <ul className={styles.byDeck}>
+          {byDeck.map((entry) => (
+            <li key={entry.deckId}>
+              <span>{entry.deckName}</span>
+              <strong>{entry.won}/{entry.played}</strong>
+            </li>
+          ))}
+        </ul>
+      )}
+      <ol className={styles.historyList}>
+        {records.slice(0, 12).map((record) => (
+          <li key={record.id} className={styles.historyRow} data-won={record.won}>
+            <span className={styles.historyResult}>{record.won ? 'Victoria' : 'Derrota'}</span>
+            <span className={styles.historyDeck}>{record.deckName} <small>vs {record.opponentDeckName}</small></span>
+            <span className={styles.historyMeta}>{record.turns} turnos · {record.seconds}s · {relativeDay(record.finishedAt)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }

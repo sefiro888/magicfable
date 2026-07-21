@@ -248,6 +248,8 @@
 .resultStats div:last-child { border: 0; }
 .resultStats strong { display: block; color: var(--gold-bright); font-family: var(--display); font-size: 20px; }
 .resultStats span { color: #77746d; font-size: 8px; text-transform: uppercase; }
+.resultTally { margin: -12px 0 20px; color: #918e86; font-size: 11px; }
+.resultTally strong { color: var(--gold-bright); font-family: var(--display); font-size: 14px; }
 .resultActions { display: flex; justify-content: center; gap: 10px; }
 .resultActions button, .resultActions a { padding: 11px 18px; border: 1px solid var(--line-bright); background: rgba(215,180,103,.1); cursor: pointer; }
 .mulligan { width: min(850px, 90vw); padding: 34px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; }
