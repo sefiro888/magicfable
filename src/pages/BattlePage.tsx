@@ -534,6 +534,7 @@ export function BattlePage() {
               <img className={styles.portrait} src={commander ? withBase(commander.art.webp) : undefined} alt="" />
               <div><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
             </div>
+            {commander && <p className={styles.commanderRules}>{commander.rules}</p>}
             {player.unitDiscountPending && <p className={styles.commanderBoon}>Pasiva activa: tu siguiente unidad cuesta 1 menos.</p>}
           </section>
           <section className={styles.panelSection}>
