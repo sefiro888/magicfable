@@ -79,3 +79,23 @@
   font-size: 11px;
   letter-spacing: .05em;
 }
+
+/* ── Móvil: la marca arriba, la navegación en su propia fila ── */
+@media (max-width: 720px) {
+  .header {
+    height: auto;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'brand actions'
+      'nav nav';
+    padding: 10px 14px 0;
+  }
+  .brand { grid-area: brand; }
+  .actions { grid-area: actions; }
+  .nav { grid-area: nav; height: 46px; justify-content: center; gap: 0; margin-top: 2px; }
+  .navLink { padding: 0 11px; font-size: 11px; letter-spacing: .08em; }
+  .navLink::after { left: 11px; right: 11px; }
+  .brandText small { display: none; }
+  .main { min-height: calc(100vh - 128px); }
+  .footer { flex-direction: column; gap: 6px; padding: 14px; text-align: center; }
+}

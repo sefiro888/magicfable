@@ -36,3 +36,8 @@
   .fanCard:hover, .fanCard:focus-within { transform: rotate(0deg) translateY(-28px) scale(1.05); }
   .fanCard[data-selected='true'] { transform: rotate(0deg) translateY(-36px) scale(1.07); }
 }
+
+/* ── Móvil: la mano entera se escala para caber en vertical ── */
+@media (max-width: 760px) {
+  .hand { transform: scale(0.74); transform-origin: 50% 100%; }
+}

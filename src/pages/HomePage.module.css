@@ -74,3 +74,16 @@
   .cardLeft { left: 3%; }
   .cardRight { right: 3%; }
 }
+
+/* ── Móvil ── */
+@media (max-width: 720px) {
+  .cardFan { display: none; }
+  .featureStrip { grid-template-columns: repeat(2, 1fr); margin: -30px 14px 0; }
+  .feature { padding: 15px 17px; }
+  .heroContent { padding: 44px 16px 70px; }
+  .title { font-size: clamp(42px, 14vw, 64px); }
+  .lead { font-size: 15px; }
+  .buttons { flex-wrap: wrap; }
+  .section { padding: 60px 16px 55px; }
+  .sectionHeader h2 { font-size: 30px; }
+}

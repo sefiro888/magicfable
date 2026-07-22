@@ -331,3 +331,21 @@
   .message { bottom: 159px; }
   .devPanel { bottom: 166px; }
 }
+
+/* ── Móvil: paneles compactos y batalla usable en vertical ── */
+@media (max-width: 760px) {
+  .battle { min-width: 0; min-height: 100vh; }
+  .topbar { grid-template-columns: auto 1fr auto; padding: 0 10px; }
+  .arena { inset: 60px 0 128px; }
+  .boardFrame { inset: 0 6px; }
+  .leftPanel, .rightPanel { width: 44vw; max-height: 42vh; top: 8px; }
+  .leftPanel { left: 8px; }
+  .rightPanel { right: 8px; bottom: auto; }
+  .panelSection { padding: 10px; }
+  .portrait { aspect-ratio: 16 / 9; }
+  .commanderRules, .contextArt, .contextFlavor, .contextKeywords { display: none; }
+  .handBar { height: 128px; }
+  .handBar[data-tucked] { height: 46px; }
+  .hints { display: none; }
+  .helpButton { top: auto; bottom: 140px; right: 8px; }
+}

@@ -94,3 +94,22 @@
 .achieveBar { margin-top: 7px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
 .achieveBar span { display: block; height: 100%; background: linear-gradient(90deg, #aa792f, var(--gold-bright)); }
 .achieveCheck { position: absolute; top: 10px; right: 12px; color: var(--success); font-weight: 900; }
+
+/* ── Móvil ── */
+@media (max-width: 900px) {
+  .page { padding: 26px 14px 70px; }
+  .header { flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-size: 34px; }
+  .tabs { flex-wrap: wrap; }
+  .layout { grid-template-columns: 1fr; }
+  .layout > * { min-width: 0; }
+  .summary { position: static; padding: 20px 16px; }
+  .summary h2 { font-size: 24px; overflow-wrap: anywhere; }
+}
+@media (max-width: 560px) {
+  .entry { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+  .entry .art { width: 44px; height: 48px; }
+  .cost { display: none; }
+  .pool { grid-template-columns: 1fr; padding: 12px; }
+  .poolCard > div { min-width: 0; }
+}
