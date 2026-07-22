@@ -81,3 +81,16 @@
 @media (max-width: 720px) {
   .historyRow { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ── Logros ──────────────────────────────────────────────────────────────── */
+.achieveCount { font-family: var(--display); color: var(--gold-bright); font-size: 15px; font-variant-numeric: tabular-nums; }
+.achievements { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; padding: 16px 23px; }
+.achievement { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 13px; align-items: center; padding: 13px 15px; border: 1px solid rgba(255,255,255,.07); background: rgba(255,255,255,.015); opacity: .6; transition: opacity .2s ease, border-color .2s ease; }
+.achievement[data-unlocked='true'] { opacity: 1; border-color: rgba(215,180,103,.34); background: rgba(215,180,103,.05); }
+.achieveIcon { font-size: 26px; filter: grayscale(1); }
+.achievement[data-unlocked='true'] .achieveIcon { filter: none; }
+.achieveBody h4 { margin: 0 0 3px; font-family: var(--display); font-size: 15px; font-weight: 500; color: #ded9cf; }
+.achieveBody p { margin: 0; color: #83807a; font-size: 11px; line-height: 1.4; }
+.achieveBar { margin-top: 7px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
+.achieveBar span { display: block; height: 100%; background: linear-gradient(90deg, #aa792f, var(--gold-bright)); }
+.achieveCheck { position: absolute; top: 10px; right: 12px; color: var(--success); font-weight: 900; }

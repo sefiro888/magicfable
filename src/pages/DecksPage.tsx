@@ -4,6 +4,7 @@ import type { DeckDefinition, DeckEntry } from '../game'
 import { FactionSigil } from '../components/FactionSigil'
 import { usePreferences } from '../store/preferences'
 import { currentStreak, summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
+import { evaluateAchievements } from '../store/achievements'
 import { withBase } from '../utils/assets'
 import styles from './DecksPage.module.css'
 
@@ -110,8 +111,39 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
           )}
         </section>
       </div>
+      <AchievementsPanel />
       <MatchHistory />
     </div>
+  )
+}
+
+function AchievementsPanel() {
+  const records = useRecords((state) => state.records)
+  const achievements = useMemo(() => evaluateAchievements(records), [records])
+  const unlocked = achievements.filter((achievement) => achievement.unlocked).length
+
+  return (
+    <section className={styles.history}>
+      <header className={styles.historyHeader}>
+        <h3>Logros</h3>
+        <span className={styles.achieveCount}>{unlocked} / {achievements.length}</span>
+      </header>
+      <div className={styles.achievements}>
+        {achievements.map((achievement) => (
+          <article key={achievement.id} className={styles.achievement} data-unlocked={achievement.unlocked}>
+            <span className={styles.achieveIcon} aria-hidden="true">{achievement.icon}</span>
+            <div className={styles.achieveBody}>
+              <h4>{achievement.name}</h4>
+              <p>{achievement.description}</p>
+              {!achievement.unlocked && achievement.progress > 0 && (
+                <div className={styles.achieveBar}><span style={{ width: `${Math.round(achievement.progress * 100)}%` }} /></div>
+              )}
+            </div>
+            {achievement.unlocked && <span className={styles.achieveCheck} aria-label="Conseguido">✓</span>}
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 
