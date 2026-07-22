@@ -1,0 +1,58 @@
+.backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vw, 3rem);
+  overflow: auto;
+  background: radial-gradient(circle at 50% 30%, rgba(178,119,53,.14), transparent 45%), rgba(3,4,8,.86);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 160ms ease-out both;
+}
+
+.panel {
+  width: min(640px, 100%);
+  padding: clamp(1.5rem, 3vw, 2.4rem);
+  border: 1px solid rgba(228,193,113,.5);
+  border-radius: 1.25rem;
+  background: linear-gradient(150deg, #1a1c26, #0d0f16 62%);
+  box-shadow: 0 2.5rem 7rem rgba(0,0,0,.72);
+  animation: riseIn 220ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.head { text-align: center; margin-bottom: 1.4rem; }
+.head small { color: #d8b551; font-weight: 800; letter-spacing: .26em; text-transform: uppercase; font-size: .68rem; }
+.head h2 { margin: .4rem 0 .3rem; font-family: var(--display, Georgia, serif); font-weight: 500; font-size: clamp(1.6rem, 4vw, 2.1rem); color: #f4ecdb; }
+.head p { margin: 0; color: #8f8b82; font-size: .9rem; }
+
+.steps { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: .8rem; }
+.step { display: grid; grid-template-columns: auto 1fr; gap: .95rem; align-items: start; padding: .85rem 1rem; border: 1px solid rgba(255,255,255,.07); border-radius: .7rem; background: rgba(255,255,255,.02); }
+.num {
+  display: grid; place-items: center;
+  width: 2.1rem; height: 2.1rem; flex: 0 0 auto;
+  font-family: var(--display, Georgia, serif); font-size: 1.15rem; font-weight: 700; color: #14110a;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #edd282, #b7893a);
+  box-shadow: 0 3px 10px -3px rgba(183,137,58,.8);
+}
+.step h3 { margin: .1rem 0 .28rem; font-family: var(--display, Georgia, serif); font-weight: 600; font-size: 1.02rem; color: #f0e8d6; }
+.step p { margin: 0; color: #b3aea3; font-size: .85rem; line-height: 1.5; }
+
+.confirm {
+  display: block; width: 100%; padding: .85rem; cursor: pointer;
+  border: 1px solid #e6c673; border-radius: .55rem;
+  color: #160f05; font-weight: 800; font-size: .95rem; letter-spacing: .02em;
+  background: linear-gradient(#e3c373, #aa792f);
+  transition: filter .15s ease, transform .15s ease;
+}
+.confirm:hover { filter: brightness(1.08); }
+.confirm:focus-visible { outline: 2px solid #fff1b8; outline-offset: 3px; }
+
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes riseIn { from { opacity: 0; transform: translateY(1rem) scale(.98); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop, .panel { animation: none; }
+  .confirm { transition: none; }
+}

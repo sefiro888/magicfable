@@ -23,6 +23,7 @@ import {
 import { Board3D } from '../battle/Board3D'
 import { HandFan } from '../battle/ui/HandFan'
 import { HistoryLog } from '../battle/ui/HistoryLog'
+import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { Card } from '../components'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
@@ -114,6 +115,7 @@ export function BattlePage() {
   const [revealedCardId, setRevealedCardId] = useState<string>()
   const [banner, setBanner] = useState<string>()
   const [devOpen, setDevOpen] = useState(false)
+  const [howToOpen, setHowToOpen] = useState(() => !hasSeenHowTo())
   const aiSteps = useRef(0)
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
@@ -413,6 +415,11 @@ export function BattlePage() {
     if (doAction({ type: 'end-turn', playerId: 'player' })) finishSelection()
   }, [doAction, finishSelection])
 
+  const closeHowTo = useCallback(() => {
+    markHowToSeen()
+    setHowToOpen(false)
+  }, [])
+
   if (!match || !player || !ai) return <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'} />
 
   const playSelectedWithoutTarget = () => {
@@ -675,6 +682,18 @@ export function BattlePage() {
           </section>
         </div>
       )}
+
+      <button
+        className={styles.helpButton}
+        type="button"
+        onClick={() => setHowToOpen(true)}
+        aria-label="Cómo jugar"
+        title="Cómo jugar"
+      >
+        ?
+      </button>
+
+      {howToOpen && <HowToPlay onClose={closeHowTo} />}
 
       {!player.mulliganTaken && match.turn === 1 && !match.winner && (
         <div className={styles.resultBackdrop}>
