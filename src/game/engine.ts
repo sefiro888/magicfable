@@ -193,6 +193,25 @@ const pathIsClear = (
   return true;
 };
 
+const hasKeyword = (piece: BoardPiece, keyword: 'guard' | 'flying' | 'impulse' | 'swift-strike'): boolean =>
+  Boolean(pieceDefinition(piece)?.keywords.includes(keyword));
+
+/**
+ * Guardia: mientras una unidad enemiga esté adyacente a un Guardia, solo puede
+ * atacar a ese Guardia (protege al resto de piezas y al Nexo). Devuelve el
+ * conjunto de ids de Guardias enemigos adyacentes al atacante, si los hay.
+ */
+const adjacentEnemyGuards = (state: MatchState, attacker: BoardPiece): Set<string> => {
+  const guards = new Set<string>();
+  for (const piece of state.board) {
+    if (piece.owner === attacker.owner) continue;
+    if (distance(piece.position, attacker.position) === 1 && hasKeyword(piece, 'guard')) {
+      guards.add(piece.instanceId);
+    }
+  }
+  return guards;
+};
+
 const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boolean => {
   const definition = pieceDefinition(piece);
   if (!definition || definition.type !== 'unit' || piece.owner !== state.activePlayer) return false;
@@ -200,7 +219,10 @@ const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boole
   if (piece.enteredOnTurn === state.turn && !definition.keywords.includes('impulse')) return false;
   const movement = definition.movement ?? 1;
   const travel = distance(piece.position, to);
-  return travel > 0 && travel <= movement && pathIsClear(state, piece.position, to, piece.instanceId);
+  if (travel <= 0 || travel > movement) return false;
+  // Volador: ignora las piezas del camino (pero no puede aterrizar en casilla ocupada).
+  if (definition.keywords.includes('flying')) return true;
+  return pathIsClear(state, piece.position, to, piece.instanceId);
 };
 
 export const getValidMoves = (state: MatchState, pieceId: string): readonly Position[] => {
@@ -221,6 +243,9 @@ const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: Board
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.owner === defender.owner || attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
+  // Guardia: si hay Guardias enemigos adyacentes, el objetivo debe ser uno de ellos.
+  const guards = adjacentEnemyGuards(state, attacker);
+  if (guards.size > 0 && !guards.has(defender.instanceId)) return false;
   const range = definition.range ?? 1;
   const targetDistance = distance(attacker.position, defender.position);
   return targetDistance > 0 && targetDistance <= range && pathIsClear(state, attacker.position, defender.position, attacker.instanceId);
@@ -231,6 +256,8 @@ const canAttackEnemyNexus = (state: MatchState, attacker: BoardPiece): boolean =
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
+  // Guardia: no se puede golpear el Nexo mientras un Guardia enemigo esté adyacente.
+  if (adjacentEnemyGuards(state, attacker).size > 0) return false;
   const enemy = opponentOf(attacker.owner);
   const target = { x: attacker.position.x, y: nexusRow(enemy) };
   const range = definition.range ?? 1;

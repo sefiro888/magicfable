@@ -299,6 +299,49 @@ describe('combate, daño y destrucción', () => {
   });
 });
 
+describe('palabras clave: Volador y Guardia', () => {
+  it('Volador ignora las piezas del camino al moverse', () => {
+    const state: MatchState = {
+      ...freshMatch(),
+      board: [
+        // Águila Celestial (volador, movimiento 2) con una pieza en su columna.
+        makePiece('flyer', 'aguila-celestial', 'player', { x: 2, y: 5 }),
+        makePiece('wallA', 'oso-forestal', 'player', { x: 2, y: 4 }),
+        // Sabueso (terrestre, movimiento 2) con un bloqueo idéntico como control.
+        makePiece('ground', 'sabueso-brasa', 'player', { x: 5, y: 5 }),
+        makePiece('wallB', 'oso-forestal', 'player', { x: 5, y: 4 }),
+      ],
+    };
+    expect(getValidMoves(state, 'flyer')).toContainEqual({ x: 2, y: 3 });
+    expect(getValidMoves(state, 'ground')).not.toContainEqual({ x: 5, y: 3 });
+  });
+
+  it('Guardia obliga a atacarlo antes que a otras piezas', () => {
+    const state: MatchState = {
+      ...freshMatch(),
+      board: [
+        makePiece('attacker', 'sabueso-brasa', 'player', { x: 3, y: 3 }),
+        makePiece('guard', 'guardian-robledal', 'ai', { x: 2, y: 3 }),
+        makePiece('other', 'sabueso-brasa', 'ai', { x: 4, y: 3 }),
+      ],
+    };
+    const attacks = getValidAttacks(state, 'attacker');
+    expect(attacks.pieceIds).toContain('guard');
+    expect(attacks.pieceIds).not.toContain('other');
+  });
+
+  it('Guardia protege el Nexo enemigo mientras esté adyacente', () => {
+    const attacker = makePiece('striker', 'sabueso-brasa', 'player', { x: 4, y: 0 });
+    const free: MatchState = { ...freshMatch(), board: [attacker] };
+    expect(getValidAttacks(free, 'striker').canAttackNexus).toBe(true);
+    const guarded: MatchState = {
+      ...freshMatch(),
+      board: [attacker, makePiece('guard', 'guardian-robledal', 'ai', { x: 4, y: 1 })],
+    };
+    expect(getValidAttacks(guarded, 'striker').canAttackNexus).toBe(false);
+  });
+});
+
 describe('efectos de cartas principales', () => {
   it('el Dragón de la Caldera hace 2 de daño a todas las cartas adyacentes al entrar', () => {
     let state: MatchState = {
