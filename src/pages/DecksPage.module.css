@@ -42,6 +42,16 @@
 .counter button:hover { background: rgba(215,180,103,.12); }
 .counter span { text-align: center; font-family: var(--display); color: var(--gold-bright); }
 
+/* Catálogo de la facción: cartas disponibles para añadir al mazo. */
+.pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; padding: 14px 18px; }
+.poolCard { display: grid; grid-template-columns: 44px 1fr auto auto; align-items: center; gap: 12px; padding: 8px 12px; cursor: pointer; text-align: left; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); transition: border-color .15s ease, background .15s ease; }
+.poolCard:hover { border-color: var(--line-bright); background: rgba(215,180,103,.06); }
+.poolCard .art { width: 44px; height: 48px; }
+.poolCard h4 { margin: 0 0 3px; font-family: var(--display); font-size: 14px; font-weight: 500; }
+.poolCard p { margin: 0; color: #7e7b74; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+.addMark { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--line-bright); border-radius: 50%; color: var(--gold-bright); font-family: var(--display); font-size: 16px; }
+.poolCard:hover .addMark { background: rgba(215,180,103,.14); }
+
 /* ── Historial de escaramuzas ─────────────────────────────────────────────── */
 .history { margin-top: 26px; border: 1px solid var(--line); background: rgba(255,255,255,.014); }
 .historyHeader { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 23px; border-bottom: 1px solid var(--line); }

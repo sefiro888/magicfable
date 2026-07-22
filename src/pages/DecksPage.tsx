@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, validateDeck } from '../game'
+import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, cardsForFaction, validateDeck } from '../game'
 import type { DeckDefinition, DeckEntry } from '../game'
 import { FactionSigil } from '../components/FactionSigil'
 import { usePreferences } from '../store/preferences'
@@ -34,9 +34,24 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
   const validation = useMemo(() => validateDeck(draft), [draft])
   const commander = COMMANDER_BY_ID[selected.commanderId]
 
+  // Catálogo de la facción que aún no está en el mazo: permite construir desde cero.
+  const availablePool = useMemo(() => {
+    const inDeck = new Set(entries.map((entry) => entry.cardId))
+    return cardsForFaction(selected.faction).filter((card) => !inDeck.has(card.id))
+  }, [entries, selected.faction])
+
   const changeCount = (cardId: string, delta: number) => {
     setSaved(false)
-    setEntries((current) => current.map((entry) => entry.cardId === cardId ? { ...entry, count: Math.max(0, entry.count + delta) } : entry))
+    setEntries((current) =>
+      current
+        .map((entry) => (entry.cardId === cardId ? { ...entry, count: Math.max(0, entry.count + delta) } : entry))
+        // Al bajar a 0 la carta sale del mazo y vuelve al catálogo.
+        .filter((entry) => entry.count > 0),
+    )
+  }
+  const addCard = (cardId: string) => {
+    setSaved(false)
+    setEntries((current) => (current.some((entry) => entry.cardId === cardId) ? current : [...current, { cardId, count: 1 }]))
   }
   const save = () => {
     localStorage.setItem(`cronicas-nexo-deck-${selected.id}`, JSON.stringify(entries))
@@ -65,7 +80,7 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
           {saved && <span className={styles.saved}>Borrador guardado en este dispositivo.</span>}
         </aside>
         <section className={styles.editor}>
-          <header className={styles.editorHeader}><h3>Lista de cartas</h3><span>Usa +/− para probar la validación automática</span></header>
+          <header className={styles.editorHeader}><h3>Lista de cartas</h3><span>Usa +/− para ajustar copias. Al llegar a 0, la carta vuelve al catálogo.</span></header>
           <div className={styles.list}>{entries.map((entry) => {
             const card = CARD_BY_ID[entry.cardId]
             if (!card) return null
@@ -77,6 +92,22 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
               <div className={styles.counter}><button onClick={() => changeCount(entry.cardId, -1)} aria-label={`Quitar ${card.name}`}>−</button><span>{entry.count}</span><button onClick={() => changeCount(entry.cardId, 1)} aria-label={`Añadir ${card.name}`}>+</button></div>
             </article>
           })}</div>
+          {availablePool.length > 0 && (
+            <>
+              <header className={styles.editorHeader}><h3>Catálogo de {selected.faction === 'fury' ? 'Furia' : selected.name}</h3><span>Añade cartas de la facción para construir tu propio mazo</span></header>
+              <div className={styles.pool}>{availablePool.map((card) => {
+                const colorCost = Object.values(card.cost.colored).reduce((total, amount) => total + (amount ?? 0), 0)
+                return (
+                  <button className={styles.poolCard} key={card.id} onClick={() => addCard(card.id)} title={`Añadir ${card.name} al mazo`}>
+                    <img className={styles.art} src={withBase(card.art.webp)} alt="" />
+                    <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}</p></div>
+                    <span className={styles.cost}>{card.type === 'mana' ? 'Fuente' : `Coste ${card.cost.generic + colorCost}`}</span>
+                    <span className={styles.addMark} aria-hidden="true">+</span>
+                  </button>
+                )
+              })}</div>
+            </>
+          )}
         </section>
       </div>
       <MatchHistory />
