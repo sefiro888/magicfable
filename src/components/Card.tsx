@@ -148,7 +148,6 @@ function ManaCostBadge({ cost }: { readonly cost: ManaCost }) {
     <div className={styles.cost} aria-label={`Coste: ${formatManaCost(cost)}`} title={`Coste: ${formatManaCost(cost)}`}>
       {colored.map(({ faction, amount }) => (
         <span className={styles.coloredCost} data-faction={faction} key={faction}>
-          <FactionSigil faction={faction} size="small" decorative />
           <strong>{amount}</strong>
         </span>
       ))}

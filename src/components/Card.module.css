@@ -228,41 +228,48 @@
   left: 0.35rem;
   display: flex;
   align-items: center;
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,.85));
+  gap: 0.18em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
 }
-/* Gema hexagonal engastada en oro: engaste dorado exterior + núcleo facetado. */
+/* Cristal de coste: hexágono vertical esbelto con filo dorado fino.
+   Solo lleva el número — el color del núcleo ya identifica la facción. */
 .coloredCost,
 .genericCost {
   position: relative;
   display: inline-flex;
-  width: 2.5em;
-  height: 2.5em;
+  width: 1.85em;
+  height: 2.3em;
   align-items: center;
   justify-content: center;
   color: #fff;
-  clip-path: polygon(50% 1%, 93% 25%, 93% 75%, 50% 99%, 7% 75%, 7% 25%);
-  background: linear-gradient(150deg, #ffeaa8 8%, #c69a44 46%, #6f4f1c);
+  font-family: var(--display, Georgia, serif);
+  font-size: 1.08em;
+  font-weight: 700;
+  clip-path: polygon(50% 0%, 100% 26%, 100% 74%, 50% 100%, 0% 74%, 0% 26%);
+  background: linear-gradient(168deg, #f6dfa0 6%, #b98f3c 48%, #5f431a);
+  text-shadow: 0 1px 2px #000, 0 0 0.28em rgba(0, 0, 0, 0.75);
 }
-/* Núcleo interior facetado, en el color de la facción. */
+/* Núcleo facetado tras un filo dorado muy fino. */
 .coloredCost::before,
 .genericCost::before {
   content: '';
   position: absolute;
-  inset: 0.16em;
+  inset: 0.09em;
   clip-path: inherit;
   background:
-    linear-gradient(150deg, rgba(255,255,255,.55), transparent 42%),
-    radial-gradient(circle at 40% 30%, var(--frame-light), var(--frame-mid) 54%, #0c0910 100%);
-  box-shadow: inset 0 0 0.35em rgba(0,0,0,.6);
+    linear-gradient(165deg, rgba(255, 255, 255, 0.5), transparent 44%),
+    radial-gradient(ellipse at 45% 30%, var(--frame-light), var(--frame-mid) 56%, #0b0810 100%);
+  box-shadow: inset 0 0 0.3em rgba(0, 0, 0, 0.55);
 }
 .coloredCost > *,
 .genericCost > * { position: relative; z-index: 1; }
-.coloredCost + .coloredCost,
-.coloredCost + .genericCost { margin-left: -0.55em; }
-.coloredCost strong { margin-left: -0.05em; font-size: 1.05em; font-weight: 800; text-shadow: 0 1px 2px #000, 0 0 0.3em rgba(0,0,0,.7); }
-/* El coste genérico usa un núcleo de plata/acero, sin color de facción. */
-.genericCost { font-family: var(--display, Georgia, serif); font-size: 1.16em; font-weight: 800; text-shadow: 0 1px 2px #000; }
-.genericCost::before { background: linear-gradient(150deg, rgba(255,255,255,.6), transparent 42%), radial-gradient(circle at 40% 30%, #e7ddc8, #7c7263 52%, #14110c); }
+.coloredCost strong { font-size: 1em; font-weight: 700; }
+/* El coste genérico usa un núcleo de acero, sin color de facción. */
+.genericCost::before {
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.55), transparent 44%),
+    radial-gradient(ellipse at 45% 30%, #ded5c2, #6f665a 55%, #100d0a 100%);
+}
 /* Míticas y raras: el engaste del coste brilla. */
 .card[data-rarity='rare'] .coloredCost, .card[data-rarity='rare'] .genericCost { filter: drop-shadow(0 0 0.3em var(--frame-glow)); }
 .card[data-rarity='mythic'] .coloredCost, .card[data-rarity='mythic'] .genericCost { filter: drop-shadow(0 0 0.42em color-mix(in srgb, #d86cff 70%, var(--frame-glow))); }
