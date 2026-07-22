@@ -20,6 +20,9 @@ import type {
 
 const MAX_AI_ACTIONS = 64;
 
+/** Nivel de la IA rival. Solo cambia su agresividad, no su validez de jugadas. */
+export type AiDifficulty = 'easy' | 'normal' | 'hard';
+
 const cardScore = (card: CardDefinition): number => {
   const cost = card.cost.generic + Object.values(card.cost.colored).reduce<number>((sum, value) => sum + (value ?? 0), 0);
   const boardValue = (card.attack ?? 0) * 2 + (card.health ?? card.resistance ?? 0);
@@ -200,6 +203,7 @@ const actWithPiece = (state: MatchState, pieceId: string): MatchState => {
 export const chooseNextAiAction = (
   state: MatchState,
   skippedCardIds: ReadonlySet<string> = new Set(),
+  difficulty: AiDifficulty = 'normal',
 ): GameAction => {
   const endTurn: GameAction = { type: 'end-turn', playerId: 'ai' };
   if (state.activePlayer !== 'ai' || state.phase === 'finished') return endTurn;
@@ -217,7 +221,8 @@ export const chooseNextAiAction = (
     .sort((left, right) => left.instanceId.localeCompare(right.instanceId));
   for (const piece of pieces) {
     const attacks = getValidAttacks(state, piece.instanceId);
-    if (attacks.canAttackNexus) {
+    // En fácil la IA no remata el Nexo: pelea en el tablero y deja respirar al jugador.
+    if (attacks.canAttackNexus && difficulty !== 'easy') {
       return { type: 'attack-nexus', playerId: 'ai', attackerId: piece.instanceId };
     }
     if (attacks.pieceIds.length > 0) {

@@ -1,5 +1,11 @@
-import { usePreferences, type GraphicsQuality, type ScenarioId } from '../store/preferences'
+import { usePreferences, type AiDifficulty, type GraphicsQuality, type ScenarioId } from '../store/preferences'
 import styles from './SettingsPage.module.css'
+
+const DIFFICULTY_OPTIONS: readonly { value: AiDifficulty; label: string; hint: string }[] = [
+  { value: 'easy', label: 'Fácil', hint: 'El rival pelea en el tablero pero no remata tu Nexo. Ideal para aprender.' },
+  { value: 'normal', label: 'Normal', hint: 'El rival juega a por la victoria con su táctica completa.' },
+  { value: 'hard', label: 'Difícil', hint: 'El rival aprovecha cada apertura para golpear tu Nexo.' },
+]
 
 const SCENARIO_OPTIONS: readonly { value: ScenarioId; label: string; hint: string }[] = [
   { value: 'aether-citadel', label: 'Aether Citadel', hint: 'Ciudadela flotante al amanecer (Blender + GLB).' },
@@ -89,6 +95,20 @@ export function SettingsPage() {
         <section className={styles.section}>
           <h2>Accesibilidad y ritmo</h2><p>Ajusta la presentación sin alterar las reglas.</p>
           <div className={styles.toggleRow}><span><strong>Reducir movimiento</strong><small>Acorta transiciones, golpes de cámara y partículas.</small></span><button className={styles.toggle} data-on={settings.reducedMotion} onClick={() => settings.setReducedMotion(!settings.reducedMotion)} aria-label="Reducir movimiento" aria-pressed={settings.reducedMotion} /></div>
+          <div className={styles.control}>
+            <label htmlFor="aiDifficulty">Dificultad del rival</label>
+            <select
+              id="aiDifficulty"
+              className={styles.select}
+              value={settings.aiDifficulty}
+              onChange={(event) => settings.setAiDifficulty(event.target.value as AiDifficulty)}
+            >
+              {DIFFICULTY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <output>{DIFFICULTY_OPTIONS.find((option) => option.value === settings.aiDifficulty)?.hint}</output>
+          </div>
           <div className={styles.control}>
             <label htmlFor="aiDelay">Pausa de la IA</label>
             <input id="aiDelay" type="range" min="150" max="1200" step="50" value={settings.aiDelayMs} onChange={(event) => settings.setAiDelay(Number(event.target.value))} />

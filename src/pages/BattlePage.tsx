@@ -233,7 +233,7 @@ export function BattlePage() {
       const action: GameAction =
         aiSteps.current >= MAX_AI_STEPS
           ? { type: 'end-turn', playerId: 'ai' }
-          : chooseNextAiAction(matchNow, aiSkipped.current)
+          : chooseNextAiAction(matchNow, aiSkipped.current, preferences.aiDifficulty)
       const ok = stateNow.dispatch(action)
       if (!ok) {
         stateNow.setMessage(undefined)
@@ -252,7 +252,7 @@ export function BattlePage() {
       stateNow.setAiThinking(false)
     }, Math.max(140, preferences.aiDelayMs / 3))
     return () => window.clearTimeout(timer)
-  }, [match?.activePlayer, match?.turn, match?.winner, queueBusy, scryOpen, preferences.aiDelayMs, pendingCount])
+  }, [match?.activePlayer, match?.turn, match?.winner, queueBusy, scryOpen, preferences.aiDelayMs, preferences.aiDifficulty, pendingCount])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {

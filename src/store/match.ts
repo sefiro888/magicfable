@@ -72,10 +72,13 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
   startMatch: (playerDeckId, seed) => {
     const playerIndex = Math.max(0, STARTER_DECKS.findIndex((deck) => deck.id === playerDeckId))
     const playerDeck = STARTER_DECKS[playerIndex]
-    // El rival avanza una posición en la lista para que cada facción tenga un oponente distinto.
-    const aiDeck = STARTER_DECKS[(playerIndex + 1) % STARTER_DECKS.length]
+    const matchSeed = seed ?? (Date.now() >>> 0)
+    // El rival se elige a partir de la semilla entre las demás facciones: varía en
+    // cada escaramuza, pero una revancha con la misma semilla repite el emparejamiento.
+    const opponents = STARTER_DECKS.filter((_, index) => index !== playerIndex)
+    const aiDeck = opponents[matchSeed % opponents.length] ?? opponents[0]
     if (!playerDeck || !aiDeck) throw new Error('Faltan mazos iniciales para crear la partida.')
-    const match = createMatch(playerDeck, aiDeck, seed ?? (Date.now() >>> 0))
+    const match = createMatch(playerDeck, aiDeck, matchSeed)
     set({
       ...initialState,
       match: clearAnimationQueue(match),

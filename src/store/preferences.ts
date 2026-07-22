@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high'
 export type ScenarioId = 'aether-citadel' | 'sanctuary'
+export type AiDifficulty = 'easy' | 'normal' | 'hard'
 
 export interface PreferencesState {
   masterVolume: number
@@ -11,6 +12,7 @@ export interface PreferencesState {
   muted: boolean
   reducedMotion: boolean
   aiDelayMs: number
+  aiDifficulty: AiDifficulty
   selectedDeckId: string
   graphicsQuality: GraphicsQuality
   /** Escenario 3D de la batalla. */
@@ -21,6 +23,7 @@ export interface PreferencesState {
   setMuted: (muted: boolean) => void
   setReducedMotion: (reduced: boolean) => void
   setAiDelay: (delay: number) => void
+  setAiDifficulty: (difficulty: AiDifficulty) => void
   setSelectedDeck: (deckId: string) => void
   setGraphicsQuality: (quality: GraphicsQuality) => void
   setScenario: (scenario: ScenarioId) => void
@@ -35,6 +38,7 @@ const defaults = {
   muted: false,
   reducedMotion: false,
   aiDelayMs: 520,
+  aiDifficulty: 'normal' as AiDifficulty,
   selectedDeckId: 'furia-caldera',
   graphicsQuality: 'medium' as GraphicsQuality,
   scenario: 'aether-citadel' as ScenarioId,
@@ -49,6 +53,7 @@ export const usePreferences = create<PreferencesState>()(
       setMuted: (muted) => set({ muted }),
       setReducedMotion: (reducedMotion) => set({ reducedMotion }),
       setAiDelay: (aiDelayMs) => set({ aiDelayMs }),
+      setAiDifficulty: (aiDifficulty) => set({ aiDifficulty }),
       setSelectedDeck: (selectedDeckId) => set({ selectedDeckId }),
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
       setScenario: (scenario) => set({ scenario }),
@@ -57,7 +62,7 @@ export const usePreferences = create<PreferencesState>()(
     }),
     {
       name: 'cronicas-nexo-preferences',
-      version: 3,
+      version: 4,
       migrate: (persisted) => ({ ...defaults, ...(persisted as Partial<PreferencesState>) }),
     },
   ),
