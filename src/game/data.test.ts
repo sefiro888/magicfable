@@ -70,6 +70,36 @@ describe('catálogo del Nexo', () => {
       expect(CommanderDefinitionSchema.safeParse(commander).success).toBe(true);
     }
   });
+
+  it('da a cada facción un comandante único que no colisiona con ninguna carta', () => {
+    // Exactamente un comandante por facción jugable.
+    for (const faction of PLAYABLE_FACTIONS) {
+      const owners = COMMANDERS.filter((commander) => commander.faction === faction.id);
+      expect(owners, faction.id).toHaveLength(1);
+    }
+    // Ids de comandante únicos entre sí.
+    expect(new Set(COMMANDERS.map((commander) => commander.id)).size).toBe(COMMANDERS.length);
+    // Ningún comandante comparte id ni archivo de arte con una carta del catálogo.
+    const cardIds = new Set(CARDS.map((card) => card.id));
+    const cardArt = new Set(CARDS.map((card) => card.art.webp));
+    for (const commander of COMMANDERS) {
+      expect(cardIds.has(commander.id), `${commander.id} choca con una carta`).toBe(false);
+      expect(cardArt.has(commander.art.webp), `${commander.id} reutiliza arte de una carta`).toBe(false);
+    }
+    // El arte de los comandantes tampoco se repite entre ellos.
+    expect(new Set(COMMANDERS.map((commander) => commander.art.webp)).size).toBe(COMMANDERS.length);
+  });
+
+  it('da a cada facción una única fuente de maná exclusiva', () => {
+    const manaCards = CARDS.filter((card) => card.type === 'mana');
+    for (const faction of PLAYABLE_FACTIONS) {
+      const sources = manaCards.filter((card) => card.faction === faction.id);
+      expect(sources, faction.id).toHaveLength(1);
+    }
+    // Sin fuentes huérfanas de una facción que no exista, y una por facción en total.
+    expect(manaCards).toHaveLength(PLAYABLE_FACTIONS.length);
+    expect(new Set(manaCards.map((card) => card.id)).size).toBe(manaCards.length);
+  });
 });
 
 describe('mazos iniciales', () => {
