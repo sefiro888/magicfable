@@ -126,7 +126,14 @@ export function BattlePage() {
   const scryOpen = scryAmount > 0
 
   useEffect(() => {
-    if (!store.match) {
+    // Crea partida nueva si no hay ninguna o si la que persiste en el store no
+    // corresponde al mazo elegido. Sin la segunda condición, la primera facción
+    // con la que se juega quedaba fija al volver a entrar con otra distinta.
+    const selectedDeck = STARTER_DECKS.find((deck) => deck.id === preferences.selectedDeckId)
+    const matchesSelection = Boolean(
+      store.match && selectedDeck && store.match.players.player.commanderId === selectedDeck.commanderId,
+    )
+    if (!matchesSelection) {
       useMatchStore.getState().startMatch(preferences.selectedDeckId, forcedSeed)
     }
   }, [preferences.selectedDeckId, store.match, forcedSeed])
