@@ -23,6 +23,7 @@ import {
 } from './grid/gridCoordinates'
 import { AetherCitadel } from './scenarios/AetherCitadel'
 import { SanctuaryScenario } from './scenarios/SanctuaryScenario'
+import { CalderaScenario } from './scenarios/CalderaScenario'
 import { slabTexture } from './textures'
 import styles from './Board3D.module.css'
 
@@ -324,6 +325,8 @@ function Scene(props: Board3DProps) {
       <Suspense fallback={<LoadingStage />}>
         {props.scenario === 'aether-citadel' ? (
           <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'caldera' ? (
+          <CalderaScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : (
           <SanctuaryScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         )}

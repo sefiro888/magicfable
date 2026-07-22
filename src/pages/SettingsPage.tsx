@@ -10,6 +10,7 @@ const DIFFICULTY_OPTIONS: readonly { value: AiDifficulty; label: string; hint: s
 const SCENARIO_OPTIONS: readonly { value: ScenarioId; label: string; hint: string }[] = [
   { value: 'aether-citadel', label: 'Aether Citadel', hint: 'Ciudadela flotante al amanecer (Blender + GLB).' },
   { value: 'sanctuary', label: 'Santuario de las Runas', hint: 'Arena nocturna procedural original.' },
+  { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Las runas quebradas envueltas en brasa y fuego.' },
 ]
 
 const QUALITY_OPTIONS: readonly { value: GraphicsQuality; label: string; hint: string }[] = [
