@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { PLAYABLE_FACTIONS } from '../game'
+import { FactionSigil } from '../components/FactionSigil'
 import { withBase } from '../utils/assets'
 import styles from './HomePage.module.css'
 
@@ -27,24 +29,22 @@ export function HomePage() {
 
       <div className={styles.featureStrip} aria-label="Características del prototipo">
         <div className={styles.feature}><strong>8 × 8</strong><span>Tablero táctico</span></div>
-        <div className={styles.feature}><strong>24</strong><span>Cartas originales</span></div>
-        <div className={styles.feature}><strong>2 × 50</strong><span>Mazos completos</span></div>
+        <div className={styles.feature}><strong>90</strong><span>Cartas originales</span></div>
+        <div className={styles.feature}><strong>6 × 50</strong><span>Mazos completos</span></div>
         <div className={styles.feature}><strong>25</strong><span>Vida del Nexo</span></div>
       </div>
 
       <section className={styles.section}>
-        <header className={styles.sectionHeader}><small>Elige tu vínculo</small><h2>Dos fuerzas despiertan</h2></header>
+        <header className={styles.sectionHeader}><small>Elige tu vínculo</small><h2>Seis fuerzas despiertan</h2></header>
         <div className={styles.factions}>
-          <article className={`${styles.faction} ${styles.fury}`}>
-            <span className={styles.sigil}>♨</span><h3>Furia</h3>
-            <p>Presión volcánica, criaturas veloces y golpes que dejan el campo ardiendo.</p>
-            <div className={styles.tags}><span>Agresión</span><span>Fuego</span><span>Impulso</span></div>
-          </article>
-          <article className={`${styles.faction} ${styles.arcane}`}>
-            <span className={styles.sigil}>◇</span><h3>Arcano</h3>
-            <p>Controla el ritmo de la batalla con hielo, conocimiento y magia encadenada.</p>
-            <div className={styles.tags}><span>Control</span><span>Hielo</span><span>Robo</span></div>
-          </article>
+          {PLAYABLE_FACTIONS.map((faction) => (
+            <article key={faction.id} className={`${styles.faction} ${styles[faction.id]}`}>
+              <span className={styles.sigil}><FactionSigil faction={faction.id} size="large" decorative /></span>
+              <h3>{faction.name}</h3>
+              <p>{faction.description}</p>
+              <div className={styles.tags}>{faction.themes.map((theme) => <span key={theme}>{theme}</span>)}</div>
+            </article>
+          ))}
         </div>
       </section>
     </div>

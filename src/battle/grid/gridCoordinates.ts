@@ -47,9 +47,15 @@ export const NEXUS_WORLD: Readonly<Record<string, readonly [number, number]>> = 
 export const LEGACY_FOOTPRINT = 5.9
 export const SCENERY_SCALE = BOARD_WORLD_SIZE / LEGACY_FOOTPRINT
 
-/** Encuadre de cámara recomendado para la huella actual. */
-export const CAMERA_POSITION: readonly [number, number, number] = [0, 10.9, 10.5]
+/**
+ * Encuadre de cámara recomendado para la huella actual.
+ * La posición inicial mantiene el ángulo picado clásico pero arranca más cerca
+ * (~11.5 de distancia frente a los ~15.6 anteriores) para que el tablero llene
+ * más la pantalla. La distancia mínima baja a 8.5 para permitir un zoom mayor;
+ * la máxima conserva el encuadre amplio previo por si se quiere alejar.
+ */
+export const CAMERA_POSITION: readonly [number, number, number] = [0, 8.1, 7.6]
 export const CAMERA_FOV = 44
 export const CAMERA_TARGET: readonly [number, number, number] = [0, 0, -0.6]
-export const CAMERA_MIN_DISTANCE = 10.2
+export const CAMERA_MIN_DISTANCE = 8.5
 export const CAMERA_MAX_DISTANCE = 16.2

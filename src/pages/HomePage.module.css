@@ -54,12 +54,16 @@
 .sectionHeader { text-align: center; margin-bottom: 40px; }
 .sectionHeader small { color: var(--gold); letter-spacing: .32em; text-transform: uppercase; font-weight: 800; }
 .sectionHeader h2 { margin: 12px 0 0; font-family: var(--display); font-size: 42px; font-weight: 500; }
-.factions { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-.faction { min-height: 280px; position: relative; overflow: hidden; padding: 38px; border: 1px solid var(--line); background: var(--panel); }
+.factions { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
+.faction { min-height: 240px; position: relative; overflow: hidden; padding: 34px; border: 1px solid var(--line); background: var(--panel); }
 .faction::before { content: ""; position: absolute; width: 330px; height: 330px; right: -90px; top: -90px; border-radius: 50%; filter: blur(15px); opacity: .18; }
 .fury::before { background: #f33b14; }
 .arcane::before { background: #25a5ff; }
-.sigil { font-size: 37px; color: var(--gold-bright); }
+.nature::before { background: #3fbf46; }
+.order::before { background: #e8c24a; }
+.shadow::before { background: #9a54c0; }
+.void::before { background: #b464ff; }
+.sigil { display: inline-flex; }
 .faction h3 { margin: 24px 0 7px; font-family: var(--display); font-size: 30px; }
 .faction p { max-width: 430px; color: #aaa69d; line-height: 1.65; }
 .tags { display: flex; gap: 8px; margin-top: 24px; }

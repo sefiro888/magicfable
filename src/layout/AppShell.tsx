@@ -55,7 +55,7 @@ export function AppShell() {
       <main className={styles.main}><Outlet /></main>
       <footer className={styles.footer}>
         <span>PROTOTIPO VERTICAL · PARTIDAS LOCALES</span>
-        <span>FURIA · ARCANO · NEXO 25</span>
+        <span>6 FACCIONES · NEXO 25</span>
       </footer>
     </div>
   )
