@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card, CardInspector } from '../components'
-import { CARDS, CARD_TYPES, RARITIES, type CardDefinition, type CardType, type FactionId, type Rarity } from '../game'
+import { CARDS, CARD_TYPES, FACTION_IDS, RARITIES, type CardDefinition, type CardType, type FactionId, type Rarity } from '../game'
+import { RarityGem } from '../components/RarityGem'
 import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS, totalCost } from '../utils/cardLabels'
 import styles from './GalleryPage.module.css'
 
 type FilterValue<T extends string> = 'all' | T
+
+const FACTION_TABS: readonly FilterValue<FactionId>[] = ['all', ...FACTION_IDS]
 
 export function GalleryPage() {
   const [query, setQuery] = useState('')
@@ -39,6 +42,13 @@ export function GalleryPage() {
     })
   }, [cost, faction, keyword, query, rarity, type])
 
+  // Recuento por rareza sobre las cartas visibles: da a la galería aire de álbum.
+  const rarityCounts = useMemo(() => {
+    const counts = Object.fromEntries(RARITIES.map((value) => [value, 0])) as Record<Rarity, number>
+    for (const card of filtered) counts[card.rarity] += 1
+    return counts
+  }, [filtered])
+
   return (
     <div className={styles.page}>
       <header className={styles.header}><div><small>Archivo NEX-01 · Despertar</small><h1>Galería de cartas</h1></div><div className={styles.count}><strong>{filtered.length}</strong> de {CARDS.length} diseños</div></header>
@@ -49,7 +59,16 @@ export function GalleryPage() {
         <select className={styles.select} value={cost} onChange={(event) => setCost(event.target.value)} aria-label="Filtrar por coste"><option value="all">Cualquier coste</option><option value="0-2">Coste 0–2</option><option value="3-4">Coste 3–4</option><option value="5+">Coste 5+</option></select>
         <select className={styles.select} value={keyword} onChange={(event) => setKeyword(event.target.value)} aria-label="Filtrar por palabra clave"><option value="all">Toda palabra clave</option>{keywords.map((value) => <option key={value} value={value}>{value}</option>)}</select>
       </div>
-      <div className={styles.factionTabs}>{(['all', 'fury', 'arcane'] as const).map((value) => <button key={value} className={styles.factionTab} data-active={faction === value} onClick={() => setFaction(value)}>{value === 'all' ? 'Todas las facciones' : FACTION_LABELS[value]}</button>)}</div>
+      <div className={styles.factionTabs}>{FACTION_TABS.map((value) => <button key={value} className={styles.factionTab} data-active={faction === value} onClick={() => setFaction(value)}>{value === 'all' ? 'Todas las facciones' : FACTION_LABELS[value]}</button>)}</div>
+      <div className={styles.collectionBar} aria-label="Recuento por rareza">
+        {RARITIES.map((value) => (
+          <span key={value} className={styles.collectionStat} data-rarity={value}>
+            <RarityGem rarity={value} compact />
+            <strong>{rarityCounts[value]}</strong>
+            <small>{RARITY_LABELS[value]}</small>
+          </span>
+        ))}
+      </div>
       <section className={styles.grid} aria-live="polite">{filtered.map((card) => <Card key={card.id} card={card} size="gallery" onSelect={setInspected} onInspect={setInspected} />)}{filtered.length === 0 && <div className={styles.empty}>Ninguna carta coincide con estos filtros.</div>}</section>
       <CardInspector card={inspected ?? null} onClose={() => setInspected(undefined)} />
     </div>

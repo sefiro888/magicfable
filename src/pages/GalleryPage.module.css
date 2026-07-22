@@ -12,6 +12,14 @@
 .factionTabs { margin-top: 16px; display: flex; gap: 7px; }
 .factionTab { padding: 8px 13px; border: 1px solid rgba(255,255,255,.09); color: #918e87; background: rgba(255,255,255,.02); cursor: pointer; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
 .factionTab[data-active="true"] { border-color: var(--line-bright); color: var(--ivory); background: rgba(215,180,103,.08); }
+.factionTabs { flex-wrap: wrap; }
+
+.collectionBar { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.collectionStat { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
+.collectionStat strong { font-family: var(--display); font-size: 16px; color: var(--ivory); font-variant-numeric: tabular-nums; }
+.collectionStat small { color: #8b877f; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.collectionStat[data-rarity="rare"] { border-color: rgba(230,199,101,.32); }
+.collectionStat[data-rarity="mythic"] { border-color: rgba(216,108,255,.34); background: rgba(216,108,255,.05); }
 .grid { margin-top: 32px; display: grid; grid-template-columns: repeat(4, 1fr); justify-items: center; align-items: start; gap: 34px 18px; }
 .empty { grid-column: 1 / -1; width: 100%; padding: 70px; border: 1px dashed rgba(255,255,255,.14); color: #85827b; text-align: center; }
 .backdrop { position: fixed; z-index: 200; inset: 0; display: grid; place-items: center; padding: 30px; background: rgba(3,4,7,.86); backdrop-filter: blur(12px); }
