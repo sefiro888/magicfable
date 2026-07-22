@@ -607,7 +607,7 @@ export function BattlePage() {
               </p>
             )}
             {canCastDirectly && payment?.payable && (
-              <button className={styles.cast} onClick={playSelectedWithoutTarget}>Resolver carta</button>
+              <button className={styles.cast} onClick={playSelectedWithoutTarget} title="Lanza este hechizo, que no necesita objetivo en el tablero.">Resolver carta</button>
             )}
           </section>
           <HistoryLog entries={store.history} />
@@ -618,6 +618,12 @@ export function BattlePage() {
               onClick={endTurn}
               disabled={turnState !== 'ready'}
               aria-label="Finalizar turno"
+              title={
+                turnState === 'enemy' ? 'Espera: la IA está jugando su turno.'
+                  : turnState === 'busy' ? 'Espera a que terminen las animaciones en curso.'
+                  : turnState === 'over' ? 'La partida ha terminado.'
+                  : 'Cede el turno al rival. Tus fuentes se recargan al empezar tu próximo turno.'
+              }
             >
               {turnState === 'enemy' ? 'Turno rival…' : turnState === 'busy' ? 'Resolviendo…' : turnState === 'over' ? 'Crónica concluida' : 'Finalizar turno'}
             </button>
@@ -675,7 +681,24 @@ export function BattlePage() {
           <section className={styles.mulligan}>
             <small>Preparación de la crónica</small>
             <h2>Tu mano inicial</h2>
-            <p>Marca las cartas que quieras devolver. Solo puedes hacerlo una vez.</p>
+            <p>
+              El <strong>mulligan</strong> te deja cambiar cartas de tu mano de salida una sola vez:
+              marca las que no te convenzan y roba otras tantas nuevas.
+            </p>
+            {(() => {
+              const fuentes = player.hand.filter((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana').length
+              const equilibrada = fuentes >= 2 && fuentes <= 4
+              return (
+                <p className={styles.mulliganHint} data-ok={equilibrada}>
+                  Tienes <strong>{fuentes}</strong> {fuentes === 1 ? 'fuente' : 'fuentes'} de Esencia en la mano.
+                  {equilibrada
+                    ? ' Es un buen arranque para desplegar cartas pronto.'
+                    : fuentes < 2
+                      ? ' Con menos de dos te costará pagar tus cartas: valora cambiar alguna.'
+                      : ' Demasiadas fuentes y pocas jugadas: valora cambiar alguna.'}
+                </p>
+              )
+            })()}
             <div className={styles.mulliganCards}>
               {player.hand.map((instance) => {
                 const card = CARD_BY_ID[instance.cardId]

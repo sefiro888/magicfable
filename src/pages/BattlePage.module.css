@@ -257,6 +257,10 @@
 .mulligan > small { color: var(--gold); font-weight: 800; letter-spacing: .28em; text-transform: uppercase; }
 .mulligan h2 { margin: 10px 0 5px; font-family: var(--display); font-size: 34px; font-weight: 500; }
 .mulligan > p { margin: 0; color: #8e8b84; }
+.mulligan > p strong { color: #cfc9bd; }
+.mulliganHint { margin: 12px auto 0 !important; max-width: 60ch; padding: 9px 14px; border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; color: #c86a58; background: rgba(200,106,88,.08); }
+.mulliganHint[data-ok='true'] { color: var(--success); background: rgba(74,158,92,.09); }
+.mulliganHint strong { color: inherit; font-family: var(--display); }
 .mulliganCards { display: flex; justify-content: center; gap: 10px; margin: 25px 0; }
 .mulliganCard { width: 132px; overflow: hidden; padding: 0 0 10px; border: 1px solid rgba(255,255,255,.14); color: var(--ivory); background: #11131a; cursor: pointer; }
 .mulliganCard:hover { border-color: var(--line-bright); transform: translateY(-3px); }
