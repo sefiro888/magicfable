@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
+import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 
 import type { CardDefinition, CardType, FactionId, ManaCost } from '../game/types';
 import { withBase } from '../utils/assets';
@@ -71,6 +71,12 @@ const SIZE_CLASS: Readonly<Record<CardSize, string>> = {
   gallery: styles.gallery!,
   inspect: styles.inspect!,
 };
+
+/** Tamaños grandes donde la inclinación 3D y el parallax merecen la pena. */
+const TILT_SIZES: ReadonlySet<CardSize> = new Set<CardSize>(['gallery', 'inspect', 'hand']);
+
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 const FACTION_ORDER: readonly FactionId[] = [
   'fury',
@@ -205,6 +211,29 @@ export function Card({
   ].filter(Boolean).join(', ');
   const accessibleLabel = `${card.name}. ${typeLine}. Coste ${formatManaCost(card.cost)}. ${RARITY_LABELS[card.rarity]}${stateDescription ? `. ${stateDescription}` : ''}`;
 
+  const tiltEnabled = isInteractive && TILT_SIZES.has(size);
+
+  const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
+    if (!tiltEnabled || prefersReducedMotion()) return;
+    const element = event.currentTarget;
+    const rect = element.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width; // 0 (izq) … 1 (der)
+    const py = (event.clientY - rect.top) / rect.height; // 0 (arr) … 1 (abj)
+    element.style.setProperty('--tilt-y', `${((px - 0.5) * 13).toFixed(2)}deg`);
+    element.style.setProperty('--tilt-x', `${((0.5 - py) * 10).toFixed(2)}deg`);
+    element.style.setProperty('--par-x', `${((0.5 - px) * 7).toFixed(1)}%`);
+    element.style.setProperty('--par-y', `${((0.5 - py) * 7).toFixed(1)}%`);
+    element.style.setProperty('--foil-x', `${(px * 100).toFixed(0)}%`);
+    element.style.setProperty('--foil-y', `${(py * 100).toFixed(0)}%`);
+  };
+
+  const resetTilt = (event: PointerEvent<HTMLElement>) => {
+    const element = event.currentTarget;
+    for (const prop of ['--tilt-x', '--tilt-y', '--par-x', '--par-y', '--foil-x', '--foil-y']) {
+      element.style.removeProperty(prop);
+    }
+  };
+
   const selectCard = () => {
     if (!disabled) onSelect?.(card);
   };
@@ -257,8 +286,11 @@ export function Card({
       onDoubleClick={onInspect ? () => onInspect(card) : undefined}
       onContextMenu={handleContextMenu}
       onKeyDown={handleKeyDown}
+      onPointerMove={tiltEnabled ? handlePointerMove : undefined}
+      onPointerLeave={tiltEnabled ? resetTilt : undefined}
     >
       <span className={styles.frameFiligree} aria-hidden="true" />
+      <span className={styles.foil} aria-hidden="true" />
       <ManaCostBadge cost={card.cost} />
       <div className={styles.header}>
         <h3 className={styles.name}>{card.name}</h3>
