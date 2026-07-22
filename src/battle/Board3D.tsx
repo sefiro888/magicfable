@@ -221,44 +221,112 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
 function Nexus({ playerId, health, targetable, onClick }: { playerId: PlayerId; health: number; targetable: boolean; onClick: () => void }) {
   const group = useRef<Group>(null)
   const crystal = useRef<Mesh>(null)
+  const core = useRef<Mesh>(null)
+  const ringA = useRef<Mesh>(null)
+  const ringB = useRef<Mesh>(null)
+  const ringC = useRef<Mesh>(null)
+  const shards = useRef<Group>(null)
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && targetable)
   useFrame(({ clock }) => {
-    if (group.current) group.current.rotation.y = clock.elapsedTime * (playerId === 'player' ? 0.18 : -0.18)
+    const t = clock.elapsedTime
+    const dir = playerId === 'player' ? 1 : -1
+    if (group.current) group.current.rotation.y = t * dir * 0.16
+    // El cristal flota con una leve oscilación y late si es objetivo de ataque.
     if (crystal.current) {
+      crystal.current.position.y = Math.sin(t * 1.4) * 0.045
       const material = crystal.current.material as MeshStandardMaterial
-      material.emissiveIntensity = targetable ? 1.6 + Math.sin(clock.elapsedTime * 5) * 0.5 : 1.25
+      material.emissiveIntensity = targetable ? 1.5 + Math.sin(t * 5) * 0.55 : 1.15
     }
+    if (core.current) {
+      core.current.position.y = Math.sin(t * 1.4) * 0.045
+      const s = 1 + Math.sin(t * 2.6) * 0.08
+      core.current.scale.setScalar(s)
+    }
+    // Las tres esferas armilares giran en ejes distintos, como un astrolabio.
+    if (ringA.current) ringA.current.rotation.z = t * 0.7 * dir
+    if (ringB.current) ringB.current.rotation.x = t * -0.5
+    if (ringC.current) ringC.current.rotation.y = t * 0.9 * dir
+    if (shards.current) shards.current.rotation.y = t * -0.35 * dir
   })
   const z = nexusWorldZ(playerId)
-  const color = playerId === 'player' ? '#f28b42' : '#58c9ff'
+  const color = playerId === 'player' ? '#f2a24a' : '#58c9ff'
+  const coreColor = playerId === 'player' ? '#fff0cf' : '#dff4ff'
+  const ringColor = playerId === 'player' ? '#e8c46e' : '#bfe6ff'
+  const ringEmissive = playerId === 'player' ? '#9a7326' : '#3f7fb0'
+  const shardOffsets = [0, 1, 2, 3] as const
   return (
     <group position={[0, 0, z]}>
-      {/* Pedestal de piedra */}
-      <mesh position={[0, 0.05, 0]}>
-        <cylinderGeometry args={[0.72, 0.9, 0.34, 8]} />
-        <meshStandardMaterial color="#1a1f2e" roughness={0.85} metalness={0.1} emissive="#0c101c" emissiveIntensity={0.5} />
+      {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
+      <mesh position={[0, 0.04, 0]} receiveShadow>
+        <cylinderGeometry args={[0.98, 1.2, 0.22, 8]} />
+        <meshStandardMaterial color="#161b28" roughness={0.9} metalness={0.12} emissive="#0a0e18" emissiveIntensity={0.4} />
       </mesh>
+      <mesh position={[0, 0.26, 0]}>
+        <cylinderGeometry args={[0.62, 0.82, 0.3, 8]} />
+        <meshStandardMaterial color="#1e2434" roughness={0.82} metalness={0.16} emissive="#0c1120" emissiveIntensity={0.45} />
+      </mesh>
+      <mesh position={[0, 0.46, 0]}>
+        <cylinderGeometry args={[0.74, 0.6, 0.12, 8]} />
+        <meshStandardMaterial color="#2a3145" roughness={0.7} metalness={0.25} emissive={ringEmissive} emissiveIntensity={0.35} />
+      </mesh>
+      {/* Corona de esquirlas de cristal alrededor del borde del pedestal. */}
+      {[...Array(8).keys()].map((index) => {
+        const angle = (index / 8) * Math.PI * 2
+        return (
+          <mesh key={index} position={[Math.cos(angle) * 0.66, 0.56, Math.sin(angle) * 0.66]} rotation={[0, -angle, 0.16]}>
+            <coneGeometry args={[0.07, 0.24, 4]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.85} roughness={0.3} metalness={0.3} />
+          </mesh>
+        )
+      })}
       <group
         ref={group}
-        position={[0, 0.62, 0]}
+        position={[0, 0.92, 0]}
         onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
       >
+        {/* Gema exterior facetada, translúcida y brillante. */}
         <mesh ref={crystal} castShadow>
-          <octahedronGeometry args={[0.46, 1]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.25} roughness={0.18} metalness={0.28} />
+          <icosahedronGeometry args={[0.44, 0]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.15} roughness={0.12} metalness={0.45} flatShading />
         </mesh>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.68, 0.025, 8, 64]} />
-          <meshStandardMaterial color="#d8bb76" emissive="#8e6a2d" emissiveIntensity={0.7} />
+        {/* Núcleo interior incandescente que late. */}
+        <mesh ref={core}>
+          <sphereGeometry args={[0.19, 20, 20]} />
+          <meshStandardMaterial color={coreColor} emissive={coreColor} emissiveIntensity={2.4} toneMapped={false} />
         </mesh>
-        <Html center position={[0, 0.72, 0]} distanceFactor={7} className={styles.nexusLabel}>
+        {/* Tres anillos armilares finos. */}
+        <mesh ref={ringA} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.66, 0.02, 10, 72]} />
+          <meshStandardMaterial color={ringColor} emissive={ringEmissive} emissiveIntensity={0.9} roughness={0.35} metalness={0.7} />
+        </mesh>
+        <mesh ref={ringB} rotation={[0, 0, Math.PI / 3]}>
+          <torusGeometry args={[0.6, 0.016, 10, 72]} />
+          <meshStandardMaterial color={ringColor} emissive={ringEmissive} emissiveIntensity={0.75} roughness={0.35} metalness={0.7} />
+        </mesh>
+        <mesh ref={ringC} rotation={[Math.PI / 4, Math.PI / 5, 0]}>
+          <torusGeometry args={[0.54, 0.014, 10, 72]} />
+          <meshStandardMaterial color={ringColor} emissive={ringEmissive} emissiveIntensity={0.6} roughness={0.4} metalness={0.65} />
+        </mesh>
+        {/* Esquirlas orbitando el núcleo. */}
+        <group ref={shards}>
+          {shardOffsets.map((index) => {
+            const angle = (index / shardOffsets.length) * Math.PI * 2
+            return (
+              <mesh key={index} position={[Math.cos(angle) * 0.72, Math.sin(angle * 1.3) * 0.12, Math.sin(angle) * 0.72]} rotation={[angle, angle, 0]}>
+                <octahedronGeometry args={[0.07, 0]} />
+                <meshStandardMaterial color={coreColor} emissive={color} emissiveIntensity={1.1} roughness={0.2} metalness={0.4} flatShading />
+              </mesh>
+            )
+          })}
+        </group>
+        <Html center position={[0, 0.82, 0]} distanceFactor={7} className={styles.nexusLabel}>
           <div data-targetable={targetable || undefined}>{playerId === 'player' ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
         </Html>
       </group>
-      <pointLight position={[0, 1.1, 0]} color={color} intensity={6} distance={4.5} decay={2} />
+      <pointLight position={[0, 1.25, 0]} color={color} intensity={7} distance={5} decay={2} />
     </group>
   )
 }
