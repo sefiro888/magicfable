@@ -4,20 +4,37 @@
   height: 1.65em;
   flex: 0 0 auto;
   place-items: center;
-  color: var(--gem-color);
-  filter: drop-shadow(0 0 0.35em color-mix(in srgb, var(--gem-color) 60%, transparent));
 }
 
 .gem svg { width: 100%; height: 100%; overflow: visible; }
-.setting { fill: #b89a58; stroke: #ffe9a7; stroke-width: 0.8; }
-.stone { fill: var(--gem-color); stroke: color-mix(in srgb, var(--gem-color) 55%, white); stroke-width: 1; }
-.glint { fill: color-mix(in srgb, var(--gem-color) 30%, white); opacity: 0.9; }
-.common { --gem-color: #aeb3b9; }
-.uncommon { --gem-color: #65c982; }
-.rare { --gem-color: #65aef8; }
-.mythic { --gem-color: #dc75ff; }
 .compact { width: 1.25em; height: 1.25em; }
 
+/* Escalada de material: cuanto más rara, más luz propia. */
+.common svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)); }
+.uncommon svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 0.22em rgba(178, 198, 214, 0.4)); }
+.rare svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 0.3em rgba(239, 184, 62, 0.55)); }
+.mythic svg {
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 0.34em rgba(216, 108, 255, 0.75));
+  animation: mythicGemPulse 2.8s ease-in-out infinite;
+}
+
+/* Los rayos de la mítica giran despacio tras la gema. */
+.rays {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: mythicRays 9s linear infinite;
+}
+
+@keyframes mythicGemPulse {
+  0%, 100% { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 0.3em rgba(216, 108, 255, 0.6)); }
+  50% { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 0.55em rgba(224, 132, 255, 0.95)); }
+}
+
+@keyframes mythicRays {
+  to { transform: rotate(360deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .gem { filter: none; }
+  .mythic svg { animation: none; }
+  .rays { animation: none; }
 }
