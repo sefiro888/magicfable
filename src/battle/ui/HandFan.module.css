@@ -7,6 +7,14 @@
   transition: transform 0.22s cubic-bezier(0.25, 0.8, 0.35, 1), filter 0.2s ease;
   filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.5));
   will-change: transform;
+  /* Destello dorado al entrar: solo se dispara al robar, cuando monta una carta
+     con key nueva. No toca transform para no pelearse con el abanico. */
+  animation: cardDrawIn 420ms ease-out both;
+}
+@keyframes cardDrawIn {
+  0% { opacity: 0; filter: drop-shadow(0 0 22px rgba(246, 214, 130, 0.95)) drop-shadow(0 12px 20px rgba(0, 0, 0, 0.5)); }
+  55% { opacity: 1; filter: drop-shadow(0 0 15px rgba(246, 214, 130, 0.6)) drop-shadow(0 12px 20px rgba(0, 0, 0, 0.5)); }
+  100% { opacity: 1; }
 }
 /* El pequeño retraso al entrar estabiliza el abanico cuando el ratón lo barre. */
 .fanCard:hover, .fanCard:focus-within {
@@ -21,7 +29,7 @@
   filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(228, 192, 105, 0.42));
 }
 @media (prefers-reduced-motion: reduce) {
-  .fanCard { transition: none; }
+  .fanCard { transition: none; animation: none; }
 }
 @media (max-height: 820px) {
   .fanCard { transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 58px)); }

@@ -13,8 +13,29 @@
   animation: backdropIn 150ms ease-out both;
 }
 
+/* Fondo cinematográfico: el propio arte de la carta, ampliado y desenfocado. */
+.artHaze {
+  position: fixed;
+  z-index: 0;
+  inset: -8%;
+  background-size: cover;
+  background-position: center 35%;
+  filter: blur(3.2rem) saturate(1.15) brightness(0.62);
+  opacity: 0.5;
+  transform: scale(1.12);
+  pointer-events: none;
+  animation: hazeIn 420ms ease-out both;
+}
+.artHaze::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, transparent 20%, rgba(3, 4, 8, 0.72) 78%);
+}
+
 .dialog {
   position: relative;
+  z-index: 1;
   isolation: isolate;
   display: grid;
   width: min(72rem, 100%);
@@ -125,6 +146,7 @@
 
 @keyframes backdropIn { from { opacity: 0; } }
 @keyframes dialogIn { from { opacity: 0; transform: translateY(1rem) scale(.975); } }
+@keyframes hazeIn { from { opacity: 0; transform: scale(1.24); } }
 
 @media (max-height: 800px) {
   .backdrop { padding-block: 1rem; }
@@ -139,7 +161,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .backdrop, .dialog { animation: none; }
+  .backdrop, .dialog, .artHaze { animation: none; }
   .close { transition: none; }
   .close:hover { transform: none; }
 }

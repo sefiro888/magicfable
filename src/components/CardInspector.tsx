@@ -7,6 +7,7 @@ import type { CardStatus } from './Card';
 import { FactionSigil, FACTION_LABELS } from './FactionSigil';
 import { GlossaryText } from './GlossaryText';
 import { RarityGem, RARITY_LABELS } from './RarityGem';
+import { withBase } from '../utils/assets';
 import styles from './CardInspector.module.css';
 
 export interface CardInspectorProps {
@@ -114,6 +115,12 @@ export function CardInspector({
 
   return (
     <div className={styles.backdrop} onMouseDown={closeFromBackdrop}>
+      <div
+        className={styles.artHaze}
+        data-faction={card.faction}
+        style={{ backgroundImage: `url(${withBase(card.art.webp)})` }}
+        aria-hidden="true"
+      />
       <div
         className={[styles.dialog, className].filter(Boolean).join(' ')}
         ref={dialogRef}
