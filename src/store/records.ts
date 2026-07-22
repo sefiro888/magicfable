@@ -64,6 +64,21 @@ export const summarizeRecords = (records: readonly MatchRecord[]): RecordSummary
   }
 }
 
+/**
+ * Racha en curso a partir de las partidas más recientes (records[0] es la
+ * última). Positiva si son victorias, negativa si son derrotas, 0 sin partidas.
+ */
+export const currentStreak = (records: readonly MatchRecord[]): number => {
+  if (records.length === 0) return 0
+  const winning = records[0]!.won
+  let streak = 0
+  for (const record of records) {
+    if (record.won !== winning) break
+    streak += 1
+  }
+  return winning ? streak : -streak
+}
+
 /** Victorias y derrotas por mazo, ordenadas de más a menos jugadas. */
 export const summarizeByDeck = (
   records: readonly MatchRecord[],

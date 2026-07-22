@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { summarizeByDeck, summarizeRecords, useRecords, type MatchRecord } from './records'
+import { currentStreak, summarizeByDeck, summarizeRecords, useRecords, type MatchRecord } from './records'
 
 const record = (values: Partial<MatchRecord> = {}): Omit<MatchRecord, 'id'> => ({
   finishedAt: 1_000,
@@ -51,6 +51,15 @@ describe('historial de partidas', () => {
 
   it('devuelve un resumen vacío sin partidas, sin dividir por cero', () => {
     expect(summarizeRecords([])).toEqual({ played: 0, won: 0, lost: 0, winRate: 0 })
+  })
+
+  it('calcula la racha en curso desde las partidas más recientes', () => {
+    const entry = (won: boolean, id: string): MatchRecord => ({ ...record({ won }), id })
+    expect(currentStreak([])).toBe(0)
+    // records[0] es la más reciente: tres victorias seguidas.
+    expect(currentStreak([entry(true, 'a'), entry(true, 'b'), entry(true, 'c'), entry(false, 'd')])).toBe(3)
+    // dos derrotas seguidas → racha negativa.
+    expect(currentStreak([entry(false, 'a'), entry(false, 'b'), entry(true, 'c')])).toBe(-2)
   })
 
   it('agrupa por mazo y ordena por partidas jugadas', () => {

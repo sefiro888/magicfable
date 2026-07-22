@@ -59,7 +59,10 @@
 .historyClear { padding: 7px 13px; border: 1px solid rgba(255,255,255,.13); background: transparent; color: #aaa69e; font-size: 10px; cursor: pointer; }
 .historyClear:hover { border-color: rgba(255,255,255,.26); color: #d6d1c7; }
 .historyEmpty { margin: 0; padding: 22px 23px; color: #817e77; font-size: 12px; }
-.historyTally { display: grid; grid-template-columns: repeat(4,1fr); border-bottom: 1px solid var(--line); }
+.historyTally { display: grid; grid-template-columns: repeat(5,1fr); border-bottom: 1px solid var(--line); }
+.historyTally .stat[data-streak='win'] strong { color: var(--success); }
+.historyTally .stat[data-streak='loss'] strong { color: #c86a58; }
+@media (max-width: 640px) { .historyTally { grid-template-columns: repeat(2,1fr); } }
 .historyTally .stat { padding: 15px 8px; text-align: center; border-right: 1px solid var(--line); }
 .historyTally .stat:last-child { border-right: 0; }
 .byDeck { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 14px 23px; list-style: none; border-bottom: 1px solid var(--line); }

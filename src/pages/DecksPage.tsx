@@ -3,7 +3,7 @@ import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, cardsForFaction, validateDe
 import type { DeckDefinition, DeckEntry } from '../game'
 import { FactionSigil } from '../components/FactionSigil'
 import { usePreferences } from '../store/preferences'
-import { summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
+import { currentStreak, summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
 import { withBase } from '../utils/assets'
 import styles from './DecksPage.module.css'
 
@@ -127,6 +127,8 @@ function MatchHistory() {
   const clear = useRecords((state) => state.clear)
   const tally = useMemo(() => summarizeRecords(records), [records])
   const byDeck = useMemo(() => summarizeByDeck(records), [records])
+  const streak = useMemo(() => currentStreak(records), [records])
+  const streakLabel = streak > 0 ? `${streak} victoria${streak === 1 ? '' : 's'}` : streak < 0 ? `${-streak} derrota${streak === -1 ? '' : 's'}` : '—'
 
   if (records.length === 0) {
     return (
@@ -148,6 +150,7 @@ function MatchHistory() {
         <div className={styles.stat}><strong>{tally.won}</strong><span>Victorias</span></div>
         <div className={styles.stat}><strong>{tally.lost}</strong><span>Derrotas</span></div>
         <div className={styles.stat}><strong>{tally.winRate}%</strong><span>Ratio</span></div>
+        <div className={styles.stat} data-streak={streak > 0 ? 'win' : streak < 0 ? 'loss' : undefined}><strong>{streakLabel}</strong><span>Racha actual</span></div>
       </div>
       {byDeck.length > 1 && (
         <ul className={styles.byDeck}>
