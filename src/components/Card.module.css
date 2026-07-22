@@ -230,23 +230,42 @@
   align-items: center;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,.85));
 }
+/* Gema hexagonal engastada en oro: engaste dorado exterior + núcleo facetado. */
 .coloredCost,
 .genericCost {
+  position: relative;
   display: inline-flex;
-  width: 2.35em;
-  height: 2.35em;
+  width: 2.5em;
+  height: 2.5em;
   align-items: center;
   justify-content: center;
-  border: 1px solid #f7dea0;
-  border-radius: 50%;
   color: #fff;
-  background: radial-gradient(circle at 35% 26%, var(--frame-light), var(--frame-mid) 52%, #100b0c 100%);
-  box-shadow: inset 0 0 0 2px rgba(0,0,0,.5), 0 0 0 1px #211711;
+  clip-path: polygon(50% 1%, 93% 25%, 93% 75%, 50% 99%, 7% 75%, 7% 25%);
+  background: linear-gradient(150deg, #ffeaa8 8%, #c69a44 46%, #6f4f1c);
 }
+/* Núcleo interior facetado, en el color de la facción. */
+.coloredCost::before,
+.genericCost::before {
+  content: '';
+  position: absolute;
+  inset: 0.16em;
+  clip-path: inherit;
+  background:
+    linear-gradient(150deg, rgba(255,255,255,.55), transparent 42%),
+    radial-gradient(circle at 40% 30%, var(--frame-light), var(--frame-mid) 54%, #0c0910 100%);
+  box-shadow: inset 0 0 0.35em rgba(0,0,0,.6);
+}
+.coloredCost > *,
+.genericCost > * { position: relative; z-index: 1; }
 .coloredCost + .coloredCost,
-.coloredCost + .genericCost { margin-left: -0.6em; }
-.coloredCost strong { margin-left: -0.18em; font-size: 1.08em; text-shadow: 0 1px 2px #000; }
-.genericCost { font-family: var(--display, Georgia, serif); font-size: 1.18em; font-weight: 800; background: radial-gradient(circle at 35% 26%, #cfbb8d, #5b5142 54%, #171412); }
+.coloredCost + .genericCost { margin-left: -0.55em; }
+.coloredCost strong { margin-left: -0.05em; font-size: 1.05em; font-weight: 800; text-shadow: 0 1px 2px #000, 0 0 0.3em rgba(0,0,0,.7); }
+/* El coste genérico usa un núcleo de plata/acero, sin color de facción. */
+.genericCost { font-family: var(--display, Georgia, serif); font-size: 1.16em; font-weight: 800; text-shadow: 0 1px 2px #000; }
+.genericCost::before { background: linear-gradient(150deg, rgba(255,255,255,.6), transparent 42%), radial-gradient(circle at 40% 30%, #e7ddc8, #7c7263 52%, #14110c); }
+/* Míticas y raras: el engaste del coste brilla. */
+.card[data-rarity='rare'] .coloredCost, .card[data-rarity='rare'] .genericCost { filter: drop-shadow(0 0 0.3em var(--frame-glow)); }
+.card[data-rarity='mythic'] .coloredCost, .card[data-rarity='mythic'] .genericCost { filter: drop-shadow(0 0 0.42em color-mix(in srgb, #d86cff 70%, var(--frame-glow))); }
 
 .artwork {
   position: relative;
@@ -261,19 +280,38 @@
 .artImage { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 280ms ease, filter 180ms ease; }
 .interactive:hover .artImage { transform: scale(1.08) translate(var(--par-x, 0), var(--par-y, 0)); }
 .artVignette { position: absolute; inset: 0; box-shadow: inset 0 0 1.3rem rgba(0,0,0,.72), inset 0 -1.3rem 1.4rem rgba(0,0,0,.54); pointer-events: none; }
+/* Medallón de facción: aro dorado, destello radial del color de facción y sigilo. */
 .factionSeal {
   position: absolute;
-  right: 0.3rem;
-  bottom: 0.22rem;
+  right: 0.28rem;
+  bottom: 0.2rem;
   display: grid;
-  width: 2.35em;
-  height: 2.35em;
+  width: 2.5em;
+  height: 2.5em;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--frame-light) 75%, #fff);
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--frame-dark) 75%, #000), #08080b);
-  box-shadow: 0 2px 6px #000, inset 0 0 0.45rem var(--frame-glow);
+  background:
+    radial-gradient(circle at 50% 42%, var(--frame-glow), transparent 62%),
+    radial-gradient(circle, color-mix(in srgb, var(--frame-dark) 78%, #000), #07070b);
+  box-shadow:
+    0 0 0 1px #1a140c,
+    0 0 0 2px color-mix(in srgb, var(--frame-light) 80%, #f6d78e),
+    0 0 0 3px #1a140c,
+    0 2px 7px rgba(0,0,0,.8),
+    inset 0 0 0.5rem var(--frame-glow);
 }
+/* Rayos sutiles tras el sigilo. */
+.factionSeal::before {
+  content: '';
+  position: absolute;
+  inset: -0.12em;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 12deg, color-mix(in srgb, var(--frame-light) 40%, transparent) 14deg 16deg, transparent 18deg 30deg);
+  opacity: 0.5;
+  -webkit-mask: radial-gradient(circle, transparent 52%, #000 54% 74%, transparent 76%);
+  mask: radial-gradient(circle, transparent 52%, #000 54% 74%, transparent 76%);
+}
+.card[data-rarity='mythic'] .factionSeal { box-shadow: 0 0 0 1px #1a140c, 0 0 0 2px #ecb6f4, 0 0 0 3px #1a140c, 0 2px 7px rgba(0,0,0,.8), inset 0 0 0.5rem var(--frame-glow), 0 0 0.5em color-mix(in srgb, #d86cff 55%, transparent); }
 
 .typeLine {
   position: relative;
@@ -323,25 +361,37 @@
   gap: .3em;
 }
 .collection { max-width: 68%; overflow: hidden; color: #c5b894; font-size: .57em; letter-spacing: .045em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.stats { display: flex; align-items: center; gap: .22em; margin-left: auto; }
+.stats { display: flex; align-items: center; gap: .3em; margin-left: auto; }
+/* Gema de estadística: engaste dorado, núcleo por tipo (ataque/vida/resistencia) y brillo superior. */
 .stat {
+  position: relative;
   display: inline-flex;
-  min-width: 2.55em;
-  height: 2.1em;
+  min-width: 2.5em;
+  height: 2.35em;
   align-items: center;
   justify-content: center;
-  gap: .2em;
-  border: 1px solid #e5c875;
-  border-radius: 45% 45% 50% 50%;
+  gap: .18em;
+  padding: 0 .3em;
   color: #fff8e8;
-  background: #3c2820;
-  box-shadow: inset 0 0 .5rem rgba(0,0,0,.72), 0 1px 3px #000;
+  clip-path: polygon(50% 0%, 90% 16%, 100% 50%, 90% 84%, 50% 100%, 10% 84%, 0% 50%, 10% 16%);
+  background: linear-gradient(150deg, #ffeaa8 6%, #c69a44 48%, #6b4c1b);
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.75));
 }
-.stat small { font-size: .44em; font-weight: 900; letter-spacing: .02em; }
-.stat strong { font-family: var(--display, Georgia, serif); font-size: 1.3em; line-height: 1; }
-.attack { background: radial-gradient(circle at 70% 30%, #b64b2e, #3c1812 75%); }
-.health { background: radial-gradient(circle at 70% 30%, #438254, #142e20 75%); }
-.resistance { background: radial-gradient(circle at 70% 30%, #608093, #172a35 75%); }
+.stat::before {
+  content: '';
+  position: absolute;
+  inset: 0.15em;
+  clip-path: inherit;
+  background: var(--stat-core, radial-gradient(circle at 60% 28%, #6a5142, #1c130d 78%));
+  box-shadow: inset 0 0 .4em rgba(0,0,0,.7);
+}
+.stat small, .stat strong { position: relative; z-index: 1; }
+.stat small { font-size: .42em; font-weight: 900; letter-spacing: .04em; opacity: .92; }
+.stat strong { font-family: var(--display, Georgia, serif); font-size: 1.32em; line-height: 1; text-shadow: 0 1px 2px #000; }
+.attack { --stat-core: radial-gradient(circle at 62% 28%, #e46236, #4a170f 80%); }
+.health { --stat-core: radial-gradient(circle at 62% 28%, #55b06c, #123021 80%); }
+.resistance { --stat-core: radial-gradient(circle at 62% 28%, #6fa0c0, #16303f 80%); }
+.card[data-rarity='mythic'] .stat { filter: drop-shadow(0 0 0.32em color-mix(in srgb, #d86cff 55%, transparent)); }
 
 .statuses {
   position: absolute;
