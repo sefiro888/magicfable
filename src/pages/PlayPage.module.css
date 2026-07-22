@@ -41,3 +41,13 @@
 .locked > span { color: #75736c; font-size: 10px; letter-spacing: .15em; text-transform: uppercase; }
 .lockedFactions { display: flex; gap: 10px; }
 .lockedFactions span { padding: 7px 11px; border: 1px solid rgba(255,255,255,.08); color: #8f8b82; font-size: 11px; }
+
+/* ── Reto diario ─────────────────────────────────────────────────────────── */
+.daily { margin-top: 20px; display: flex; align-items: center; gap: 16px; padding: 15px 20px; border: 1px solid var(--line); border-left: 3px solid var(--gold); background: rgba(215,180,103,.05); }
+.daily[data-done='true'] { border-left-color: var(--success); background: rgba(74,158,92,.07); }
+.dailyBadge { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border: 1px solid var(--line-bright); border-radius: 50%; color: var(--gold-bright); font-size: 17px; }
+.daily[data-done='true'] .dailyBadge { color: var(--success); border-color: rgba(74,158,92,.5); }
+.dailyBody { display: flex; flex-direction: column; gap: 2px; }
+.dailyBody small { color: var(--gold); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; }
+.dailyBody strong { font-family: var(--display); font-size: 17px; font-weight: 500; color: var(--ivory); }
+.dailyBody span { color: #918e86; font-size: 12px; }

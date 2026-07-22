@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, STARTER_DECKS } from '../game'
 import { usePreferences } from '../store/preferences'
+import { useRecords } from '../store/records'
+import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { playSynthCue } from '../services/audio'
 import { withBase } from '../utils/assets'
 import styles from './PlayPage.module.css'
@@ -27,6 +29,8 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
 export function PlayPage() {
   const navigate = useNavigate()
   const preferences = usePreferences()
+  const records = useRecords((state) => state.records)
+  const daily = useMemo(() => evaluateDailyChallenge(records), [records])
   const deck = useMemo(() => STARTER_DECKS.find((candidate) => candidate.id === preferences.selectedDeckId) ?? STARTER_DECKS[0], [preferences.selectedDeckId])
 
   const start = () => {
@@ -40,6 +44,14 @@ export function PlayPage() {
         <div><small>Escaramuza contra la IA</small><h1>Selecciona tu mazo</h1></div>
         <p>Cada mazo contiene 50 cartas y un comandante. Tu rival utilizará la facción opuesta.</p>
       </header>
+      <div className={styles.daily} data-done={daily.done}>
+        <span className={styles.dailyBadge}>{daily.done ? '✓' : '◆'}</span>
+        <div className={styles.dailyBody}>
+          <small>Reto de hoy{daily.done ? ' · completado' : ''}</small>
+          <strong>{daily.title}</strong>
+          <span>{daily.description}</span>
+        </div>
+      </div>
       <div className={styles.decks}>
         {STARTER_DECKS.map((candidate) => {
           const commander = COMMANDER_BY_ID[candidate.commanderId]
