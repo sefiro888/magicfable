@@ -24,7 +24,7 @@ import { Board3D } from '../battle/Board3D'
 import { HandFan } from '../battle/ui/HandFan'
 import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
-import { Card } from '../components'
+import { Card, formatManaCost } from '../components'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
 import { usePreferences } from '../store/preferences'
@@ -49,6 +49,15 @@ const PHASE_LABELS: Record<string, string> = {
   combat: 'Combate',
   end: 'Fin',
   finished: 'Terminada',
+}
+
+const BATTLE_KEYWORD_LABELS: Record<string, string> = {
+  impulse: 'Impulso',
+  'swift-strike': 'Golpe veloz',
+  guard: 'Guardia',
+  flying: 'Volador',
+  channel: 'Canalizar',
+  frozen: 'Congelación',
 }
 
 const ESSENCE_LABELS: Record<string, string> = {
@@ -116,6 +125,8 @@ export function BattlePage() {
   const [banner, setBanner] = useState<string>()
   const [devOpen, setDevOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(() => !hasSeenHowTo())
+  /** Mano recogida: despeja el tablero; al soltar el botón vuelve a subir. */
+  const [handTucked, setHandTucked] = useState(false)
   const aiSteps = useRef(0)
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
@@ -601,9 +612,24 @@ export function BattlePage() {
             <span className={styles.panelLabel}>{activeInfo ? 'Selección' : 'Contexto'}</span>
             {activeInfo ? (
               <>
+                <div className={styles.contextArt}>
+                  <img src={withBase(activeInfo.art.webp)} alt="" loading="lazy" />
+                </div>
                 <h3>{activeInfo.name}</h3>
+                <p className={styles.contextType}>
+                  {FACTION_LABELS[activeInfo.faction]} · {TYPE_LABELS[activeInfo.type]}{activeInfo.subtype ? ` — ${activeInfo.subtype}` : ''} · {RARITY_LABELS[activeInfo.rarity]}
+                </p>
+                <p className={styles.contextCost}>Coste: {formatManaCost(activeInfo.cost)}</p>
                 {contextStats && <p className={styles.contextStats}>{contextStats}</p>}
                 <p className={styles.contextRules}>{activeInfo.rules}</p>
+                {activeInfo.keywords.length > 0 && (
+                  <div className={styles.contextKeywords}>
+                    {activeInfo.keywords.map((keyword) => (
+                      <span key={keyword}>{BATTLE_KEYWORD_LABELS[keyword] ?? keyword}</span>
+                    ))}
+                  </div>
+                )}
+                <p className={styles.contextFlavor}>«{activeInfo.flavor}»</p>
               </>
             ) : (
               <h3>Sin selección</h3>
@@ -638,7 +664,17 @@ export function BattlePage() {
         </aside>
       </div>
 
-      <footer className={styles.handBar}>
+      <footer className={styles.handBar} data-tucked={handTucked || undefined}>
+        <button
+          className={styles.handToggle}
+          type="button"
+          onClick={() => setHandTucked((current) => !current)}
+          aria-pressed={handTucked}
+          aria-label={handTucked ? 'Mostrar la mano' : 'Recoger la mano'}
+          title={handTucked ? 'Mostrar la mano' : 'Recoger la mano para despejar el tablero'}
+        >
+          {handTucked ? '▲ Mano' : '▼ Recoger'}
+        </button>
         <HandFan match={match} selectedHandId={store.selectedHandId} onSelect={onHandSelect} onInspect={inspectCard} />
         <div className={styles.hints} aria-hidden="true">
           Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar
