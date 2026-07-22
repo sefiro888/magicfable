@@ -65,6 +65,7 @@ export const DamageNumbers = memo(function DamageNumbers({ event }: { event?: An
             position={[num.x, num.z + y, 0]}
             scale={1}
             distanceFactor={8}
+            zIndexRange={[16, 0]}
           >
             <div className={styles.number} data-color={num.color} style={{ opacity }}>
               {num.color === 'shield' ? '+' : '−'}{num.value}

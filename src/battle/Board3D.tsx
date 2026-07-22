@@ -205,7 +205,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           </mesh>
         )}
       </group>
-      <Html center position={[0, 0.15, 0]} distanceFactor={8.6} className={styles.cardLabel}>
+      {/* zIndexRange bajo: sin él, drei usa z-index millonarios que tapan los modales. */}
+      <Html center position={[0, 0.15, 0]} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
         <div className={styles.cardName} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats}>
           {card.attack !== undefined && <span className={styles.attackStat}>⚔ {Math.max(0, card.attack + piece.attackModifier)}</span>}
@@ -322,7 +323,7 @@ function Nexus({ playerId, health, targetable, onClick }: { playerId: PlayerId; 
             )
           })}
         </group>
-        <Html center position={[0, 0.82, 0]} distanceFactor={7} className={styles.nexusLabel}>
+        <Html center position={[0, 0.82, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
           <div data-targetable={targetable || undefined}>{playerId === 'player' ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
         </Html>
       </group>
