@@ -1,27 +1,17 @@
-import { Sparkles, useGLTF } from '@react-three/drei'
+import { Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { useMemo, useRef } from 'react'
 import { usePageVisibility } from '../usePageVisibility'
-import { AdditiveBlending, DoubleSide, MeshPhysicalMaterial, RepeatWrapping } from 'three'
-import type { Group, Mesh, MeshStandardMaterial, Object3D, PointLight } from 'three'
+import type { Group } from 'three'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
-import { withBase } from '../../utils/assets'
-import { cloudTexture, dawnSkyTexture, glowTexture, goldFloorInlayTexture, masonryTexture, portalSwirlTexture } from '../textures'
-import { SanctuaryScenario } from './SanctuaryScenario'
-
-const CITADEL_URL = withBase('/assets/scenarios/aether-citadel.glb')
+import { cloudTexture, dawnSkyTexture, goldFloorInlayTexture } from '../textures'
 
 interface AetherCitadelProps {
   quality: GraphicsQuality
   reducedMotion: boolean
   event?: AnimationEvent
 }
-
-/** Posiciones clave del GLB en coordenadas three.js (Blender +Y ⇒ three −Z). */
-const PORTAL = { x: -8.2, y: 3.6, z: -11.9 }
-const RIGHT_CRYSTAL = { x: 10.8, y: 2.4, z: 0.6 }
-const WEST_CRYSTAL = { x: -10.2, y: 1.9, z: 1.0 }
 
 /** Atmósfera de amanecer: cielo, niebla, sol cálido y relleno azul. */
 function DawnAtmosphere({ quality }: { quality: GraphicsQuality }) {
@@ -54,54 +44,7 @@ function DawnAtmosphere({ quality }: { quality: GraphicsQuality }) {
   )
 }
 
-/** Vórtice animado del portal, superpuesto al marco de piedra del GLB. */
-function PortalVortex({ reducedMotion, flare }: { reducedMotion: boolean; flare: number }) {
-  const outer = useRef<Mesh>(null)
-  const inner = useRef<Mesh>(null)
-  const light = useRef<PointLight>(null)
-  const visible = usePageVisibility()
-  useFrame((_, delta) => {
-    if (!reducedMotion && visible.current) {
-      if (outer.current) outer.current.rotation.z -= delta * 0.5
-      if (inner.current) inner.current.rotation.z += delta * 0.85
-    }
-    if (light.current) light.current.intensity = 26 + flare * 30
-  })
-  return (
-    <group position={[PORTAL.x, PORTAL.y, PORTAL.z]}>
-      <mesh ref={outer} position={[0, 0, 0.35]}>
-        <circleGeometry args={[1.78, 40]} />
-        <meshBasicMaterial map={portalSwirlTexture()} transparent opacity={0.95} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-      </mesh>
-      <mesh ref={inner} position={[0, 0, 0.5]}>
-        <circleGeometry args={[1.05, 32]} />
-        <meshBasicMaterial map={portalSwirlTexture()} transparent opacity={0.7} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-      </mesh>
-      <pointLight ref={light} position={[0, 0, 2.2]} color="#6db8ff" intensity={26} distance={16} decay={2} />
-    </group>
-  )
-}
-
-/** Resplandor pulsante sobre los cristales monumentales del GLB. */
-function CrystalGlow({ position, scale, flare, reducedMotion, quality }: { position: readonly [number, number, number]; scale: number; flare: number; reducedMotion: boolean; quality: GraphicsQuality }) {
-  const halo = useRef<Object3D>(null)
-  const still = reducedMotion || quality === 'low'
-  useFrame(({ clock }) => {
-    if (!halo.current) return
-    const pulse = still ? 1 : 1 + Math.sin(clock.elapsedTime * 1.6 + position[0]) * 0.12
-    halo.current.scale.setScalar(scale * pulse * (1 + flare * 0.3))
-  })
-  return (
-    <group position={[position[0], position[1], position[2]]}>
-      <sprite ref={halo} scale={[scale, scale, scale]}>
-        <spriteMaterial map={glowTexture('arcane')} transparent opacity={0.55} blending={AdditiveBlending} depthWrite={false} />
-      </sprite>
-      <pointLight color="#5fb6ff" intensity={14 + flare * 12} distance={9} decay={2} />
-    </group>
-  )
-}
-
-/** Mar de nubes al amanecer alrededor de la ciudadela. */
+/** Mar de nubes al amanecer alrededor de la plataforma. */
 function DawnClouds({ quality, reducedMotion }: { quality: GraphicsQuality; reducedMotion: boolean }) {
   const group = useRef<Group>(null)
   const visible = usePageVisibility()
@@ -172,100 +115,15 @@ function DawnClouds({ quality, reducedMotion }: { quality: GraphicsQuality; redu
 }
 
 /**
- * La arquitectura estática exportada desde Blender, revestida en runtime:
- * el glTF trae materiales PBR planos y aquí se les aplica la sillería
- * procedural, dorados emisivos y cristales físicos translúcidos.
+ * Aether Citadel: un domo de cielo al amanecer con nubes y polvo de luz
+ * flotando sobre la plaza — sin arquitectura ni escombros alrededor del
+ * tablero, para que toda la atención quede en las cartas.
  */
-function CitadelModel({ quality }: { quality: GraphicsQuality }) {
-  const { scene } = useGLTF(CITADEL_URL)
-  useEffect(() => {
-    const masonry = masonryTexture()
-    masonry.wrapS = RepeatWrapping
-    masonry.wrapT = RepeatWrapping
-    const dressed = new Set<string>()
-    scene.traverse((object) => {
-      const mesh = object as Mesh
-      if (!mesh.isMesh) return
-      mesh.receiveShadow = quality !== 'low'
-      mesh.castShadow = quality === 'high' && /Tower|Portal(Pylon|ArchOuter)|Col\d|Pedestal/.test(mesh.name)
-      const material = mesh.material as MeshStandardMaterial
-      if (!material?.name) return
-      // Cristales: material físico translúcido, uno por malla para el brillo interno.
-      if (material.name === 'AC_CrystalBlue') {
-        if (!(mesh.material instanceof MeshPhysicalMaterial)) {
-          mesh.material = new MeshPhysicalMaterial({
-            color: '#8ecbff',
-            roughness: 0.08,
-            metalness: 0.05,
-            transmission: 0.55,
-            thickness: 1.2,
-            ior: 1.45,
-            emissive: '#2f7fe8',
-            emissiveIntensity: 1.35,
-            transparent: true,
-            opacity: 0.96,
-          })
-        }
-        return
-      }
-      if (dressed.has(material.name)) return
-      dressed.add(material.name)
-      if (/AC_StoneMain|AC_StoneLight|AC_RockUnder/.test(material.name)) {
-        // Sillería solo en superficies grandes; en cilindros finos los UV
-        // estiran los bloques y arruinan la lectura.
-        const repeat = material.name === 'AC_RockUnder' ? 1.6 : 2.4
-        material.map = masonry
-        material.bumpMap = masonry
-        material.bumpScale = 2.5
-        material.map.repeat.set(repeat, repeat)
-        // El mapa multiplica al color base: se aclara para que la sillería respire.
-        material.color.multiplyScalar(2.1)
-        material.needsUpdate = true
-      } else if (/AC_StoneDark|AC_RuinFar/.test(material.name)) {
-        material.color.multiplyScalar(1.2)
-        material.needsUpdate = true
-      } else if (material.name === 'AC_GoldInlay') {
-        material.emissiveIntensity = 1.05
-        material.roughness = 0.24
-        material.needsUpdate = true
-      } else if (material.name === 'AC_PortalCore') {
-        material.emissiveIntensity = 5.5
-        material.needsUpdate = true
-      }
-    })
-  }, [scene, quality])
-  return <primitive object={scene} />
-}
-
-interface BoundaryProps { fallback: ReactNode; children: ReactNode }
-
-/** Si el GLB no puede cargarse, la batalla continúa en el Santuario. */
-class ScenarioBoundary extends Component<BoundaryProps, { failed: boolean }> {
-  state = { failed: false }
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
-  componentDidCatch(error: unknown) {
-    console.error('Aether Citadel no pudo cargarse; se usa el Santuario.', error)
-  }
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children
-  }
-}
-
-/**
- * Aether Citadel: ciudadela flotante al amanecer. La arquitectura estática
- * vive en el GLB generado por tools/blender/generate_aether_citadel.py;
- * esta capa añade atmósfera, portal animado, cristales y nubes.
- */
-export function AetherCitadel({ quality, reducedMotion, event }: AetherCitadelProps) {
-  const flare = event?.type === 'nexus-damage' || event?.type === 'victory' ? 1 : 0
+export function AetherCitadel({ quality, reducedMotion }: AetherCitadelProps) {
   return (
-    <ScenarioBoundary fallback={<SanctuaryScenario quality={quality} reducedMotion={reducedMotion} event={event} />}>
+    <>
       <DawnAtmosphere quality={quality} />
-      <CitadelModel quality={quality} />
-      {/* Incrustación dorada grabada en el mandil de la plaza, alrededor del
-          tablero: sustituye a los antiguos aros flotantes. */}
+      {/* Incrustación dorada grabada en el mandil de la plaza, alrededor del tablero. */}
       <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[11.6, 11.6]} />
         <meshStandardMaterial
@@ -280,16 +138,10 @@ export function AetherCitadel({ quality, reducedMotion, event }: AetherCitadelPr
           polygonOffsetFactor={-1}
         />
       </mesh>
-      <PortalVortex reducedMotion={reducedMotion} flare={flare} />
-      <CrystalGlow position={[RIGHT_CRYSTAL.x, RIGHT_CRYSTAL.y, RIGHT_CRYSTAL.z]} scale={3.4} flare={flare} reducedMotion={reducedMotion} quality={quality} />
-      <CrystalGlow position={[WEST_CRYSTAL.x, WEST_CRYSTAL.y, WEST_CRYSTAL.z]} scale={2.6} flare={flare} reducedMotion={reducedMotion} quality={quality} />
-      <CrystalGlow position={[PORTAL.x, PORTAL.y + 3.7, PORTAL.z]} scale={1.6} flare={flare} reducedMotion={reducedMotion} quality={quality} />
       <DawnClouds quality={quality} reducedMotion={reducedMotion} />
       {quality !== 'low' && (
         <Sparkles count={quality === 'high' ? 60 : 30} scale={[11, 3.4, 11]} size={1.6} speed={reducedMotion ? 0 : 0.28} color="#ffe2b0" opacity={0.4} position={[0, 1.6, 0]} />
       )}
-    </ScenarioBoundary>
+    </>
   )
 }
-
-useGLTF.preload(CITADEL_URL)
