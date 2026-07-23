@@ -762,3 +762,80 @@ export const glowTexture = (tint: 'ember' | 'arcane' | 'gold'): CanvasTexture =>
   context.fillRect(0, 0, size, size);
   return finishTexture(key, canvas);
 };
+
+/**
+ * Suelo de lava para la Fragua de la Caldera: roca basáltica agrietada con
+ * vetas incandescentes que serpentean entre las fisuras. Se usa como plano
+ * bajo la escenografía, no como sillería tileable, así que las grietas se
+ * distribuyen radialmente desde el centro sin repetición.
+ */
+export const lavaFloorTexture = (): CanvasTexture => {
+  const cached = cache.get('lava-floor');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4c415641);
+  const center = size / 2;
+
+  // Roca basáltica oscura de base, con variación tonal suave.
+  context.fillStyle = '#170805';
+  context.fillRect(0, 0, size, size);
+  for (let index = 0; index < 260; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = 12 + random() * 46;
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+    const shade = 8 + Math.floor(random() * 10);
+    gradient.addColorStop(0, `rgba(${shade + 12}, ${shade + 4}, ${shade}, 0.5)`);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+
+  // Vetas de lava: líneas quebradas que irradian desde varios focos, con
+  // núcleo blanco-amarillo y halo naranja-rojo, como grietas incandescentes.
+  const veinFrom = (originX: number, originY: number, branches: number) => {
+    for (let branch = 0; branch < branches; branch += 1) {
+      let x = originX;
+      let y = originY;
+      let angle = random() * Math.PI * 2;
+      const segments = 8 + Math.floor(random() * 10);
+      const points: [number, number][] = [[x, y]];
+      for (let step = 0; step < segments; step += 1) {
+        angle += (random() - 0.5) * 1.1;
+        const length = 18 + random() * 34;
+        x += Math.cos(angle) * length;
+        y += Math.sin(angle) * length;
+        points.push([x, y]);
+      }
+      const draw = (width: number, color: string) => {
+        context.strokeStyle = color;
+        context.lineWidth = width;
+        context.lineCap = 'round';
+        context.beginPath();
+        points.forEach(([px, py], index) => (index === 0 ? context.moveTo(px, py) : context.lineTo(px, py)));
+        context.stroke();
+      };
+      draw(9, 'rgba(255, 92, 20, 0.5)'); // halo exterior
+      draw(4.5, 'rgba(255, 140, 40, 0.85)'); // veta
+      draw(1.8, 'rgba(255, 226, 160, 0.95)'); // núcleo brillante
+    }
+  };
+  veinFrom(center, center, 6);
+  veinFrom(center * 0.5, center * 0.7, 4);
+  veinFrom(center * 1.5, center * 1.25, 4);
+  veinFrom(center * 0.7, center * 1.5, 3);
+  veinFrom(center * 1.35, center * 0.45, 3);
+
+  // Motas de brasa dispersas entre las grietas.
+  for (let index = 0; index < 90; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    context.fillStyle = `rgba(255, ${150 + Math.floor(random() * 80)}, ${60 + Math.floor(random() * 60)}, ${0.3 + random() * 0.4})`;
+    context.beginPath();
+    context.arc(x, y, 1 + random() * 2.4, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  return finishTexture('lava-floor', canvas);
+};
