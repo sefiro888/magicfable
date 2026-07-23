@@ -7,6 +7,7 @@ import { usePreferences } from '../store/preferences'
 import { currentStreak, summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
 import { evaluateAchievements } from '../store/achievements'
 import { withBase } from '../utils/assets'
+import { decodeDeckCode, encodeDeckCode } from '../utils/deckCode'
 import styles from './DecksPage.module.css'
 
 function loadEntries(deck: DeckDefinition): DeckEntry[] {
@@ -31,6 +32,11 @@ export function DecksPage() {
 function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; selectDeck: (deckId: string) => void }) {
   const [entries, setEntries] = useState<DeckEntry[]>(() => loadEntries(selected))
   const [saved, setSaved] = useState(false)
+  const [shareCode, setShareCode] = useState<string>()
+  const [shareCopied, setShareCopied] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [importOpen, setImportOpen] = useState(false)
+  const [importError, setImportError] = useState<string>()
 
   const draft = useMemo<DeckDefinition>(() => ({ ...selected, cards: entries }), [selected, entries])
   const validation = useMemo(() => validateDeck(draft), [draft])
@@ -65,6 +71,41 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
     setSaved(false)
   }
 
+  const share = () => {
+    const code = encodeDeckCode(selected.id, entries)
+    setShareCode(code)
+    setShareCopied(false)
+    navigator.clipboard?.writeText(code).then(
+      () => setShareCopied(true),
+      () => {
+        /* Sin permiso de portapapeles: el código sigue visible para copiarlo a mano. */
+      },
+    )
+  }
+
+  const applyImport = () => {
+    const decoded = decodeDeckCode(importText)
+    if (!decoded) {
+      setImportError('Ese texto no es un código de mazo válido.')
+      return
+    }
+    if (decoded.deckId !== selected.id) {
+      const owner = STARTER_DECKS.find((deck) => deck.id === decoded.deckId)
+      setImportError(owner ? `Ese código es de «${owner.name}». Cambia primero a esa pestaña.` : 'Ese código pertenece a un mazo que no existe en este set.')
+      return
+    }
+    const unknown = decoded.cards.filter((entry) => !CARD_BY_ID[entry.cardId])
+    if (unknown.length === decoded.cards.length) {
+      setImportError('Ninguna carta del código coincide con el set actual.')
+      return
+    }
+    setEntries(decoded.cards.filter((entry) => CARD_BY_ID[entry.cardId]))
+    setSaved(false)
+    setImportError(undefined)
+    setImportText('')
+    setImportOpen(false)
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -80,6 +121,32 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
           {validation.valid ? <div className={styles.valid}>✓ Mazo válido para jugar</div> : <div className={styles.invalid}>Mazo no válido<ul className={styles.issues}>{validation.issues.slice(0, 4).map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul></div>}
           <div className={styles.saveRow}><button className={styles.save} onClick={save}>Guardar local</button><button className={styles.reset} onClick={reset}>Restaurar</button></div>
           {saved && <span className={styles.saved}>Borrador guardado en este dispositivo.</span>}
+
+          <div className={styles.shareBlock}>
+            <div className={styles.shareRow}>
+              <button className={styles.shareButton} onClick={share}>Compartir código</button>
+              <button className={styles.shareButton} onClick={() => setImportOpen((open) => !open)}>Importar código</button>
+            </div>
+            {shareCode && (
+              <div className={styles.shareCode}>
+                <code>{shareCode}</code>
+                <span>{shareCopied ? 'Copiado al portapapeles.' : 'Cópialo y compártelo por chat.'}</span>
+              </div>
+            )}
+            {importOpen && (
+              <div className={styles.importBlock}>
+                <textarea
+                  className={styles.importInput}
+                  value={importText}
+                  onChange={(event) => { setImportText(event.target.value); setImportError(undefined) }}
+                  placeholder="Pega aquí el código de un mazo de esta misma facción…"
+                  rows={3}
+                />
+                <button className={styles.shareButton} onClick={applyImport} disabled={!importText.trim()}>Aplicar</button>
+                {importError && <p className={styles.importError}>{importError}</p>}
+              </div>
+            )}
+          </div>
         </aside>
         <section className={styles.editor}>
           <header className={styles.editorHeader}><h3>Lista de cartas</h3><span>Usa +/− para ajustar copias. Al llegar a 0, la carta vuelve al catálogo.</span></header>
