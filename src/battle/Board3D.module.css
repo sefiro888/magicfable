@@ -27,3 +27,14 @@
 @media (prefers-reduced-motion: reduce) {
   .nexusLabel [data-targetable] { animation: none; }
 }
+.nexusCard { width: 74px; pointer-events: none; }
+.nexusCard div {
+  overflow: hidden;
+  border: 2px solid rgba(215, 180, 103, 0.55);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.nexusCard img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.nexusCard [data-targetable] { border-color: #ffd257; box-shadow: 0 0 16px rgba(255, 210, 87, 0.55); }
+.nexusCard [data-hit] { border-color: #ff6b58; box-shadow: 0 0 22px rgba(255, 107, 88, 0.85); }

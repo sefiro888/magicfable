@@ -3,7 +3,7 @@ import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { MathUtils, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
-import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID } from '../game'
+import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
@@ -219,43 +219,52 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   )
 })
 
-function Nexus({ playerId, health, targetable, onClick }: { playerId: PlayerId; health: number; targetable: boolean; onClick: () => void }) {
-  const group = useRef<Group>(null)
-  const crystal = useRef<Mesh>(null)
-  const core = useRef<Mesh>(null)
-  const ringA = useRef<Mesh>(null)
-  const ringB = useRef<Mesh>(null)
-  const ringC = useRef<Mesh>(null)
-  const shards = useRef<Group>(null)
+/**
+ * Nexo: antes era ~20 mallas por bando rotando/pulsando cada fotograma sin
+ * parar (icosaedro + núcleo + 3 anillos + 4 esquirlas orbitando, x2 Nexos),
+ * lo que costaba fotogramas todo el partido para un adorno de fondo. Ahora
+ * es un pedestal estático (sin useFrame) con el retrato del comandante como
+ * superposición HTML —no como textura WebGL: cargar dos texturas más de
+ * comandante saturaba el renderizado por software en equipos modestos—.
+ * El destello al recibir daño es una clase CSS puntual, no una animación
+ * continua en el hilo de render de Three.js.
+ */
+function Nexus({
+  playerId,
+  health,
+  targetable,
+  onClick,
+  commanderArt,
+  activeEvent,
+}: {
+  playerId: PlayerId
+  health: number
+  targetable: boolean
+  onClick: () => void
+  commanderArt: string
+  activeEvent?: AnimationEvent
+}) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && targetable)
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime
-    const dir = playerId === 'player' ? 1 : -1
-    if (group.current) group.current.rotation.y = t * dir * 0.16
-    // El cristal flota con una leve oscilación y late si es objetivo de ataque.
-    if (crystal.current) {
-      crystal.current.position.y = Math.sin(t * 1.4) * 0.045
-      const material = crystal.current.material as MeshStandardMaterial
-      material.emissiveIntensity = targetable ? 1.5 + Math.sin(t * 5) * 0.55 : 1.15
+  const [justHit, setJustHit] = useState(false)
+  const lastEvent = useRef<AnimationEvent | undefined>(undefined)
+  useEffect(() => {
+    if (
+      activeEvent &&
+      activeEvent !== lastEvent.current &&
+      activeEvent.targetId === `${playerId}-nexus` &&
+      (activeEvent.type === 'nexus-damage' || activeEvent.type === 'victory')
+    ) {
+      lastEvent.current = activeEvent
+      setJustHit(true)
+      const timer = window.setTimeout(() => setJustHit(false), 380)
+      return () => window.clearTimeout(timer)
     }
-    if (core.current) {
-      core.current.position.y = Math.sin(t * 1.4) * 0.045
-      const s = 1 + Math.sin(t * 2.6) * 0.08
-      core.current.scale.setScalar(s)
-    }
-    // Las tres esferas armilares giran en ejes distintos, como un astrolabio.
-    if (ringA.current) ringA.current.rotation.z = t * 0.7 * dir
-    if (ringB.current) ringB.current.rotation.x = t * -0.5
-    if (ringC.current) ringC.current.rotation.y = t * 0.9 * dir
-    if (shards.current) shards.current.rotation.y = t * -0.35 * dir
-  })
+    return undefined
+  }, [activeEvent, playerId])
   const z = nexusWorldZ(playerId)
   const color = playerId === 'player' ? '#f2a24a' : '#58c9ff'
-  const coreColor = playerId === 'player' ? '#fff0cf' : '#dff4ff'
-  const ringColor = playerId === 'player' ? '#e8c46e' : '#bfe6ff'
   const ringEmissive = playerId === 'player' ? '#9a7326' : '#3f7fb0'
-  const shardOffsets = [0, 1, 2, 3] as const
   return (
     <group position={[0, 0, z]}>
       {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
@@ -271,7 +280,7 @@ function Nexus({ playerId, health, targetable, onClick }: { playerId: PlayerId; 
         <cylinderGeometry args={[0.74, 0.6, 0.12, 8]} />
         <meshStandardMaterial color="#2a3145" roughness={0.7} metalness={0.25} emissive={ringEmissive} emissiveIntensity={0.35} />
       </mesh>
-      {/* Corona de esquirlas de cristal alrededor del borde del pedestal. */}
+      {/* Corona de esquirlas de cristal alrededor del borde del pedestal (estática). */}
       {[...Array(8).keys()].map((index) => {
         const angle = (index / 8) * Math.PI * 2
         return (
@@ -281,53 +290,25 @@ function Nexus({ playerId, health, targetable, onClick }: { playerId: PlayerId; 
           </mesh>
         )
       })}
-      <group
-        ref={group}
-        position={[0, 0.92, 0]}
+      {/* Volumen invisible: conserva el clic/hover en 3D sin gastar una textura. */}
+      <mesh
+        position={[0, 0.66, 0]}
+        visible={false}
         onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
       >
-        {/* Gema exterior facetada, translúcida y brillante. */}
-        <mesh ref={crystal} castShadow>
-          <icosahedronGeometry args={[0.44, 0]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.15} roughness={0.12} metalness={0.45} flatShading />
-        </mesh>
-        {/* Núcleo interior incandescente que late. */}
-        <mesh ref={core}>
-          <sphereGeometry args={[0.19, 20, 20]} />
-          <meshStandardMaterial color={coreColor} emissive={coreColor} emissiveIntensity={2.4} toneMapped={false} />
-        </mesh>
-        {/* Tres anillos armilares finos. */}
-        <mesh ref={ringA} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.66, 0.02, 10, 72]} />
-          <meshStandardMaterial color={ringColor} emissive={ringEmissive} emissiveIntensity={0.9} roughness={0.35} metalness={0.7} />
-        </mesh>
-        <mesh ref={ringB} rotation={[0, 0, Math.PI / 3]}>
-          <torusGeometry args={[0.6, 0.016, 10, 72]} />
-          <meshStandardMaterial color={ringColor} emissive={ringEmissive} emissiveIntensity={0.75} roughness={0.35} metalness={0.7} />
-        </mesh>
-        <mesh ref={ringC} rotation={[Math.PI / 4, Math.PI / 5, 0]}>
-          <torusGeometry args={[0.54, 0.014, 10, 72]} />
-          <meshStandardMaterial color={ringColor} emissive={ringEmissive} emissiveIntensity={0.6} roughness={0.4} metalness={0.65} />
-        </mesh>
-        {/* Esquirlas orbitando el núcleo. */}
-        <group ref={shards}>
-          {shardOffsets.map((index) => {
-            const angle = (index / shardOffsets.length) * Math.PI * 2
-            return (
-              <mesh key={index} position={[Math.cos(angle) * 0.72, Math.sin(angle * 1.3) * 0.12, Math.sin(angle) * 0.72]} rotation={[angle, angle, 0]}>
-                <octahedronGeometry args={[0.07, 0]} />
-                <meshStandardMaterial color={coreColor} emissive={color} emissiveIntensity={1.1} roughness={0.2} metalness={0.4} flatShading />
-              </mesh>
-            )
-          })}
-        </group>
-        <Html center position={[0, 0.82, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
-          <div data-targetable={targetable || undefined}>{playerId === 'player' ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
-        </Html>
-      </group>
-      <pointLight position={[0, 1.25, 0]} color={color} intensity={7} distance={5} decay={2} />
+        <boxGeometry args={[0.9, 0.5, 1.1]} />
+      </mesh>
+      <Html center position={[0, 0.66, 0]} distanceFactor={6.5} zIndexRange={[14, 0]} className={styles.nexusCard}>
+        <div data-targetable={targetable || undefined} data-hit={justHit || undefined}>
+          <img src={withBase(commanderArt)} alt="" />
+        </div>
+      </Html>
+      <Html center position={[0, 1.28, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
+        <div data-targetable={targetable || undefined}>{playerId === 'player' ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
+      </Html>
+      <pointLight position={[0, 1.1, 0]} color={color} intensity={5} distance={4} decay={2} />
     </group>
   )
 }
@@ -428,8 +409,22 @@ function Scene(props: Board3DProps) {
           />
         ))}
       </Suspense>
-      <Nexus playerId="player" health={props.state.players.player.nexusHealth} targetable={false} onClick={() => props.onNexus('player')} />
-      <Nexus playerId="ai" health={props.state.players.ai.nexusHealth} targetable={props.validTargets.includes('ai-nexus')} onClick={() => props.onNexus('ai')} />
+      <Nexus
+        playerId="player"
+        health={props.state.players.player.nexusHealth}
+        targetable={false}
+        onClick={() => props.onNexus('player')}
+        commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
+        activeEvent={props.activeEvent}
+      />
+      <Nexus
+        playerId="ai"
+        health={props.state.players.ai.nexusHealth}
+        targetable={props.validTargets.includes('ai-nexus')}
+        onClick={() => props.onNexus('ai')}
+        commanderArt={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.art.webp ?? '/assets/cards/art/fuente-arcana.webp'}
+        activeEvent={props.activeEvent}
+      />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
       <DamageNumbers event={props.activeEvent} />
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
