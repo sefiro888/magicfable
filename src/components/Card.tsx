@@ -50,7 +50,6 @@ export const CARD_TYPE_LABELS: Readonly<Record<CardType, string>> = {
   mana: 'Esencia',
   unit: 'Unidad',
   instant: 'Hechizo inmediato',
-  persistent: 'Hechizo persistente',
   structure: 'Estructura',
 };
 

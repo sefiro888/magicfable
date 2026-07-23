@@ -5,7 +5,6 @@ export const CARD_TYPES = [
   'mana',
   'unit',
   'instant',
-  'persistent',
   'structure',
 ] as const;
 export type CardType = (typeof CARD_TYPES)[number];

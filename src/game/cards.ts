@@ -164,7 +164,7 @@ const furyCards: readonly CardDefinition[] = [
     vfx: { summonEffect: 'magma-wall', persistentEffect: 'heat-haze' },
   }),
   defineCard({
-    id: 'temblor-rojo', name: 'Temblor Rojo', faction: 'fury', type: 'persistent', subtype: 'Cataclismo',
+    id: 'temblor-rojo', name: 'Temblor Rojo', faction: 'fury', type: 'instant', subtype: 'Cataclismo',
     rarity: 'rare', cost: factionCost('fury', 2, 2),
     rules: 'Inflige 3 de daño a una unidad. Después, la réplica inflige 1 de daño a la unidad enemiga más debilitada restante.',
     flavor: 'La tierra aprende a rugir antes de abrirse.',
@@ -247,7 +247,7 @@ const arcaneCards: readonly CardDefinition[] = [
     vfx: { summonEffect: 'frost-weave', attackEffect: 'ice-thread', impactEffect: 'freeze-lock' },
   }),
   defineCard({
-    id: 'prision-glacial', name: 'Prisión Glacial', faction: 'arcane', type: 'persistent', subtype: 'Encantamiento',
+    id: 'prision-glacial', name: 'Prisión Glacial', faction: 'arcane', type: 'instant', subtype: 'Encantamiento',
     rarity: 'uncommon', cost: factionCost('arcane', 1, 1),
     rules: 'Congela una unidad hasta el comienzo de tu siguiente turno. No puede moverse ni atacar.',
     flavor: 'El hielo no encierra el cuerpo. Convence al tiempo de que deje de avanzar.',
@@ -292,7 +292,7 @@ const arcaneCards: readonly CardDefinition[] = [
     vfx: { summonEffect: 'azur-assemble', impactEffect: 'water-shield', deathEffect: 'azur-shatter' },
   }),
   defineCard({
-    id: 'niebla-espejada', name: 'Niebla Espejada', faction: 'arcane', type: 'persistent', subtype: 'Encantamiento',
+    id: 'niebla-espejada', name: 'Niebla Espejada', faction: 'arcane', type: 'instant', subtype: 'Encantamiento',
     rarity: 'rare', cost: factionCost('arcane', 2, 1),
     rules: 'Observa las tres primeras cartas de tu mazo y colócalas en el orden que quieras. Después, roba una carta.',
     flavor: 'Cada reflejo oculta a quien lo está mirando.',
@@ -319,7 +319,7 @@ const arcaneCards: readonly CardDefinition[] = [
     vfx: { summonEffect: 'infinite-library', attackEffect: 'glyph-beam', deathEffect: 'pages-to-stars' },
   }),
   defineCard({
-    id: 'convergencia-astral', name: 'Convergencia Astral', faction: 'arcane', type: 'persistent', subtype: 'Portal',
+    id: 'convergencia-astral', name: 'Convergencia Astral', faction: 'arcane', type: 'instant', subtype: 'Portal',
     rarity: 'uncommon', cost: factionCost('arcane', 1, 2),
     rules: 'Una unidad aliada puede moverse de nuevo este turno, aunque acabe de entrar en juego.',
     flavor: 'Cuando las estrellas coinciden, la distancia pierde toda autoridad.',
@@ -673,7 +673,7 @@ const shadowCards: readonly CardDefinition[] = [
     vfx: { summonEffect: 'death-magic', persistentEffect: 'curse-aura' },
   }),
   defineCard({
-    id: 'maldicion-sombra', name: 'Maldición Sombra', faction: 'shadow', type: 'persistent', subtype: 'Encantamiento',
+    id: 'maldicion-sombra', name: 'Maldición Sombra', faction: 'shadow', type: 'instant', subtype: 'Encantamiento',
     rarity: 'uncommon', cost: factionCost('shadow', 1, 2),
     rules: 'Una unidad enemiga pierde 1 Vida al final de cada turno.',
     flavor: 'Marca invisible que consume vitalidad.',
@@ -813,7 +813,7 @@ const voidCards: readonly CardDefinition[] = [
     vfx: { impactEffect: 'void-annihilation' },
   }),
   defineCard({
-    id: 'paradoja-vacio', name: 'Paradoja del Vacío', faction: 'void', type: 'persistent', subtype: 'Portal',
+    id: 'paradoja-vacio', name: 'Paradoja del Vacío', faction: 'void', type: 'instant', subtype: 'Portal',
     rarity: 'uncommon', cost: factionCost('void', 1, 3),
     rules: 'Una vez por turno, una unidad aliada puede cambiar de lado de forma temporal.',
     flavor: 'Puerta a realidades que se contradicen.',

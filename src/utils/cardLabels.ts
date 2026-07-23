@@ -13,7 +13,6 @@ export const TYPE_LABELS: Record<CardType, string> = {
   mana: 'Esencia',
   unit: 'Unidad',
   instant: 'Hechizo inmediato',
-  persistent: 'Hechizo persistente',
   structure: 'Estructura',
 }
 

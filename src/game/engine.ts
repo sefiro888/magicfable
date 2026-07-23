@@ -658,7 +658,7 @@ export const effectiveCost = (
   card: CardDefinition,
 ): ManaCost => {
   let generic = card.cost.generic;
-  if (card.type === 'instant' || card.type === 'persistent') {
+  if (card.type === 'instant') {
     for (const piece of state.board) {
       if (piece.owner !== playerId) continue;
       const discount = CARD_BY_ID[piece.cardId]?.effects.find(
@@ -714,10 +714,7 @@ export const playCard = (
     ...player,
     hand: player.hand.filter((candidate) => candidate.instanceId !== cardInstanceId),
     resources: payment.resources,
-    spellsCastThisTurn:
-      card.type === 'instant' || card.type === 'persistent'
-        ? player.spellsCastThisTurn + 1
-        : player.spellsCastThisTurn,
+    spellsCastThisTurn: card.type === 'instant' ? player.spellsCastThisTurn + 1 : player.spellsCastThisTurn,
     forgeBuffUsedThisTurn: player.forgeBuffUsedThisTurn || receivesForgeBuff,
     unitDiscountPending: player.unitDiscountPending && !usedUnitDiscount,
     stats: { ...player.stats, cardsPlayed: player.stats.cardsPlayed + 1 },
