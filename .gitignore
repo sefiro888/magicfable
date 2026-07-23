@@ -7,6 +7,12 @@ test-results/
 .DS_Store
 *.log
 
+# Claves de Supabase: la anon/publishable key es segura de exponer en el
+# cliente, pero no debe vivir en el historial de git — se inyecta en CI
+# como secreto de GitHub Actions (ver .github/workflows) y aquí en local.
+.env
+.env.local
+
 # Backups automáticos de Blender
 *.blend1
 *.blend2
