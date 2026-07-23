@@ -83,11 +83,12 @@ function PortalVortex({ reducedMotion, flare }: { reducedMotion: boolean; flare:
 }
 
 /** Resplandor pulsante sobre los cristales monumentales del GLB. */
-function CrystalGlow({ position, scale, flare, reducedMotion }: { position: readonly [number, number, number]; scale: number; flare: number; reducedMotion: boolean }) {
+function CrystalGlow({ position, scale, flare, reducedMotion, quality }: { position: readonly [number, number, number]; scale: number; flare: number; reducedMotion: boolean; quality: GraphicsQuality }) {
   const halo = useRef<Object3D>(null)
+  const still = reducedMotion || quality === 'low'
   useFrame(({ clock }) => {
     if (!halo.current) return
-    const pulse = reducedMotion ? 1 : 1 + Math.sin(clock.elapsedTime * 1.6 + position[0]) * 0.12
+    const pulse = still ? 1 : 1 + Math.sin(clock.elapsedTime * 1.6 + position[0]) * 0.12
     halo.current.scale.setScalar(scale * pulse * (1 + flare * 0.3))
   })
   return (
@@ -280,9 +281,9 @@ export function AetherCitadel({ quality, reducedMotion, event }: AetherCitadelPr
         />
       </mesh>
       <PortalVortex reducedMotion={reducedMotion} flare={flare} />
-      <CrystalGlow position={[RIGHT_CRYSTAL.x, RIGHT_CRYSTAL.y, RIGHT_CRYSTAL.z]} scale={3.4} flare={flare} reducedMotion={reducedMotion} />
-      <CrystalGlow position={[WEST_CRYSTAL.x, WEST_CRYSTAL.y, WEST_CRYSTAL.z]} scale={2.6} flare={flare} reducedMotion={reducedMotion} />
-      <CrystalGlow position={[PORTAL.x, PORTAL.y + 3.7, PORTAL.z]} scale={1.6} flare={flare} reducedMotion={reducedMotion} />
+      <CrystalGlow position={[RIGHT_CRYSTAL.x, RIGHT_CRYSTAL.y, RIGHT_CRYSTAL.z]} scale={3.4} flare={flare} reducedMotion={reducedMotion} quality={quality} />
+      <CrystalGlow position={[WEST_CRYSTAL.x, WEST_CRYSTAL.y, WEST_CRYSTAL.z]} scale={2.6} flare={flare} reducedMotion={reducedMotion} quality={quality} />
+      <CrystalGlow position={[PORTAL.x, PORTAL.y + 3.7, PORTAL.z]} scale={1.6} flare={flare} reducedMotion={reducedMotion} quality={quality} />
       <DawnClouds quality={quality} reducedMotion={reducedMotion} />
       {quality !== 'low' && (
         <Sparkles count={quality === 'high' ? 60 : 30} scale={[11, 3.4, 11]} size={1.6} speed={reducedMotion ? 0 : 0.28} color="#ffe2b0" opacity={0.4} position={[0, 1.6, 0]} />

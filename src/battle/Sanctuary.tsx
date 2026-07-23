@@ -159,18 +159,19 @@ function Balustrades({ quality }: { quality: GraphicsQuality }) {
 }
 
 /** Pilonos de las esquinas: poste dorado con cristal flotante que se aviva con los golpes. */
-function CrystalPylon({ position, flare, reducedMotion }: { position: [number, number, number]; flare: number; reducedMotion: boolean }) {
+function CrystalPylon({ position, flare, reducedMotion, quality }: { position: [number, number, number]; flare: number; reducedMotion: boolean; quality: GraphicsQuality }) {
   const crystal = useRef<Mesh>(null)
   const halo = useRef<Mesh>(null)
+  const still = reducedMotion || quality === 'low'
   useFrame(({ clock }) => {
     const time = clock.elapsedTime
     if (crystal.current) {
-      if (!reducedMotion) {
+      if (!still) {
         crystal.current.rotation.y = time * 0.8
         crystal.current.position.y = 0.86 + Math.sin(time * 1.7 + position[0]) * 0.035
       }
       const material = crystal.current.material as MeshStandardMaterial
-      material.emissiveIntensity = 1.9 + flare * 2.6 + (reducedMotion ? 0 : Math.sin(time * 2.3 + position[2]) * 0.35)
+      material.emissiveIntensity = 1.9 + flare * 2.6 + (still ? 0 : Math.sin(time * 2.3 + position[2]) * 0.35)
     }
     if (halo.current) {
       const material = halo.current.material as MeshBasicMaterial
@@ -478,10 +479,10 @@ export function Sanctuary({ quality, reducedMotion, event }: SanctuaryProps) {
       <InlayRing event={event} reducedMotion={reducedMotion} />
       <PortalGate flare={flare} reducedMotion={reducedMotion} quality={quality} />
       <Telescope reducedMotion={reducedMotion} />
-      <CrystalPylon position={[-3.88, 0, 3.88]} flare={flare} reducedMotion={reducedMotion} />
-      <CrystalPylon position={[3.88, 0, 3.88]} flare={flare} reducedMotion={reducedMotion} />
-      <CrystalPylon position={[-3.88, 0, -3.88]} flare={flare} reducedMotion={reducedMotion} />
-      <CrystalPylon position={[3.88, 0, -3.88]} flare={flare} reducedMotion={reducedMotion} />
+      <CrystalPylon position={[-3.88, 0, 3.88]} flare={flare} reducedMotion={reducedMotion} quality={quality} />
+      <CrystalPylon position={[3.88, 0, 3.88]} flare={flare} reducedMotion={reducedMotion} quality={quality} />
+      <CrystalPylon position={[-3.88, 0, -3.88]} flare={flare} reducedMotion={reducedMotion} quality={quality} />
+      <CrystalPylon position={[3.88, 0, -3.88]} flare={flare} reducedMotion={reducedMotion} quality={quality} />
       {quality !== 'low' && (
         <>
           <Sparkles
