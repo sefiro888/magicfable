@@ -32,6 +32,7 @@ import { useMatchStore } from '../store/match'
 import { usePreferences } from '../store/preferences'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
+import { evaluateAchievements, type Achievement } from '../store/achievements'
 import { withBase } from '../utils/assets'
 import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS } from '../utils/cardLabels'
 import styles from './BattlePage.module.css'
@@ -138,6 +139,8 @@ export function BattlePage() {
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
   const recordedSeed = useRef<number | undefined>(undefined)
+  /** Logros que este resultado concreto acaba de desbloquear, para celebrarlos en la pantalla final. */
+  const [matchAchievements, setMatchAchievements] = useState<readonly Achievement[]>([])
 
   const match = store.match
   const currentEvent = store.currentEvent
@@ -218,6 +221,9 @@ export function BattlePage() {
     const playerState = finished.players.player
     const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
     const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === finished.players.ai.commanderId)
+    const unlockedBefore = new Set(
+      evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked).map((a) => a.id),
+    )
     useRecords.getState().addRecord({
       finishedAt: Date.now(),
       deckId: playerDeck?.id ?? preferences.selectedDeckId,
@@ -230,6 +236,9 @@ export function BattlePage() {
       damageDealt: playerState.stats.damageDealt,
       seed: finished.seed,
     })
+    setMatchAchievements(
+      evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked && !unlockedBefore.has(a.id)),
+    )
   }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId])
 
   useEffect(() => {
@@ -482,6 +491,7 @@ export function BattlePage() {
     aiSkipped.current = new Set()
     // Con «?seed=N» la revancha repite semilla: sin esto la nueva partida no se anotaría.
     recordedSeed.current = undefined
+    setMatchAchievements([])
     store.startMatch(preferences.selectedDeckId, forcedSeed)
   }
 
@@ -898,6 +908,16 @@ export function BattlePage() {
             )}
             {match.winner === 'player' && daily.done && (
               <p className={styles.dailyResultNote}>✓ Reto de hoy completado: {daily.title}</p>
+            )}
+            {matchAchievements.length > 0 && (
+              <div className={styles.resultAchievements}>
+                <small>Logro{matchAchievements.length > 1 ? 's' : ''} desbloqueado{matchAchievements.length > 1 ? 's' : ''}</small>
+                {matchAchievements.map((achievement) => (
+                  <p key={achievement.id}>
+                    <span aria-hidden="true">{achievement.icon}</span> {achievement.name}
+                  </p>
+                ))}
+              </div>
             )}
             <div className={styles.resultActions}>
               <button onClick={repeat}>Repetir</button>

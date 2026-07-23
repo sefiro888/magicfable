@@ -280,6 +280,9 @@
 .resultTally { margin: -12px 0 20px; color: #918e86; font-size: 11px; }
 .resultTally strong { color: var(--gold-bright); font-family: var(--display); font-size: 14px; }
 .dailyResultNote { margin: -12px 0 20px; color: var(--success); font-size: 11px; }
+.resultAchievements { margin: -6px 0 20px; padding: 10px 14px; border: 1px solid var(--line-bright); background: rgba(215,180,103,.08); }
+.resultAchievements small { display: block; color: #918e86; letter-spacing: .08em; text-transform: uppercase; font-size: 10px; margin-bottom: 6px; }
+.resultAchievements p { margin: 2px 0; color: var(--gold-bright); font-size: 13px; }
 .resultActions { display: flex; justify-content: center; gap: 10px; }
 .resultActions button, .resultActions a { padding: 11px 18px; border: 1px solid var(--line-bright); background: rgba(215,180,103,.1); cursor: pointer; }
 .mulligan { width: min(850px, 90vw); padding: 34px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; }
