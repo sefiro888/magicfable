@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseNextAiAction, runAiTurn } from './ai';
+import { chooseNextAiAction, factionCardBias, runAiTurn } from './ai';
 import { CARD_BY_ID } from './cards';
 import { STARTER_DECKS } from './decks';
 import { applyAction, createMatch } from './engine';
@@ -136,5 +136,58 @@ describe('IA básica determinista', () => {
       animations: [],
     };
     expect(runAiTurn(state)).toEqual(runAiTurn(state));
+  });
+});
+
+describe('sesgo de arquetipo por facción', () => {
+  it('Furia valora más el daño/abrasión que Arcano en la misma carta', () => {
+    const lluviaCeniza = CARD_BY_ID['lluvia-ceniza']!;
+    expect(factionCardBias(lluviaCeniza, 'fury')).toBeGreaterThan(factionCardBias(lluviaCeniza, 'arcane'));
+  });
+
+  it('Arcano valora más la congelación que Furia en la misma carta', () => {
+    const congelacion = CARD_BY_ID['congelacion-rapida']!;
+    expect(factionCardBias(congelacion, 'arcane')).toBeGreaterThan(factionCardBias(congelacion, 'fury'));
+  });
+
+  it('Orden valora más una estructura que Furia en la misma carta', () => {
+    const forjaCarmesi = CARD_BY_ID['forja-carmesi']!;
+    expect(factionCardBias(forjaCarmesi, 'order')).toBeGreaterThan(factionCardBias(forjaCarmesi, 'fury'));
+  });
+
+  it('sin facción no aplica ningún sesgo', () => {
+    const lluviaCeniza = CARD_BY_ID['lluvia-ceniza']!;
+    expect(factionCardBias(lluviaCeniza, undefined)).toBe(0);
+  });
+
+  it('la IA de Arcano prioriza congelar una amenaza sobre jugar una unidad de menor valor', () => {
+    const base = match();
+    const state: MatchState = {
+      ...base,
+      activePlayer: 'ai',
+      turn: 4,
+      players: {
+        ...base.players,
+        ai: {
+          ...base.players.ai,
+          hand: [{ instanceId: 'ai-freeze', cardId: 'congelacion-rapida' }],
+          deck: [],
+          resources: [
+            { instanceId: 'r1', cardId: 'fuente-arcana', faction: 'arcane', exhausted: false },
+            { instanceId: 'r2', cardId: 'fuente-arcana', faction: 'arcane', exhausted: false },
+          ],
+          resourcePlayedThisTurn: true,
+        },
+      },
+      board: [{
+        instanceId: 'player-unit', cardId: 'duelista-prisma', owner: 'player',
+        position: { x: 3, y: 7 }, currentHealth: 3, attackModifier: 0,
+        movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [],
+      }],
+      animations: [],
+    };
+    const action = chooseNextAiAction(state);
+    expect(action.type).toBe('play-card');
+    expect(action.type === 'play-card' && action.cardInstanceId).toBe('ai-freeze');
   });
 });

@@ -1,5 +1,6 @@
 import { distanceToCenter, distanceToEnemyNexusRow } from './board';
 import { CARD_BY_ID } from './cards';
+import { COMMANDER_BY_ID } from './decks';
 import {
   applyAction,
   effectiveCost,
@@ -12,6 +13,7 @@ import type {
   BoardPiece,
   CardDefinition,
   CardInstance,
+  FactionId,
   GameAction,
   MatchState,
   Position,
@@ -23,14 +25,43 @@ const MAX_AI_ACTIONS = 64;
 /** Nivel de la IA rival. Solo cambia su agresividad, no su validez de jugadas. */
 export type AiDifficulty = 'easy' | 'normal' | 'hard';
 
-const cardScore = (card: CardDefinition): number => {
+/**
+ * Sesgo de puntuación por arquetipo de facción: cada IA rival prioriza sus
+ * propias cartas y objetivos de forma distinta según su identidad temática
+ * (ver src/game/factions.ts). Solo reordena candidatos ya válidos; nunca
+ * habilita una jugada que el motor rechazaría.
+ */
+export const factionCardBias = (card: CardDefinition, faction: FactionId | undefined): number => {
+  if (!faction) return 0;
+  switch (faction) {
+    case 'fury':
+      return (card.attack ?? 0) * 1.5 + card.effects.reduce((sum, effect) => sum + (effect.kind === 'scorch' ? 5 : effect.kind === 'damage' ? effect.amount : 0), 0);
+    case 'arcane':
+      return card.effects.reduce((sum, effect) => sum + (effect.kind === 'freeze' ? 6 : effect.kind === 'draw' ? effect.amount * 3 : effect.kind === 'scry' ? effect.amount * 2 : 0), 0);
+    case 'nature':
+      return (card.health ?? card.resistance ?? 0) * 1.5 + card.effects.reduce((sum, effect) => sum + (effect.kind === 'heal-nexus' ? effect.amount * 2 : 0), 0);
+    case 'order':
+      return (card.type === 'structure' ? 6 : 0) + card.effects.reduce((sum, effect) => sum + (effect.kind === 'passive' && effect.id === 'target-attack-until-end' ? 4 : 0), 0);
+    case 'shadow':
+      return card.effects.reduce((sum, effect) => sum + (effect.kind === 'discard' ? effect.amount * 4 : effect.kind === 'adjacent-damage' ? effect.amount * 2 : effect.kind === 'splash-weakest-enemy' ? effect.amount * 2 : 0), 0);
+    case 'void':
+      return (card.unique ? 4 : 0) + card.effects.reduce((sum, effect) => sum + (effect.kind === 'refresh-move' ? 5 : effect.kind === 'passive' ? 2 : 0), 0);
+    default:
+      return 0;
+  }
+};
+
+const aiFaction = (state: MatchState): FactionId | undefined =>
+  COMMANDER_BY_ID[state.players.ai.commanderId]?.faction;
+
+const cardScore = (card: CardDefinition, faction?: FactionId): number => {
   const cost = card.cost.generic + Object.values(card.cost.colored).reduce<number>((sum, value) => sum + (value ?? 0), 0);
   const boardValue = (card.attack ?? 0) * 2 + (card.health ?? card.resistance ?? 0);
   const removalValue = card.effects.reduce(
     (sum, effect) => sum + (effect.kind === 'damage' ? effect.amount * 3 : effect.kind === 'freeze' ? 4 : effect.kind === 'draw' ? effect.amount * 2 : 0),
     0,
   );
-  return boardValue + removalValue + cost + (card.unique ? 2 : 0);
+  return boardValue + removalValue + cost + (card.unique ? 2 : 0) + factionCardBias(card, faction);
 };
 
 const stableTieBreaker = (value: string, seed: number): number => {
@@ -123,12 +154,13 @@ const actionForCard = (state: MatchState, instance: CardInstance): GameAction | 
 };
 
 const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>): GameAction | undefined => {
+  const faction = aiFaction(state);
   const candidates = state.players.ai.hand
     .filter((instance) => !skipped.has(instance.instanceId))
     .map((instance) => ({ instance, card: CARD_BY_ID[instance.cardId] }))
     .filter((candidate): candidate is { instance: CardInstance; card: CardDefinition } => Boolean(candidate.card))
     .sort((left, right) =>
-      cardScore(right.card) - cardScore(left.card) ||
+      cardScore(right.card, faction) - cardScore(left.card, faction) ||
       stableTieBreaker(left.instance.instanceId, state.seed + state.turn) -
         stableTieBreaker(right.instance.instanceId, state.seed + state.turn),
     );
