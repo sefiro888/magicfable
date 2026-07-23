@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { usePreferences } from '../store/preferences'
 import { playSynthCue } from '../services/audio'
+import { AchievementToast } from '../components/AchievementToast'
 import styles from './AppShell.module.css'
 
 const links = [
@@ -20,43 +21,51 @@ export function AppShell() {
     setMuted(!muted)
   }
 
-  if (isBattle) return <Outlet />
-
   return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <NavLink to="/" className={styles.brand} aria-label="Crónicas del Nexo, inicio">
-          <span className={styles.brandMark} aria-hidden="true"><span>✦</span></span>
-          <span className={styles.brandText}>
-            <strong>CRÓNICAS DEL NEXO</strong>
-            <small>El destino está en tus cartas</small>
-          </span>
-        </NavLink>
-        <nav className={styles.nav} aria-label="Navegación principal">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.to === '/'}
-              className={styles.navLink}
-              data-active={location.pathname === link.to}
-            >
-              {link.label}
+    <>
+      {/* Instancia única fuera de la rama battle/no-battle: si viviera duplicada
+          en ambas, cada navegación entre /battle y el resto la remontaría y
+          perdería el registro de qué logros ya se anunciaron en esta sesión. */}
+      <AchievementToast />
+      {isBattle ? (
+        <Outlet />
+      ) : (
+        <div className={styles.shell}>
+          <header className={styles.header}>
+            <NavLink to="/" className={styles.brand} aria-label="Crónicas del Nexo, inicio">
+              <span className={styles.brandMark} aria-hidden="true"><span>✦</span></span>
+              <span className={styles.brandText}>
+                <strong>CRÓNICAS DEL NEXO</strong>
+                <small>El destino está en tus cartas</small>
+              </span>
             </NavLink>
-          ))}
-        </nav>
-        <div className={styles.actions}>
-          <button className={styles.iconButton} onClick={toggleSound} aria-label={muted ? 'Activar sonido' : 'Silenciar'} title={muted ? 'Activar sonido' : 'Silenciar'}>
-            {muted ? '◌' : '♪'}
-          </button>
-          <NavLink className={styles.iconButton} to="/settings" aria-label="Ajustes" title="Ajustes">⚙</NavLink>
+            <nav className={styles.nav} aria-label="Navegación principal">
+              {links.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === '/'}
+                  className={styles.navLink}
+                  data-active={location.pathname === link.to}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+            <div className={styles.actions}>
+              <button className={styles.iconButton} onClick={toggleSound} aria-label={muted ? 'Activar sonido' : 'Silenciar'} title={muted ? 'Activar sonido' : 'Silenciar'}>
+                {muted ? '◌' : '♪'}
+              </button>
+              <NavLink className={styles.iconButton} to="/settings" aria-label="Ajustes" title="Ajustes">⚙</NavLink>
+            </div>
+          </header>
+          <main className={styles.main}><Outlet /></main>
+          <footer className={styles.footer}>
+            <span>PROTOTIPO VERTICAL · PARTIDAS LOCALES</span>
+            <span>6 FACCIONES · NEXO 25</span>
+          </footer>
         </div>
-      </header>
-      <main className={styles.main}><Outlet /></main>
-      <footer className={styles.footer}>
-        <span>PROTOTIPO VERTICAL · PARTIDAS LOCALES</span>
-        <span>6 FACCIONES · NEXO 25</span>
-      </footer>
-    </div>
+      )}
+    </>
   )
 }
