@@ -58,8 +58,6 @@ const BATTLE_KEYWORD_LABELS: Record<string, string> = {
   'swift-strike': 'Golpe veloz',
   guard: 'Guardia',
   flying: 'Volador',
-  channel: 'Canalizar',
-  frozen: 'Congelación',
 }
 
 const ESSENCE_LABELS: Record<string, string> = {

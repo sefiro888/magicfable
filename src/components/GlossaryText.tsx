@@ -65,12 +65,6 @@ export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
     definition: 'Puede ignorar ciertas restricciones de ocupación o terreno indicadas por las reglas del efecto.',
   },
   {
-    id: 'canalizar',
-    terms: ['Canaliza', 'Canalizar', 'Canalización'],
-    label: 'Canalizar',
-    definition: 'Acumula o transforma energía arcana para un efecto posterior.',
-  },
-  {
     id: 'escudo',
     terms: ['Escudo', 'Escudos'],
     label: 'Escudo',

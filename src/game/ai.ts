@@ -101,7 +101,7 @@ const chooseDeployment = (state: MatchState): Position | undefined => {
 
 const actionForCard = (state: MatchState, instance: CardInstance): GameAction | undefined => {
   const card = CARD_BY_ID[instance.cardId];
-  if (!card || card.type === 'mana' || card.type === 'relic') return undefined;
+  if (!card || card.type === 'mana') return undefined;
   if (!planManaPayment(state.players.ai.resources, effectiveCost(state, 'ai', card)).payable) return undefined;
   if (card.type === 'unit' || card.type === 'structure') {
     const position = chooseDeployment(state);

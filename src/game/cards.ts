@@ -314,7 +314,7 @@ const arcaneCards: readonly CardDefinition[] = [
     rarity: 'mythic', cost: factionCost('arcane', 2, 4), attack: 4, health: 6, range: 2, movement: 1,
     rules: 'Al entrar en juego, roba 2 cartas. Tus hechizos cuestan 1 genérico menos, hasta un mínimo de 0.',
     flavor: 'Ha catalogado cada final salvo el suyo.',
-    keywords: ['channel'], collectorNumber: 23, aiTags: ['finisher', 'draw'], unique: true,
+    keywords: [], collectorNumber: 23, aiTags: ['finisher', 'draw'], unique: true,
     effects: [{ kind: 'draw', amount: 2 }, { kind: 'passive', id: 'spell-generic-discount', value: 1 }],
     vfx: { summonEffect: 'infinite-library', attackEffect: 'glyph-beam', deathEffect: 'pages-to-stars' },
   }),

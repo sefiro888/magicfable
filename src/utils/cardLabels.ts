@@ -15,7 +15,6 @@ export const TYPE_LABELS: Record<CardType, string> = {
   instant: 'Hechizo inmediato',
   persistent: 'Hechizo persistente',
   structure: 'Estructura',
-  relic: 'Reliquia',
 }
 
 export const RARITY_LABELS: Record<Rarity, string> = {

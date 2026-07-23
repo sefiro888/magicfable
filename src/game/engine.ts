@@ -688,7 +688,6 @@ export const playCard = (
   const card = CARD_BY_ID[instance.cardId];
   if (!card) return fail(state, 'card-not-found', 'La definición de la carta no existe.');
   if (card.type === 'mana') return fail(state, 'invalid-card-type', 'Usa la acción de jugar fuente.');
-  if (card.type === 'relic') return fail(state, 'invalid-card-type', 'Las reliquias aún no son jugables.');
 
   const isPiece = card.type === 'unit' || card.type === 'structure';
   if (isPiece) {

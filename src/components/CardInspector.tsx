@@ -23,10 +23,8 @@ export interface CardInspectorProps {
 const KEYWORD_LABELS: Readonly<Record<Keyword, string>> = {
   impulse: 'Impulso',
   'swift-strike': 'Golpe veloz',
-  frozen: 'Congelación',
   guard: 'Guardia',
   flying: 'Volador',
-  channel: 'Canalizar',
 };
 
 const focusableSelector = [

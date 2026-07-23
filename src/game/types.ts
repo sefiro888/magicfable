@@ -7,7 +7,6 @@ export const CARD_TYPES = [
   'instant',
   'persistent',
   'structure',
-  'relic',
 ] as const;
 export type CardType = (typeof CARD_TYPES)[number];
 
@@ -17,10 +16,8 @@ export type Rarity = (typeof RARITIES)[number];
 export const KEYWORDS = [
   'impulse',
   'swift-strike',
-  'frozen',
   'guard',
   'flying',
-  'channel',
 ] as const;
 export type Keyword = (typeof KEYWORDS)[number];
 

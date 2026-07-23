@@ -52,7 +52,6 @@ export const CARD_TYPE_LABELS: Readonly<Record<CardType, string>> = {
   instant: 'Hechizo inmediato',
   persistent: 'Hechizo persistente',
   structure: 'Estructura',
-  relic: 'Reliquia',
 };
 
 const STATUS_PRESETS: Readonly<Record<CardStatusId, ResolvedStatus>> = {
