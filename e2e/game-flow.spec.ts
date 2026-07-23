@@ -50,7 +50,8 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
   await expect(page.getByText('Turno 1 · Principal')).toBeVisible()
   await page.getByRole('button', { name: /Fuente de Furia\. Esencia — Fuente\./ }).first().click()
   await expect(page.getByText('1 / 1').first()).toBeVisible()
-  await expect(page.getByText('Fuente de Furia entra en la reserva.')).toBeVisible()
+  // Aparece dos veces: el aviso central de eventos y la Crónica de batalla.
+  await expect(page.getByText('Fuente de Furia entra en la reserva.').first()).toBeVisible()
 
   await page.getByRole('button', { name: 'Finalizar turno' }).click()
   // La IA reproduce su turno paso a paso y devuelve el control (turno 3 = jugador).
