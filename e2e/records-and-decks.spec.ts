@@ -137,3 +137,20 @@ test('el panel del rival muestra su vida, esencia, mano, mazo y descarte', async
   await panel.getByRole('button', { name: 'Cerrar' }).click()
   await expect(page.getByRole('dialog', { name: 'Datos del rival' })).toBeHidden()
 })
+
+test('el panel propio en móvil está oculto por defecto y se abre con ⛨', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/battle?seed=555')
+  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  // Oculto por defecto: la vida y la esencia ya se ven en el tablero y la píldora inferior.
+  await expect(page.getByText('Vida del Nexo')).toBeHidden()
+  // El aria-label cambia entre "Ver tus datos…" y "Ocultar tus datos" según el
+  // estado, así que se localiza por clase (estable) y no por nombre accesible.
+  const toggle = page.locator('[class*="_ownPanelToggle_"]')
+  await toggle.click()
+  await expect(page.getByText('Vida del Nexo')).toBeVisible()
+  await expect(page.getByText('Reto de hoy')).toBeVisible()
+  await toggle.click()
+  await expect(page.getByText('Vida del Nexo')).toBeHidden()
+})

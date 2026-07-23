@@ -56,7 +56,11 @@
 .dailyBattleNote strong { display: block; margin-top: 1px; font-family: var(--display); font-size: 11.5px; font-weight: 500; color: #d9d2c3; line-height: 1.25; }
 
 /* ── Panel derecho: selección → acción → crónica → turno ─────────────────── */
+/* flex:1 solo cuando hay algo que mostrar: si no hay carta seleccionada, el
+   panel no debe reservar todo el alto disponible dejando un hueco vacío
+   sobre la Crónica de batalla y el botón de turno. */
 .context { flex: 1; min-height: 0; overflow: auto; }
+.context[data-empty] { flex: 0 0 auto; }
 .context h3 { margin: 9px 0 3px; font-family: var(--display); font-size: 17px; font-weight: 500; }
 .contextArt { margin-top: 8px; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--line-bright); background: #0a0c13; box-shadow: inset 0 0 14px rgba(0,0,0,.6); }
 .contextArt img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; display: block; }
@@ -357,6 +361,13 @@
 }
 .glossaryButton:hover { color: var(--gold-bright); border-color: var(--gold); transform: scale(1.08); }
 .glossaryButton:focus-visible { outline: 2px solid #fff1b8; outline-offset: 2px; }
+
+/* Alterna el panel propio: solo existe en móvil (oculto por defecto en desktop,
+   donde el panel izquierdo ya está siempre visible sin necesidad de un botón). */
+.ownPanelToggle { display: none; }
+
+/* Crónica de batalla: visible en PC; en móvil se oculta (ver regla en el bloque móvil). */
+.historyLogWrap { display: contents; }
 .mulliganHint[data-ok='true'] { color: var(--success); background: rgba(74,158,92,.09); }
 .mulliganHint strong { color: inherit; font-family: var(--display); }
 .mulliganCards { display: flex; justify-content: center; gap: 10px; margin: 25px 0; }
@@ -424,7 +435,11 @@
 
   /* Paneles compactos y semitransparentes: informan sin tapar el tablero. */
   .leftPanel, .rightPanel { width: 45vw; max-height: 30vh; top: 6px; font-size: 12px; background: rgba(11,13,20,.92); }
-  .leftPanel { left: 6px; }
+  /* Tu vida y tu esencia ya se ven en el tablero 3D y en la píldora inferior:
+     el panel propio queda oculto por defecto y solo aparece al pulsar ⛨,
+     para que el tablero mande en pantallas pequeñas. */
+  .leftPanel { display: none; left: 6px; }
+  .leftPanel[data-mobile-open] { display: block; }
   /* Sin backdrop-filter aquí: crea un containing block que atraparía el
      position:fixed del turnDock dentro de este panel en vez del viewport. */
   .rightPanel { right: 6px; bottom: auto; backdrop-filter: none; -webkit-backdrop-filter: none; }
@@ -432,7 +447,6 @@
   .portrait { display: none; }
   .commander { grid-template-columns: 1fr; }
   .commanderRules, .contextArt, .contextFlavor, .contextKeywords { display: none; }
-  .leftPanel .panelSection:last-child { display: none; }
   .deckCounters { gap: 5px; margin-top: 8px; }
   .counter { padding: 5px 3px; }
   .counter strong { font-size: 13px; }
@@ -453,4 +467,16 @@
   .helpButton, .glossaryButton { top: auto; bottom: 188px; width: 30px; height: 30px; font-size: 15px; }
   .helpButton { right: 6px; }
   .glossaryButton { right: 44px; }
+
+  /* Crónica de batalla: redundante en móvil con el aviso central de eventos. */
+  .historyLogWrap { display: none; }
+
+  .ownPanelToggle {
+    display: grid; place-items: center; position: absolute; z-index: 45;
+    top: 6px; left: 6px; width: 30px; height: 30px; cursor: pointer;
+    font-size: 15px; color: #e6d9b6; border: 1px solid var(--line-bright); border-radius: 50%;
+    background: rgba(11,13,20,.84); backdrop-filter: blur(8px);
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .ownPanelToggle[aria-pressed="true"] { color: var(--gold-bright); border-color: var(--gold); }
 }

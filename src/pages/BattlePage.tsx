@@ -141,6 +141,10 @@ export function BattlePage() {
   const [glossaryOpen, setGlossaryOpen] = useState(false)
   /** Panel de datos del rival: vida, esencia, mazo y descarte — plegado por defecto para no robarle sitio al tablero. */
   const [enemyPanelOpen, setEnemyPanelOpen] = useState(false)
+  /** Panel propio (comandante/mazo/descarte/reto) en móvil: su vida y esencia ya se ven
+      en el tablero y en la píldora inferior, así que se oculta por defecto para dejar
+      sitio al tablero. En PC siempre está visible, este estado no se usa ahí. */
+  const [ownPanelOpenMobile, setOwnPanelOpenMobile] = useState(false)
   const aiSteps = useRef(0)
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
@@ -692,7 +696,7 @@ export function BattlePage() {
             </span>
           </div>
         </div>
-        <aside className={styles.leftPanel}>
+        <aside className={styles.leftPanel} data-mobile-open={ownPanelOpenMobile || undefined}>
           <section className={styles.panelSection}>
             <span className={styles.panelLabel}>Comandante</span>
             <div className={styles.commander}>
@@ -726,9 +730,9 @@ export function BattlePage() {
           </section>
         </aside>
         <aside className={styles.rightPanel}>
-          <section className={`${styles.panelSection} ${styles.context}`}>
+          <section className={`${styles.panelSection} ${styles.context}`} data-empty={!activeInfo || undefined}>
             <span className={styles.panelLabel}>{activeInfo ? 'Selección' : 'Contexto'}</span>
-            {activeInfo ? (
+            {activeInfo && (
               <>
                 <div className={styles.contextArt}>
                   <img src={withBase(activeInfo.art.webp)} alt="" loading="lazy" />
@@ -749,8 +753,6 @@ export function BattlePage() {
                 )}
                 <p className={styles.contextFlavor}>«{activeInfo.flavor}»</p>
               </>
-            ) : (
-              <h3>Sin selección</h3>
             )}
             {actionHint && (
               <p key={actionHint} className={styles.actionHint} data-warning={actionHint.startsWith('No tienes') || undefined} role="status">
@@ -761,7 +763,12 @@ export function BattlePage() {
               <button className={styles.cast} onClick={playSelectedWithoutTarget} title="Lanza este hechizo, que no necesita objetivo en el tablero.">Resolver carta</button>
             )}
           </section>
-          <HistoryLog entries={store.history} />
+          {/* En móvil se oculta: el aviso central de eventos ya anuncia cada
+              acción, así que este registro es redundante ahí y solo le quita
+              sitio al tablero. En PC se conserva, plegado por defecto. */}
+          <div className={styles.historyLogWrap}>
+            <HistoryLog entries={store.history} />
+          </div>
           <div className={styles.turnDock}>
             <button
               ref={endTurnRef}
@@ -837,6 +844,19 @@ export function BattlePage() {
           </section>
         </div>
       )}
+
+      {/* Solo visible en móvil (CSS): tu vida y esencia ya se ven en el tablero y
+          la píldora inferior, así que el panel propio queda oculto por defecto. */}
+      <button
+        className={styles.ownPanelToggle}
+        type="button"
+        onClick={() => setOwnPanelOpenMobile((open) => !open)}
+        aria-pressed={ownPanelOpenMobile}
+        aria-label={ownPanelOpenMobile ? 'Ocultar tus datos' : 'Ver tus datos: comandante, mazo, descarte y reto de hoy'}
+        title={ownPanelOpenMobile ? 'Ocultar tus datos' : 'Ver tus datos: comandante, mazo, descarte y reto de hoy'}
+      >
+        ⛨
+      </button>
 
       <button
         className={styles.helpButton}
