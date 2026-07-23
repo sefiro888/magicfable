@@ -360,21 +360,56 @@
   .devPanel { bottom: 166px; }
 }
 
-/* ── Móvil: paneles compactos y batalla usable en vertical ── */
-@media (max-width: 760px) {
+/* ── Móvil: paneles compactos y batalla usable en vertical y horizontal ──
+   Se activa por ancho (retrato) o por alto (apaisado: un móvil en horizontal
+   sigue siendo "pantalla pequeña" aunque su ancho lógico supere los 760px). */
+@media (max-width: 760px), (max-height: 500px) {
   .battle { min-width: 0; min-height: 100vh; }
-  .topbar { grid-template-columns: auto 1fr auto; padding: 0 10px; }
-  .arena { inset: 60px 0 128px; }
-  .boardFrame { inset: 0 6px; }
-  .leftPanel, .rightPanel { width: 44vw; max-height: 42vh; top: 8px; }
-  .leftPanel { left: 8px; }
-  .rightPanel { right: 8px; bottom: auto; }
-  .panelSection { padding: 10px; }
-  .portrait { aspect-ratio: 16 / 9; }
+
+  /* Cabecera: sin esto el texto de turno envolvía a dos líneas y desbordaba
+     los 52px reservados, empujándose sobre los paneles de debajo. */
+  .topbar { grid-template-columns: auto 1fr auto; padding: 0 8px; height: 52px; column-gap: 6px; }
+  .exit { max-width: 84px; padding: 6px 7px; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .turn { overflow: hidden; }
+  .turn strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .turn span { font-size: 7.5px; white-space: nowrap; }
+  .enemySummary { gap: 7px; }
+  .enemySummary span { display: none; }
+  .enemySummary strong { max-width: 68px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nexusOrb { width: 28px; height: 28px; font-size: 11px; }
+
+  .arena { inset: 52px 0 128px; }
+  .boardFrame { inset: 0 4px; }
+
+  /* Paneles compactos y semitransparentes: informan sin tapar el tablero. */
+  .leftPanel, .rightPanel { width: 45vw; max-height: 30vh; top: 6px; font-size: 12px; background: rgba(11,13,20,.92); }
+  .leftPanel { left: 6px; }
+  /* Sin backdrop-filter aquí: crea un containing block que atraparía el
+     position:fixed del turnDock dentro de este panel en vez del viewport. */
+  .rightPanel { right: 6px; bottom: auto; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .panelSection { padding: 8px 9px; }
+  .portrait { display: none; }
+  .commander { grid-template-columns: 1fr; }
   .commanderRules, .contextArt, .contextFlavor, .contextKeywords { display: none; }
+  .leftPanel .panelSection:last-child { display: none; }
+  .deckCounters { gap: 5px; margin-top: 8px; }
+  .counter { padding: 5px 3px; }
+  .counter strong { font-size: 13px; }
+  .essenceNote { font-size: 9px; margin-top: 8px; }
+  .context h3 { font-size: 13px; }
+  .contextRules { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 9px; }
+  .actionHint { padding: 6px 8px; font-size: 9px; }
+  .cast { margin-top: 8px; padding: 7px; font-size: 9px; }
+
+  /* El botón de turno vive fuera del panel lateral: siempre visible sobre
+     la mano, no depende de que el panel de contexto esté a la vista. */
+  .turnDock { position: fixed; z-index: 46; left: 6px; right: 6px; bottom: 128px; padding: 6px; border-top: 0; background: rgba(9,12,20,.94); border: 1px solid var(--line-bright); }
+  .endTurn { height: 40px; font-size: 10px; }
+
   .handBar { height: 128px; }
   .handBar[data-tucked] { height: 46px; }
   .hints { display: none; }
-  .helpButton { top: auto; bottom: 140px; right: 8px; }
-  .glossaryButton { top: auto; bottom: 140px; right: 50px; }
+  .helpButton, .glossaryButton { top: auto; bottom: 188px; width: 30px; height: 30px; font-size: 15px; }
+  .helpButton { right: 6px; }
+  .glossaryButton { right: 44px; }
 }

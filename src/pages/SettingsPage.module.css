@@ -26,3 +26,14 @@
 .control:has(.select) output { text-align: left; color: #8f8c85; }
 .select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--ivory); background: #191b24; font-size: 13px; cursor: pointer; }
 .select:hover { border-color: var(--line-bright); }
+
+/* Móvil: la rejilla de 3 columnas (210px + 220px + 1fr) no cabe en una
+   pantalla estrecha y desbordaba el selector fuera del viewport. */
+@media (max-width: 640px) {
+  .page { padding: 56px 18px 90px; }
+  .header h1 { font-size: 34px; }
+  .section { padding: 22px 18px; }
+  .control, .control:has(.select) { grid-template-columns: 1fr; gap: 6px; }
+  .control output { text-align: left; }
+  .select { width: 100%; }
+}
