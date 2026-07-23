@@ -24,6 +24,7 @@ import { Board3D } from '../battle/Board3D'
 import { HandFan } from '../battle/ui/HandFan'
 import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
+import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { Card, formatManaCost } from '../components'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
@@ -125,6 +126,10 @@ export function BattlePage() {
   const [banner, setBanner] = useState<string>()
   const [devOpen, setDevOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(() => !hasSeenHowTo())
+  /** Coach interactivo de la primera partida: arranca solo tras cerrar la guía la primerísima vez. */
+  const [tutorialActive, setTutorialActive] = useState(false)
+  const handBarRef = useRef<HTMLElement>(null)
+  const endTurnRef = useRef<HTMLButtonElement>(null)
   /** Mano recogida: despeja el tablero; al soltar el botón vuelve a subir. */
   const [handTucked, setHandTucked] = useState(false)
   const aiSteps = useRef(0)
@@ -427,8 +432,12 @@ export function BattlePage() {
   }, [doAction, finishSelection])
 
   const closeHowTo = useCallback(() => {
+    const firstTime = !hasSeenHowTo()
     markHowToSeen()
     setHowToOpen(false)
+    // El coach interactivo solo arranca la primerísima vez, justo tras la
+    // guía de bienvenida; reabrir la guía luego con el botón de ayuda no lo repite.
+    if (firstTime) setTutorialActive(true)
   }, [])
 
   if (!match || !player || !ai) return <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'} />
@@ -646,6 +655,7 @@ export function BattlePage() {
           <HistoryLog entries={store.history} />
           <div className={styles.turnDock}>
             <button
+              ref={endTurnRef}
               className={styles.endTurn}
               data-state={turnState}
               onClick={endTurn}
@@ -664,7 +674,7 @@ export function BattlePage() {
         </aside>
       </div>
 
-      <footer className={styles.handBar} data-tucked={handTucked || undefined}>
+      <footer ref={handBarRef} className={styles.handBar} data-tucked={handTucked || undefined}>
         <button
           className={styles.handToggle}
           type="button"
@@ -730,6 +740,15 @@ export function BattlePage() {
       </button>
 
       {howToOpen && <HowToPlay onClose={closeHowTo} />}
+
+      {tutorialActive && player.mulliganTaken && !match.winner && (
+        <GuidedTutorial
+          match={match}
+          handBarRef={handBarRef}
+          endTurnRef={endTurnRef}
+          onFinish={() => setTutorialActive(false)}
+        />
+      )}
 
       {!player.mulliganTaken && match.turn === 1 && !match.winner && (
         <div className={styles.resultBackdrop}>
