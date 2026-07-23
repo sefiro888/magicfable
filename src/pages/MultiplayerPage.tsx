@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { createRoom, joinRoom, type Room, type RoomStatus } from '../multiplayer/room'
+import { useMatchStore } from '../store/match'
+import { useNetworkStore } from '../store/network'
 import styles from './MultiplayerPage.module.css'
 
 type Mode = 'idle' | 'hosting' | 'joining'
 
 export function MultiplayerPage() {
+  const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('idle')
   const [room, setRoom] = useState<Room>()
   const [status, setStatus] = useState<RoomStatus>('waiting')
@@ -47,6 +51,19 @@ export function MultiplayerPage() {
     setMode('idle')
     setJoinCode('')
     setError(undefined)
+  }
+
+  const enterBattle = () => {
+    if (!room) return
+    // Sin este reset, una partida en solitario que quedara persistida de una
+    // sesión anterior parecería ya en marcha (con su propio mulligan resuelto)
+    // en vez de esperar a la partida en red recién sembrada por el anfitrión.
+    useMatchStore.getState().reset()
+    useNetworkStore.getState().setRoom(room, room.role)
+    // La sala ya no es responsabilidad de esta pantalla: BattlePage se encarga
+    // de salir de ella cuando la partida termine o se abandone.
+    roomRef.current = undefined
+    navigate('/battle')
   }
 
   const copyCode = async () => {
@@ -107,9 +124,10 @@ export function MultiplayerPage() {
             {status === 'connected' ? '● Rival conectado' : '○ Esperando al rival…'}
           </div>
           {status === 'connected' && (
-            <p className={styles.note}>
-              La sala ya conecta a los dos jugadores. La partida sincronizada en el tablero llega en el próximo paso.
-            </p>
+            <>
+              <p className={styles.note}>Ambos jugaréis con el mazo que tengáis elegido en «Mazos».</p>
+              <button className={styles.joinButton} onClick={enterBattle}>Entrar a la batalla</button>
+            </>
           )}
           <button className={styles.leaveButton} onClick={handleLeave}>Salir de la sala</button>
         </div>

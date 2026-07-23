@@ -27,8 +27,10 @@ import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../battle/ui/GlossaryPanel'
 import { Card, formatManaCost } from '../components'
+import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
+import { useNetworkStore } from '../store/network'
 import { usePreferences } from '../store/preferences'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
@@ -71,8 +73,8 @@ const ESSENCE_LABELS: Record<string, string> = {
   void: 'Esencia del Vacío',
 }
 
-/** Traduce un evento del motor a su señal sonora. */
-const cueForEvent = (event: AnimationEvent): SoundCue | undefined => {
+/** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
+const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
   switch (event.type) {
     case 'draw': return 'draw'
     case 'resource': return 'resource'
@@ -88,7 +90,7 @@ const cueForEvent = (event: AnimationEvent): SoundCue | undefined => {
     case 'freeze': return 'freeze'
     case 'reveal': return 'reveal'
     case 'turn': return 'turn'
-    case 'victory': return event.actorId === 'player' ? 'victory' : 'defeat'
+    case 'victory': return event.actorId === me ? 'victory' : 'defeat'
     default: return undefined
   }
 }
@@ -113,6 +115,13 @@ export function BattlePage() {
   const [searchParams] = useSearchParams()
   const preferences = usePreferences()
   const store = useMatchStore()
+  const room = useNetworkStore((state) => state.room)
+  const role = useNetworkStore((state) => state.role)
+  // En solitario y para el anfitrión, «yo» soy el bando 'player' del motor;
+  // el invitado ocupa siempre el bando 'ai' (así el motor no cambia nada).
+  const ME: PlayerId = role === 'guest' ? 'ai' : 'player'
+  const RIVAL: PlayerId = ME === 'player' ? 'ai' : 'player'
+  const { sendIntent } = useNetworkSync(room, role, preferences.selectedDeckId)
   // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
   const forcedSeed = useMemo(() => {
     const raw = searchParams.get('seed')
@@ -159,6 +168,9 @@ export function BattlePage() {
   const scryOpen = scryAmount > 0
 
   useEffect(() => {
+    // En multijugador la partida la siembra el anfitrión vía useNetworkSync,
+    // no este efecto: aquí no hay mazo de IA que elegir ni semilla que forzar.
+    if (room) return
     // Crea partida nueva si no hay ninguna o si la que persiste en el store no
     // corresponde al mazo elegido. Sin la segunda condición, la primera facción
     // con la que se juega quedaba fija al volver a entrar con otra distinta.
@@ -169,7 +181,7 @@ export function BattlePage() {
     if (!matchesSelection) {
       useMatchStore.getState().startMatch(preferences.selectedDeckId, forcedSeed)
     }
-  }, [preferences.selectedDeckId, store.match, forcedSeed])
+  }, [preferences.selectedDeckId, store.match, forcedSeed, room])
 
   // ── Director de animaciones ────────────────────────────────────────────────
   // 1) Si no hay evento en reproducción, avanza la cola.
@@ -183,7 +195,7 @@ export function BattlePage() {
   useEffect(() => {
     if (!currentEvent) return
     const state = useMatchStore.getState()
-    const cue = cueForEvent(currentEvent)
+    const cue = cueForEvent(currentEvent, ME)
     if (cue && !preferences.muted) {
       playSynthCue(cue, preferences.masterVolume * preferences.effectsVolume)
     }
@@ -191,17 +203,17 @@ export function BattlePage() {
     // efecto para no encadenar renders síncronos.
     const sideChannel = window.setTimeout(() => {
       if (currentEvent.type === 'turn') {
-        setBanner(currentEvent.actorId === 'player' ? 'Tu turno' : 'Turno rival')
+        setBanner(currentEvent.actorId === ME ? 'Tu turno' : 'Turno rival')
       }
-      if (currentEvent.type === 'spell' && currentEvent.effectId === 'scry-top-cards' && currentEvent.actorId === 'player') {
-        const amount = Math.min(currentEvent.amount ?? 1, state.match?.players.player.deck.length ?? 0)
+      if (currentEvent.type === 'spell' && currentEvent.effectId === 'scry-top-cards' && currentEvent.actorId === ME) {
+        const amount = Math.min(currentEvent.amount ?? 1, state.match?.players[ME].deck.length ?? 0)
         if (amount > 0) {
           setScryAmount(amount)
-          setScryOrder(state.match?.players.player.deck.slice(0, amount).map((card) => card.instanceId) ?? [])
+          setScryOrder(state.match?.players[ME].deck.slice(0, amount).map((card) => card.instanceId) ?? [])
         }
       }
-      if (currentEvent.type === 'reveal' && currentEvent.actorId === 'player') {
-        const revealed = state.match?.players.player.deck.find((card) => card.instanceId === currentEvent.targetId)
+      if (currentEvent.type === 'reveal' && currentEvent.actorId === ME) {
+        const revealed = state.match?.players[ME].deck.find((card) => card.instanceId === currentEvent.targetId)
         if (revealed) setRevealedCardId(revealed.cardId)
       }
     }, 0)
@@ -214,7 +226,7 @@ export function BattlePage() {
       window.clearTimeout(sideChannel)
       window.clearTimeout(timer)
     }
-  }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion])
+  }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, ME])
 
   useEffect(() => {
     if (!banner) return
@@ -233,7 +245,7 @@ export function BattlePage() {
     }
     const latest = entries[entries.length - 1]
     lastHistoryLength.current = entries.length
-    if (!latest || latest === 'Has cedido el turno.' || latest === 'La IA termina su turno.') return undefined
+    if (!latest || latest === 'Has cedido el turno.' || latest === 'Se cede el turno.') return undefined
     // setState se difiere fuera del cuerpo del efecto: mismo patrón que ya usa
     // el director de animaciones un poco más arriba para sus canales laterales.
     const sideChannel = window.setTimeout(() => setEventBanner(latest), 0)
@@ -247,7 +259,10 @@ export function BattlePage() {
   }, [eventBanner])
 
   // ── Historial: anota la partida una sola vez, al terminar de reproducirse ──
+  // Solo en solitario: el historial y los logros están pensados para la
+  // campaña contra la IA, no para escaramuzas PvP.
   useEffect(() => {
+    if (room) return
     const finished = store.match
     if (!finished?.winner || queueBusy) return
     if (recordedSeed.current === finished.seed) return
@@ -273,7 +288,7 @@ export function BattlePage() {
     setMatchAchievements(
       evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked && !unlockedBefore.has(a.id)),
     )
-  }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId])
+  }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId, room])
 
   useEffect(() => {
     if (!revealedCardId) return
@@ -282,7 +297,10 @@ export function BattlePage() {
   }, [revealedCardId])
 
   // ── Turno de la IA, paso a paso ───────────────────────────────────────────
+  // En multijugador el bando 'ai' del motor es un humano de verdad (el
+  // invitado): este bot nunca debe jugar por él.
   useEffect(() => {
+    if (room) return
     const current = useMatchStore.getState().match
     if (!current || current.activePlayer !== 'ai' || current.winner || queueBusy || scryOpen) return
     const timer = window.setTimeout(() => {
@@ -313,7 +331,7 @@ export function BattlePage() {
       stateNow.setAiThinking(false)
     }, Math.max(140, preferences.aiDelayMs / 3))
     return () => window.clearTimeout(timer)
-  }, [match?.activePlayer, match?.turn, match?.winner, queueBusy, scryOpen, preferences.aiDelayMs, preferences.aiDifficulty, pendingCount])
+  }, [match?.activePlayer, match?.turn, match?.winner, queueBusy, scryOpen, preferences.aiDelayMs, preferences.aiDifficulty, pendingCount, room])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {
@@ -336,17 +354,17 @@ export function BattlePage() {
       }
       if (event.key.toLowerCase() === 'i') {
         const current = store.match
-        const hand = current?.players.player.hand.find((card) => card.instanceId === store.selectedHandId)
+        const hand = current?.players[ME].hand.find((card) => card.instanceId === store.selectedHandId)
         const piece = current?.board.find((card) => card.instanceId === store.selectedPieceId)
         store.inspect(hand?.cardId ?? piece?.cardId)
       }
     }
     window.addEventListener('keydown', cancel)
     return () => window.removeEventListener('keydown', cancel)
-  }, [store])
+  }, [store, ME])
 
-  const player = match?.players.player
-  const ai = match?.players.ai
+  const player = match?.players[ME]
+  const ai = match?.players[RIVAL]
   const selectedInstance = player?.hand.find((instance) => instance.instanceId === store.selectedHandId)
   const selectedCard = selectedInstance ? CARD_BY_ID[selectedInstance.cardId] : undefined
   const selectedPiece = match?.board.find((piece) => piece.instanceId === store.selectedPieceId)
@@ -362,15 +380,15 @@ export function BattlePage() {
     [match, selectedPiece],
   )
   const deployCells = useMemo<Position[]>(() => {
-    if (!match || !selectedCard || !isBoardCard(selectedCard) || match.activePlayer !== 'player') return []
-    if (!planManaPayment(match.players.player.resources, effectiveCost(match, 'player', selectedCard)).payable) return []
-    return [...getValidDeploymentPositions(match, 'player')]
-  }, [match, selectedCard])
+    if (!match || !selectedCard || !isBoardCard(selectedCard) || match.activePlayer !== ME) return []
+    if (!planManaPayment(match.players[ME].resources, effectiveCost(match, ME, selectedCard)).payable) return []
+    return [...getValidDeploymentPositions(match, ME)]
+  }, [match, selectedCard, ME])
   const validCells = selectedCard ? deployCells : moves
   const mana = summarizeMana(player?.resources ?? [])
   const aiMana = summarizeMana(ai?.resources ?? [])
   const payment = match && selectedCard
-    ? planManaPayment(player?.resources ?? [], effectiveCost(match, 'player', selectedCard))
+    ? planManaPayment(player?.resources ?? [], effectiveCost(match, ME, selectedCard))
     : undefined
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
   const aiCommander = ai ? COMMANDER_BY_ID[ai.commanderId] : undefined
@@ -388,24 +406,24 @@ export function BattlePage() {
     return match.board.filter((piece) => {
       const definition = CARD_BY_ID[piece.cardId]
       if (unitsOnly && definition?.type !== 'unit') return false
-      if (friendlyOnly) return piece.owner === 'player'
-      if (enemyOnly) return piece.owner === 'ai'
+      if (friendlyOnly) return piece.owner === ME
+      if (enemyOnly) return piece.owner === RIVAL
       return true
     }).map((piece) => piece.instanceId)
-  }, [match, selectedCard])
+  }, [match, selectedCard, ME, RIVAL])
 
   const boardTargets = useMemo(() => {
     const base = selectedCard ? spellTargets : attacks.pieceIds
-    return attacks.canAttackNexus && !selectedCard ? [...base, 'ai-nexus'] : base
-  }, [selectedCard, spellTargets, attacks])
+    return attacks.canAttackNexus && !selectedCard ? [...base, `${RIVAL}-nexus`] : base
+  }, [selectedCard, spellTargets, attacks, RIVAL])
 
   // Unidades propias que aún pueden mover o atacar: reciben un anillo de
   // disponibilidad en el tablero. Se recalcula solo cuando cambia la partida.
   const readyPieceIds = useMemo(() => {
     const ready = new Set<string>()
-    if (!match || match.activePlayer !== 'player' || match.winner) return ready
+    if (!match || match.activePlayer !== ME || match.winner) return ready
     for (const piece of match.board) {
-      if (piece.owner !== 'player') continue
+      if (piece.owner !== ME) continue
       if (CARD_BY_ID[piece.cardId]?.type !== 'unit') continue
       if (getValidMoves(match, piece.instanceId).length > 0) {
         ready.add(piece.instanceId)
@@ -415,11 +433,20 @@ export function BattlePage() {
       if (options.pieceIds.length > 0 || options.canAttackNexus) ready.add(piece.instanceId)
     }
     return ready
-  }, [match])
+  }, [match, ME])
 
   // Handlers estables (useCallback): permiten memoizar las celdas y cartas del
   // tablero 3D para que la reproducción de eventos no re-renderice el canvas.
-  const doAction = useCallback((action: GameAction) => useMatchStore.getState().dispatch(action), [])
+  // El invitado nunca es la autoridad de la partida: en vez de aplicar la
+  // acción localmente, se la envía al anfitrión y confía en que la
+  // retransmisión de estado (useNetworkSync) la refleje enseguida.
+  const doAction = useCallback((action: GameAction) => {
+    if (role === 'guest') {
+      sendIntent({ kind: 'action', action })
+      return true
+    }
+    return useMatchStore.getState().dispatch(action)
+  }, [role, sendIntent])
   const finishSelection = useCallback(() => {
     const state = useMatchStore.getState()
     state.selectHand(undefined)
@@ -428,55 +455,55 @@ export function BattlePage() {
 
   const onHandSelect = useCallback((instanceId: string) => {
     if (!match || !player) return
-    if (match.activePlayer !== 'player' || match.winner || queueBusy) return
+    if (match.activePlayer !== ME || match.winner || queueBusy) return
     const instance = player.hand.find((candidate) => candidate.instanceId === instanceId)
     const card = instance ? CARD_BY_ID[instance.cardId] : undefined
     if (!instance || !card) return
     if (card.type === 'mana') {
-      if (doAction({ type: 'play-resource', playerId: 'player', cardInstanceId: instanceId })) finishSelection()
+      if (doAction({ type: 'play-resource', playerId: ME, cardInstanceId: instanceId })) finishSelection()
       return
     }
     useMatchStore.getState().selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
-  }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection])
+  }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection, ME])
 
   const inspectCard = useCallback((cardId?: string) => useMatchStore.getState().inspect(cardId), [])
 
   const onCell = useCallback((position: Position) => {
     if (selectedInstance && selectedCard && isBoardCard(selectedCard)) {
-      if (doAction({ type: 'play-card', playerId: 'player', cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' } })) finishSelection()
+      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' } })) finishSelection()
       return
     }
     if (selectedPiece && moves.some((cell) => cell.x === position.x && cell.y === position.y)) {
-      if (doAction({ type: 'move', playerId: 'player', pieceId: selectedPiece.instanceId, to: position })) finishSelection()
+      if (doAction({ type: 'move', playerId: ME, pieceId: selectedPiece.instanceId, to: position })) finishSelection()
     }
-  }, [selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection])
+  }, [selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME])
 
   const onPiece = useCallback((pieceId: string) => {
     if (!match) return
     const piece = match.board.find((candidate) => candidate.instanceId === pieceId)
-    if (!piece || match.activePlayer !== 'player') return
+    if (!piece || match.activePlayer !== ME) return
     if (selectedInstance && selectedCard && !isBoardCard(selectedCard)) {
-      if (doAction({ type: 'play-card', playerId: 'player', cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId } })) finishSelection()
+      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId } })) finishSelection()
       return
     }
     if (selectedPiece && attacks.pieceIds.includes(pieceId)) {
-      if (doAction({ type: 'attack-piece', playerId: 'player', attackerId: selectedPiece.instanceId, defenderId: pieceId })) finishSelection()
+      if (doAction({ type: 'attack-piece', playerId: ME, attackerId: selectedPiece.instanceId, defenderId: pieceId })) finishSelection()
       return
     }
     const state = useMatchStore.getState()
-    if (piece.owner === 'player') state.selectPiece(state.selectedPieceId === pieceId ? undefined : pieceId)
+    if (piece.owner === ME) state.selectPiece(state.selectedPieceId === pieceId ? undefined : pieceId)
     else state.inspect(piece.cardId)
-  }, [match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection])
+  }, [match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection, ME])
 
   const onNexus = useCallback((playerId: PlayerId) => {
-    if (playerId === 'ai' && selectedPiece && attacks.canAttackNexus) {
-      if (doAction({ type: 'attack-nexus', playerId: 'player', attackerId: selectedPiece.instanceId })) finishSelection()
+    if (playerId === RIVAL && selectedPiece && attacks.canAttackNexus) {
+      if (doAction({ type: 'attack-nexus', playerId: ME, attackerId: selectedPiece.instanceId })) finishSelection()
     }
-  }, [selectedPiece, attacks, doAction, finishSelection])
+  }, [selectedPiece, attacks, doAction, finishSelection, ME, RIVAL])
 
   const endTurn = useCallback(() => {
-    if (doAction({ type: 'end-turn', playerId: 'player' })) finishSelection()
-  }, [doAction, finishSelection])
+    if (doAction({ type: 'end-turn', playerId: ME })) finishSelection()
+  }, [doAction, finishSelection, ME])
 
   const closeHowTo = useCallback(() => {
     const firstTime = !hasSeenHowTo()
@@ -487,17 +514,28 @@ export function BattlePage() {
     if (firstTime) setTutorialActive(true)
   }, [])
 
-  if (!match || !player || !ai) return <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'} />
+  if (!match || !player || !ai) {
+    return (
+      <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
+        {room && (
+          <div className={styles.resultBackdrop}>
+            <section className={styles.result}><small>Multijugador</small><h2>Preparando la partida…</h2></section>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const playSelectedWithoutTarget = () => {
     if (!selectedInstance || !selectedCard) return
-    if (doAction({ type: 'play-card', playerId: 'player', cardInstanceId: selectedInstance.instanceId, target: { kind: 'none' } })) finishSelection()
+    if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'none' } })) finishSelection()
   }
 
   const abandonMatch = () => {
     // Abandonar cuenta como derrota: sin esto se podía esquivar una derrota
     // segura saliendo a mitad de partida, y el historial quedaba mintiendo.
-    if (!match.winner) {
+    // Solo se anota en solitario: el historial de campaña no lleva cuenta de escaramuzas PvP.
+    if (!match.winner && !room) {
       const playerState = match.players.player
       const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
       const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === match.players.ai.commanderId)
@@ -514,6 +552,8 @@ export function BattlePage() {
         seed: match.seed,
       })
     }
+    room?.leave()
+    useNetworkStore.getState().clear()
     store.reset()
     setConfirmAbandon(false)
     navigate('/play')
@@ -533,7 +573,14 @@ export function BattlePage() {
   }
 
   const confirmMulligan = () => {
-    const result = mulliganOpeningHand(match, 'player', mulliganIds)
+    // El invitado no tiene autoridad sobre la partida: pide el mulligan al
+    // anfitrión y espera a que la retransmisión de estado lo refleje.
+    if (role === 'guest') {
+      sendIntent({ kind: 'mulligan', ids: mulliganIds })
+      setMulliganIds([])
+      return
+    }
+    const result = mulliganOpeningHand(match, ME, mulliganIds)
     if (!result.ok) {
       store.setMessage(result.error?.message ?? 'No se pudo completar el mulligan.')
       return
@@ -543,7 +590,13 @@ export function BattlePage() {
   }
 
   const confirmScry = () => {
-    const result = reorderTopCards(match, 'player', scryOrder)
+    if (role === 'guest') {
+      sendIntent({ kind: 'scry', order: scryOrder })
+      setScryAmount(0)
+      setScryOrder([])
+      return
+    }
+    const result = reorderTopCards(match, ME, scryOrder)
     if (result.ok) {
       store.replaceMatch(result.state, 'Ordenas la parte superior de tu mazo.')
     }
@@ -572,7 +625,7 @@ export function BattlePage() {
   const revealedCard = revealedCardId ? CARD_BY_ID[revealedCardId] : undefined
 
   /** Estado visual del botón de turno: listo, resolviendo, turno rival o fin. */
-  const turnState = match.winner ? 'over' : match.activePlayer !== 'player' ? 'enemy' : queueBusy ? 'busy' : 'ready'
+  const turnState = match.winner ? 'over' : match.activePlayer !== ME ? 'enemy' : queueBusy ? 'busy' : 'ready'
 
   /** Línea compacta de estadísticas de la carta o unidad seleccionada. */
   const contextStats = (() => {
@@ -595,7 +648,7 @@ export function BattlePage() {
   /** Guía inmediata: qué puede hacer el jugador con la selección actual. */
   const actionHint = (() => {
     if (match.winner) return undefined
-    if (match.activePlayer !== 'player') return 'Turno rival: observa sus movimientos.'
+    if (match.activePlayer !== ME) return 'Turno rival: observa sus movimientos.'
     if (selectedCard) {
       if (payment && !payment.payable) return 'No tienes Esencia suficiente para esta carta.'
       if (isBoardCard(selectedCard)) return 'Elige una casilla iluminada en azul para desplegar.'
@@ -619,9 +672,19 @@ export function BattlePage() {
   return (
     <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
       <header className={styles.topbar}>
-        <button className={styles.exit} onClick={() => (match.winner ? navigate('/play') : setConfirmAbandon(true))}>← Abandonar el Santuario</button>
+        <button
+          className={styles.exit}
+          onClick={() => {
+            if (!match.winner) { setConfirmAbandon(true); return }
+            room?.leave()
+            useNetworkStore.getState().clear()
+            navigate('/play')
+          }}
+        >
+          ← Abandonar el Santuario
+        </button>
         <div className={styles.turn}>
-          <strong>{match.activePlayer === 'player' ? 'Tu turno' : 'Turno rival'}</strong>
+          <strong>{match.activePlayer === ME ? 'Tu turno' : 'Turno rival'}</strong>
           <span>Turno {match.turn} · {PHASE_LABELS[match.phase] ?? match.phase}</span>
         </div>
         <button
@@ -662,6 +725,7 @@ export function BattlePage() {
         <div className={styles.boardFrame}>
           <Board3D
             state={match}
+            localPlayerId={ME}
             selectedPieceId={store.selectedPieceId}
             validCells={validCells}
             validTargets={boardTargets}
@@ -801,7 +865,7 @@ export function BattlePage() {
         >
           {handTucked ? '▲ Mano' : '▼ Recoger'}
         </button>
-        <HandFan match={match} selectedHandId={store.selectedHandId} onSelect={onHandSelect} onInspect={inspectCard} />
+        <HandFan match={match} localPlayerId={ME} selectedHandId={store.selectedHandId} onSelect={onHandSelect} onInspect={inspectCard} />
         <div className={styles.hints} aria-hidden="true">
           Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar
         </div>
@@ -825,7 +889,7 @@ export function BattlePage() {
             <p>La primera carta de la lista será la próxima que robes.</p>
             <div className={styles.scryCards}>
               {scryOrder.map((instanceId, index) => {
-                const instance = match.players.player.deck.find((card) => card.instanceId === instanceId)
+                const instance = match.players[ME].deck.find((card) => card.instanceId === instanceId)
                 const card = instance ? CARD_BY_ID[instance.cardId] : undefined
                 if (!card) return null
                 return (
@@ -896,7 +960,7 @@ export function BattlePage() {
         </div>
       )}
 
-      {tutorialActive && player.mulliganTaken && !match.winner && (
+      {!room && tutorialActive && player.mulliganTaken && !match.winner && (
         <GuidedTutorial
           match={match}
           handBarRef={handBarRef}
@@ -975,8 +1039,8 @@ export function BattlePage() {
         <div className={styles.resultBackdrop}>
           <section className={styles.result}>
             <small>La crónica ha concluido</small>
-            <h2>{match.winner === 'player' ? 'Victoria' : 'Derrota'}</h2>
-            <p>{match.winner === 'player' ? 'El Nexo rival se quiebra bajo tu voluntad.' : 'Tu Nexo se desvanece. La siguiente crónica aún puede cambiar.'}</p>
+            <h2>{match.winner === ME ? 'Victoria' : 'Derrota'}</h2>
+            <p>{match.winner === ME ? 'El Nexo rival se quiebra bajo tu voluntad.' : 'Tu Nexo se desvanece. La siguiente crónica aún puede cambiar.'}</p>
             <div className={styles.resultStats}>
               <div><strong>{match.turn}</strong><span>Turnos</span></div>
               <div><strong>{store.elapsedSeconds}s</strong><span>Duración</span></div>
@@ -988,7 +1052,7 @@ export function BattlePage() {
                 Llevas <strong>{tally.won}</strong> {tally.won === 1 ? 'victoria' : 'victorias'} de <strong>{tally.played}</strong> escaramuzas · {tally.winRate}%
               </p>
             )}
-            {match.winner === 'player' && daily.done && (
+            {match.winner === ME && daily.done && (
               <p className={styles.dailyResultNote}>✓ Reto de hoy completado: {daily.title}</p>
             )}
             {matchAchievements.length > 0 && (
@@ -1002,17 +1066,20 @@ export function BattlePage() {
               </div>
             )}
             <div className={styles.resultActions}>
-              <button onClick={repeat}>Repetir</button>
+              {/* La revancha reutiliza el emparejamiento local contra la IA: en
+                  multijugador no hay (todavía) un acuerdo de revancha entre
+                  dos personas, así que solo se ofrece «Volver al inicio». */}
+              {!room && <button onClick={repeat}>Repetir</button>}
               {/* Sin el reset, la partida terminada quedaba persistida: si luego se
                   elegía la misma facción, se reanudaba esta misma (mismo rival, ya
                   con ganador) en vez de empezar una nueva. */}
-              <button onClick={() => { store.reset(); navigate('/') }}>Volver al inicio</button>
+              <button onClick={() => { room?.leave(); useNetworkStore.getState().clear(); store.reset(); navigate('/') }}>Volver al inicio</button>
             </div>
           </section>
         </div>
       )}
 
-      {import.meta.env.DEV && devOpen && (
+      {import.meta.env.DEV && devOpen && !room && (
         <section className={styles.devPanel} aria-label="Modo desarrollador">
           <strong>Modo desarrollador</strong>
           <button onClick={() => devApply((current) => ({

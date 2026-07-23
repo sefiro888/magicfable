@@ -28,6 +28,8 @@ interface MatchStore {
   /** Evento visual en reproducción en este instante. */
   currentEvent?: AnimationEvent
   startMatch: (playerDeckId: string, seed?: number) => void
+  /** Arranca la partida a partir de un MatchState ya construido (multijugador: lo crea el anfitrión y lo recibe el invitado). */
+  startFromMatch: (match: MatchState) => void
   dispatch: (action: GameAction) => boolean
   replaceMatch: (match: MatchState, message?: string) => void
   advanceEvent: () => void
@@ -79,7 +81,9 @@ const actionDescription = (state: MatchState, action: GameAction): string => {
   if (action.type === 'attack-piece') return `${pieceName(state, action.attackerId)} ataca a ${pieceName(state, action.defenderId)}.`
   if (action.type === 'attack-nexus') return `${pieceName(state, action.attackerId)} golpea el Nexo enemigo.`
   if (action.type === 'draw') return 'Se roba una carta.'
-  return action.playerId === 'player' ? 'Has cedido el turno.' : 'La IA termina su turno.'
+  // Fraseo neutro para el bando no-'player': en solitario es la IA, pero en
+  // multijugador es un rival humano de verdad, así que no se le llama «IA».
+  return action.playerId === 'player' ? 'Has cedido el turno.' : 'Se cede el turno.'
 }
 
 const initialState = {
@@ -126,6 +130,18 @@ export const useMatchStore = create<MatchStore>()(
     const aiDeck = opponents[opponentIndex] ?? opponents[0]
     if (!playerDeck || !aiDeck) throw new Error('Faltan mazos iniciales para crear la partida.')
     const match = createMatch(playerDeck, aiDeck, matchSeed)
+    set({
+      ...initialState,
+      match: clearAnimationQueue(match),
+      history: ['La escaramuza comienza. Robas cinco cartas.'],
+      selectedHandId: undefined,
+      selectedPieceId: undefined,
+      inspectedCardId: undefined,
+      message: undefined,
+      startedAtMs: Date.now(),
+    })
+  },
+  startFromMatch: (match) => {
     set({
       ...initialState,
       match: clearAnimationQueue(match),

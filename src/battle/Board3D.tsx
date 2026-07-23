@@ -29,6 +29,8 @@ import styles from './Board3D.module.css'
 
 interface Board3DProps {
   state: MatchState
+  /** Bando de la partida que controla este navegador: decide qué Nexo queda cerca de la cámara. */
+  localPlayerId: PlayerId
   selectedPieceId?: string
   validCells: readonly Position[]
   validTargets: readonly string[]
@@ -231,6 +233,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
  */
 function Nexus({
   playerId,
+  mine,
   health,
   targetable,
   onClick,
@@ -238,6 +241,8 @@ function Nexus({
   activeEvent,
 }: {
   playerId: PlayerId
+  /** Si este Nexo es el de quien mira la pantalla (no siempre coincide con el bando 'player' del motor: en multijugador el invitado es 'ai'). */
+  mine: boolean
   health: number
   targetable: boolean
   onClick: () => void
@@ -263,8 +268,8 @@ function Nexus({
     return undefined
   }, [activeEvent, playerId])
   const z = nexusWorldZ(playerId)
-  const color = playerId === 'player' ? '#f2a24a' : '#58c9ff'
-  const ringEmissive = playerId === 'player' ? '#9a7326' : '#3f7fb0'
+  const color = mine ? '#f2a24a' : '#58c9ff'
+  const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   return (
     <group position={[0, 0, z]}>
       {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
@@ -306,7 +311,7 @@ function Nexus({
         </div>
       </Html>
       <Html center position={[0, 1.28, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
-        <div data-targetable={targetable || undefined}>{playerId === 'player' ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
+        <div data-targetable={targetable || undefined}>{mine ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
       </Html>
       <pointLight position={[0, 1.1, 0]} color={color} intensity={5} distance={4} decay={2} />
     </group>
@@ -372,6 +377,11 @@ function Scene(props: Board3DProps) {
   const subtleCells = props.scenario === 'aether-citadel'
   return (
     <>
+      {/* Todo el contenido jugable gira 180° cuando el invitado ('ai') mira la
+          escena: así su propio Nexo queda cerca de la cámara, igual que le
+          pasa al anfitrión con el suyo. La cámara y sus controles no son
+          hijos de este grupo, así que el punto de vista real no se mueve. */}
+      <group rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
       <Suspense fallback={<LoadingStage />}>
         {props.scenario === 'aether-citadel' ? (
           <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
@@ -411,14 +421,16 @@ function Scene(props: Board3DProps) {
       </Suspense>
       <Nexus
         playerId="player"
+        mine={props.localPlayerId === 'player'}
         health={props.state.players.player.nexusHealth}
-        targetable={false}
+        targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
         commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
         activeEvent={props.activeEvent}
       />
       <Nexus
         playerId="ai"
+        mine={props.localPlayerId === 'ai'}
         health={props.state.players.ai.nexusHealth}
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
@@ -427,6 +439,7 @@ function Scene(props: Board3DProps) {
       />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
       <DamageNumbers event={props.activeEvent} />
+      </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <OrbitControls makeDefault enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[...CAMERA_TARGET]} />
     </>
