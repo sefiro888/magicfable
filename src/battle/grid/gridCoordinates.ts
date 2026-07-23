@@ -53,8 +53,15 @@ export const SCENERY_SCALE = BOARD_WORLD_SIZE / LEGACY_FOOTPRINT
  * (~11.5 de distancia frente a los ~15.6 anteriores) para que el tablero llene
  * más la pantalla. La distancia mínima baja a 8.5 para permitir un zoom mayor;
  * la máxima conserva el encuadre amplio previo por si se quiere alejar.
+ *
+ * El picado se suavizó de ~44,6° a ~35,6° bajo la horizontal (mismos ~11,5 de
+ * distancia): con el ángulo anterior, del cielo solo asomaba una rendija
+ * rasante por encima del tablero que ninguna textura llegaba a lucir. Sigue
+ * dentro del rango que ya permitía OrbitControls (maxPolarAngle 1.03 rad ≈
+ * 59° desde la vertical), así que el usuario ya podía llegar aquí orbitando;
+ * ahora es el encuadre de partida.
  */
-export const CAMERA_POSITION: readonly [number, number, number] = [0, 8.1, 7.6]
+export const CAMERA_POSITION: readonly [number, number, number] = [0, 6.7, 8.8]
 export const CAMERA_FOV = 44
 export const CAMERA_TARGET: readonly [number, number, number] = [0, 0, -0.6]
 export const CAMERA_MIN_DISTANCE = 8.5

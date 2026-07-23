@@ -663,60 +663,147 @@ export const masonryTexture = (): CanvasTexture => {
   return texture;
 };
 
-/** Cielo de amanecer para Aether Citadel: horizonte cálido, cénit azul y nubes lejanas. */
+/**
+ * Puñado de lóbulos redondos superpuestos con degradado suave: la técnica
+ * más simple para que una nube lea como un volumen esponjoso en vez de una
+ * elipse plana. `tint` es el color de la cara iluminada (por debajo/lado del
+ * sol); el resto de cada lóbulo se desvanece hacia transparente.
+ */
+const drawCloudPuff = (
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  tint: string,
+  shadeTint: string,
+  random: () => number,
+) => {
+  const lobes = 5 + Math.floor(random() * 4);
+  for (let index = 0; index < lobes; index += 1) {
+    const angle = (index / lobes) * Math.PI * 2 + random() * 0.6;
+    const spread = radius * (0.42 + random() * 0.3);
+    const lx = x + Math.cos(angle) * spread * 1.15;
+    const ly = y + Math.sin(angle) * spread * 0.55 - radius * 0.18;
+    const lr = radius * (0.4 + random() * 0.4);
+    // La mitad superior del lóbulo queda más fría/oscura; la inferior, cálida y luminosa.
+    const shaded = Math.sin(angle) < -0.1;
+    const gradient = context.createRadialGradient(lx, ly, 0, lx, ly, lr);
+    gradient.addColorStop(0, shaded ? shadeTint : tint);
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(lx, ly, lr, 0, Math.PI * 2);
+    context.fill();
+  }
+  // Núcleo central, más denso, para que el conjunto no se lea hueco.
+  const core = context.createRadialGradient(x, y, 0, x, y, radius * 0.75);
+  core.addColorStop(0, tint);
+  core.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = core;
+  context.beginPath();
+  context.arc(x, y, radius * 0.75, 0, Math.PI * 2);
+  context.fill();
+};
+
+/**
+ * Cielo de amanecer para Aether Citadel: nubes con volumen real iluminadas
+ * desde abajo y un lavado cósmico violeta entreverado con estrellas.
+ *
+ * La cámara de la partida mira hacia abajo desde muy cerca del tablero
+ * (ver CAMERA_POSITION/CAMERA_TARGET): del cielo solo se llega a ver una
+ * franja estrecha justo por encima del horizonte, rasante — nunca el cénit.
+ * Por eso casi todo el detalle (nubes, nebulosa, estrellas) se concentra
+ * entre v≈0.42 y v≈0.86 de esta textura en vez de repartirse por igual;
+ * el resto solo aporta continuidad de color si la cámara cambia algún día.
+ */
 export const dawnSkyTexture = (): CanvasTexture => {
   const cached = cache.get('dawn-sky');
   if (cached) return cached;
-  const size = 1024;
+  const size = 1536;
   const [canvas, context] = makeCanvas(size);
   const random = seededRandom(0x44415741);
 
   const sky = context.createLinearGradient(0, 0, 0, size);
-  sky.addColorStop(0, '#2c3a66');
-  sky.addColorStop(0.42, '#51649c');
-  sky.addColorStop(0.62, '#8b93b8');
-  sky.addColorStop(0.74, '#d9a878');
-  sky.addColorStop(0.85, '#f2c48d');
+  sky.addColorStop(0, '#1c1f3f');
+  sky.addColorStop(0.3, '#2c2c5a');
+  sky.addColorStop(0.42, '#453f74');
+  sky.addColorStop(0.5, '#6a5c8c');
+  sky.addColorStop(0.58, '#9b7d9a');
+  sky.addColorStop(0.68, '#d0977f');
+  sky.addColorStop(0.78, '#eeb47d');
+  sky.addColorStop(0.88, '#f6cf95');
   sky.addColorStop(1, '#8a7290');
   context.fillStyle = sky;
   context.fillRect(0, 0, size, size);
 
-  // Resplandor del sol bajo en el horizonte.
-  const sun = context.createRadialGradient(size * 0.31, size * 0.76, 0, size * 0.31, size * 0.76, size * 0.34);
-  sun.addColorStop(0, 'rgba(255, 236, 200, 0.95)');
-  sun.addColorStop(0.35, 'rgba(255, 202, 138, 0.5)');
-  sun.addColorStop(1, 'rgba(255, 190, 120, 0)');
-  context.fillStyle = sun;
-  context.fillRect(0, 0, size, size);
-
-  // Bandas de nubes lejanas iluminadas por debajo.
-  for (let band = 0; band < 26; band += 1) {
-    const y = size * (0.55 + random() * 0.36);
-    const width = size * (0.12 + random() * 0.3);
-    const height = size * (0.012 + random() * 0.02);
-    const x = random() * size;
-    const warm = y > size * 0.7;
-    const gradient = context.createRadialGradient(x, y, 0, x, y, width);
-    gradient.addColorStop(0, warm ? 'rgba(255, 214, 168, 0.34)' : 'rgba(206, 216, 240, 0.26)');
-    gradient.addColorStop(1, 'rgba(200, 200, 230, 0)');
-    context.fillStyle = gradient;
+  // Lavado nebuloso violeta/magenta justo en la franja que la cámara alcanza
+  // a ver: manchas suaves y alargadas, no un degradado uniforme, para que
+  // lea como nube cósmica entreverada con el amanecer, no como niebla plana.
+  for (let index = 0; index < 7; index += 1) {
+    const x = size * (0.05 + random() * 0.9);
+    const y = size * (0.4 + random() * 0.28);
+    const w = size * (0.16 + random() * 0.22);
+    const nebula = context.createRadialGradient(x, y, 0, x, y, w);
+    nebula.addColorStop(0, `rgba(${180 + random() * 40 | 0}, ${140 + random() * 30 | 0}, ${230 + random() * 20 | 0}, ${0.22 + random() * 0.14})`);
+    nebula.addColorStop(1, 'rgba(150, 120, 220, 0)');
+    context.fillStyle = nebula;
     context.save();
     context.translate(x, y);
-    context.scale(1, height / width);
+    context.scale(1.7, 0.85);
     context.beginPath();
-    context.arc(0, 0, width, 0, Math.PI * 2);
+    context.arc(0, 0, w, 0, Math.PI * 2);
     context.fill();
     context.restore();
   }
 
-  // Estrellas tenues que sobreviven al amanecer en el cénit.
-  for (let index = 0; index < 160; index += 1) {
-    const y = random() * size * 0.4;
-    context.fillStyle = `rgba(255, 255, 255, ${0.14 + random() * 0.3})`;
+  // Resplandor del sol bajo en el horizonte.
+  const sun = context.createRadialGradient(size * 0.31, size * 0.72, 0, size * 0.31, size * 0.72, size * 0.36);
+  sun.addColorStop(0, 'rgba(255, 240, 210, 0.98)');
+  sun.addColorStop(0.3, 'rgba(255, 210, 150, 0.55)');
+  sun.addColorStop(1, 'rgba(255, 190, 120, 0)');
+  context.fillStyle = sun;
+  context.fillRect(0, 0, size, size);
+
+  // Estrellas que sobreviven al amanecer, concentradas donde la cámara
+  // llega a rozarlas entre las nubes, con un puñado destacando en cruz.
+  for (let index = 0; index < 140; index += 1) {
+    const y = size * (0.36 + random() * 0.3);
+    const bright = random() > 0.9;
+    const r = bright ? 1.8 + random() * 1.3 : 0.5 + random() * 0.9;
+    const x = random() * size;
+    const fade = 1 - Math.max(0, (y / size - 0.55) * 2.2); // se apagan según se acercan al resplandor cálido
+    context.fillStyle = `rgba(255, 255, 255, ${Math.max(0, (0.18 + random() * 0.36) * fade)})`;
     context.beginPath();
-    context.arc(random() * size, y, 0.9, 0, Math.PI * 2);
+    context.arc(x, y, r, 0, Math.PI * 2);
     context.fill();
+    if (bright && random() > 0.45 && fade > 0.3) {
+      context.save();
+      context.globalAlpha = 0.5 * fade;
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(x - r * 3.4, y);
+      context.lineTo(x + r * 3.4, y);
+      context.moveTo(x, y - r * 3.4);
+      context.lineTo(x, y + r * 3.4);
+      context.stroke();
+      context.restore();
+    }
   }
+
+  // Nubes con volumen real: puñados de lóbulos superpuestos, concentradas
+  // en la franja visible y más densas y cálidas hacia el horizonte.
+  for (let index = 0; index < 34; index += 1) {
+    const horizonBias = random() * random(); // sesga hacia el horizonte sin descartar el resto de la franja
+    const y = size * (0.44 + horizonBias * 0.42);
+    const x = random() * size;
+    const radius = size * (0.045 + random() * 0.08) * (0.7 + horizonBias);
+    const warmth = Math.min(1, (y / size - 0.5) * 2.2);
+    const tint = `rgba(255, ${226 - warmth * 10 | 0}, ${196 + warmth * 20 | 0}, ${0.42 + warmth * 0.28})`;
+    const shadeTint = `rgba(${150 + warmth * 60 | 0}, ${140 + warmth * 50 | 0}, ${195 - warmth * 30 | 0}, ${0.32 + warmth * 0.15})`;
+    drawCloudPuff(context, x, y, radius, tint, shadeTint, random);
+  }
+
   return finishTexture('dawn-sky', canvas);
 };
 
