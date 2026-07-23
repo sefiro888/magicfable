@@ -85,6 +85,7 @@ const createPlayer = (
     nexusDamagedThisTurn: false,
     unitDiscountPending: false,
     firstUnitDeployedThisTurn: false,
+    fatigueStacks: 0,
     mulliganTaken: false,
     stats: { cardsPlayed: 0, damageDealt: 0 },
   };
@@ -119,10 +120,34 @@ export const createMatch = (
   };
 };
 
+/**
+ * Fatiga: robar con el mazo vacío no se ignora. Cada intento cuenta una carga
+ * más y esa cantidad de daño golpea el propio Nexo, así que dos jugadores
+ * pasivos no alargan la partida indefinidamente.
+ */
+const applyFatigue = (state: MatchState, playerId: PlayerId): MatchState => {
+  const player = state.players[playerId];
+  const stacks = player.fatigueStacks + 1;
+  const nexusHealth = Math.max(0, player.nexusHealth - stacks);
+  let next = withPlayer(state, playerId, { ...player, fatigueStacks: stacks, nexusHealth });
+  next = enqueue(next, {
+    type: 'nexus-damage', actorId: playerId, targetId: `${playerId}-nexus`,
+    amount: stacks, effectId: 'fatigue-exhaustion', durationMs: 420,
+  });
+  if (nexusHealth <= 0) {
+    const winner = opponentOf(playerId);
+    next = { ...next, winner, phase: 'finished' };
+    next = enqueue(next, {
+      type: 'victory', actorId: winner, targetId: `${playerId}-nexus`, effectId: 'fatigue-victory', durationMs: 900,
+    });
+  }
+  return next;
+};
+
 const drawInternal = (state: MatchState, playerId: PlayerId): MatchState => {
   const player = state.players[playerId];
   const card = player.deck[0];
-  if (!card) return state;
+  if (!card) return applyFatigue(state, playerId);
   const next = withPlayer(state, playerId, {
     ...player,
     deck: player.deck.slice(1),
@@ -137,7 +162,8 @@ export const drawCard = (state: MatchState, playerId: PlayerId = state.activePla
   if (state.phase === 'finished') return fail(state, 'game-finished', 'La partida ya ha terminado.');
   if (playerId !== state.activePlayer) return fail(state, 'wrong-turn', 'Solo roba el jugador activo.');
   if (state.phase !== 'draw') return fail(state, 'wrong-phase', 'Solo se roba durante la fase de robo.');
-  return success({ ...drawInternal(state, playerId), phase: 'main' });
+  const drawn = drawInternal(state, playerId);
+  return success(drawn.phase === 'finished' ? drawn : { ...drawn, phase: 'main' });
 };
 
 /** Applies the ordering chosen after a scry event to the currently revealed top cards. */
@@ -942,7 +968,7 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
   });
   next = { ...next, phase: 'draw' };
   next = drawInternal(next, nextPlayerId);
-  next = { ...next, phase: 'main' };
+  if (next.phase !== 'finished') next = { ...next, phase: 'main' };
   return success(next);
 };
 

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import {
   applyAction,
   CARD_BY_ID,
@@ -67,7 +68,17 @@ const drainAnimations = (state: MatchState): { match: MatchState; events: readon
   events: state.animations,
 })
 
-export const useMatchStore = create<MatchStore>((set, get) => ({
+/**
+ * Sube esta versión siempre que cambie la forma de MatchState/PlayerState
+ * (por ejemplo, un campo nuevo como fatigueStacks). Sin `migrate`, zustand
+ * descarta silenciosamente cualquier partida guardada con una versión
+ * distinta en vez de arriesgarse a hidratar un estado incompleto.
+ */
+const MATCH_PERSIST_VERSION = 1
+
+export const useMatchStore = create<MatchStore>()(
+  persist(
+    (set, get) => ({
   ...initialState,
   startMatch: (playerDeckId, seed) => {
     const playerIndex = Math.max(0, STARTER_DECKS.findIndex((deck) => deck.id === playerDeckId))
@@ -132,4 +143,18 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
   setMessage: (message) => set({ message }),
   setAiThinking: (aiThinking) => set({ aiThinking }),
   reset: () => set({ match: undefined, selectedHandId: undefined, selectedPieceId: undefined, inspectedCardId: undefined, message: undefined, ...initialState }),
-}))
+    }),
+    {
+      name: 'cronicas-nexo-match',
+      version: MATCH_PERSIST_VERSION,
+      // Solo el estado necesario para retomar la partida: nunca la cola de
+      // animaciones ni la selección en curso, que no tienen sentido tras recargar.
+      partialize: (state) => ({
+        match: state.match,
+        history: state.history,
+        startedAtMs: state.startedAtMs,
+        elapsedSeconds: state.elapsedSeconds,
+      }),
+    },
+  ),
+)
