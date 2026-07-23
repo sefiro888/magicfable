@@ -21,6 +21,9 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
         version: 3,
       }),
     )
+    // Sin esto, la guía "Cómo jugar" se abre sola la primera vez y su fondo
+    // bloquea los clics del mulligan que hay debajo.
+    localStorage.setItem('cronicas-nexo-howto-visto', '1')
   })
 
   await page.goto('/')
