@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, cardsForFaction, validateDeck } from '../game'
 import type { DeckDefinition, DeckEntry } from '../game'
 import { FactionSigil } from '../components/FactionSigil'
@@ -157,6 +158,14 @@ const relativeDay = (timestamp: number): string => {
 function MatchHistory() {
   const records = useRecords((state) => state.records)
   const clear = useRecords((state) => state.clear)
+  const preferences = usePreferences()
+  const navigate = useNavigate()
+  const repeatMatch = (record: { deckId: string; seed: number }) => {
+    // Misma facción y misma semilla: el motor es determinista, así que
+    // reproduce exactamente la misma partida turno a turno.
+    preferences.setSelectedDeck(record.deckId)
+    navigate(`/battle?seed=${record.seed}`)
+  }
   const tally = useMemo(() => summarizeRecords(records), [records])
   const byDeck = useMemo(() => summarizeByDeck(records), [records])
   const streak = useMemo(() => currentStreak(records), [records])
@@ -200,6 +209,13 @@ function MatchHistory() {
             <span className={styles.historyResult}>{record.won ? 'Victoria' : 'Derrota'}</span>
             <span className={styles.historyDeck}>{record.deckName} <small>vs {record.opponentDeckName}</small></span>
             <span className={styles.historyMeta}>{record.turns} turnos · {record.seconds}s · {relativeDay(record.finishedAt)}</span>
+            <button
+              className={styles.historyRepeat}
+              onClick={() => repeatMatch(record)}
+              title="Vuelve a jugar exactamente esta misma partida, turno a turno"
+            >
+              ↻ Repetir
+            </button>
           </li>
         ))}
       </ol>

@@ -70,8 +70,10 @@
 .byDeck span { color: #817e77; font-size: 10px; }
 .byDeck strong { color: var(--gold-bright); font-family: var(--display); font-size: 13px; font-variant-numeric: tabular-nums; }
 .historyList { margin: 0; padding: 0; list-style: none; }
-.historyRow { display: grid; grid-template-columns: 82px 1fr auto; align-items: center; gap: 14px; padding: 12px 23px; border-bottom: 1px solid rgba(255,255,255,.055); }
+.historyRow { display: grid; grid-template-columns: 82px 1fr auto auto; align-items: center; gap: 14px; padding: 12px 23px; border-bottom: 1px solid rgba(255,255,255,.055); }
 .historyRow:last-child { border-bottom: 0; }
+.historyRepeat { padding: 6px 12px; border: 1px solid rgba(255,255,255,.13); background: transparent; color: #aaa69e; font-size: 10px; letter-spacing: .04em; cursor: pointer; white-space: nowrap; }
+.historyRepeat:hover { border-color: var(--gold); color: var(--gold-bright); }
 .historyResult { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
 .historyRow[data-won='true'] .historyResult { color: var(--success); }
 .historyRow[data-won='false'] .historyResult { color: #c86a58; }
