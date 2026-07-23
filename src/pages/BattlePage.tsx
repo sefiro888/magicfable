@@ -30,6 +30,7 @@ import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
 import { usePreferences } from '../store/preferences'
 import { summarizeRecords, useRecords } from '../store/records'
+import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
 import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS } from '../utils/cardLabels'
 import styles from './BattlePage.module.css'
@@ -332,6 +333,7 @@ export function BattlePage() {
   const inspected = store.inspectedCardId ? CARD_BY_ID[store.inspectedCardId] : undefined
   const storedRecords = useRecords((state) => state.records)
   const tally = useMemo(() => summarizeRecords(storedRecords), [storedRecords])
+  const daily = useMemo(() => evaluateDailyChallenge(storedRecords), [storedRecords])
   const spellTargets = useMemo(() => {
     if (!match || !selectedCard || !requiresPieceTarget(selectedCard)) return []
     const friendlyOnly = selectedCard.effects.some((effect) =>
@@ -641,6 +643,15 @@ export function BattlePage() {
               Esencia: <strong>{mana.available} / {mana.total}</strong>{mana.exhausted > 0 ? ` · ${mana.exhausted} agotadas` : ''}
             </p>
           </section>
+          <section className={styles.panelSection}>
+            <div className={styles.dailyBattleNote} data-done={daily.done}>
+              <span className={styles.dailyBattleBadge}>{daily.done ? '✓' : '◆'}</span>
+              <div>
+                <small>Reto de hoy</small>
+                <strong>{daily.title}</strong>
+              </div>
+            </div>
+          </section>
         </aside>
         <aside className={styles.rightPanel}>
           <section className={`${styles.panelSection} ${styles.context}`}>
@@ -872,6 +883,9 @@ export function BattlePage() {
               <p className={styles.resultTally}>
                 Llevas <strong>{tally.won}</strong> {tally.won === 1 ? 'victoria' : 'victorias'} de <strong>{tally.played}</strong> escaramuzas · {tally.winRate}%
               </p>
+            )}
+            {match.winner === 'player' && daily.done && (
+              <p className={styles.dailyResultNote}>✓ Reto de hoy completado: {daily.title}</p>
             )}
             <div className={styles.resultActions}>
               <button onClick={repeat}>Repetir</button>
