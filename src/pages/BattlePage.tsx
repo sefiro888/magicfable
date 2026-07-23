@@ -132,6 +132,7 @@ export function BattlePage() {
   const endTurnRef = useRef<HTMLButtonElement>(null)
   /** Mano recogida: despeja el tablero; al soltar el botón vuelve a subir. */
   const [handTucked, setHandTucked] = useState(false)
+  const [confirmAbandon, setConfirmAbandon] = useState(false)
   const aiSteps = useRef(0)
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
@@ -447,6 +448,31 @@ export function BattlePage() {
     if (doAction({ type: 'play-card', playerId: 'player', cardInstanceId: selectedInstance.instanceId, target: { kind: 'none' } })) finishSelection()
   }
 
+  const abandonMatch = () => {
+    // Abandonar cuenta como derrota: sin esto se podía esquivar una derrota
+    // segura saliendo a mitad de partida, y el historial quedaba mintiendo.
+    if (!match.winner) {
+      const playerState = match.players.player
+      const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
+      const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === match.players.ai.commanderId)
+      useRecords.getState().addRecord({
+        finishedAt: Date.now(),
+        deckId: playerDeck?.id ?? preferences.selectedDeckId,
+        deckName: playerDeck?.name ?? 'Mazo desconocido',
+        commanderName: COMMANDER_BY_ID[playerState.commanderId]?.name ?? '—',
+        opponentDeckName: opponentDeck?.name ?? 'Rival desconocido',
+        won: false,
+        turns: match.turn,
+        seconds: Math.max(1, Math.round((Date.now() - store.startedAtMs) / 1000)),
+        damageDealt: playerState.stats.damageDealt,
+        seed: match.seed,
+      })
+    }
+    store.reset()
+    setConfirmAbandon(false)
+    navigate('/play')
+  }
+
   const repeat = () => {
     store.reset()
     setMulliganIds([])
@@ -544,7 +570,7 @@ export function BattlePage() {
   return (
     <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
       <header className={styles.topbar}>
-        <button className={styles.exit} onClick={() => navigate('/play')}>← Abandonar el Santuario</button>
+        <button className={styles.exit} onClick={() => (match.winner ? navigate('/play') : setConfirmAbandon(true))}>← Abandonar el Santuario</button>
         <div className={styles.turn}>
           <strong>{match.activePlayer === 'player' ? 'Tu turno' : 'Turno rival'}</strong>
           <span>Turno {match.turn} · {PHASE_LABELS[match.phase] ?? match.phase}</span>
@@ -740,6 +766,20 @@ export function BattlePage() {
       </button>
 
       {howToOpen && <HowToPlay onClose={closeHowTo} />}
+
+      {confirmAbandon && (
+        <div className={styles.resultBackdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmAbandon(false) }}>
+          <section className={styles.abandonDialog} role="alertdialog" aria-modal="true" aria-labelledby="abandon-title">
+            <small>Antes de irte</small>
+            <h2 id="abandon-title">¿Abandonar esta crónica?</h2>
+            <p>Contará como una derrota en tu historial. La partida no se puede retomar después.</p>
+            <div className={styles.abandonActions}>
+              <button className={styles.abandonCancel} onClick={() => setConfirmAbandon(false)}>Seguir jugando</button>
+              <button className={styles.abandonConfirm} onClick={abandonMatch}>Abandonar</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {tutorialActive && player.mulliganTaken && !match.winner && (
         <GuidedTutorial

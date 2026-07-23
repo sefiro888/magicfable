@@ -278,6 +278,15 @@
 .resultActions button, .resultActions a { padding: 11px 18px; border: 1px solid var(--line-bright); background: rgba(215,180,103,.1); cursor: pointer; }
 .mulligan { width: min(850px, 90vw); padding: 34px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; }
 .mulligan > small { color: var(--gold); font-weight: 800; letter-spacing: .28em; text-transform: uppercase; }
+.abandonDialog { width: min(440px, 90vw); padding: 30px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; }
+.abandonDialog > small { color: var(--gold); font-weight: 800; letter-spacing: .26em; text-transform: uppercase; }
+.abandonDialog h2 { margin: 10px 0 8px; font-family: var(--display); font-size: 26px; font-weight: 500; color: var(--ivory); }
+.abandonDialog > p { margin: 0; color: #a39f97; font-size: 12px; line-height: 1.55; }
+.abandonActions { display: flex; justify-content: center; gap: 10px; margin-top: 22px; }
+.abandonCancel { padding: 11px 20px; border: 1px solid var(--line-bright); color: var(--ivory); background: rgba(255,255,255,.03); cursor: pointer; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.abandonCancel:hover { border-color: var(--gold); }
+.abandonConfirm { padding: 11px 20px; border: 1px solid #d96a5a; color: #2a0d09; background: linear-gradient(#e08a7c,#c04a38); cursor: pointer; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.abandonConfirm:hover { filter: brightness(1.08); }
 .mulligan h2 { margin: 10px 0 5px; font-family: var(--display); font-size: 34px; font-weight: 500; }
 .mulligan > p { margin: 0; color: #8e8b84; }
 .mulligan > p strong { color: #cfc9bd; }
