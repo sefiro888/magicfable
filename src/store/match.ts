@@ -5,6 +5,7 @@ import {
   CARD_BY_ID,
   clearAnimationQueue,
   createMatch,
+  nextRandom,
   STARTER_DECKS,
   type AnimationEvent,
   type GameAction,
@@ -114,8 +115,15 @@ export const useMatchStore = create<MatchStore>()(
     const matchSeed = seed ?? (Date.now() >>> 0)
     // El rival se elige a partir de la semilla entre las demás facciones: varía en
     // cada escaramuza, pero una revancha con la misma semilla repite el emparejamiento.
+    // `matchSeed` suele ser Date.now(): dos partidas separadas por un intervalo
+    // parecido (p. ej. el tiempo que tarda alguien en volver a jugar) generan
+    // deltas de reloj parecidos, y `matchSeed % N` sobre esos deltas produce
+    // rachas del mismo rival mucho más largas de lo que parece aleatorio. Se
+    // pasa por nextRandom() (el mismo mezclador que ya usa el motor para barajar
+    // el mazo) para romper esa correlación antes de elegir el índice.
     const opponents = STARTER_DECKS.filter((_, index) => index !== playerIndex)
-    const aiDeck = opponents[matchSeed % opponents.length] ?? opponents[0]
+    const opponentIndex = Math.floor(nextRandom(matchSeed).value * opponents.length)
+    const aiDeck = opponents[opponentIndex] ?? opponents[0]
     if (!playerDeck || !aiDeck) throw new Error('Faltan mazos iniciales para crear la partida.')
     const match = createMatch(playerDeck, aiDeck, matchSeed)
     set({

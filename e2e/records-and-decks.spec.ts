@@ -100,3 +100,24 @@ test('una victoria en el primer turno celebra los logros recién desbloqueados',
   await expect(page.getByText('⚔️ Primera sangre')).toBeVisible()
   await expect(page.getByText('⚡ Victoria relámpago')).toBeVisible()
 })
+
+test('«Volver al inicio» no deja la partida terminada a medias para la siguiente', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.goto('/battle?seed=555')
+  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.keyboard.press('Control+Shift+D')
+  const nexusHit = page.getByRole('button', { name: '-5 al Nexo rival' })
+  for (let i = 0; i < 5; i += 1) {
+    await nexusHit.click()
+  }
+  await expect(page.getByRole('heading', { name: 'Victoria' })).toBeVisible()
+  // Sin el reset, volver a entrar con la misma facción reanudaba esta misma
+  // partida ya ganada (mismo rival, turno y tablero) en vez de empezar otra.
+  await page.getByRole('button', { name: 'Volver al inicio' }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await page.goto('/battle?seed=555')
+  await expect(page.getByRole('heading', { name: 'Tu mano inicial' })).toBeVisible()
+  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await expect(page.getByText('Turno 1 · Principal')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Victoria' })).toBeHidden()
+})

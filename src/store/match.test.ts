@@ -46,6 +46,19 @@ describe('store de partida: descripciones del historial', () => {
     expect(useMatchStore.getState().history).toEqual(['La escaramuza comienza. Robas cinco cartas.'])
   })
 
+  it('startMatch nunca elige la propia facción como rival, y varía entre semillas', () => {
+    const seen = new Set<string>()
+    for (let seed = 0; seed < 40; seed += 1) {
+      useMatchStore.getState().startMatch(STARTER_DECKS[0]!.id, seed)
+      const aiCommanderId = useMatchStore.getState().match!.players.ai.commanderId
+      expect(aiCommanderId).not.toBe(STARTER_DECKS[0]!.commanderId)
+      seen.add(aiCommanderId)
+    }
+    // Con 40 semillas y 5 rivales posibles, deberían aparecer varias facciones
+    // distintas — si solo apareciera una, el mezclador estaría roto de nuevo.
+    expect(seen.size).toBeGreaterThan(1)
+  })
+
   it('jugar una fuente nombra la carta real', () => {
     const match = baseMatch()
     useMatchStore.setState({

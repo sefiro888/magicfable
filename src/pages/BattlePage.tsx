@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
   chooseNextAiAction,
@@ -952,7 +952,10 @@ export function BattlePage() {
             )}
             <div className={styles.resultActions}>
               <button onClick={repeat}>Repetir</button>
-              <Link to="/">Volver al inicio</Link>
+              {/* Sin el reset, la partida terminada quedaba persistida: si luego se
+                  elegía la misma facción, se reanudaba esta misma (mismo rival, ya
+                  con ganador) en vez de empezar una nueva. */}
+              <button onClick={() => { store.reset(); navigate('/') }}>Volver al inicio</button>
             </div>
           </section>
         </div>
