@@ -25,6 +25,7 @@ import { HandFan } from '../battle/ui/HandFan'
 import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
+import { GlossaryPanel } from '../battle/ui/GlossaryPanel'
 import { Card, formatManaCost } from '../components'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
@@ -132,6 +133,7 @@ export function BattlePage() {
   /** Mano recogida: despeja el tablero; al soltar el botón vuelve a subir. */
   const [handTucked, setHandTucked] = useState(false)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
+  const [glossaryOpen, setGlossaryOpen] = useState(false)
   const aiSteps = useRef(0)
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
@@ -773,6 +775,18 @@ export function BattlePage() {
       >
         ?
       </button>
+
+      <button
+        className={styles.glossaryButton}
+        type="button"
+        onClick={() => setGlossaryOpen(true)}
+        aria-label="Glosario de términos"
+        title="Glosario de términos"
+      >
+        §
+      </button>
+
+      {glossaryOpen && <GlossaryPanel onClose={() => setGlossaryOpen(false)} />}
 
       {howToOpen && <HowToPlay onClose={closeHowTo} />}
 
