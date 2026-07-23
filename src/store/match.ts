@@ -9,6 +9,7 @@ import {
   type AnimationEvent,
   type GameAction,
   type MatchState,
+  type SpellTarget,
 } from '../game'
 
 interface MatchStore {
@@ -39,16 +40,43 @@ interface MatchStore {
   reset: () => void
 }
 
+/** Nombre de la carta en una casilla, tal como estaba justo antes de aplicar la acción. */
+const pieceName = (state: MatchState, pieceId: string): string => {
+  const piece = state.board.find((candidate) => candidate.instanceId === pieceId)
+  return (piece && CARD_BY_ID[piece.cardId]?.name) ?? 'Una unidad'
+}
+
+const spellTargetName = (state: MatchState, target: SpellTarget | undefined): string | undefined => {
+  if (!target) return undefined
+  if (target.kind === 'piece') return pieceName(state, target.pieceId)
+  if (target.kind === 'nexus') return 'el Nexo'
+  return undefined
+}
+
+/**
+ * Descripción legible de la acción, para el registro «Crónica de batalla» y
+ * el aviso central de eventos. Se calcula con el estado ANTERIOR a aplicar
+ * la acción: así las piezas que el efecto destruye o mueve aún están donde
+ * el jugador las vio.
+ */
 const actionDescription = (state: MatchState, action: GameAction): string => {
   const player = state.players[action.playerId ?? state.activePlayer]
-  if (action.type === 'play-resource' || action.type === 'play-card') {
+  if (action.type === 'play-resource') {
     const instance = player.hand.find((card) => card.instanceId === action.cardInstanceId)
     const name = instance ? CARD_BY_ID[instance.cardId]?.name : undefined
-    return action.type === 'play-resource' ? `${name ?? 'Una fuente'} entra en la reserva.` : `${name ?? 'Una carta'} entra en juego.`
+    return `${name ?? 'Una fuente'} entra en la reserva.`
   }
-  if (action.type === 'move') return 'Una unidad cambia de posición.'
-  if (action.type === 'attack-piece') return 'Las cartas chocan en el tablero.'
-  if (action.type === 'attack-nexus') return 'El Nexo recibe un impacto directo.'
+  if (action.type === 'play-card') {
+    const instance = player.hand.find((card) => card.instanceId === action.cardInstanceId)
+    const card = instance ? CARD_BY_ID[instance.cardId] : undefined
+    const name = card?.name ?? 'Una carta'
+    if (card && (card.type === 'unit' || card.type === 'structure')) return `${name} entra en juego.`
+    const target = spellTargetName(state, action.target)
+    return target ? `${name} alcanza a ${target}.` : `${name} se resuelve.`
+  }
+  if (action.type === 'move') return `${pieceName(state, action.pieceId)} se reposiciona.`
+  if (action.type === 'attack-piece') return `${pieceName(state, action.attackerId)} ataca a ${pieceName(state, action.defenderId)}.`
+  if (action.type === 'attack-nexus') return `${pieceName(state, action.attackerId)} golpea el Nexo enemigo.`
   if (action.type === 'draw') return 'Se roba una carta.'
   return action.playerId === 'player' ? 'Has cedido el turno.' : 'La IA termina su turno.'
 }

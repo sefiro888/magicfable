@@ -125,6 +125,10 @@ export function BattlePage() {
   const [scryOrder, setScryOrder] = useState<readonly string[]>([])
   const [revealedCardId, setRevealedCardId] = useState<string>()
   const [banner, setBanner] = useState<string>()
+  /** Aviso central de eventos: qué acaba de pasar (ataques, hechizos, despliegues…). */
+  const [eventBanner, setEventBanner] = useState<string>()
+  /** Longitud de historial ya anunciada: evita reanunciar entradas viejas al recargar una partida guardada. */
+  const lastHistoryLength = useRef(store.history.length)
   const [devOpen, setDevOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(() => !hasSeenHowTo())
   /** Coach interactivo de la primera partida: arranca solo tras cerrar la guía la primerísima vez. */
@@ -211,6 +215,30 @@ export function BattlePage() {
     const timer = window.setTimeout(() => setBanner(undefined), 1400)
     return () => window.clearTimeout(timer)
   }, [banner])
+
+  // ── Aviso central de eventos: anuncia cada acción según ocurre ────────────
+  // Reutiliza el mismo texto que ya se anota en «Crónica de batalla», para no
+  // mantener dos redacciones distintas del mismo suceso.
+  useEffect(() => {
+    const entries = store.history
+    if (entries.length <= lastHistoryLength.current) {
+      lastHistoryLength.current = entries.length
+      return undefined
+    }
+    const latest = entries[entries.length - 1]
+    lastHistoryLength.current = entries.length
+    if (!latest || latest === 'Has cedido el turno.' || latest === 'La IA termina su turno.') return undefined
+    // setState se difiere fuera del cuerpo del efecto: mismo patrón que ya usa
+    // el director de animaciones un poco más arriba para sus canales laterales.
+    const sideChannel = window.setTimeout(() => setEventBanner(latest), 0)
+    return () => window.clearTimeout(sideChannel)
+  }, [store.history])
+
+  useEffect(() => {
+    if (!eventBanner) return
+    const timer = window.setTimeout(() => setEventBanner(undefined), 1900)
+    return () => window.clearTimeout(timer)
+  }, [eventBanner])
 
   // ── Historial: anota la partida una sola vez, al terminar de reproducirse ──
   useEffect(() => {
@@ -492,6 +520,8 @@ export function BattlePage() {
     // Con «?seed=N» la revancha repite semilla: sin esto la nueva partida no se anotaría.
     recordedSeed.current = undefined
     setMatchAchievements([])
+    lastHistoryLength.current = 0
+    setEventBanner(undefined)
     store.startMatch(preferences.selectedDeckId, forcedSeed)
   }
 
@@ -610,6 +640,7 @@ export function BattlePage() {
             activeEvent={currentEvent}
           />
           {banner && <div className={styles.turnBanner} role="status">{banner}</div>}
+          {eventBanner && <div key={eventBanner} className={styles.eventBanner} role="status">{eventBanner}</div>}
           {queueBusy && pendingCount >= 2 && (
             <button className={styles.skipQueue} onClick={() => store.skipAnimations()}>
               Saltar animaciones ({pendingCount})

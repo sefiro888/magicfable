@@ -183,6 +183,31 @@
   78% { opacity: 1; }
   100% { opacity: 0; }
 }
+/* Aviso central de eventos: qué acaba de pasar (ataque, hechizo, despliegue…). Más
+   discreto y arriba que el banner de turno, para que ambos puedan convivir. */
+.eventBanner {
+  position: absolute;
+  z-index: 39;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(560px, 82%);
+  padding: 9px 22px;
+  border-left: 2px solid var(--gold);
+  color: #ecdfb8;
+  background: rgba(8, 10, 16, 0.82);
+  font: 500 15px var(--display);
+  letter-spacing: 0.03em;
+  text-align: center;
+  pointer-events: none;
+  animation: eventBannerIn 1.9s ease forwards;
+}
+@keyframes eventBannerIn {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  12% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  82% { opacity: 1; }
+  100% { opacity: 0; }
+}
 .skipQueue {
   position: absolute;
   z-index: 40;
@@ -334,7 +359,7 @@
 
 /* Movimiento reducido: sin pulsos ni micro-animaciones. */
 @media (prefers-reduced-motion: reduce) {
-  .turnBanner { animation: none; opacity: 1; }
+  .turnBanner, .eventBanner { animation: none; opacity: 1; }
   .endTurn[data-state='ready'] { animation: none; }
   .endTurn[data-state='enemy']::after { animation: none; content: none; }
   .life, .counter strong, .essenceCount { animation: none; }
@@ -342,6 +367,7 @@
   .actionHint, .message { animation: none; }
 }
 .battle[data-motion='reduced'] .turnBanner,
+.battle[data-motion='reduced'] .eventBanner,
 .battle[data-motion='reduced'] .endTurn[data-state='ready'],
 .battle[data-motion='reduced'] .life,
 .battle[data-motion='reduced'] .counter strong,
