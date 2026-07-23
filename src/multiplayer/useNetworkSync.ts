@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createMatch, mulliganOpeningHand, reorderTopCards, STARTER_DECKS, type GameAction, type MatchState } from '../game'
 import { useMatchStore } from '../store/match'
 import type { Room, RoomRole } from './room'
@@ -22,6 +22,26 @@ interface StatePayload {
  */
 export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefined, localDeckId: string) => {
   const peerDeckId = useRef<string>(undefined)
+  const [peerLeft, setPeerLeft] = useState(false)
+
+  // Detecta cuando el rival se desconecta a mitad de partida (cierra la
+  // pestaña, pierde la red…): antes de esto, un corte dejaba la pantalla
+  // congelada sin ninguna pista de qué había pasado.
+  useEffect(() => {
+    if (!room) return undefined
+    // Diferido: evita anidar el setState de reinicio dentro del cuerpo
+    // síncrono del efecto (mismo patrón que el resto de canales laterales).
+    const reset = window.setTimeout(() => setPeerLeft(false), 0)
+    const wasConnected = { current: room.getStatus() === 'connected' }
+    const off = room.onStatusChange((status) => {
+      if (status === 'connected') wasConnected.current = true
+      else if (status === 'waiting' && wasConnected.current) setPeerLeft(true)
+    })
+    return () => {
+      window.clearTimeout(reset)
+      off()
+    }
+  }, [room])
 
   useEffect(() => {
     if (!room || !role) return undefined
@@ -90,5 +110,5 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
   }, [room, role, localDeckId])
 
   const sendIntent = (intent: NetworkIntent) => room?.send('intent', intent)
-  return { sendIntent }
+  return { sendIntent, peerLeft }
 }

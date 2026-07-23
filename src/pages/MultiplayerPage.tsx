@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { COMMANDER_BY_ID, STARTER_DECKS } from '../game'
 import { createRoom, joinRoom, type Room, type RoomStatus } from '../multiplayer/room'
 import { useMatchStore } from '../store/match'
 import { useNetworkStore } from '../store/network'
+import { usePreferences } from '../store/preferences'
 import styles from './MultiplayerPage.module.css'
 
 type Mode = 'idle' | 'hosting' | 'joining'
 
 export function MultiplayerPage() {
   const navigate = useNavigate()
+  const preferences = usePreferences()
   const [mode, setMode] = useState<Mode>('idle')
   const [room, setRoom] = useState<Room>()
   const [status, setStatus] = useState<RoomStatus>('waiting')
@@ -85,6 +88,28 @@ export function MultiplayerPage() {
         <p>Crea una sala y comparte el código, o entra con el código que te han pasado.</p>
       </header>
 
+      <section className={styles.deckPicker} aria-label="Elige tu mazo para esta escaramuza">
+        <span className={styles.deckPickerLabel}>Tu mazo para esta partida</span>
+        <div className={styles.deckOptions}>
+          {STARTER_DECKS.map((deck) => {
+            const commander = COMMANDER_BY_ID[deck.commanderId]
+            const selected = deck.id === preferences.selectedDeckId
+            return (
+              <button
+                key={deck.id}
+                className={`${styles.deckOption} ${styles[deck.faction]}`}
+                data-selected={selected}
+                aria-pressed={selected}
+                onClick={() => preferences.setSelectedDeck(deck.id)}
+                title={deck.name}
+              >
+                {commander?.name ?? deck.name}
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
       {mode === 'idle' && (
         <div className={styles.choices}>
           <button className={styles.choice} onClick={handleCreate}>
@@ -125,7 +150,7 @@ export function MultiplayerPage() {
           </div>
           {status === 'connected' && (
             <>
-              <p className={styles.note}>Ambos jugaréis con el mazo que tengáis elegido en «Mazos».</p>
+              <p className={styles.note}>Jugarás con el mazo elegido arriba. Confirma con tu rival que no hayáis elegido la misma facción.</p>
               <button className={styles.joinButton} onClick={enterBattle}>Entrar a la batalla</button>
             </>
           )}

@@ -121,7 +121,7 @@ export function BattlePage() {
   // el invitado ocupa siempre el bando 'ai' (así el motor no cambia nada).
   const ME: PlayerId = role === 'guest' ? 'ai' : 'player'
   const RIVAL: PlayerId = ME === 'player' ? 'ai' : 'player'
-  const { sendIntent } = useNetworkSync(room, role, preferences.selectedDeckId)
+  const { sendIntent, peerLeft } = useNetworkSync(room, role, preferences.selectedDeckId)
   // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
   const forcedSeed = useMemo(() => {
     const raw = searchParams.get('seed')
@@ -955,6 +955,19 @@ export function BattlePage() {
             <div className={styles.abandonActions}>
               <button className={styles.abandonCancel} onClick={() => setConfirmAbandon(false)}>Seguir jugando</button>
               <button className={styles.abandonConfirm} onClick={abandonMatch}>Abandonar</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {peerLeft && !match.winner && (
+        <div className={styles.resultBackdrop}>
+          <section className={styles.result}>
+            <small>Multijugador</small>
+            <h2>Tu rival se ha desconectado</h2>
+            <p>La partida no se puede continuar ni reanudar sin él. Puedes volver al inicio.</p>
+            <div className={styles.resultActions}>
+              <button onClick={() => { room?.leave(); useNetworkStore.getState().clear(); store.reset(); navigate('/') }}>Volver al inicio</button>
             </div>
           </section>
         </div>
