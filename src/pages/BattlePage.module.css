@@ -5,10 +5,22 @@
 .turn { text-align: center; }
 .turn strong { display: block; font-family: var(--display); color: var(--gold-bright); font-size: 17px; font-weight: 500; }
 .turn span { color: #848179; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
-.enemySummary { justify-self: end; display: flex; align-items: center; gap: 12px; text-align: right; }
+.enemySummary { justify-self: end; display: flex; align-items: center; gap: 12px; text-align: right; background: none; border: 0; padding: 4px 6px; margin: -4px -6px; cursor: pointer; font: inherit; color: inherit; border-radius: 4px; transition: background .15s ease; }
+.enemySummary:hover, .enemySummary[aria-expanded="true"] { background: rgba(255,255,255,.06); }
 .enemySummary strong { display: block; font-family: var(--display); font-size: 14px; }
 .enemySummary span { color: #85827a; font-size: 10px; }
 .nexusOrb { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(104,205,255,.55); border-radius: 50%; color: #bcecff; background: radial-gradient(circle, rgba(66,184,245,.42), rgba(18,48,76,.18)); box-shadow: 0 0 20px rgba(59,176,242,.18); font-family: var(--display); }
+
+/* Panel de datos del rival: se abre bajo el resumen del rival en la cabecera. */
+.enemyPanel {
+  position: absolute; z-index: 41; top: 66px; right: 16px; width: 220px;
+  padding: 16px 15px; border: 1px solid var(--line-bright);
+  background: rgba(11,13,20,.96); backdrop-filter: blur(12px);
+  box-shadow: 0 18px 45px rgba(0,0,0,.4);
+}
+.enemyPanel .deckCounters { grid-template-columns: repeat(3, 1fr); }
+.enemyPanelClose { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.03); color: #cfc9bd; cursor: pointer; font-size: 13px; line-height: 1; }
+.enemyPanelClose:hover { color: var(--ivory); border-color: var(--gold); }
 
 /* ── Arena: el tablero es el protagonista ─────────────────────────────────── */
 .arena { position: absolute; inset: 60px 0 158px; }
@@ -403,6 +415,9 @@
   .enemySummary span { display: none; }
   .enemySummary strong { max-width: 68px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .nexusOrb { width: 28px; height: 28px; font-size: 11px; }
+  .enemyPanel { top: 56px; right: 6px; width: 44vw; padding: 12px 10px; font-size: 12px; }
+  .enemyPanel .deckCounters { gap: 4px; }
+  .enemyPanel .counter { padding: 5px 3px; }
 
   .arena { inset: 52px 0 128px; }
   .boardFrame { inset: 0 4px; }

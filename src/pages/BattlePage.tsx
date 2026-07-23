@@ -139,6 +139,8 @@ export function BattlePage() {
   const [handTucked, setHandTucked] = useState(false)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
   const [glossaryOpen, setGlossaryOpen] = useState(false)
+  /** Panel de datos del rival: vida, esencia, mazo y descarte — plegado por defecto para no robarle sitio al tablero. */
+  const [enemyPanelOpen, setEnemyPanelOpen] = useState(false)
   const aiSteps = useRef(0)
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
@@ -362,6 +364,7 @@ export function BattlePage() {
   }, [match, selectedCard])
   const validCells = selectedCard ? deployCells : moves
   const mana = summarizeMana(player?.resources ?? [])
+  const aiMana = summarizeMana(ai?.resources ?? [])
   const payment = match && selectedCard
     ? planManaPayment(player?.resources ?? [], effectiveCost(match, 'player', selectedCard))
     : undefined
@@ -617,11 +620,39 @@ export function BattlePage() {
           <strong>{match.activePlayer === 'player' ? 'Tu turno' : 'Turno rival'}</strong>
           <span>Turno {match.turn} · {PHASE_LABELS[match.phase] ?? match.phase}</span>
         </div>
-        <div className={styles.enemySummary}>
+        <button
+          type="button"
+          className={styles.enemySummary}
+          onClick={() => setEnemyPanelOpen((open) => !open)}
+          aria-expanded={enemyPanelOpen}
+          title="Ver los datos del rival: vida, esencia, mazo y descarte"
+        >
           <div><strong>{aiCommander?.name}</strong><span>{ai.hand.length} cartas · {ai.deck.length} en mazo</span></div>
           <div className={styles.nexusOrb}>{ai.nexusHealth}</div>
-        </div>
+        </button>
       </header>
+
+      {enemyPanelOpen && (
+        <aside className={styles.enemyPanel} role="dialog" aria-label="Datos del rival">
+          <button className={styles.enemyPanelClose} onClick={() => setEnemyPanelOpen(false)} aria-label="Cerrar">×</button>
+          <div className={styles.commander}>
+            <img className={styles.portrait} src={aiCommander ? withBase(aiCommander.art.webp) : undefined} alt="" />
+            <div><strong>{aiCommander?.name}</strong><small>{aiCommander?.title}</small></div>
+          </div>
+          <div className={styles.lifeRow}>
+            <span>Vida del Nexo</span>
+            <span key={ai.nexusHealth} className={styles.life}>♥ {ai.nexusHealth}</span>
+          </div>
+          <div className={styles.deckCounters}>
+            <div className={styles.counter}><strong key={ai.hand.length}>{ai.hand.length}</strong><span>Mano</span></div>
+            <div className={styles.counter}><strong key={ai.deck.length}>{ai.deck.length}</strong><span>Mazo</span></div>
+            <div className={styles.counter}><strong key={ai.discard.length}>{ai.discard.length}</strong><span>Descarte</span></div>
+          </div>
+          <p className={styles.essenceNote} title={ESSENCE_LABELS[aiCommander?.faction ?? 'fury']}>
+            Esencia: <strong>{aiMana.available} / {aiMana.total}</strong>{aiMana.exhausted > 0 ? ` · ${aiMana.exhausted} agotadas` : ''}
+          </p>
+        </aside>
+      )}
 
       <div className={styles.arena}>
         <div className={styles.boardFrame}>
