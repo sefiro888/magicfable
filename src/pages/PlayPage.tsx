@@ -42,7 +42,7 @@ export function PlayPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div><small>Escaramuza contra la IA</small><h1>Selecciona tu mazo</h1></div>
-        <p>Cada mazo contiene 50 cartas y un comandante. Tu rival utilizará la facción opuesta.</p>
+        <p>Cada mazo contiene 50 cartas y un comandante. Tu rival utilizará la facción opuesta.<br /><span className={styles.note}>Nexo a 25 · tablero 8 × 8</span></p>
       </header>
       <div className={styles.daily} data-done={daily.done}>
         <span className={styles.dailyBadge}>{daily.done ? '✓' : '◆'}</span>
@@ -57,23 +57,35 @@ export function PlayPage() {
           const commander = COMMANDER_BY_ID[candidate.commanderId]
           const selected = candidate.id === deck?.id
           return (
-            <button key={candidate.id} className={`${styles.deck} ${styles[candidate.faction]}`} data-selected={selected} onClick={() => preferences.setSelectedDeck(candidate.id)} aria-pressed={selected}>
-              {selected && <span className={styles.selected}>Seleccionado</span>}
-              <div className={styles.deckArt} aria-hidden="true">
-                {showcase[candidate.faction]?.map((cardId) => {
-                  const art = CARD_BY_ID[cardId]?.art.webp
-                  return art ? <img key={cardId} src={withBase(art)} alt="" /> : null
-                })}
-              </div>
-              <h2>{candidate.name}</h2>
-              <div className={styles.commander}>{commander?.name} · {commander?.title}</div>
-              <p className={styles.description}>{DECK_DESCRIPTIONS[candidate.faction]}</p>
-              <div className={styles.metrics}><span>Cartas<strong>50</strong></span><span>Fuentes<strong>20</strong></span><span>Identidad<strong>{FACTION_BY_ID[candidate.faction].name}</strong></span></div>
-            </button>
+            <div key={candidate.id} className={`${styles.deck} ${styles[candidate.faction]}`} data-selected={selected}>
+              {/* display:contents: es el botón que selecciona el mazo (para que
+                  el lector de pantalla lo anuncie como tal), pero sin envolver
+                  en él la caja visual, así el botón «Entrar al tablero» de
+                  abajo puede ser un elemento hermano en vez de ir anidado
+                  dentro de otro botón. */}
+              <button type="button" className={styles.deckSelect} aria-pressed={selected} onClick={() => preferences.setSelectedDeck(candidate.id)}>
+                {selected && <span className={styles.selected}>Seleccionado</span>}
+                <div className={styles.deckArt} aria-hidden="true">
+                  {showcase[candidate.faction]?.map((cardId) => {
+                    const art = CARD_BY_ID[cardId]?.art.webp
+                    return art ? <img key={cardId} src={withBase(art)} alt="" /> : null
+                  })}
+                </div>
+                <h2>{candidate.name}</h2>
+                <div className={styles.commander}>{commander?.name} · {commander?.title}</div>
+                <p className={styles.description}>{DECK_DESCRIPTIONS[candidate.faction]}</p>
+                <div className={styles.metrics}><span>Cartas<strong>50</strong></span><span>Fuentes<strong>20</strong></span><span>Identidad<strong>{FACTION_BY_ID[candidate.faction].name}</strong></span></div>
+              </button>
+              {/* Solo en la tarjeta ya elegida: así el botón para empezar
+                  aparece justo donde el jugador acaba de hacer clic, en vez
+                  de obligarle a bajar hasta el final de la página. */}
+              {selected && (
+                <button className={styles.enterBoard} onClick={start}>Entrar al tablero →</button>
+              )}
+            </div>
           )
         })}
       </div>
-      <div className={styles.startRow}><button className={styles.start} onClick={start}>Entrar al tablero</button><span className={styles.note}>Nexo a 25 · tablero 8 × 8</span></div>
     </div>
   )
 }

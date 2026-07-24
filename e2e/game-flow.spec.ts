@@ -40,7 +40,7 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
 
   await page.getByRole('link', { name: 'Jugar' }).click()
   await expect(page.getByRole('heading', { name: 'Selecciona tu mazo' })).toBeVisible()
-  await page.getByRole('button', { name: 'Entrar al tablero' }).click()
+  await page.getByRole('button', { name: 'Entrar al tablero →' }).click()
 
   // Semilla fija: la mano inicial debe contener una fuente para el paso siguiente.
   await page.goto('/battle?seed=1311657807')
