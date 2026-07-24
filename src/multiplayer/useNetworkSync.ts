@@ -63,7 +63,13 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
   useEffect(() => {
     if (!room || !role) return undefined
 
+    // Aviso de "ya estoy listo": si el mazo propio se envía antes de que el
+    // otro lado haya montado esta pantalla (y por tanto antes de que esté
+    // escuchando), ese mensaje se pierde sin más — el canal no guarda
+    // mensajes pasados. Este segundo aviso, más el reenvío del mazo al
+    // recibirlo, cierra esa carrera sin importar quién llegue primero.
     room.send('deck', localDeckId)
+    room.send('ready', {})
 
     const offDeck = room.onMessage('deck', (payload) => {
       const deckId = payload as string
@@ -76,6 +82,8 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       const match = createMatch(hostDeck, guestDeck, Date.now() >>> 0)
       useMatchStore.getState().startFromMatch(match)
     })
+
+    const offReady = room.onMessage('ready', () => room.send('deck', localDeckId))
 
     const offState = room.onMessage('state', (payload) => {
       if (role !== 'guest') return
@@ -122,6 +130,7 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
 
     return () => {
       offDeck()
+      offReady()
       offState()
       offRematch()
       offIntent()
