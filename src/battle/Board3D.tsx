@@ -59,6 +59,15 @@ const cellKey = (position: Position) => `${position.x},${position.y}`
 /** Las cartas se diseñaron para un paso de casilla de 1.18; se reescalan al actual. */
 const CARD_SCALE = CELL_SIZE / 1.18
 
+/**
+ * PRUEBA: inclinación tipo «standee» en vez de tumbada del todo, para que el
+ * arte se lea mejor desde la cámara picada. 0 = tumbada (como antes), PI/2 =
+ * de pie recta. A ajustar o retirar según el resultado visual.
+ */
+const CARD_STAND_TILT = Math.PI / 3
+/** Compensa que, al inclinar la carta desde su centro, el borde inferior se hunda en la casilla. */
+const CARD_STAND_RISE = 0.51 * CARD_SCALE * Math.sin(Math.abs(CARD_STAND_TILT))
+
 /** Tinte determinista por casilla para romper la repetición del pavimento. */
 const SLAB_TINTS = ['#ffffff', '#f1efe9', '#e8e9f1'] as const
 
@@ -173,7 +182,10 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      <group scale={CARD_SCALE}>
+      {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
+          Se eleva CARD_STAND_RISE para que, al girar desde su centro, el borde
+          inferior quede a ras de la casilla en vez de hundirse en ella. */}
+      <group position={[0, CARD_STAND_RISE, 0]} scale={CARD_SCALE} rotation={[CARD_STAND_TILT, 0, 0]}>
         <mesh ref={frame} castShadow receiveShadow>
           <boxGeometry args={[0.83, 0.07, 1.02]} />
           <meshStandardMaterial
@@ -194,6 +206,9 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             <meshStandardMaterial color="#bdeaff" transparent opacity={0.32} roughness={0.2} metalness={0.4} emissive="#9fd8ff" emissiveIntensity={0.5} />
           </mesh>
         )}
+      </group>
+      {/* Anillos de selección/disponibilidad: se quedan tumbados en la casilla aunque la carta se incline. */}
+      <group scale={CARD_SCALE}>
         {selected && (
           <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.62, 0.72, 36]} />
@@ -207,8 +222,11 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           </mesh>
         )}
       </group>
-      {/* zIndexRange bajo: sin él, drei usa z-index millonarios que tapan los modales. */}
-      <Html center position={[0, 0.15, 0]} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
+      {/* zIndexRange bajo: sin él, drei usa z-index millonarios que tapan los modales.
+          A la altura del borde superior del standee (2×CARD_STAND_RISE), no de la
+          carta tumbada de antes: si no, el nombre y las estadísticas quedan
+          flotando muy por encima de la carta en vez de justo sobre ella. */}
+      <Html center position={[0, CARD_STAND_RISE * 2 + 0.05, 0]} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
         <div className={styles.cardName} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats}>
           {card.attack !== undefined && <span className={styles.attackStat}>⚔ {Math.max(0, card.attack + piece.attackModifier)}</span>}
