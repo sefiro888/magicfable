@@ -37,13 +37,13 @@ Estados usados en las tablas:
 | Facción | Total | Verificadas | Dudosas | Bugs | Pendientes |
 |---|---|---|---|---|---|
 | Furia | 17 | 12 | 0 | 5 | 0 |
-| Arcano | 17 | 10 | 0 | 0 | 7 |
+| Arcano | 17 | 14 | 0 | 3 | 0 |
 | Naturaleza | 14 | 2 | 1 | 0 | 11 |
 | Orden | 14 | 1 | 0 | 0 | 13 |
 | Sombra | 14 | 0 | 1 | 0 | 13 |
 | Vacío | 14 | 0 | 1 | 0 | 13 |
 | Comandantes | 6 | 6 | 0 | 0 | 0 |
-| **Total** | **96** | **31** | **3** | **5** | **57** |
+| **Total** | **96** | **35** | **3** | **8** | **50** |
 
 ## Bugs encontrados (pendientes de arreglar todos juntos al final)
 
@@ -69,6 +69,21 @@ Estados usados en las tablas:
    grande: el motor no tiene ningún mecanismo de daño en área a "todos los
    enemigos", habría que crearlo desde cero (nuevo tipo de efecto, además
    de enseñarle a la IA a lanzarlo sin elegir objetivo).
+6. **Dragón de Escarcha** (Arcano) — el texto dice "cuando ataca, congela
+   el objetivo"; el efecto `freeze` de la carta solo se interpreta cuando
+   se lanza un hechizo (`resolveSpell`), nunca durante un ataque. El dragón
+   nunca congela a nadie. Arreglo mediano: añadir el mismo tipo de gancho
+   que ya existe para `freeze-on-damage` (Tejedora de Escarcha), pero para
+   congelar en vez de solo marcar el daño.
+7. **Guardián Escarchado** (Arcano) — el pasivo `pacify-adjacent-enemies`
+   no está conectado a nada: las unidades enemigas adyacentes atacan con
+   normalidad. Arreglo mediano: hay que decidir dónde se comprueba esta
+   restricción (en `getValidAttacks`, para que ni siquiera aparezca como
+   opción).
+8. **Mago Celestial** (Arcano) — el pasivo `ranged-attack-bonus` no está
+   conectado a nada: nunca gana el +1 Ataque prometido al atacar a
+   distancia. Arreglo mediano: sumarlo en `attackPiece` cuando la distancia
+   entre atacante y objetivo sea mayor que 1.
 
 ---
 
@@ -108,13 +123,13 @@ Estados usados en las tablas:
 | eco-cronomante | Roba 2, descarta 1 | ✅ | effects.test.ts (como hechizo con descuento / de Oriel) |
 | archivo-viviente | Roba 2 al entrar; hechizos -1 genérico | ✅ | effects.test.ts |
 | convergencia-astral | Refresca movimiento de una unidad | ✅ | effects.test.ts |
-| fuente-arcana | Fuente de maná | ⬜ | — |
-| duelista-prisma | Roba 1 y descarta 1 al entrar | ⬜ | — |
-| congelacion-rapida | Congela 1 turno | ⬜ | — |
-| dragon-escarcha | Congela al atacar | ⬜ | — |
-| guardian-escarchado | Enemigos adyacentes no pueden atacar | ⬜ | — |
-| destello-runico | 2 daño + roba 1 | ⬜ | — |
-| mago-celestial | Rango 3; +1 ATQ a distancia | ⬜ | — |
+| fuente-arcana | Fuente de maná | ✅ | sin efecto propio, nada que auditar |
+| duelista-prisma | Roba 1 y descarta 1 al entrar | ✅ | effects.test.ts |
+| congelacion-rapida | Congela 1 turno | ✅ | effects.test.ts |
+| dragon-escarcha | Congela al atacar | ❌ Bug #6 | — |
+| guardian-escarchado | Enemigos adyacentes no pueden atacar | ❌ Bug #7 | — |
+| destello-runico | 2 daño + roba 1 | ✅ | effects.test.ts |
+| mago-celestial | Rango 3; +1 ATQ a distancia | ❌ Bug #8 | — |
 
 ## Naturaleza (14)
 

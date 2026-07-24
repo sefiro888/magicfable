@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CARD_BY_ID } from './cards';
 import { STARTER_DECKS } from './decks';
-import { applyAction, createMatch, effectiveCost, getValidMoves } from './engine';
+import { applyAction, createMatch, effectiveCost, getValidAttacks, getValidMoves } from './engine';
 import type {
   BoardPiece,
   CardInstance,
@@ -321,6 +321,70 @@ describe('Pacto de Ascuas — +2 Ataque hasta fin de turno', () => {
       type: 'play-card', playerId: 'player', cardInstanceId: 'pacto', target: { kind: 'piece', pieceId: 'enemigo' },
     });
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('Duelista del Prisma — roba una carta y descarta una al entrar', () => {
+  it('roba una carta y descarta la que le precedía en la mano', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      hand: [handCard('duelista-prisma', 'duelista'), handCard('fuente-arcana', 'filler')],
+      resources: resources('arcane', 3),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'duelista', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    // Se juega el duelista (-1), se roba una carta (+1) y se descarta la que quedaba (-1).
+    expect(result.state.players.player.hand).toHaveLength(1);
+    expect(result.state.players.player.hand.some((card) => card.instanceId === 'filler')).toBe(false);
+    expect(result.state.players.player.discard.some((card) => card.instanceId === 'filler')).toBe(true);
+  });
+});
+
+describe('Congelación Rápida — congela 1 turno', () => {
+  it('impide moverse y atacar durante el siguiente turno del objetivo', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('frozen', 'centinela-cristal', 'ai', { x: 2, y: 2 }),
+        makePiece('enemy', 'sabueso-brasa', 'player', { x: 2, y: 3 }),
+      ],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('congelacion-rapida', 'congela')], resources: resources('arcane', 2),
+    });
+    const cast = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'congela', target: { kind: 'piece', pieceId: 'frozen' },
+    });
+    expect(cast.ok).toBe(true);
+    const aiTurn = applyAction(cast.state, { type: 'end-turn', playerId: 'player' });
+    expect(aiTurn.ok).toBe(true);
+    expect(getValidMoves(aiTurn.state, 'frozen')).toEqual([]);
+    expect(getValidAttacks(aiTurn.state, 'frozen').pieceIds).toEqual([]);
+  });
+});
+
+describe('Destello Rúnico — daño y robo', () => {
+  it('inflige 2 de daño a una unidad enemiga y roba una carta', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('victima', 'gigante-magma', 'ai', { x: 2, y: 2 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('destello-runico', 'destello')], resources: resources('arcane', 2),
+    });
+    const before = state.players.player.hand.length;
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'destello', target: { kind: 'piece', pieceId: 'victima' },
+    });
+    expect(result.ok).toBe(true);
+    // Gigante de Magma: 6 de vida - 2 de daño = 4.
+    expect(result.state.board.find((piece) => piece.instanceId === 'victima')?.currentHealth).toBe(4);
+    // Jugó la carta (-1) y robó una (+1): la mano queda igual de larga.
+    expect(result.state.players.player.hand).toHaveLength(before);
   });
 });
 
