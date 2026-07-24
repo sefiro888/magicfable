@@ -536,6 +536,97 @@ describe('Columna de Luz — 5 de daño a una pieza enemiga', () => {
   });
 });
 
+describe('Sacerdote de la Carroña — roba y descarta al entrar', () => {
+  it('roba una carta y descarta la que le precedía en la mano', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      hand: [handCard('sacerdote-carrona', 'sacerdote'), handCard('fuente-sombra', 'filler')],
+      resources: resources('shadow', 3),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'sacerdote', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.player.hand).toHaveLength(1);
+    expect(result.state.players.player.discard.some((card) => card.instanceId === 'filler')).toBe(true);
+  });
+});
+
+describe('Ritual Sanguino — cura el Nexo y descarta una carta', () => {
+  it('recupera 4 de Vida y descarta una carta de la mano', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      nexusHealth: 15,
+      hand: [handCard('ritual-sanguino', 'ritual'), handCard('fuente-sombra', 'filler')],
+      resources: resources('shadow', 2),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'ritual', target: { kind: 'none' },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.player.nexusHealth).toBe(19);
+    expect(result.state.players.player.discard.some((card) => card.instanceId === 'filler')).toBe(true);
+  });
+});
+
+describe('Cripta Olvidada — descuento a los hechizos propios', () => {
+  it('reduce en 1 el coste genérico de los hechizos, sin bajar de 0', () => {
+    let state = freshMatch();
+    state = { ...state, board: [makePiece('cripta', 'cripta-olvidada', 'player', { x: 2, y: 7 })] };
+    const ritual = CARD_BY_ID['ritual-sanguino']!;
+    expect(effectiveCost(state, 'player', ritual).generic).toBe(0);
+    expect(ritual.cost.generic).toBeGreaterThan(0);
+  });
+});
+
+describe('Guadaña Espectral — daño y réplica al más débil', () => {
+  it('inflige 4 al objetivo y 2 a la unidad enemiga restante con menos vida', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('objetivo', 'gigante-magma', 'ai', { x: 2, y: 2 }),
+        makePiece('debil', 'sabueso-brasa', 'ai', { x: 4, y: 2 }),
+      ],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('guadana-espectral', 'guadana')], resources: resources('shadow', 4),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'guadana',
+      target: { kind: 'piece', pieceId: 'objetivo' },
+    });
+    expect(result.ok).toBe(true);
+    // Gigante de Magma: 6 - 4 = 2.
+    expect(result.state.board.find((piece) => piece.instanceId === 'objetivo')?.currentHealth).toBe(2);
+    // Sabueso de Brasa (1 de vida) es el más débil: recibe 2 y muere.
+    expect(result.state.board.some((piece) => piece.instanceId === 'debil')).toBe(false);
+  });
+});
+
+describe('Señor del Osario — daño a todos los enemigos adyacentes al entrar', () => {
+  it('inflige 2 de daño a cada unidad enemiga adyacente, no a las aliadas', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('enemy', 'centinela-cristal', 'ai', { x: 1, y: 7 }),
+        makePiece('ally', 'sabueso-brasa', 'player', { x: 3, y: 7 }),
+      ],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('senor-osario', 'senor')], resources: resources('shadow', 6),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'senor', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.board.find((piece) => piece.instanceId === 'enemy')?.currentHealth).toBe(1);
+    // Sabueso de Brasa (1 de vida) es aliado: includeAllies:false no le afecta.
+    expect(result.state.board.find((piece) => piece.instanceId === 'ally')?.currentHealth).toBe(1);
+  });
+});
+
 describe('Niebla Espejada y Oriel — observación del mazo', () => {
   it('Niebla Espejada emite el evento de escrutinio y roba una carta', () => {
     let state = freshMatch();

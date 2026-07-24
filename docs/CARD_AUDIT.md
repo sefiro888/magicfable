@@ -40,10 +40,10 @@ Estados usados en las tablas:
 | Arcano | 17 | 14 | 0 | 3 | 0 |
 | Naturaleza | 14 | 8 | 0 | 6 | 0 |
 | Orden | 14 | 8 | 0 | 6 | 0 |
-| Sombra | 14 | 0 | 1 | 0 | 13 |
+| Sombra | 14 | 7 | 0 | 7 | 0 |
 | Vacío | 14 | 0 | 1 | 0 | 13 |
 | Comandantes | 6 | 6 | 0 | 0 | 0 |
-| **Total** | **96** | **48** | **2** | **20** | **26** |
+| **Total** | **96** | **55** | **1** | **27** | **13** |
 
 ## Bugs encontrados (pendientes de arreglar todos juntos al final)
 
@@ -127,6 +127,32 @@ Estados usados en las tablas:
     y como está implementado (99 de daño sin condición) destruye
     cualquier unidad enemiga, tenga la vida que tenga. Es más fuerte de lo
     que su propio texto dice.
+21. **Murciélago Sombra** (Sombra) — el pasivo `drain-life-on-attack` no
+    está conectado a nada: nunca drena Vida al atacar.
+22. **Espectro Siniestro** (Sombra) — dos problemas: el pasivo
+    `unblockable-ghost` no está conectado a nada (se le puede bloquear con
+    normalidad), y su descarte no dispara "cuando daña" como dice el
+    texto, sino al entrar en juego, y descarta una carta de **su propia
+    mano** en vez de una carta enemiga (el mecanismo genérico de
+    `discard` al desplegarse siempre descarta del propio dueño de la
+    carta que entra).
+23. **Esqueleto Guerrero** (Sombra) — el pasivo `undead-resurrection` no
+    está conectado a nada: al morir, no ofrece ninguna opción de
+    resucitar.
+24. **Nigromante Oscuro** (Sombra) — dos problemas: `drain-spells` no está
+    conectado a nada, y el robo de carta no dispara "cuando muere un
+    aliado" como dice el texto, sino una sola vez al entrar en juego el
+    propio Nigromante (mismo patrón de disparador equivocado).
+25. **Maldición Sombra** (Sombra) — el pasivo `curse-drain-health` no está
+    conectado a nada: la unidad marcada no pierde Vida al final de los
+    turnos.
+26. **Vampiro Siniestro** (Sombra) — el pasivo `lifesteal-on-attack` no
+    está conectado a nada.
+27. **Pesadilla Mortal** (Sombra) — mismo problema de "mano equivocada"
+    que el Espectro Siniestro: descarta 2 cartas de **su propio** dueño en
+    vez de 2 cartas enemigas (el disparador "al entrar en juego" sí es
+    correcto esta vez). Además, el pasivo `discarded-units-weaken` no
+    está conectado a nada.
 
 ---
 
@@ -216,20 +242,20 @@ Estados usados en las tablas:
 
 | Carta | Efecto | Estado | Test |
 |---|---|---|---|
-| esqueleto-guerrero | Resucita gastando 2 Esencia Oscura al morir | ⚠️ | usado como atacante en el test de Malachar, su resurrección no se comprueba |
-| fuente-sombra | Fuente de maná | ⬜ | — |
-| murcielago-sombra | Vuelo; drena 1 Vida al atacar | ⬜ | — |
-| espectro-siniestro | Incorpóreo; al dañar, descarta 1 enemiga | ⬜ | — |
-| nigromante-oscuro | Roba al morir un aliado; hechizos drenan Vida | ⬜ | — |
-| maldicion-sombra | -1 Vida al enemigo objetivo cada fin de turno | ⬜ | — |
-| vampiro-siniestro | Drena Vida = daño infligido al atacar | ⬜ | — |
-| pesadilla-mortal | Descarta 2 enemigas al entrar; -1 Vida a esas unidades | ⬜ | — |
-| sabueso-tumba | Impulso + Golpe Veloz | ⬜ | — |
-| sacerdote-carrona | Descarta 1 y roba 1 al entrar | ⬜ | — |
-| ritual-sanguino | Nexo +4 Vida + descarta 1 | ⬜ | — |
-| cripta-olvidada | Hechizos -1 genérico | ⬜ | — |
-| guadana-espectral | 4 daño + 2 al más débil | ⬜ | — |
-| senor-osario | 2 daño a todos los enemigos adyacentes al entrar | ⬜ | — |
+| fuente-sombra | Fuente de maná | ✅ | sin efecto propio, nada que auditar |
+| sabueso-tumba | Impulso + Golpe Veloz | ✅ | solo palabras clave, ya cubiertas genéricamente |
+| sacerdote-carrona | Descarta 1 y roba 1 al entrar | ✅ | effects.test.ts |
+| ritual-sanguino | Nexo +4 Vida + descarta 1 | ✅ | effects.test.ts |
+| cripta-olvidada | Hechizos -1 genérico | ✅ | effects.test.ts |
+| guadana-espectral | 4 daño + 2 al más débil | ✅ | effects.test.ts |
+| senor-osario | 2 daño a todos los enemigos adyacentes al entrar | ✅ | effects.test.ts |
+| murcielago-sombra | Vuelo; drena 1 Vida al atacar | ❌ Bug #21 | — |
+| espectro-siniestro | Incorpóreo; al dañar, descarta 1 enemiga | ❌ Bug #22 | — |
+| esqueleto-guerrero | Resucita gastando 2 Esencia Oscura al morir | ❌ Bug #23 | — |
+| nigromante-oscuro | Roba al morir un aliado; hechizos drenan Vida | ❌ Bug #24 | — |
+| maldicion-sombra | -1 Vida al enemigo objetivo cada fin de turno | ❌ Bug #25 | — |
+| vampiro-siniestro | Drena Vida = daño infligido al atacar | ❌ Bug #26 | — |
+| pesadilla-mortal | Descarta 2 enemigas al entrar; -1 Vida a esas unidades | ❌ Bug #27 | — |
 
 ## Vacío (14)
 
