@@ -121,7 +121,7 @@ export function BattlePage() {
   // el invitado ocupa siempre el bando 'ai' (así el motor no cambia nada).
   const ME: PlayerId = role === 'guest' ? 'ai' : 'player'
   const RIVAL: PlayerId = ME === 'player' ? 'ai' : 'player'
-  const { sendIntent, peerLeft } = useNetworkSync(room, role, preferences.selectedDeckId)
+  const { sendIntent, peerLeft, requestRematch, rematchSelf, rematchPeer } = useNetworkSync(room, role, preferences.selectedDeckId)
   // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
   const forcedSeed = useMemo(() => {
     const raw = searchParams.get('seed')
@@ -968,7 +968,7 @@ export function BattlePage() {
         </div>
       )}
 
-      {peerLeft && !match.winner && (
+      {peerLeft && (
         <div className={styles.resultBackdrop}>
           <section className={styles.result}>
             <small>Multijugador</small>
@@ -1086,11 +1086,15 @@ export function BattlePage() {
                 ))}
               </div>
             )}
+            {/* En PvP la revancha exige que los dos lados la pidan: uno solo
+                repitiendo no basta, sería jugar contra un rival que no lo sabe. */}
+            {room && rematchSelf && !rematchPeer && (
+              <p className={styles.rematchWaiting}>Esperando a que tu rival acepte la revancha…</p>
+            )}
             <div className={styles.resultActions}>
-              {/* La revancha reutiliza el emparejamiento local contra la IA: en
-                  multijugador no hay (todavía) un acuerdo de revancha entre
-                  dos personas, así que solo se ofrece «Volver al inicio». */}
-              {!room && <button onClick={repeat}>Repetir</button>}
+              {room
+                ? <button onClick={requestRematch} disabled={rematchSelf}>{rematchPeer ? 'Aceptar revancha' : 'Jugar otra vez'}</button>
+                : <button onClick={repeat}>Repetir</button>}
               {/* Sin el reset, la partida terminada quedaba persistida: si luego se
                   elegía la misma facción, se reanudaba esta misma (mismo rival, ya
                   con ganador) en vez de empezar una nueva. */}

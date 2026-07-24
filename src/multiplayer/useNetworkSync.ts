@@ -23,6 +23,10 @@ interface StatePayload {
 export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefined, localDeckId: string) => {
   const peerDeckId = useRef<string>(undefined)
   const [peerLeft, setPeerLeft] = useState(false)
+  /** Acuerdo de revancha: cada lado marca que la quiere; solo cuando ambos
+      lo han pedido el anfitrión siembra una partida nueva. */
+  const [rematchSelf, setRematchSelf] = useState(false)
+  const [rematchPeer, setRematchPeer] = useState(false)
 
   // Detecta cuando el rival se desconecta a mitad de partida (cierra la
   // pestaña, pierde la red…): antes de esto, un corte dejaba la pantalla
@@ -41,6 +45,19 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       window.clearTimeout(reset)
       off()
     }
+  }, [room])
+
+  // En cuanto llega una partida nueva sin ganador tras una ya terminada
+  // (justo lo que produce una revancha aceptada), el acuerdo local se
+  // reinicia: si no, un tercer «Jugar otra vez» quedaría ya medio marcado.
+  useEffect(() => {
+    if (!room) return undefined
+    return useMatchStore.subscribe((state, previous) => {
+      if (state.match && state.match !== previous.match && !state.match.winner && previous.match?.winner) {
+        setRematchSelf(false)
+        setRematchPeer(false)
+      }
+    })
   }, [room])
 
   useEffect(() => {
@@ -67,6 +84,8 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       if (!store.match) store.startFromMatch(match)
       else store.replaceMatch(match, message)
     })
+
+    const offRematch = room.onMessage('rematch', () => setRematchPeer(true))
 
     const offIntent = room.onMessage('intent', (payload) => {
       if (role !== 'host') return
@@ -104,11 +123,28 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     return () => {
       offDeck()
       offState()
+      offRematch()
       offIntent()
       offBroadcast?.()
     }
   }, [room, role, localDeckId])
 
+  // Solo el anfitrión tiene autoridad para sembrar la partida: en cuanto
+  // los dos lados han pedido revancha, crea un MatchState nuevo con los
+  // mismos mazos; la retransmisión habitual (offBroadcast) se lo envía al invitado.
+  useEffect(() => {
+    if (!rematchSelf || !rematchPeer || role !== 'host') return
+    const hostDeck = STARTER_DECKS.find((deck) => deck.id === localDeckId)
+    const guestDeck = STARTER_DECKS.find((deck) => deck.id === peerDeckId.current)
+    if (!hostDeck || !guestDeck) return
+    const match = createMatch(hostDeck, guestDeck, Date.now() >>> 0)
+    useMatchStore.getState().startFromMatch(match)
+  }, [rematchSelf, rematchPeer, role, localDeckId])
+
   const sendIntent = (intent: NetworkIntent) => room?.send('intent', intent)
-  return { sendIntent, peerLeft }
+  const requestRematch = () => {
+    room?.send('rematch', {})
+    setRematchSelf(true)
+  }
+  return { sendIntent, peerLeft, requestRematch, rematchSelf, rematchPeer }
 }
