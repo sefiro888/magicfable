@@ -158,6 +158,8 @@ export function BattlePage() {
   const aiSkipped = useRef(new Set<string>())
   /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
   const recordedSeed = useRef<number | undefined>(undefined)
+  /** Semilla de la última desconexión del rival ya anotada como victoria propia. */
+  const peerLeftRecordedSeed = useRef<number | undefined>(undefined)
   /** Logros que este resultado concreto acaba de desbloquear, para celebrarlos en la pantalla final. */
   const [matchAchievements, setMatchAchievements] = useState<readonly Achievement[]>([])
 
@@ -296,6 +298,33 @@ export function BattlePage() {
       }, 0)
     }
   }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId, room, ME, RIVAL])
+
+  // Si el rival se desconecta a mitad de partida (cierra la pestaña sin
+  // pulsar «Abandonar»), el motor nunca llega a poner un ganador: sin este
+  // efecto, quien se queda no veía ninguna victoria anotada en su historial,
+  // aunque la desconexión ajena es en la práctica un abandono del rival.
+  useEffect(() => {
+    const current = store.match
+    if (!peerLeft || !current || current.winner) return
+    if (peerLeftRecordedSeed.current === current.seed) return
+    peerLeftRecordedSeed.current = current.seed
+    const playerState = current.players[ME]
+    const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
+    const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === current.players[RIVAL].commanderId)
+    useRecords.getState().addRecord({
+      finishedAt: Date.now(),
+      deckId: playerDeck?.id ?? preferences.selectedDeckId,
+      deckName: playerDeck?.name ?? 'Mazo desconocido',
+      commanderName: COMMANDER_BY_ID[playerState.commanderId]?.name ?? '—',
+      opponentDeckName: opponentDeck?.name ?? 'Rival desconocido',
+      won: true,
+      turns: current.turn,
+      seconds: Math.max(1, Math.round((Date.now() - store.startedAtMs) / 1000)),
+      damageDealt: playerState.stats.damageDealt,
+      seed: current.seed,
+      mode: 'pvp',
+    })
+  }, [peerLeft, store.match, store.startedAtMs, preferences.selectedDeckId, ME, RIVAL])
 
   useEffect(() => {
     if (!revealedCardId) return
