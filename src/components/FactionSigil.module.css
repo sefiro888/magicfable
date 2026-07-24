@@ -5,25 +5,14 @@
   height: var(--sigil-size);
   flex: 0 0 auto;
   place-items: center;
-  color: var(--sigil-color);
-  filter: drop-shadow(0 0 0.3rem color-mix(in srgb, currentColor 42%, transparent));
+  filter: drop-shadow(0 0 0.3rem color-mix(in srgb, var(--sigil-color) 42%, transparent));
 }
 
-.sigil svg {
+.sigil img {
   width: 100%;
   height: 100%;
-  overflow: visible;
-  fill: currentColor;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.25;
-}
-
-.sigil .inner {
-  fill: none;
-  stroke: color-mix(in srgb, currentColor 48%, #fff);
-  stroke-width: 2;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .small { --sigil-size: 0.95rem; }
