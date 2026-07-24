@@ -95,6 +95,15 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
 
     const offRematch = room.onMessage('rematch', () => setRematchPeer(true))
 
+    // Si el anfitrión rechaza la jugada del invitado (turno equivocado, ya
+    // jugó su Esencia este turno…), la retransmisión normal de `state` no se
+    // dispara — el motor no cambió nada, así que no hay nada que reenviar —
+    // y sin este aviso el invitado no se entera de por qué "no pasó nada".
+    const offError = room.onMessage('error', (payload) => {
+      if (role !== 'guest') return
+      useMatchStore.getState().setMessage(payload as string)
+    })
+
     const offIntent = room.onMessage('intent', (payload) => {
       if (role !== 'host') return
       const store = useMatchStore.getState()
@@ -102,7 +111,9 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       if (!match) return
       const intent = payload as NetworkIntent
       if (intent.kind === 'action') {
-        store.dispatch(intent.action)
+        if (!store.dispatch(intent.action)) {
+          room.send('error', useMatchStore.getState().message ?? 'La acción no es válida.')
+        }
         return
       }
       if (intent.kind === 'mulligan') {
@@ -133,6 +144,7 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       offReady()
       offState()
       offRematch()
+      offError()
       offIntent()
       offBroadcast?.()
     }
