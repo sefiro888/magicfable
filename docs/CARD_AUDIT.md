@@ -28,19 +28,47 @@ Estados usados en las tablas:
 - `⚠️ Dudosa` — hay algún test que la usa, pero no comprueba su habilidad
   propia (aparece solo como pieza genérica de relleno).
 - `⬜ Pendiente` — sin ningún test dedicado.
+- `❌ Bug` — se ha comprobado leyendo el motor que el efecto NO hace lo que
+  dice su texto (o no hace nada). Se anota qué falla; el arreglo se deja
+  para un lote final conjunto, no se toca el motor durante la auditoría.
 
-## Estado global (23 jul. 2026, antes de empezar el lote de hoy)
+## Estado global (24 jul. 2026)
 
-| Facción | Total | Verificadas | Dudosas | Pendientes |
-|---|---|---|---|---|
-| Furia | 17 | 9 | 0 | 8 |
-| Arcano | 17 | 10 | 0 | 7 |
-| Naturaleza | 14 | 2 | 1 | 11 |
-| Orden | 14 | 1 | 0 | 13 |
-| Sombra | 14 | 0 | 1 | 13 |
-| Vacío | 14 | 0 | 1 | 13 |
-| Comandantes | 6 | 6 | 0 | 0 |
-| **Total** | **96** | **28** | **3** | **65** |
+| Facción | Total | Verificadas | Dudosas | Bugs | Pendientes |
+|---|---|---|---|---|---|
+| Furia | 17 | 12 | 0 | 5 | 0 |
+| Arcano | 17 | 10 | 0 | 0 | 7 |
+| Naturaleza | 14 | 2 | 1 | 0 | 11 |
+| Orden | 14 | 1 | 0 | 0 | 13 |
+| Sombra | 14 | 0 | 1 | 0 | 13 |
+| Vacío | 14 | 0 | 1 | 0 | 13 |
+| Comandantes | 6 | 6 | 0 | 0 | 0 |
+| **Total** | **96** | **31** | **3** | **5** | **57** |
+
+## Bugs encontrados (pendientes de arreglar todos juntos al final)
+
+1. **Elemental de Tormenta** (Furia) — el texto promete +1 daño adicional al
+   atacar; ese efecto no está conectado a nada, nunca se aplica. Arreglo
+   pequeño: sumarlo en `attackPiece`, igual que ya se hace con el bono de
+   Ariete Volcánico.
+2. **Draco de Magma** (Furia) — el texto dice "cuando ataca"; el motor lo
+   dispara al entrar en juego (como el Dragón de la Caldera), no al atacar.
+   Arreglo mediano: añadir un campo que distinga el disparador (entrada vs.
+   ataque) para el efecto `adjacent-damage`.
+3. **Gigante de Magma** (Furia) — el pasivo `scorch-adjacents` no está
+   conectado a nada: nunca abrasa ninguna casilla. Arreglo mediano
+   (propuesto): abrasar las 4 casillas adyacentes al entrar en juego, como
+   efecto puntual — un aura que se mueva con la unidad sería mucho más
+   trabajo y habría que decidir si compensa.
+4. **Infiltrado Volcánico** (Furia) — el pasivo `bonus-damage-isolated-target`
+   no está conectado a nada. Arreglo mediano: en `attackPiece`, sumar el
+   bono si el objetivo no tiene ninguna otra unidad adyacente.
+5. **Erupción Volcánica** (Furia) — el texto promete daño a **todas** las
+   unidades enemigas; el motor solo golpea a la única unidad seleccionada
+   como objetivo (se comporta igual que Lluvia de Ceniza). Es el más
+   grande: el motor no tiene ningún mecanismo de daño en área a "todos los
+   enemigos", habría que crearlo desde cero (nuevo tipo de efecto, además
+   de enseñarle a la IA a lanzarlo sin elegir objetivo).
 
 ---
 
@@ -57,14 +85,14 @@ Estados usados en las tablas:
 | lancera-magma | Impulso, avanza hasta 2 | ✅ | engine.test.ts "movimiento táctico" |
 | altar-combustion | Bloquea paso enemigo | ✅ | engine.test.ts "combate, daño y destrucción" |
 | temblor-rojo | 3 daño + réplica 1 daño al más débil | ✅ | effects.test.ts |
-| fenix-pavesa | 1 daño adyacente al entrar | ⬜ | — |
-| ariete-volcanico | +2 daño extra a estructuras | ⬜ | — |
-| pacto-ascuas | +2 ATQ a una unidad aliada | ⬜ | — |
-| erupcion-volcanica | 2 daño a todas las unidades enemigas + abrasa | ⬜ | — |
-| gigante-magma | Casillas adyacentes abrasadas | ⬜ | — |
-| draco-magma | Impulso; al atacar, daño en área | ⬜ | — |
-| infiltrado-volcanico | Impulso; +1 ATQ vs unidad solitaria | ⬜ | — |
-| elemental-tormenta | Rango 2; +1 daño extra al atacar | ⬜ | — |
+| fenix-pavesa | 1 daño adyacente al entrar | ✅ | effects.test.ts |
+| ariete-volcanico | +2 daño extra a estructuras | ✅ | effects.test.ts |
+| pacto-ascuas | +2 ATQ a una unidad aliada | ✅ | effects.test.ts |
+| erupcion-volcanica | 2 daño a todas las unidades enemigas + abrasa | ❌ Bug #5 | — |
+| gigante-magma | Casillas adyacentes abrasadas | ❌ Bug #3 | — |
+| draco-magma | Impulso; al atacar, daño en área | ❌ Bug #2 | — |
+| infiltrado-volcanico | Impulso; +1 ATQ vs unidad solitaria | ❌ Bug #4 | — |
+| elemental-tormenta | Rango 2; +1 daño extra al atacar | ❌ Bug #1 | — |
 
 ## Arcano (17)
 

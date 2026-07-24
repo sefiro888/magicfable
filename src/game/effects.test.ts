@@ -236,6 +236,94 @@ describe('Convergencia Astral — refrescar movimiento', () => {
   });
 });
 
+describe('Fénix de Pavesa — daño adyacente al entrar', () => {
+  it('inflige 1 de daño a una carta enemiga adyacente al desplegarse', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('enemy', 'centinela-cristal', 'ai', { x: 1, y: 7 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('fenix-pavesa', 'fenix')], resources: resources('fury', 5),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'fenix', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    // Centinela de Cristal: 3 de vida - 1 de daño = 2.
+    expect(result.state.board.find((piece) => piece.instanceId === 'enemy')?.currentHealth).toBe(2);
+  });
+});
+
+describe('Ariete Volcánico — daño adicional a estructuras', () => {
+  it('añade 2 de daño extra cuando el objetivo es una estructura, no una unidad', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('ariete', 'ariete-volcanico', 'player', { x: 2, y: 2 }),
+        makePiece('muro', 'bastion-marmoreo', 'ai', { x: 2, y: 3 }),
+        makePiece('unidad', 'gigante-magma', 'ai', { x: 1, y: 2 }),
+      ],
+    };
+    const onStructure = applyAction(state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'ariete', defenderId: 'muro',
+    });
+    expect(onStructure.ok).toBe(true);
+    // 4 ATQ base + 2 de bono contra estructuras = 6 de daño sobre una resistencia de 7.
+    expect(onStructure.state.board.find((piece) => piece.instanceId === 'muro')?.currentHealth).toBe(1);
+
+    const onUnit = applyAction(state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'ariete', defenderId: 'unidad',
+    });
+    expect(onUnit.ok).toBe(true);
+    // Contra una unidad no aplica el bono: solo los 4 de ataque base (Gigante de Magma: 6 - 4 = 2).
+    expect(onUnit.state.board.find((piece) => piece.instanceId === 'unidad')?.currentHealth).toBe(2);
+  });
+});
+
+describe('Pacto de Ascuas — +2 Ataque hasta fin de turno', () => {
+  it('aumenta el ataque de la unidad objetivo y se refleja en el combate', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('sabueso', 'sabueso-brasa', 'player', { x: 2, y: 2 }),
+        makePiece('victima', 'gigante-magma', 'ai', { x: 2, y: 3 }),
+      ],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('pacto-ascuas', 'pacto')], resources: resources('fury', 2),
+    });
+    const cast = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'pacto', target: { kind: 'piece', pieceId: 'sabueso' },
+    });
+    expect(cast.ok).toBe(true);
+    expect(cast.state.board.find((piece) => piece.instanceId === 'sabueso')?.attackModifier).toBe(2);
+    const attack = applyAction(cast.state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'sabueso', defenderId: 'victima',
+    });
+    expect(attack.ok).toBe(true);
+    // Sabueso de Brasa: 2 ATQ base + 2 del pacto = 4 de daño (Gigante de Magma: 6 - 4 = 2).
+    expect(attack.state.board.find((piece) => piece.instanceId === 'victima')?.currentHealth).toBe(2);
+  });
+
+  it('rechaza objetivos enemigos', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('enemigo', 'sabueso-brasa', 'ai', { x: 2, y: 2 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('pacto-ascuas', 'pacto')], resources: resources('fury', 2),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'pacto', target: { kind: 'piece', pieceId: 'enemigo' },
+    });
+    expect(result.ok).toBe(false);
+  });
+});
+
 describe('Niebla Espejada y Oriel — observación del mazo', () => {
   it('Niebla Espejada emite el evento de escrutinio y roba una carta', () => {
     let state = freshMatch();
