@@ -627,6 +627,132 @@ describe('Señor del Osario — daño a todos los enemigos adyacentes al entrar'
   });
 });
 
+describe('Heraldo de la Fractura — daño adyacente al entrar', () => {
+  it('inflige 1 de daño a una unidad enemiga adyacente al desplegarse', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('enemy', 'centinela-cristal', 'ai', { x: 1, y: 7 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('heraldo-fractura', 'heraldo')], resources: resources('void', 3),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'heraldo', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    // Centinela de Cristal: 3 de vida - 1 de daño = 2.
+    expect(result.state.board.find((piece) => piece.instanceId === 'enemy')?.currentHealth).toBe(2);
+  });
+});
+
+describe('Portal Inestable — reduce en 1 el primer daño del turno', () => {
+  it('reduce el primer golpe del turno pero no el segundo', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('portal', 'portal-inestable', 'ai', { x: 2, y: 2 }, { currentHealth: 4 }),
+        makePiece('atacante', 'sabueso-brasa', 'player', { x: 2, y: 3 }),
+        makePiece('atacante-2', 'sabueso-brasa', 'player', { x: 1, y: 2 }),
+      ],
+    };
+    const first = applyAction(state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'atacante', defenderId: 'portal',
+    });
+    expect(first.ok).toBe(true);
+    // Sabueso: 2 ATQ, reducido 1 → 1 de daño. 4 - 1 = 3.
+    expect(first.state.board.find((piece) => piece.instanceId === 'portal')?.currentHealth).toBe(3);
+    const second = applyAction(first.state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'atacante-2', defenderId: 'portal',
+    });
+    expect(second.ok).toBe(true);
+    // Segundo ataque del turno: sin reducción. 3 - 2 = 1.
+    expect(second.state.board.find((piece) => piece.instanceId === 'portal')?.currentHealth).toBe(1);
+  });
+});
+
+describe('Tejedor de Entropía — descuento a los hechizos propios', () => {
+  it('reduce en 1 el coste genérico de los hechizos, sin bajar de 0', () => {
+    let state = freshMatch();
+    state = { ...state, board: [makePiece('tejedor', 'tejedor-entropia', 'player', { x: 2, y: 7 })] };
+    const singularidad = CARD_BY_ID['singularidad']!;
+    expect(effectiveCost(state, 'player', singularidad).generic).toBe(singularidad.cost.generic - 1);
+    expect(singularidad.cost.generic).toBeGreaterThan(0);
+  });
+});
+
+describe('Paradoja del Vacío — refrescar movimiento', () => {
+  it('permite volver a mover una unidad aliada que ya movió', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('lancera', 'lancera-magma', 'player', { x: 2, y: 3 }, { movedThisTurn: true })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('paradoja-vacio', 'paradoja')], resources: resources('void', 4),
+    });
+    expect(getValidMoves(state, 'lancera')).toHaveLength(0);
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'paradoja', target: { kind: 'piece', pieceId: 'lancera' },
+    });
+    expect(result.ok).toBe(true);
+    expect(getValidMoves(result.state, 'lancera').length).toBeGreaterThan(0);
+  });
+});
+
+describe('Colapso Dimensional — daño y réplica al más débil', () => {
+  it('inflige 3 al objetivo y 3 a la unidad enemiga restante con menos vida', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('objetivo', 'gigante-magma', 'ai', { x: 2, y: 2 }),
+        makePiece('debil', 'sabueso-brasa', 'ai', { x: 4, y: 2 }),
+      ],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('colapso-dimensional', 'colapso')], resources: resources('void', 4),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'colapso',
+      target: { kind: 'piece', pieceId: 'objetivo' },
+    });
+    expect(result.ok).toBe(true);
+    // Gigante de Magma: 6 - 3 = 3.
+    expect(result.state.board.find((piece) => piece.instanceId === 'objetivo')?.currentHealth).toBe(3);
+    // Sabueso de Brasa (1 de vida) es el más débil: recibe 3 y muere.
+    expect(result.state.board.some((piece) => piece.instanceId === 'debil')).toBe(false);
+  });
+});
+
+describe('Singularidad — congela 2 turnos y daña', () => {
+  it('inflige 2 de daño y congela durante los 2 siguientes turnos del objetivo', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('objetivo', 'gigante-magma', 'ai', { x: 2, y: 2 }),
+        makePiece('enemy', 'sabueso-brasa', 'player', { x: 2, y: 3 }),
+      ],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('singularidad', 'singularidad')], resources: resources('void', 3),
+    });
+    const cast = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'singularidad',
+      target: { kind: 'piece', pieceId: 'objetivo' },
+    });
+    expect(cast.ok).toBe(true);
+    // Gigante de Magma: 6 - 2 = 4.
+    expect(cast.state.board.find((piece) => piece.instanceId === 'objetivo')?.currentHealth).toBe(4);
+    const aiTurn = applyAction(cast.state, { type: 'end-turn', playerId: 'player' });
+    expect(aiTurn.ok).toBe(true);
+    expect(getValidMoves(aiTurn.state, 'objetivo')).toEqual([]);
+    expect(getValidAttacks(aiTurn.state, 'objetivo').pieceIds).toEqual([]);
+  });
+});
+
 describe('Niebla Espejada y Oriel — observación del mazo', () => {
   it('Niebla Espejada emite el evento de escrutinio y roba una carta', () => {
     let state = freshMatch();

@@ -41,9 +41,13 @@ Estados usados en las tablas:
 | Naturaleza | 14 | 8 | 0 | 6 | 0 |
 | Orden | 14 | 8 | 0 | 6 | 0 |
 | Sombra | 14 | 7 | 0 | 7 | 0 |
-| Vacío | 14 | 0 | 1 | 0 | 13 |
+| Vacío | 14 | 8 | 0 | 6 | 0 |
 | Comandantes | 6 | 6 | 0 | 0 | 0 |
-| **Total** | **96** | **55** | **1** | **27** | **13** |
+| **Total** | **96** | **63** | **0** | **33** | **0** |
+
+**Auditoría completa: las 96 cartas y comandantes están revisados.** Quedan
+33 bugs anotados y pendientes de arreglar en un lote final conjunto (ver
+abajo). Nada queda ya por mirar por primera vez.
 
 ## Bugs encontrados (pendientes de arreglar todos juntos al final)
 
@@ -153,6 +157,27 @@ Estados usados en las tablas:
     vez de 2 cartas enemigas (el disparador "al entrar en juego" sí es
     correcto esta vez). Además, el pasivo `discarded-units-weaken` no
     está conectado a nada.
+28. **Basilisco del Caos** (Vacío) — el texto dice "cuando ataca, sujeta
+    (congela) al objetivo"; igual que el Dragón de Escarcha, el efecto
+    `freeze` de una unidad solo se interpreta al lanzar un hechizo, nunca
+    al atacar. Nunca congela a nadie.
+29. **Quimera del Caos** (Vacío) — el pasivo `copy-ally-ability` no está
+    conectado a nada: nunca copia ninguna habilidad al entrar en juego.
+30. **Devorador Entrópico** (Vacío) — el pasivo `devour-structure-resistance`
+    no está conectado a nada: no gana Vida cuando se destruye una
+    estructura.
+31. **Leviatán Abismal** (Vacío) — dos problemas: el efecto usado
+    (`adjacent-damage`) ni siquiera coincide con lo que describe el
+    texto (el texto habla de *mover* todas las unidades una casilla, no
+    de infligir daño), y además se dispara al entrar en juego en vez de
+    "cuando ataca". Habría que decidir primero qué se quiere que haga de
+    verdad antes de arreglarlo.
+32. **Aniquilación del Vacío** (Vacío) — su único efecto es
+    `destroy-all-structures`, que no está conectado a nada. Tal cual está
+    hoy, esta carta no hace absolutamente nada al lanzarla (más allá de
+    gastar Esencia y descartarse).
+33. **Horror Abisal** (Vacío) — el pasivo `slow-enemies-on-attack` no está
+    conectado a nada: al atacar, los enemigos no pierden Movimiento.
 
 ---
 
@@ -261,20 +286,20 @@ Estados usados en las tablas:
 
 | Carta | Efecto | Estado | Test |
 |---|---|---|---|
-| horror-abisal | Al atacar, enemigos -1 Movimiento este turno | ⚠️ | usado en el test de Nyxaris (mareo de invocación), su ralentización no se comprueba |
-| fuente-vacio | Fuente de maná | ⬜ | — |
-| basilisco-caos | Al atacar, inmoviliza 1 turno | ⬜ | — |
-| quimera-caos | Copia habilidad de un aliado al entrar | ⬜ | — |
-| devorador-entropico | Drena Resistencia de estructura destruida | ⬜ | — |
-| leviatan-abismal | Impulso; al atacar, distorsiona posiciones | ⬜ | — |
-| aniquilacion-vacio | Destruye estructuras enemigas; gana Esencia | ⬜ | — |
-| paradoja-vacio | Cambia de bando temporalmente 1 vez por turno | ⬜ | — |
-| heraldo-fractura | Impulso; 1 daño adyacente al entrar | ⬜ | — |
-| portal-inestable | -1 al primer daño del turno | ⬜ | — |
-| caminante-umbral | Golpe Veloz | ⬜ | — |
-| colapso-dimensional | 3 daño + 3 al más débil | ⬜ | — |
-| tejedor-entropia | Hechizos -1 genérico | ⬜ | — |
-| singularidad | Congela 2 turnos + 2 daño | ⬜ | — |
+| fuente-vacio | Fuente de maná | ✅ | sin efecto propio, nada que auditar |
+| caminante-umbral | Golpe Veloz | ✅ | solo palabra clave, ya cubierta genéricamente |
+| heraldo-fractura | Impulso; 1 daño adyacente al entrar | ✅ | effects.test.ts |
+| portal-inestable | -1 al primer daño del turno | ✅ | effects.test.ts |
+| tejedor-entropia | Hechizos -1 genérico | ✅ | effects.test.ts |
+| paradoja-vacio | Cambia de bando temporalmente 1 vez por turno | ✅ | effects.test.ts |
+| colapso-dimensional | 3 daño + 3 al más débil | ✅ | effects.test.ts |
+| singularidad | Congela 2 turnos + 2 daño | ✅ | effects.test.ts |
+| basilisco-caos | Al atacar, inmoviliza 1 turno | ❌ Bug #28 | — |
+| quimera-caos | Copia habilidad de un aliado al entrar | ❌ Bug #29 | — |
+| devorador-entropico | Drena Resistencia de estructura destruida | ❌ Bug #30 | — |
+| leviatan-abismal | Impulso; al atacar, distorsiona posiciones | ❌ Bug #31 | (el efecto ni siquiera coincide con el texto) |
+| aniquilacion-vacio | Destruye estructuras enemigas; gana Esencia | ❌ Bug #32 | (no hace nada en absoluto) |
+| horror-abisal | Al atacar, enemigos -1 Movimiento este turno | ❌ Bug #33 | — |
 
 ## Comandantes (6)
 
