@@ -38,12 +38,12 @@ Estados usados en las tablas:
 |---|---|---|---|---|---|
 | Furia | 17 | 12 | 0 | 5 | 0 |
 | Arcano | 17 | 14 | 0 | 3 | 0 |
-| Naturaleza | 14 | 2 | 1 | 0 | 11 |
+| Naturaleza | 14 | 8 | 0 | 6 | 0 |
 | Orden | 14 | 1 | 0 | 0 | 13 |
 | Sombra | 14 | 0 | 1 | 0 | 13 |
 | Vacío | 14 | 0 | 1 | 0 | 13 |
 | Comandantes | 6 | 6 | 0 | 0 | 0 |
-| **Total** | **96** | **35** | **3** | **8** | **50** |
+| **Total** | **96** | **41** | **2** | **14** | **39** |
 
 ## Bugs encontrados (pendientes de arreglar todos juntos al final)
 
@@ -84,6 +84,29 @@ Estados usados en las tablas:
    conectado a nada: nunca gana el +1 Ataque prometido al atacar a
    distancia. Arreglo mediano: sumarlo en `attackPiece` cuando la distancia
    entre atacante y objetivo sea mayor que 1.
+9. **Oso Forestal** (Naturaleza) — el pasivo `buff-allied-units-health` no
+   está conectado a nada: las demás unidades aliadas no ganan Vida.
+   Arreglo mediano: aplicarlo al desplegar cada aliado (similar a Verdania)
+   mientras el Oso siga en el tablero.
+10. **Arboleda Sagrada** (Naturaleza) — mismo problema que el Oso Forestal
+    pero para una estructura: `entry-allied-units-gain-health` no está
+    conectado a nada.
+11. **Crecimiento Salvaje** (Naturaleza) — el pasivo `unit-buff-health-attack`
+    no está conectado a nada. Además, el efecto solo guarda un `value`
+    (1), pero el texto promete dos números distintos (+2 Vida y +1
+    Ataque): habría que corregir también el dato de la carta, no solo
+    conectar el efecto.
+12. **Centauro Cazador** (Naturaleza) — el pasivo `attack-buff-nearby-allies`
+    no está conectado a nada: al atacar, los aliados adyacentes no ganan
+    Ataque.
+13. **Elfo Ancestral** (Naturaleza) — roba 1 carta al entrar correctamente,
+    pero su otra mitad (`instant-cost-discount`, instantes -1 genérico) no
+    está conectada a nada.
+14. **Dríade del Manantial** (Naturaleza) — `heal-nexus` solo se interpreta
+    cuando lo lanza un hechizo (`resolveSpell`); al ser una unidad, su
+    curación de 3 Vida al entrar nunca se aplica. Mismo patrón que el
+    Elemental de Tormenta: efecto de "hechizo" puesto en una carta que no
+    lo es.
 
 ---
 
@@ -137,18 +160,18 @@ Estados usados en las tablas:
 |---|---|---|---|
 | ciervo-sagrado | Roba 1 al entrar | ✅ | engine.test.ts "habilidades de comandante" (vía Verdania) |
 | guardian-robledal | -1 al primer daño del turno | ✅ | engine.test.ts "palabras clave" |
-| oso-forestal | Demás aliados +1 Vida | ⚠️ | usado como pieza genérica, su aura no se comprueba |
-| fuente-naturaleza | Fuente de maná | ⬜ | — |
-| lobo-salvaje | Impulso | ⬜ | — |
-| arboleda-sagrada | Aliados +1 Vida al entrar | ⬜ | — |
-| crecimiento-salvaje | +2 Vida / +1 ATQ hasta fin de turno | ⬜ | — |
-| centauro-cazador | Al atacar, aliados adyacentes +1 ATQ | ⬜ | — |
-| elfo-ancestral | Roba 1 al entrar; instantes -1 genérico | ⬜ | — |
-| driada-manantial | Nexo +3 Vida al entrar | ⬜ | — |
-| jabali-embestida | Impulso + Golpe Veloz | ⬜ | — |
-| savia-restauradora | Nexo +5 Vida + roba 1 | ⬜ | — |
-| muralla-zarzas | 2 daño adyacente al alzarse | ⬜ | — |
-| aliento-primavera | +3 ATQ + refresca movimiento | ⬜ | — |
+| fuente-naturaleza | Fuente de maná | ✅ | sin efecto propio, nada que auditar |
+| lobo-salvaje | Impulso | ✅ | solo palabra clave, ya cubierta genéricamente |
+| jabali-embestida | Impulso + Golpe Veloz | ✅ | solo palabras clave, ya cubiertas genéricamente |
+| savia-restauradora | Nexo +5 Vida + roba 1 | ✅ | effects.test.ts |
+| muralla-zarzas | 2 daño adyacente al alzarse | ✅ | effects.test.ts |
+| aliento-primavera | +3 ATQ + refresca movimiento | ✅ | effects.test.ts |
+| oso-forestal | Demás aliados +1 Vida | ❌ Bug #9 | — |
+| arboleda-sagrada | Aliados +1 Vida al entrar | ❌ Bug #10 | — |
+| crecimiento-salvaje | +2 Vida / +1 ATQ hasta fin de turno | ❌ Bug #11 | — |
+| centauro-cazador | Al atacar, aliados adyacentes +1 ATQ | ❌ Bug #12 | — |
+| elfo-ancestral | Roba 1 al entrar; instantes -1 genérico | ❌ Bug #13 | (el robo sí funciona; el descuento no) |
+| driada-manantial | Nexo +3 Vida al entrar | ❌ Bug #14 | — |
 
 ## Orden (14)
 

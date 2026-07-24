@@ -388,6 +388,75 @@ describe('Destello Rúnico — daño y robo', () => {
   });
 });
 
+describe('Muralla de Zarzas — daño adyacente al alzarse', () => {
+  it('inflige 2 de daño a una unidad enemiga adyacente al desplegarse', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('enemy', 'gigante-magma', 'ai', { x: 1, y: 7 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('muralla-zarzas', 'muralla')], resources: resources('nature', 5),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'muralla', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    // Gigante de Magma: 6 de vida - 2 de daño = 4.
+    expect(result.state.board.find((piece) => piece.instanceId === 'enemy')?.currentHealth).toBe(4);
+  });
+});
+
+describe('Savia Restauradora — cura el Nexo y roba una carta', () => {
+  it('recupera 5 de Vida en el Nexo propio y roba una carta', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      nexusHealth: 15,
+      hand: [handCard('savia-restauradora', 'savia')], resources: resources('nature', 3),
+    });
+    const before = state.players.player.hand.length;
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'savia', target: { kind: 'none' },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.player.nexusHealth).toBe(20);
+    expect(result.state.players.player.hand).toHaveLength(before);
+  });
+
+  it('no supera la Vida máxima del Nexo', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      nexusHealth: 24,
+      hand: [handCard('savia-restauradora', 'savia')], resources: resources('nature', 3),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'savia', target: { kind: 'none' },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.player.nexusHealth).toBe(25);
+  });
+});
+
+describe('Aliento de Primavera — +3 Ataque y refresca movimiento', () => {
+  it('aumenta el ataque y permite volver a mover a la unidad objetivo', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('lancera', 'lancera-magma', 'player', { x: 2, y: 3 }, { movedThisTurn: true })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('aliento-primavera', 'aliento')], resources: resources('nature', 4),
+    });
+    expect(getValidMoves(state, 'lancera')).toHaveLength(0);
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'aliento', target: { kind: 'piece', pieceId: 'lancera' },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.board.find((piece) => piece.instanceId === 'lancera')?.attackModifier).toBe(3);
+    expect(getValidMoves(result.state, 'lancera').length).toBeGreaterThan(0);
+  });
+});
+
 describe('Niebla Espejada y Oriel — observación del mazo', () => {
   it('Niebla Espejada emite el evento de escrutinio y roba una carta', () => {
     let state = freshMatch();
