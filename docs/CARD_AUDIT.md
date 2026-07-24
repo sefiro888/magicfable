@@ -1,0 +1,176 @@
+# Auditoría de cartas — Crónicas del Nexo
+
+Registro vivo de qué cartas ya tienen un test que comprueba que su efecto
+implementado coincide de verdad con su texto de reglas. Se actualiza según
+avanza la auditoría; sirve también de plantilla para cuando se añadan cartas
+nuevas en el futuro.
+
+## Cómo auditar una carta (plantilla para cartas nuevas)
+
+1. Localiza la carta en `src/game/cards.ts`: anota su `id`, el texto de
+   `rules` y su array `effects` (kind + parámetros).
+2. Busca en `src/game/engine.ts` dónde se interpreta ese `kind` de efecto
+   (o el `passive.id` concreto si es un pasivo) para entender exactamente
+   qué hace el motor.
+3. Escribe un test en `src/game/engine.test.ts` (mecánicas generales) o
+   `src/game/effects.test.ts` (efecto puntual de una carta/comandante
+   concreto) que monte un tablero mínimo, dispare el efecto y compruebe el
+   resultado exacto que promete el texto — no solo que "algo pasa".
+4. Si el test falla porque el motor hace algo distinto a lo que dice el
+   texto: eso es un bug real. Repáralo (o ajusta el texto si el
+   comportamiento del motor es el correcto) y dilo explícitamente al
+   usuario al terminar el lote.
+5. Actualiza la fila de esa carta en este documento: estado `✅ Verificada`,
+   y qué test la cubre.
+
+Estados usados en las tablas:
+- `✅ Verificada` — hay un test que comprueba su efecto exacto y pasa.
+- `⚠️ Dudosa` — hay algún test que la usa, pero no comprueba su habilidad
+  propia (aparece solo como pieza genérica de relleno).
+- `⬜ Pendiente` — sin ningún test dedicado.
+
+## Estado global (23 jul. 2026, antes de empezar el lote de hoy)
+
+| Facción | Total | Verificadas | Dudosas | Pendientes |
+|---|---|---|---|---|
+| Furia | 17 | 9 | 0 | 8 |
+| Arcano | 17 | 10 | 0 | 7 |
+| Naturaleza | 14 | 2 | 1 | 11 |
+| Orden | 14 | 1 | 0 | 13 |
+| Sombra | 14 | 0 | 1 | 13 |
+| Vacío | 14 | 0 | 1 | 13 |
+| Comandantes | 6 | 6 | 0 | 0 |
+| **Total** | **96** | **28** | **3** | **65** |
+
+---
+
+## Furia (17)
+
+| Carta | Efecto | Estado | Test |
+|---|---|---|---|
+| fuente-furia | Fuente de maná | ✅ | engine.test.ts "fuentes y despliegue" |
+| sabueso-brasa | Impulso | ✅ | engine.test.ts "movimiento táctico" |
+| berserker-ignivoro | +1 ATQ en su 1er ataque del turno | ✅ | engine.test.ts "combate..." |
+| dragon-caldera | 2 daño adyacentes al entrar | ✅ | engine.test.ts "efectos de cartas principales" |
+| lluvia-ceniza | 2 daño + abrasa casilla | ✅ | engine.test.ts "efectos de cartas principales" |
+| forja-carmesi | +1 ATQ primera unidad Furia del turno | ✅ | engine.test.ts "fuentes y despliegue" |
+| lancera-magma | Impulso, avanza hasta 2 | ✅ | engine.test.ts "movimiento táctico" |
+| altar-combustion | Bloquea paso enemigo | ✅ | engine.test.ts "combate, daño y destrucción" |
+| temblor-rojo | 3 daño + réplica 1 daño al más débil | ✅ | effects.test.ts |
+| fenix-pavesa | 1 daño adyacente al entrar | ⬜ | — |
+| ariete-volcanico | +2 daño extra a estructuras | ⬜ | — |
+| pacto-ascuas | +2 ATQ a una unidad aliada | ⬜ | — |
+| erupcion-volcanica | 2 daño a todas las unidades enemigas + abrasa | ⬜ | — |
+| gigante-magma | Casillas adyacentes abrasadas | ⬜ | — |
+| draco-magma | Impulso; al atacar, daño en área | ⬜ | — |
+| infiltrado-volcanico | Impulso; +1 ATQ vs unidad solitaria | ⬜ | — |
+| elemental-tormenta | Rango 2; +1 daño extra al atacar | ⬜ | — |
+
+## Arcano (17)
+
+| Carta | Efecto | Estado | Test |
+|---|---|---|---|
+| centinela-cristal | Scry 2 al entrar | ✅ | engine.test.ts "efectos de cartas principales" |
+| tejedora-escarcha | Congela al dañar | ✅ | engine.test.ts "combate, daño y destrucción" |
+| prision-glacial | Congela 1 turno | ✅ | engine.test.ts "efectos de cartas principales" |
+| cometa-arcano | 4 daño (+2 si congelado) | ✅ | engine.test.ts "efectos de cartas principales" |
+| torre-horizonte | Roba/descarta 1 vez por turno tras hechizo | ✅ | engine.test.ts "efectos de cartas principales" |
+| golem-azur | -1 al primer daño del turno | ✅ | effects.test.ts |
+| niebla-espejada | Scry 3 + roba 1 | ✅ | effects.test.ts |
+| eco-cronomante | Roba 2, descarta 1 | ✅ | effects.test.ts (como hechizo con descuento / de Oriel) |
+| archivo-viviente | Roba 2 al entrar; hechizos -1 genérico | ✅ | effects.test.ts |
+| convergencia-astral | Refresca movimiento de una unidad | ✅ | effects.test.ts |
+| fuente-arcana | Fuente de maná | ⬜ | — |
+| duelista-prisma | Roba 1 y descarta 1 al entrar | ⬜ | — |
+| congelacion-rapida | Congela 1 turno | ⬜ | — |
+| dragon-escarcha | Congela al atacar | ⬜ | — |
+| guardian-escarchado | Enemigos adyacentes no pueden atacar | ⬜ | — |
+| destello-runico | 2 daño + roba 1 | ⬜ | — |
+| mago-celestial | Rango 3; +1 ATQ a distancia | ⬜ | — |
+
+## Naturaleza (14)
+
+| Carta | Efecto | Estado | Test |
+|---|---|---|---|
+| ciervo-sagrado | Roba 1 al entrar | ✅ | engine.test.ts "habilidades de comandante" (vía Verdania) |
+| guardian-robledal | -1 al primer daño del turno | ✅ | engine.test.ts "palabras clave" |
+| oso-forestal | Demás aliados +1 Vida | ⚠️ | usado como pieza genérica, su aura no se comprueba |
+| fuente-naturaleza | Fuente de maná | ⬜ | — |
+| lobo-salvaje | Impulso | ⬜ | — |
+| arboleda-sagrada | Aliados +1 Vida al entrar | ⬜ | — |
+| crecimiento-salvaje | +2 Vida / +1 ATQ hasta fin de turno | ⬜ | — |
+| centauro-cazador | Al atacar, aliados adyacentes +1 ATQ | ⬜ | — |
+| elfo-ancestral | Roba 1 al entrar; instantes -1 genérico | ⬜ | — |
+| driada-manantial | Nexo +3 Vida al entrar | ⬜ | — |
+| jabali-embestida | Impulso + Golpe Veloz | ⬜ | — |
+| savia-restauradora | Nexo +5 Vida + roba 1 | ⬜ | — |
+| muralla-zarzas | 2 daño adyacente al alzarse | ⬜ | — |
+| aliento-primavera | +3 ATQ + refresca movimiento | ⬜ | — |
+
+## Orden (14)
+
+| Carta | Efecto | Estado | Test |
+|---|---|---|---|
+| aguila-celestial | Vuelo | ✅ | engine.test.ts "palabras clave" |
+| fuente-orden | Fuente de maná | ⬜ | — |
+| angel-celestial | Escudo preventivo 1 al entrar | ⬜ | — |
+| pegaso-celestial | Vuelo + impulso; cura 2 en primer ataque | ⬜ | — |
+| paladin-glorioso | Aliados adyacentes inmunes a congelación | ⬜ | — |
+| clerigo-luz | Aliado sanado gana +1 Vida ese turno | ⬜ | — |
+| grifo-orden | Vigilancia; enemigos adyacentes -1 ATQ | ⬜ | — |
+| juicio-divino | Destruye unidad con ≤2 Vida; +2 Vida | ⬜ | — |
+| lancero-alba | -1 al primer daño del turno | ⬜ | — |
+| bastion-marmoreo | Muro (solo estadísticas) | ⬜ | — |
+| centinela-solar | Vigilancia a distancia (solo estadísticas) | ⬜ | — |
+| bendicion-escudo | Nexo +4 Vida | ⬜ | — |
+| heraldo-juicio | 2 daño adyacente al entrar | ⬜ | — |
+| columna-luz | 5 daño a una pieza enemiga | ⬜ | — |
+
+## Sombra (14)
+
+| Carta | Efecto | Estado | Test |
+|---|---|---|---|
+| esqueleto-guerrero | Resucita gastando 2 Esencia Oscura al morir | ⚠️ | usado como atacante en el test de Malachar, su resurrección no se comprueba |
+| fuente-sombra | Fuente de maná | ⬜ | — |
+| murcielago-sombra | Vuelo; drena 1 Vida al atacar | ⬜ | — |
+| espectro-siniestro | Incorpóreo; al dañar, descarta 1 enemiga | ⬜ | — |
+| nigromante-oscuro | Roba al morir un aliado; hechizos drenan Vida | ⬜ | — |
+| maldicion-sombra | -1 Vida al enemigo objetivo cada fin de turno | ⬜ | — |
+| vampiro-siniestro | Drena Vida = daño infligido al atacar | ⬜ | — |
+| pesadilla-mortal | Descarta 2 enemigas al entrar; -1 Vida a esas unidades | ⬜ | — |
+| sabueso-tumba | Impulso + Golpe Veloz | ⬜ | — |
+| sacerdote-carrona | Descarta 1 y roba 1 al entrar | ⬜ | — |
+| ritual-sanguino | Nexo +4 Vida + descarta 1 | ⬜ | — |
+| cripta-olvidada | Hechizos -1 genérico | ⬜ | — |
+| guadana-espectral | 4 daño + 2 al más débil | ⬜ | — |
+| senor-osario | 2 daño a todos los enemigos adyacentes al entrar | ⬜ | — |
+
+## Vacío (14)
+
+| Carta | Efecto | Estado | Test |
+|---|---|---|---|
+| horror-abisal | Al atacar, enemigos -1 Movimiento este turno | ⚠️ | usado en el test de Nyxaris (mareo de invocación), su ralentización no se comprueba |
+| fuente-vacio | Fuente de maná | ⬜ | — |
+| basilisco-caos | Al atacar, inmoviliza 1 turno | ⬜ | — |
+| quimera-caos | Copia habilidad de un aliado al entrar | ⬜ | — |
+| devorador-entropico | Drena Resistencia de estructura destruida | ⬜ | — |
+| leviatan-abismal | Impulso; al atacar, distorsiona posiciones | ⬜ | — |
+| aniquilacion-vacio | Destruye estructuras enemigas; gana Esencia | ⬜ | — |
+| paradoja-vacio | Cambia de bando temporalmente 1 vez por turno | ⬜ | — |
+| heraldo-fractura | Impulso; 1 daño adyacente al entrar | ⬜ | — |
+| portal-inestable | -1 al primer daño del turno | ⬜ | — |
+| caminante-umbral | Golpe Veloz | ⬜ | — |
+| colapso-dimensional | 3 daño + 3 al más débil | ⬜ | — |
+| tejedor-entropia | Hechizos -1 genérico | ⬜ | — |
+| singularidad | Congela 2 turnos + 2 daño | ⬜ | — |
+
+## Comandantes (6)
+
+| Comandante | Efecto | Estado | Test |
+|---|---|---|---|
+| Kaela (Furia) | Descuento tras daño al Nexo | ✅ | effects.test.ts |
+| Oriel (Arcano) | Scry tras 2º hechizo del turno | ✅ | effects.test.ts |
+| Verdania (Naturaleza) | Aliado +1 Vida al entrar | ✅ | engine.test.ts |
+| Asterin (Orden) | Escudo preventivo al entrar | ✅ | engine.test.ts |
+| Malachar (Sombra) | Drena 1 Vida extra al atacar | ✅ | engine.test.ts |
+| Nyxaris (Vacío) | Primera unidad sin mareo de invocación | ✅ | engine.test.ts |
