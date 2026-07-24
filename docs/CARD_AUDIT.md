@@ -39,11 +39,11 @@ Estados usados en las tablas:
 | Furia | 17 | 12 | 0 | 5 | 0 |
 | Arcano | 17 | 14 | 0 | 3 | 0 |
 | Naturaleza | 14 | 8 | 0 | 6 | 0 |
-| Orden | 14 | 1 | 0 | 0 | 13 |
+| Orden | 14 | 8 | 0 | 6 | 0 |
 | Sombra | 14 | 0 | 1 | 0 | 13 |
 | Vacío | 14 | 0 | 1 | 0 | 13 |
 | Comandantes | 6 | 6 | 0 | 0 | 0 |
-| **Total** | **96** | **41** | **2** | **14** | **39** |
+| **Total** | **96** | **48** | **2** | **20** | **26** |
 
 ## Bugs encontrados (pendientes de arreglar todos juntos al final)
 
@@ -107,6 +107,26 @@ Estados usados en las tablas:
     curación de 3 Vida al entrar nunca se aplica. Mismo patrón que el
     Elemental de Tormenta: efecto de "hechizo" puesto en una carta que no
     lo es.
+15. **Ángel Celestial** (Orden) — el pasivo `entry-shield-gain` no está
+    conectado a nada. El único sitio del motor que concede el estado
+    "escudo" está codificado a mano solo para el comandante Asterin; la
+    propia carta nunca lo otorga.
+16. **Pégaso Celestial** (Orden) — el pasivo `first-attack-heal` no está
+    conectado a nada: nunca recupera las 2 de Vida prometidas en su
+    primer ataque.
+17. **Paladín Glorioso** (Orden) — el pasivo `protect-adjacent-from-freeze`
+    no está conectado a nada: sus aliados adyacentes se pueden congelar
+    con total normalidad.
+18. **Clérigo de Luz** (Orden) — el pasivo `heal-support-buff` no está
+    conectado a nada.
+19. **Grifo de Orden** (Orden) — el pasivo `weaken-adjacent-enemies` no
+    está conectado a nada: los enemigos adyacentes no sufren ningún -1
+    Ataque.
+20. **Juicio Divino** (Orden) — sí inflige el daño y cura el Nexo, pero le
+    falta la restricción que promete el texto ("con 2 Vida o menos"): tal
+    y como está implementado (99 de daño sin condición) destruye
+    cualquier unidad enemiga, tenga la vida que tenga. Es más fuerte de lo
+    que su propio texto dice.
 
 ---
 
@@ -178,19 +198,19 @@ Estados usados en las tablas:
 | Carta | Efecto | Estado | Test |
 |---|---|---|---|
 | aguila-celestial | Vuelo | ✅ | engine.test.ts "palabras clave" |
-| fuente-orden | Fuente de maná | ⬜ | — |
-| angel-celestial | Escudo preventivo 1 al entrar | ⬜ | — |
-| pegaso-celestial | Vuelo + impulso; cura 2 en primer ataque | ⬜ | — |
-| paladin-glorioso | Aliados adyacentes inmunes a congelación | ⬜ | — |
-| clerigo-luz | Aliado sanado gana +1 Vida ese turno | ⬜ | — |
-| grifo-orden | Vigilancia; enemigos adyacentes -1 ATQ | ⬜ | — |
-| juicio-divino | Destruye unidad con ≤2 Vida; +2 Vida | ⬜ | — |
-| lancero-alba | -1 al primer daño del turno | ⬜ | — |
-| bastion-marmoreo | Muro (solo estadísticas) | ⬜ | — |
-| centinela-solar | Vigilancia a distancia (solo estadísticas) | ⬜ | — |
-| bendicion-escudo | Nexo +4 Vida | ⬜ | — |
-| heraldo-juicio | 2 daño adyacente al entrar | ⬜ | — |
-| columna-luz | 5 daño a una pieza enemiga | ⬜ | — |
+| lancero-alba | -1 al primer daño del turno | ✅ | effects.test.ts |
+| bendicion-escudo | Nexo +4 Vida | ✅ | effects.test.ts |
+| heraldo-juicio | 2 daño adyacente al entrar | ✅ | effects.test.ts |
+| columna-luz | 5 daño a una pieza enemiga | ✅ | effects.test.ts |
+| fuente-orden | Fuente de maná | ✅ | sin efecto propio, nada que auditar |
+| bastion-marmoreo | Muro (solo estadísticas) | ✅ | sin efecto propio, nada que auditar |
+| centinela-solar | Vigilancia a distancia (solo estadísticas) | ✅ | sin efecto propio, nada que auditar |
+| angel-celestial | Escudo preventivo 1 al entrar | ❌ Bug #15 | — |
+| pegaso-celestial | Vuelo + impulso; cura 2 en primer ataque | ❌ Bug #16 | — |
+| paladin-glorioso | Aliados adyacentes inmunes a congelación | ❌ Bug #17 | — |
+| clerigo-luz | Aliado sanado gana +1 Vida ese turno | ❌ Bug #18 | — |
+| grifo-orden | Vigilancia; enemigos adyacentes -1 ATQ | ❌ Bug #19 | — |
+| juicio-divino | Destruye unidad con ≤2 Vida; +2 Vida | ❌ Bug #20 | (daño y curación sí funcionan; falta la condición de vida) |
 
 ## Sombra (14)
 

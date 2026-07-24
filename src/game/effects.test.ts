@@ -457,6 +457,85 @@ describe('Aliento de Primavera — +3 Ataque y refresca movimiento', () => {
   });
 });
 
+describe('Lancero del Alba — reduce en 1 el primer daño del turno', () => {
+  it('reduce el primer golpe del turno pero no el segundo', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [
+        makePiece('lancero', 'lancero-alba', 'ai', { x: 2, y: 2 }, { currentHealth: 6 }),
+        makePiece('atacante', 'sabueso-brasa', 'player', { x: 2, y: 3 }),
+        makePiece('atacante-2', 'sabueso-brasa', 'player', { x: 1, y: 2 }),
+      ],
+    };
+    const first = applyAction(state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'atacante', defenderId: 'lancero',
+    });
+    expect(first.ok).toBe(true);
+    // Sabueso: 2 ATQ, reducido 1 → 1 de daño. 6 - 1 = 5.
+    expect(first.state.board.find((piece) => piece.instanceId === 'lancero')?.currentHealth).toBe(5);
+    const second = applyAction(first.state, {
+      type: 'attack-piece', playerId: 'player', attackerId: 'atacante-2', defenderId: 'lancero',
+    });
+    expect(second.ok).toBe(true);
+    // Segundo ataque del turno: sin reducción. 5 - 2 = 3.
+    expect(second.state.board.find((piece) => piece.instanceId === 'lancero')?.currentHealth).toBe(3);
+  });
+});
+
+describe('Bendición del Escudo — cura el Nexo propio', () => {
+  it('recupera 4 de Vida en el Nexo propio', () => {
+    let state = freshMatch();
+    state = withPlayer(state, 'player', {
+      nexusHealth: 15,
+      hand: [handCard('bendicion-escudo', 'bendicion')], resources: resources('order', 2),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'bendicion', target: { kind: 'none' },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.player.nexusHealth).toBe(19);
+  });
+});
+
+describe('Heraldo del Juicio — daño adyacente al entrar', () => {
+  it('inflige 2 de daño a una unidad enemiga adyacente al desplegarse', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('enemy', 'gigante-magma', 'ai', { x: 1, y: 7 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('heraldo-juicio', 'heraldo')], resources: resources('order', 6),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'heraldo', position: { x: 2, y: 7 },
+    });
+    expect(result.ok).toBe(true);
+    // Gigante de Magma: 6 de vida - 2 de daño = 4.
+    expect(result.state.board.find((piece) => piece.instanceId === 'enemy')?.currentHealth).toBe(4);
+  });
+});
+
+describe('Columna de Luz — 5 de daño a una pieza enemiga', () => {
+  it('inflige 5 de daño al objetivo', () => {
+    let state = freshMatch();
+    state = {
+      ...state,
+      board: [makePiece('victima', 'gigante-magma', 'ai', { x: 2, y: 2 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('columna-luz', 'columna')], resources: resources('order', 4),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'columna', target: { kind: 'piece', pieceId: 'victima' },
+    });
+    expect(result.ok).toBe(true);
+    // Gigante de Magma: 6 de vida - 5 de daño = 1.
+    expect(result.state.board.find((piece) => piece.instanceId === 'victima')?.currentHealth).toBe(1);
+  });
+});
+
 describe('Niebla Espejada y Oriel — observación del mazo', () => {
   it('Niebla Espejada emite el evento de escrutinio y roba una carta', () => {
     let state = freshMatch();
