@@ -17,6 +17,11 @@ export interface MatchRecord {
   readonly damageDealt: number
   /** Semilla de la partida: permite repetirla con «/battle?seed=N». */
   readonly seed: number
+  /**
+   * 'pvp' si el rival era otra persona por multijugador. Ausente en los
+   * registros guardados antes de que existiera el PvP: tratar como 'ai'.
+   */
+  readonly mode?: 'ai' | 'pvp'
 }
 
 /** Recuento agregado que se muestra junto al historial. */
@@ -53,6 +58,14 @@ export const useRecords = create<RecordsState>()(
     { name: 'cronicas-nexo-records', version: 1 },
   ),
 )
+
+/** Registros de partidas contra otra persona por multijugador, no contra la IA. */
+export const pvpRecords = (records: readonly MatchRecord[]): readonly MatchRecord[] =>
+  records.filter((record) => record.mode === 'pvp')
+
+/** Registros de escaramuzas contra la IA (todo lo que no sea PvP, incluidos los guardados antes de que existiera). */
+export const aiRecords = (records: readonly MatchRecord[]): readonly MatchRecord[] =>
+  records.filter((record) => record.mode !== 'pvp')
 
 export const summarizeRecords = (records: readonly MatchRecord[]): RecordSummary => {
   const won = records.filter((record) => record.won).length

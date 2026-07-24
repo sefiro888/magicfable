@@ -259,17 +259,16 @@ export function BattlePage() {
   }, [eventBanner])
 
   // ── Historial: anota la partida una sola vez, al terminar de reproducirse ──
-  // Solo en solitario: el historial y los logros están pensados para la
-  // campaña contra la IA, no para escaramuzas PvP.
+  // También se registran las escaramuzas PvP (mode:'pvp'), pero aparte: los
+  // logros y el coach de campaña siguen pensados solo para partidas contra la IA.
   useEffect(() => {
-    if (room) return
     const finished = store.match
     if (!finished?.winner || queueBusy) return
     if (recordedSeed.current === finished.seed) return
     recordedSeed.current = finished.seed
-    const playerState = finished.players.player
+    const playerState = finished.players[ME]
     const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
-    const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === finished.players.ai.commanderId)
+    const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === finished.players[RIVAL].commanderId)
     const unlockedBefore = new Set(
       evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked).map((a) => a.id),
     )
@@ -279,16 +278,24 @@ export function BattlePage() {
       deckName: playerDeck?.name ?? 'Mazo desconocido',
       commanderName: COMMANDER_BY_ID[playerState.commanderId]?.name ?? '—',
       opponentDeckName: opponentDeck?.name ?? 'Rival desconocido',
-      won: finished.winner === 'player',
+      won: finished.winner === ME,
       turns: finished.turn,
       seconds: store.elapsedSeconds,
       damageDealt: playerState.stats.damageDealt,
       seed: finished.seed,
+      mode: room ? 'pvp' : 'ai',
     })
-    setMatchAchievements(
-      evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked && !unlockedBefore.has(a.id)),
-    )
-  }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId, room])
+    if (!room) {
+      // Diferido: evita anidar el setState dentro de un bloque condicional
+      // del cuerpo síncrono del efecto (mismo patrón que otros canales
+      // laterales de esta pantalla).
+      window.setTimeout(() => {
+        setMatchAchievements(
+          evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked && !unlockedBefore.has(a.id)),
+        )
+      }, 0)
+    }
+  }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId, room, ME, RIVAL])
 
   useEffect(() => {
     if (!revealedCardId) return
@@ -534,11 +541,11 @@ export function BattlePage() {
   const abandonMatch = () => {
     // Abandonar cuenta como derrota: sin esto se podía esquivar una derrota
     // segura saliendo a mitad de partida, y el historial quedaba mintiendo.
-    // Solo se anota en solitario: el historial de campaña no lleva cuenta de escaramuzas PvP.
-    if (!match.winner && !room) {
-      const playerState = match.players.player
+    // Se anota también en PvP (mode:'pvp'), cada jugador en su propio historial local.
+    if (!match.winner) {
+      const playerState = match.players[ME]
       const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
-      const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === match.players.ai.commanderId)
+      const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === match.players[RIVAL].commanderId)
       useRecords.getState().addRecord({
         finishedAt: Date.now(),
         deckId: playerDeck?.id ?? preferences.selectedDeckId,
@@ -550,6 +557,7 @@ export function BattlePage() {
         seconds: Math.max(1, Math.round((Date.now() - store.startedAtMs) / 1000)),
         damageDealt: playerState.stats.damageDealt,
         seed: match.seed,
+        mode: room ? 'pvp' : 'ai',
       })
     }
     room?.leave()

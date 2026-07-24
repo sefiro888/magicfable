@@ -4,7 +4,7 @@ import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, cardsForFaction, validateDe
 import type { DeckDefinition, DeckEntry } from '../game'
 import { FactionSigil } from '../components/FactionSigil'
 import { usePreferences } from '../store/preferences'
-import { currentStreak, summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
+import { aiRecords, currentStreak, pvpRecords, summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
 import { evaluateAchievements } from '../store/achievements'
 import { withBase } from '../utils/assets'
 import { decodeDeckCode, encodeDeckCode } from '../utils/deckCode'
@@ -233,9 +233,15 @@ function MatchHistory() {
     preferences.setSelectedDeck(record.deckId)
     navigate(`/battle?seed=${record.seed}`)
   }
-  const tally = useMemo(() => summarizeRecords(records), [records])
-  const byDeck = useMemo(() => summarizeByDeck(records), [records])
-  const streak = useMemo(() => currentStreak(records), [records])
+  // El historial de campaña (contra la IA) y el de multijugador se cuentan
+  // aparte: mezclarlos daría un ratio de victorias sin sentido (rivales de
+  // dificultad muy distinta) y el "por mazo" mezclaría bots con personas.
+  const vsAi = useMemo(() => aiRecords(records), [records])
+  const vsPvp = useMemo(() => pvpRecords(records), [records])
+  const tally = useMemo(() => summarizeRecords(vsAi), [vsAi])
+  const pvpTally = useMemo(() => summarizeRecords(vsPvp), [vsPvp])
+  const byDeck = useMemo(() => summarizeByDeck(vsAi), [vsAi])
+  const streak = useMemo(() => currentStreak(vsAi), [vsAi])
   const streakLabel = streak > 0 ? `${streak} victoria${streak === 1 ? '' : 's'}` : streak < 0 ? `${-streak} derrota${streak === -1 ? '' : 's'}` : '—'
 
   if (records.length === 0) {
@@ -270,19 +276,37 @@ function MatchHistory() {
           ))}
         </ul>
       )}
+      {vsPvp.length > 0 && (
+        <div className={styles.pvpTally}>
+          <span className={styles.pvpTallyLabel}>Multijugador (PvP)</span>
+          <div className={styles.historyTally}>
+            <div className={styles.stat}><strong>{pvpTally.played}</strong><span>Jugadas</span></div>
+            <div className={styles.stat}><strong>{pvpTally.won}</strong><span>Victorias</span></div>
+            <div className={styles.stat}><strong>{pvpTally.lost}</strong><span>Derrotas</span></div>
+            <div className={styles.stat}><strong>{pvpTally.winRate}%</strong><span>Ratio</span></div>
+          </div>
+        </div>
+      )}
       <ol className={styles.historyList}>
         {records.slice(0, 12).map((record) => (
           <li key={record.id} className={styles.historyRow} data-won={record.won}>
             <span className={styles.historyResult}>{record.won ? 'Victoria' : 'Derrota'}</span>
-            <span className={styles.historyDeck}>{record.deckName} <small>vs {record.opponentDeckName}</small></span>
+            <span className={styles.historyDeck}>
+              {record.mode === 'pvp' && <span className={styles.pvpBadge}>PvP</span>}
+              {record.deckName} <small>vs {record.opponentDeckName}</small>
+            </span>
             <span className={styles.historyMeta}>{record.turns} turnos · {record.seconds}s · {relativeDay(record.finishedAt)}</span>
-            <button
-              className={styles.historyRepeat}
-              onClick={() => repeatMatch(record)}
-              title="Vuelve a jugar exactamente esta misma partida, turno a turno"
-            >
-              ↻ Repetir
-            </button>
+            {/* Repetir reproduce la misma semilla contra la IA: no tiene
+                sentido para una partida PvP, cuyo rival fue una persona. */}
+            {record.mode !== 'pvp' && (
+              <button
+                className={styles.historyRepeat}
+                onClick={() => repeatMatch(record)}
+                title="Vuelve a jugar exactamente esta misma partida, turno a turno"
+              >
+                ↻ Repetir
+              </button>
+            )}
           </li>
         ))}
       </ol>
