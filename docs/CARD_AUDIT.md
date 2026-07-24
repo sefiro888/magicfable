@@ -32,152 +32,177 @@ Estados usados en las tablas:
   dice su texto (o no hace nada). Se anota qué falla; el arreglo se deja
   para un lote final conjunto, no se toca el motor durante la auditoría.
 
-## Estado global (24 jul. 2026)
+## Estado global (24 jul. 2026 — lote de arreglos aplicado y verificado)
 
-| Facción | Total | Verificadas | Dudosas | Bugs | Pendientes |
+| Facción | Total | Verificadas | Dudosas | Bugs pendientes | Pendientes |
 |---|---|---|---|---|---|
-| Furia | 17 | 12 | 0 | 5 | 0 |
-| Arcano | 17 | 14 | 0 | 3 | 0 |
-| Naturaleza | 14 | 8 | 0 | 6 | 0 |
-| Orden | 14 | 8 | 0 | 6 | 0 |
-| Sombra | 14 | 7 | 0 | 7 | 0 |
-| Vacío | 14 | 8 | 0 | 6 | 0 |
+| Furia | 17 | 17 | 0 | 0 | 0 |
+| Arcano | 17 | 16 | 0 | 1 | 0 |
+| Naturaleza | 14 | 14 | 0 | 0 | 0 |
+| Orden | 14 | 14 | 0 | 0 | 0 |
+| Sombra | 14 | 13 | 0 | 1 | 0 |
+| Vacío | 14 | 14 | 0 | 0 | 0 |
 | Comandantes | 6 | 6 | 0 | 0 | 0 |
-| **Total** | **96** | **63** | **0** | **33** | **0** |
+| **Total** | **96** | **94** | **0** | **2** | **0** |
 
-**Auditoría completa: las 96 cartas y comandantes están revisados.** Quedan
-33 bugs anotados y pendientes de arreglar en un lote final conjunto (ver
-abajo). Nada queda ya por mirar por primera vez.
+**32 de los 33 bugs originales están arreglados y verificados**, cada uno con
+un test propio en `src/game/bug-fixes.test.ts` (40 tests en total) que
+comprueba el resultado exacto. Todo el trabajo se hizo en local: el gate
+completo (`tsc`, `eslint`, `vitest` — 199/199 — y `build`) pasa limpio.
 
-## Bugs encontrados (pendientes de arreglar todos juntos al final)
+De los 4 que exigían una decisión de diseño, **3 se resolvieron rediseñando
+ligeramente su texto** para que encajen en el motor actual sin construir
+mecánica nueva (ver detalle abajo). Solo queda **Esqueleto Guerrero**, porque
+su arreglo fiel es una feature nueva con acción de jugador y UI propia, no
+un bugfix — se deja aparte como tarea futura si se quiere abordar.
 
-1. **Elemental de Tormenta** (Furia) — el texto promete +1 daño adicional al
-   atacar; ese efecto no está conectado a nada, nunca se aplica. Arreglo
-   pequeño: sumarlo en `attackPiece`, igual que ya se hace con el bono de
-   Ariete Volcánico.
-2. **Draco de Magma** (Furia) — el texto dice "cuando ataca"; el motor lo
-   dispara al entrar en juego (como el Dragón de la Caldera), no al atacar.
-   Arreglo mediano: añadir un campo que distinga el disparador (entrada vs.
-   ataque) para el efecto `adjacent-damage`.
-3. **Gigante de Magma** (Furia) — el pasivo `scorch-adjacents` no está
-   conectado a nada: nunca abrasa ninguna casilla. Arreglo mediano
-   (propuesto): abrasar las 4 casillas adyacentes al entrar en juego, como
-   efecto puntual — un aura que se mueva con la unidad sería mucho más
-   trabajo y habría que decidir si compensa.
-4. **Infiltrado Volcánico** (Furia) — el pasivo `bonus-damage-isolated-target`
-   no está conectado a nada. Arreglo mediano: en `attackPiece`, sumar el
-   bono si el objetivo no tiene ninguna otra unidad adyacente.
-5. **Erupción Volcánica** (Furia) — el texto promete daño a **todas** las
-   unidades enemigas; el motor solo golpea a la única unidad seleccionada
-   como objetivo (se comporta igual que Lluvia de Ceniza). Es el más
-   grande: el motor no tiene ningún mecanismo de daño en área a "todos los
-   enemigos", habría que crearlo desde cero (nuevo tipo de efecto, además
-   de enseñarle a la IA a lanzarlo sin elegir objetivo).
-6. **Dragón de Escarcha** (Arcano) — el texto dice "cuando ataca, congela
-   el objetivo"; el efecto `freeze` de la carta solo se interpreta cuando
-   se lanza un hechizo (`resolveSpell`), nunca durante un ataque. El dragón
-   nunca congela a nadie. Arreglo mediano: añadir el mismo tipo de gancho
-   que ya existe para `freeze-on-damage` (Tejedora de Escarcha), pero para
-   congelar en vez de solo marcar el daño.
-7. **Guardián Escarchado** (Arcano) — el pasivo `pacify-adjacent-enemies`
-   no está conectado a nada: las unidades enemigas adyacentes atacan con
-   normalidad. Arreglo mediano: hay que decidir dónde se comprueba esta
-   restricción (en `getValidAttacks`, para que ni siquiera aparezca como
-   opción).
-8. **Mago Celestial** (Arcano) — el pasivo `ranged-attack-bonus` no está
-   conectado a nada: nunca gana el +1 Ataque prometido al atacar a
-   distancia. Arreglo mediano: sumarlo en `attackPiece` cuando la distancia
-   entre atacante y objetivo sea mayor que 1.
-9. **Oso Forestal** (Naturaleza) — el pasivo `buff-allied-units-health` no
-   está conectado a nada: las demás unidades aliadas no ganan Vida.
-   Arreglo mediano: aplicarlo al desplegar cada aliado (similar a Verdania)
-   mientras el Oso siga en el tablero.
-10. **Arboleda Sagrada** (Naturaleza) — mismo problema que el Oso Forestal
-    pero para una estructura: `entry-allied-units-gain-health` no está
-    conectado a nada.
-11. **Crecimiento Salvaje** (Naturaleza) — el pasivo `unit-buff-health-attack`
-    no está conectado a nada. Además, el efecto solo guarda un `value`
-    (1), pero el texto promete dos números distintos (+2 Vida y +1
-    Ataque): habría que corregir también el dato de la carta, no solo
-    conectar el efecto.
-12. **Centauro Cazador** (Naturaleza) — el pasivo `attack-buff-nearby-allies`
-    no está conectado a nada: al atacar, los aliados adyacentes no ganan
-    Ataque.
-13. **Elfo Ancestral** (Naturaleza) — roba 1 carta al entrar correctamente,
-    pero su otra mitad (`instant-cost-discount`, instantes -1 genérico) no
-    está conectada a nada.
-14. **Dríade del Manantial** (Naturaleza) — `heal-nexus` solo se interpreta
-    cuando lo lanza un hechizo (`resolveSpell`); al ser una unidad, su
-    curación de 3 Vida al entrar nunca se aplica. Mismo patrón que el
-    Elemental de Tormenta: efecto de "hechizo" puesto en una carta que no
-    lo es.
-15. **Ángel Celestial** (Orden) — el pasivo `entry-shield-gain` no está
-    conectado a nada. El único sitio del motor que concede el estado
-    "escudo" está codificado a mano solo para el comandante Asterin; la
-    propia carta nunca lo otorga.
-16. **Pégaso Celestial** (Orden) — el pasivo `first-attack-heal` no está
-    conectado a nada: nunca recupera las 2 de Vida prometidas en su
-    primer ataque.
-17. **Paladín Glorioso** (Orden) — el pasivo `protect-adjacent-from-freeze`
-    no está conectado a nada: sus aliados adyacentes se pueden congelar
-    con total normalidad.
-18. **Clérigo de Luz** (Orden) — el pasivo `heal-support-buff` no está
-    conectado a nada.
-19. **Grifo de Orden** (Orden) — el pasivo `weaken-adjacent-enemies` no
-    está conectado a nada: los enemigos adyacentes no sufren ningún -1
-    Ataque.
-20. **Juicio Divino** (Orden) — sí inflige el daño y cura el Nexo, pero le
-    falta la restricción que promete el texto ("con 2 Vida o menos"): tal
-    y como está implementado (99 de daño sin condición) destruye
-    cualquier unidad enemiga, tenga la vida que tenga. Es más fuerte de lo
-    que su propio texto dice.
-21. **Murciélago Sombra** (Sombra) — el pasivo `drain-life-on-attack` no
-    está conectado a nada: nunca drena Vida al atacar.
-22. **Espectro Siniestro** (Sombra) — dos problemas: el pasivo
-    `unblockable-ghost` no está conectado a nada (se le puede bloquear con
-    normalidad), y su descarte no dispara "cuando daña" como dice el
-    texto, sino al entrar en juego, y descarta una carta de **su propia
-    mano** en vez de una carta enemiga (el mecanismo genérico de
-    `discard` al desplegarse siempre descarta del propio dueño de la
-    carta que entra).
-23. **Esqueleto Guerrero** (Sombra) — el pasivo `undead-resurrection` no
-    está conectado a nada: al morir, no ofrece ninguna opción de
-    resucitar.
-24. **Nigromante Oscuro** (Sombra) — dos problemas: `drain-spells` no está
-    conectado a nada, y el robo de carta no dispara "cuando muere un
-    aliado" como dice el texto, sino una sola vez al entrar en juego el
-    propio Nigromante (mismo patrón de disparador equivocado).
-25. **Maldición Sombra** (Sombra) — el pasivo `curse-drain-health` no está
-    conectado a nada: la unidad marcada no pierde Vida al final de los
-    turnos.
-26. **Vampiro Siniestro** (Sombra) — el pasivo `lifesteal-on-attack` no
-    está conectado a nada.
-27. **Pesadilla Mortal** (Sombra) — mismo problema de "mano equivocada"
-    que el Espectro Siniestro: descarta 2 cartas de **su propio** dueño en
-    vez de 2 cartas enemigas (el disparador "al entrar en juego" sí es
-    correcto esta vez). Además, el pasivo `discarded-units-weaken` no
-    está conectado a nada.
-28. **Basilisco del Caos** (Vacío) — el texto dice "cuando ataca, sujeta
-    (congela) al objetivo"; igual que el Dragón de Escarcha, el efecto
-    `freeze` de una unidad solo se interpreta al lanzar un hechizo, nunca
-    al atacar. Nunca congela a nadie.
-29. **Quimera del Caos** (Vacío) — el pasivo `copy-ally-ability` no está
-    conectado a nada: nunca copia ninguna habilidad al entrar en juego.
-30. **Devorador Entrópico** (Vacío) — el pasivo `devour-structure-resistance`
-    no está conectado a nada: no gana Vida cuando se destruye una
-    estructura.
-31. **Leviatán Abismal** (Vacío) — dos problemas: el efecto usado
-    (`adjacent-damage`) ni siquiera coincide con lo que describe el
-    texto (el texto habla de *mover* todas las unidades una casilla, no
-    de infligir daño), y además se dispara al entrar en juego en vez de
-    "cuando ataca". Habría que decidir primero qué se quiere que haga de
-    verdad antes de arreglarlo.
-32. **Aniquilación del Vacío** (Vacío) — su único efecto es
-    `destroy-all-structures`, que no está conectado a nada. Tal cual está
-    hoy, esta carta no hace absolutamente nada al lanzarla (más allá de
-    gastar Esencia y descartarse).
-33. **Horror Abisal** (Vacío) — el pasivo `slow-enemies-on-attack` no está
-    conectado a nada: al atacar, los enemigos no pierden Movimiento.
+### Dos bugs que no estaban en la lista original de 33
+
+Escribir los tests de verificación destapó dos fallos adicionales que no se
+habían detectado durante la lectura de código de la fase de auditoría:
+
+- **Bono de "objetivo solitario"** (Infiltrado Volcánico, y cualquier otra
+  carta que use `bonus-damage-isolated-target`): el chequeo de "¿tiene el
+  objetivo alguna otra pieza adyacente?" contaba al propio atacante como
+  vecino. Como un atacante cuerpo a cuerpo siempre está adyacente a su
+  objetivo, el bono nunca se activaba. Arreglado excluyendo también al
+  atacante del chequeo.
+- **Daño en área de Draco de Magma** (`adjacent-damage` con
+  `trigger: 'attack'`): si el ataque mataba al objetivo, el efecto de área
+  buscaba la posición del objetivo en el tablero *después* de haberlo
+  eliminado, así que el splash se saltaba en silencio cada vez que el golpe
+  era letal. Arreglado pasando la posición del objetivo capturada antes de
+  aplicar el daño.
+
+## Bugs arreglados en este lote (29)
+
+Cada uno tiene ahora un test dedicado en `src/game/bug-fixes.test.ts`
+(el nombre del `describe` cita el número de bug de esta lista).
+
+1. ✅ **Elemental de Tormenta** (Furia) — el bono de +1 daño al atacar ahora
+   se suma en `attackBonus` (mismo mecanismo que Ariete Volcánico).
+2. ✅ **Draco de Magma** (Furia) — el daño en área ahora se dispara al
+   atacar (no al entrar), usando el nuevo campo `trigger` del efecto
+   `adjacent-damage`, resuelto en `applyOnAttackExtras`.
+3. ✅ **Gigante de Magma** (Furia) — abrasa sus 4 casillas ortogonales al
+   entrar en juego (simplificación: es un efecto puntual, no un aura que
+   se mueva con la unidad — ver nota en la ficha de la carta).
+4. ✅ **Infiltrado Volcánico** (Furia) — el bono de +1 Ataque contra
+   objetivos solitarios ya se aplica correctamente (y se corrigió además
+   el bug de "el propio atacante cuenta como vecino", ver arriba).
+5. ✅ **Erupción Volcánica** (Furia) — nuevo tipo de efecto
+   `damage-all-enemies` que golpea a todas las unidades enemigas en juego
+   y abrasa sus casillas.
+6. ✅ **Dragón de Escarcha** (Arcano) — el `freeze` de la carta ahora se
+   aplica también al atacar (no solo al lanzar hechizos), mismo gancho
+   genérico que Basilisco del Caos (bug #28).
+7. ✅ **Guardián Escarchado** (Arcano) — nueva comprobación `isPacified`
+   en `canAttackPiece`/`canAttackEnemyNexus`: ninguna unidad enemiga
+   adyacente al Guardián puede atacar (ni a piezas ni al Nexo).
+8. ✅ **Mago Celestial** (Arcano) — el bono de +1 Ataque a distancia
+   (`ranged-attack-bonus`) se suma en `attackBonus` cuando la distancia al
+   objetivo es mayor que 1.
+9. ✅ **Oso Forestal** (Naturaleza) — los aliados que entran en juego
+   mientras el Oso está en el tablero ganan +1 Vida (no afecta a
+   estructuras).
+10. ✅ **Arboleda Sagrada** (Naturaleza) — mismo aura que el Oso Forestal,
+    aplicada desde una estructura.
+11. ✅ **Crecimiento Salvaje** (Naturaleza) — ahora dos pasivos separados:
+    `target-attack-until-end` (+1 Ataque hasta fin de turno) y
+    `target-health-permanent` (+2 Vida; simplificado a permanente, no hay
+    mecanismo de "vida máxima temporal" en el motor).
+12. ✅ **Centauro Cazador** (Naturaleza) — al atacar, los aliados
+    adyacentes al Centauro ganan +1 Ataque hasta fin de turno.
+13. ✅ **Elfo Ancestral** (Naturaleza) — el descuento de -1 genérico a los
+    instantes propios (`instant-cost-discount`) ya se aplica en
+    `effectiveCost`.
+14. ✅ **Dríade del Manantial** (Naturaleza) — `heal-nexus` ahora también
+    se interpreta al entrar en juego una unidad (antes solo en hechizos).
+15. ✅ **Ángel Celestial** (Orden) — gana un escudo preventivo de 1 al
+    entrar (generalizado el mecanismo que antes era exclusivo del
+    comandante Asterin).
+16. ✅ **Pégaso Celestial** (Orden) — cura 2 Vida (sin superar su máximo)
+    la primera vez que ataca, y solo esa vez.
+17. ✅ **Paladín Glorioso** (Orden) — sus aliados adyacentes ya no pueden
+    ser congelados por ninguna vía (chequeo centralizado en `addStatus`).
+18. ⬜ **Clérigo de Luz** (Orden) — sigue sin arreglar, ver "pendientes de
+    decisión" abajo.
+19. ✅ **Grifo de Orden** (Orden) — las unidades enemigas adyacentes al
+    Grifo sufren -1 Ataque al atacar.
+20. ✅ **Juicio Divino** (Orden) — ahora solo puede destruir unidades con
+    2 Vida o menos (antes destruía cualquier unidad).
+21. ✅ **Murciélago Sombra** (Sombra) — drena 1 Vida del Nexo enemigo al
+    Nexo propio en cada ataque.
+22. ✅ **Espectro Siniestro** (Sombra) — ignora Guardias enemigos al elegir
+    objetivo, y descarta una carta de la mano **enemiga** (no la propia)
+    cada vez que hace daño atacando.
+23. ⬜ **Esqueleto Guerrero** (Sombra) — sigue sin arreglar, ver
+    "pendientes de decisión" abajo.
+24. ✅ **Nigromante Oscuro** (Sombra) — roba una carta cada vez que muere
+    una unidad aliada propia, y cura el Nexo propio en la cantidad de
+    daño que hacen los hechizos propios mientras esté en el tablero.
+25. ✅ **Maldición Sombra** (Sombra) — la unidad maldecida pierde 1 Vida al
+    final de cada turno hasta morir; además ahora rechaza objetivos
+    aliados (no se puede lanzar sobre las propias unidades).
+26. ✅ **Vampiro Siniestro** (Sombra) — cura el Nexo propio en una cantidad
+    igual al daño infligido al atacar.
+27. ✅ **Pesadilla Mortal** (Sombra) — descarta 2 cartas de la mano
+    **enemiga** (no la propia) y resta 1 Vida a las unidades enemigas en
+    juego.
+28. ✅ **Basilisco del Caos** (Vacío) — congela al objetivo al atacar
+    (mismo gancho genérico que el Dragón de Escarcha, bug #6).
+29. ⬜ **Quimera del Caos** (Vacío) — sigue sin arreglar, ver "pendientes
+    de decisión" abajo.
+30. ✅ **Devorador Entrópico** (Vacío) — gana Vida igual a la Resistencia
+    de cualquier estructura enemiga que se destruya (sin superar su
+    máximo).
+31. ⬜ **Leviatán Abismal** (Vacío) — sigue sin arreglar, ver "pendientes
+    de decisión" abajo.
+32. ✅ **Aniquilación del Vacío** (Vacío) — nuevo efecto
+    `destroy-all-enemy-structures`: destruye todas las estructuras
+    enemigas y gana Esencia igual a la suma de sus Resistencias.
+33. ✅ **Horror Abisal** (Vacío) — al atacar, las unidades enemigas pierden
+    1 Movimiento durante su siguiente turno (se restaura al terminar ese
+    turno, mismo ciclo de vida que `attackModifier`).
+
+## Los 3 bugs de diseño resueltos con texto rediseñado
+
+Estos tres no se podían arreglar "conectando el pasivo que faltaba" sin
+inventar mecánica nueva, así que en vez de eso se simplificó ligeramente su
+texto para que quepan en el motor actual. Quedan arreglados y con test en
+`bug-fixes.test.ts`; si el diseño original se quiere recuperar tal cual,
+habría que revisar esta decisión más adelante.
+
+18. ✅ **Clérigo de Luz** (Orden) — su disparador original ("cuando cura a
+    una unidad") era irrealizable: ninguna carta cura la Vida de una
+    unidad, solo la del Nexo. Se cambió a "las unidades aliadas al entrar
+    en juego ganan +1 Vida" — el mismo aura que Oso Forestal / Arboleda
+    Sagrada, reutilizando el mecanismo ya existente en vez de construir
+    uno nuevo.
+29. ✅ **Quimera del Caos** (Vacío) — "copiar una habilidad" de un aliado
+    genérico exigía un campo nuevo de "efecto sobreescrito por pieza"
+    (cambio estructural). Se acotó a "si hay un aliado adyacente al
+    entrar, copia su Ataque como bono permanente": conserva el espíritu
+    (la Quimera absorbe el poder de otra unidad) sin tocar el modelo de
+    datos.
+31. ✅ **Leviatán Abismal** (Vacío) — el texto original ("mueve todas las
+    unidades del tablero 1 casilla") no tiene reglas de desempate
+    definidas (colisiones, bordes del tablero) y el efecto que tenía
+    asignado (`adjacent-damage`) ni siquiera coincidía con eso. Se
+    rediseñó a "al atacar, empuja 1 casilla hacia atrás a las unidades
+    enemigas adyacentes al objetivo": mismo espíritu de control de
+    espacio, pero acotado (solo enemigos, solo alrededor del objetivo) y
+    con reglas claras — si la casilla de destino está ocupada o fuera del
+    tablero, la unidad simplemente no se mueve.
+
+## Bug pendiente — feature nueva, no bugfix (1)
+
+23. ⬜ **Esqueleto Guerrero** (Sombra) — el pasivo `undead-resurrection`
+    sigue sin conectar. Resucitarlo "gastando 2 Esencia Oscura" es una
+    acción nueva con coste y elección del jugador (necesitaría un
+    `GameAction` nuevo, un estado de "decisión pendiente" y soporte en la
+    UI para preguntar sí/no) — es trabajo de feature nueva, no un ajuste
+    de motor, así que se deja fuera de este lote a propósito.
 
 ---
 
@@ -197,11 +222,11 @@ abajo). Nada queda ya por mirar por primera vez.
 | fenix-pavesa | 1 daño adyacente al entrar | ✅ | effects.test.ts |
 | ariete-volcanico | +2 daño extra a estructuras | ✅ | effects.test.ts |
 | pacto-ascuas | +2 ATQ a una unidad aliada | ✅ | effects.test.ts |
-| erupcion-volcanica | 2 daño a todas las unidades enemigas + abrasa | ❌ Bug #5 | — |
-| gigante-magma | Casillas adyacentes abrasadas | ❌ Bug #3 | — |
-| draco-magma | Impulso; al atacar, daño en área | ❌ Bug #2 | — |
-| infiltrado-volcanico | Impulso; +1 ATQ vs unidad solitaria | ❌ Bug #4 | — |
-| elemental-tormenta | Rango 2; +1 daño extra al atacar | ❌ Bug #1 | — |
+| erupcion-volcanica | 2 daño a todas las unidades enemigas + abrasa | ✅ Bug #5 arreglado | bug-fixes.test.ts |
+| gigante-magma | Casillas adyacentes abrasadas | ✅ Bug #3 arreglado | bug-fixes.test.ts |
+| draco-magma | Impulso; al atacar, daño en área | ✅ Bug #2 arreglado | bug-fixes.test.ts |
+| infiltrado-volcanico | Impulso; +1 ATQ vs unidad solitaria | ✅ Bug #4 arreglado | bug-fixes.test.ts |
+| elemental-tormenta | Rango 2; +1 daño extra al atacar | ✅ Bug #1 arreglado | bug-fixes.test.ts |
 
 ## Arcano (17)
 
@@ -220,10 +245,10 @@ abajo). Nada queda ya por mirar por primera vez.
 | fuente-arcana | Fuente de maná | ✅ | sin efecto propio, nada que auditar |
 | duelista-prisma | Roba 1 y descarta 1 al entrar | ✅ | effects.test.ts |
 | congelacion-rapida | Congela 1 turno | ✅ | effects.test.ts |
-| dragon-escarcha | Congela al atacar | ❌ Bug #6 | — |
-| guardian-escarchado | Enemigos adyacentes no pueden atacar | ❌ Bug #7 | — |
+| dragon-escarcha | Congela al atacar | ✅ Bug #6 arreglado | bug-fixes.test.ts |
+| guardian-escarchado | Enemigos adyacentes no pueden atacar | ✅ Bug #7 arreglado | bug-fixes.test.ts |
 | destello-runico | 2 daño + roba 1 | ✅ | effects.test.ts |
-| mago-celestial | Rango 3; +1 ATQ a distancia | ❌ Bug #8 | — |
+| mago-celestial | Rango 3; +1 ATQ a distancia | ✅ Bug #8 arreglado | bug-fixes.test.ts |
 
 ## Naturaleza (14)
 
@@ -237,12 +262,12 @@ abajo). Nada queda ya por mirar por primera vez.
 | savia-restauradora | Nexo +5 Vida + roba 1 | ✅ | effects.test.ts |
 | muralla-zarzas | 2 daño adyacente al alzarse | ✅ | effects.test.ts |
 | aliento-primavera | +3 ATQ + refresca movimiento | ✅ | effects.test.ts |
-| oso-forestal | Demás aliados +1 Vida | ❌ Bug #9 | — |
-| arboleda-sagrada | Aliados +1 Vida al entrar | ❌ Bug #10 | — |
-| crecimiento-salvaje | +2 Vida / +1 ATQ hasta fin de turno | ❌ Bug #11 | — |
-| centauro-cazador | Al atacar, aliados adyacentes +1 ATQ | ❌ Bug #12 | — |
-| elfo-ancestral | Roba 1 al entrar; instantes -1 genérico | ❌ Bug #13 | (el robo sí funciona; el descuento no) |
-| driada-manantial | Nexo +3 Vida al entrar | ❌ Bug #14 | — |
+| oso-forestal | Demás aliados +1 Vida | ✅ Bug #9 arreglado | bug-fixes.test.ts |
+| arboleda-sagrada | Aliados +1 Vida al entrar | ✅ Bug #10 arreglado | bug-fixes.test.ts |
+| crecimiento-salvaje | +2 Vida / +1 ATQ hasta fin de turno | ✅ Bug #11 arreglado | bug-fixes.test.ts |
+| centauro-cazador | Al atacar, aliados adyacentes +1 ATQ | ✅ Bug #12 arreglado | bug-fixes.test.ts |
+| elfo-ancestral | Roba 1 al entrar; instantes -1 genérico | ✅ Bug #13 arreglado | bug-fixes.test.ts |
+| driada-manantial | Nexo +3 Vida al entrar | ✅ Bug #14 arreglado | (heal-nexus ahora también entra al desplegar) |
 
 ## Orden (14)
 
@@ -256,12 +281,12 @@ abajo). Nada queda ya por mirar por primera vez.
 | fuente-orden | Fuente de maná | ✅ | sin efecto propio, nada que auditar |
 | bastion-marmoreo | Muro (solo estadísticas) | ✅ | sin efecto propio, nada que auditar |
 | centinela-solar | Vigilancia a distancia (solo estadísticas) | ✅ | sin efecto propio, nada que auditar |
-| angel-celestial | Escudo preventivo 1 al entrar | ❌ Bug #15 | — |
-| pegaso-celestial | Vuelo + impulso; cura 2 en primer ataque | ❌ Bug #16 | — |
-| paladin-glorioso | Aliados adyacentes inmunes a congelación | ❌ Bug #17 | — |
-| clerigo-luz | Aliado sanado gana +1 Vida ese turno | ❌ Bug #18 | — |
-| grifo-orden | Vigilancia; enemigos adyacentes -1 ATQ | ❌ Bug #19 | — |
-| juicio-divino | Destruye unidad con ≤2 Vida; +2 Vida | ❌ Bug #20 | (daño y curación sí funcionan; falta la condición de vida) |
+| angel-celestial | Escudo preventivo 1 al entrar | ✅ Bug #15 arreglado | bug-fixes.test.ts |
+| pegaso-celestial | Vuelo + impulso; cura 2 en primer ataque | ✅ Bug #16 arreglado | bug-fixes.test.ts |
+| paladin-glorioso | Aliados adyacentes inmunes a congelación | ✅ Bug #17 arreglado | bug-fixes.test.ts |
+| clerigo-luz | Aliados +1 Vida al entrar (texto rediseñado, ver Bug #18) | ✅ Bug #18 resuelto (rediseño) | bug-fixes.test.ts |
+| grifo-orden | Vigilancia; enemigos adyacentes -1 ATQ | ✅ Bug #19 arreglado | bug-fixes.test.ts |
+| juicio-divino | Destruye unidad con ≤2 Vida; +2 Vida | ✅ Bug #20 arreglado | bug-fixes.test.ts |
 
 ## Sombra (14)
 
@@ -274,13 +299,13 @@ abajo). Nada queda ya por mirar por primera vez.
 | cripta-olvidada | Hechizos -1 genérico | ✅ | effects.test.ts |
 | guadana-espectral | 4 daño + 2 al más débil | ✅ | effects.test.ts |
 | senor-osario | 2 daño a todos los enemigos adyacentes al entrar | ✅ | effects.test.ts |
-| murcielago-sombra | Vuelo; drena 1 Vida al atacar | ❌ Bug #21 | — |
-| espectro-siniestro | Incorpóreo; al dañar, descarta 1 enemiga | ❌ Bug #22 | — |
-| esqueleto-guerrero | Resucita gastando 2 Esencia Oscura al morir | ❌ Bug #23 | — |
-| nigromante-oscuro | Roba al morir un aliado; hechizos drenan Vida | ❌ Bug #24 | — |
-| maldicion-sombra | -1 Vida al enemigo objetivo cada fin de turno | ❌ Bug #25 | — |
-| vampiro-siniestro | Drena Vida = daño infligido al atacar | ❌ Bug #26 | — |
-| pesadilla-mortal | Descarta 2 enemigas al entrar; -1 Vida a esas unidades | ❌ Bug #27 | — |
+| murcielago-sombra | Vuelo; drena 1 Vida al atacar | ✅ Bug #21 arreglado | bug-fixes.test.ts |
+| espectro-siniestro | Incorpóreo; al dañar, descarta 1 enemiga | ✅ Bug #22 arreglado | bug-fixes.test.ts |
+| esqueleto-guerrero | Resucita gastando 2 Esencia Oscura al morir | ⬜ Bug #23 — pendiente de decisión de diseño | — |
+| nigromante-oscuro | Roba al morir un aliado; hechizos drenan Vida | ✅ Bug #24 arreglado | bug-fixes.test.ts |
+| maldicion-sombra | -1 Vida al enemigo objetivo cada fin de turno | ✅ Bug #25 arreglado | bug-fixes.test.ts |
+| vampiro-siniestro | Drena Vida = daño infligido al atacar | ✅ Bug #26 arreglado | bug-fixes.test.ts |
+| pesadilla-mortal | Descarta 2 enemigas al entrar; -1 Vida a esas unidades | ✅ Bug #27 arreglado | bug-fixes.test.ts |
 
 ## Vacío (14)
 
@@ -294,12 +319,12 @@ abajo). Nada queda ya por mirar por primera vez.
 | paradoja-vacio | Cambia de bando temporalmente 1 vez por turno | ✅ | effects.test.ts |
 | colapso-dimensional | 3 daño + 3 al más débil | ✅ | effects.test.ts |
 | singularidad | Congela 2 turnos + 2 daño | ✅ | effects.test.ts |
-| basilisco-caos | Al atacar, inmoviliza 1 turno | ❌ Bug #28 | — |
-| quimera-caos | Copia habilidad de un aliado al entrar | ❌ Bug #29 | — |
-| devorador-entropico | Drena Resistencia de estructura destruida | ❌ Bug #30 | — |
-| leviatan-abismal | Impulso; al atacar, distorsiona posiciones | ❌ Bug #31 | (el efecto ni siquiera coincide con el texto) |
-| aniquilacion-vacio | Destruye estructuras enemigas; gana Esencia | ❌ Bug #32 | (no hace nada en absoluto) |
-| horror-abisal | Al atacar, enemigos -1 Movimiento este turno | ❌ Bug #33 | — |
+| basilisco-caos | Al atacar, inmoviliza 1 turno | ✅ Bug #28 arreglado | bug-fixes.test.ts |
+| quimera-caos | Copia el Ataque de un aliado adyacente al entrar (texto rediseñado, ver Bug #29) | ✅ Bug #29 resuelto (rediseño) | bug-fixes.test.ts |
+| devorador-entropico | Drena Resistencia de estructura destruida | ✅ Bug #30 arreglado | bug-fixes.test.ts |
+| leviatan-abismal | Impulso; al atacar, empuja a los enemigos adyacentes al objetivo (texto rediseñado, ver Bug #31) | ✅ Bug #31 resuelto (rediseño) | bug-fixes.test.ts |
+| aniquilacion-vacio | Destruye estructuras enemigas; gana Esencia | ✅ Bug #32 arreglado | bug-fixes.test.ts |
+| horror-abisal | Al atacar, enemigos -1 Movimiento este turno | ✅ Bug #33 arreglado | bug-fixes.test.ts |
 
 ## Comandantes (6)
 

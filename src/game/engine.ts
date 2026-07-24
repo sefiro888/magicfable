@@ -238,12 +238,22 @@ const adjacentEnemyGuards = (state: MatchState, attacker: BoardPiece): Set<strin
   return guards;
 };
 
+/** Guardián Escarchado: las unidades enemigas adyacentes a él no pueden atacar. */
+const isPacified = (state: MatchState, attacker: BoardPiece): boolean =>
+  state.board.some(
+    (piece) =>
+      piece.owner !== attacker.owner &&
+      distance(piece.position, attacker.position) === 1 &&
+      pieceDefinition(piece)?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'pacify-adjacent-enemies'),
+  );
+
 const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boolean => {
   const definition = pieceDefinition(piece);
   if (!definition || definition.type !== 'unit' || piece.owner !== state.activePlayer) return false;
   if (piece.movedThisTurn || isFrozen(state, piece) || !isInsideBoard(to) || pieceAt(state, to)) return false;
   if (piece.enteredOnTurn === state.turn && !definition.keywords.includes('impulse')) return false;
-  const movement = definition.movement ?? 1;
+  // Horror Abisal: ralentiza a los enemigos que atacó, sin bajar de 0.
+  const movement = Math.max(0, (definition.movement ?? 1) - (piece.movementModifier ?? 0));
   const travel = distance(piece.position, to);
   if (travel <= 0 || travel > movement) return false;
   // Volador: ignora las piezas del camino (pero no puede aterrizar en casilla ocupada).
@@ -264,14 +274,19 @@ export const getValidMoves = (state: MatchState, pieceId: string): readonly Posi
   return positions;
 };
 
+/** Espectro Siniestro: incorpóreo, ningún Guardia enemigo puede obligarlo a atacarlo a él. */
+const ignoresGuards = (definition: CardDefinition): boolean =>
+  definition.effects.some((effect) => effect.kind === 'passive' && effect.id === 'unblockable-ghost');
+
 const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: BoardPiece): boolean => {
   const definition = pieceDefinition(attacker);
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.owner === defender.owner || attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
-  // Guardia: si hay Guardias enemigos adyacentes, el objetivo debe ser uno de ellos.
+  if (isPacified(state, attacker)) return false;
+  // Guardia: si hay Guardias enemigos adyacentes, el objetivo debe ser uno de ellos (salvo incorpóreos).
   const guards = adjacentEnemyGuards(state, attacker);
-  if (guards.size > 0 && !guards.has(defender.instanceId)) return false;
+  if (guards.size > 0 && !guards.has(defender.instanceId) && !ignoresGuards(definition)) return false;
   const range = definition.range ?? 1;
   const targetDistance = distance(attacker.position, defender.position);
   return targetDistance > 0 && targetDistance <= range && pathIsClear(state, attacker.position, defender.position, attacker.instanceId);
@@ -282,8 +297,9 @@ const canAttackEnemyNexus = (state: MatchState, attacker: BoardPiece): boolean =
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
-  // Guardia: no se puede golpear el Nexo mientras un Guardia enemigo esté adyacente.
-  if (adjacentEnemyGuards(state, attacker).size > 0) return false;
+  if (isPacified(state, attacker)) return false;
+  // Guardia: no se puede golpear el Nexo mientras un Guardia enemigo esté adyacente (salvo incorpóreos).
+  if (adjacentEnemyGuards(state, attacker).size > 0 && !ignoresGuards(definition)) return false;
   const enemy = opponentOf(attacker.owner);
   const target = { x: attacker.position.x, y: nexusRow(enemy) };
   const range = definition.range ?? 1;
@@ -380,17 +396,60 @@ const damagePiece = (
   });
   if (target.currentHealth - finalAmount <= 0) {
     const owner = next.players[target.owner];
+    const dyingDefinition = pieceDefinition(target);
+    const structureResistanceDrain = dyingDefinition?.type === 'structure'
+      ? next.board.filter(
+          (candidate) =>
+            candidate.instanceId !== pieceId &&
+            candidate.owner !== target.owner &&
+            pieceDefinition(candidate)?.effects.some(
+              (effect) => effect.kind === 'passive' && effect.id === 'devour-structure-resistance',
+            ),
+        )
+      : [];
     next = withPlayer(
       { ...next, board: next.board.filter((piece) => piece.instanceId !== pieceId) },
       target.owner,
       { ...owner, discard: [...owner.discard, { instanceId: target.instanceId, cardId: target.cardId }] },
     );
-    const definition = pieceDefinition(target);
     next = enqueue(next, {
-      type: 'destroy', targetId: pieceId, to: target.position, effectId: definition?.vfx.deathEffect ?? 'card-destroy', durationMs: 420,
+      type: 'destroy', targetId: pieceId, to: target.position, effectId: dyingDefinition?.vfx.deathEffect ?? 'card-destroy', durationMs: 420,
     });
+    // Devorador Entrópico: drena la Resistencia de una estructura enemiga destruida como Vida propia.
+    for (const devourer of structureResistanceDrain) {
+      const maxHealth = pieceDefinition(devourer)?.health ?? devourer.currentHealth;
+      next = updatePiece(next, devourer.instanceId, (piece) => ({
+        ...piece, currentHealth: Math.min(maxHealth, piece.currentHealth + (dyingDefinition?.resistance ?? 0)),
+      }));
+    }
+    // Nigromante Oscuro: roba una carta por cada unidad aliada propia que muere.
+    if (dyingDefinition?.type === 'unit') {
+      const necromancers = next.board.filter(
+        (candidate) =>
+          candidate.owner === target.owner &&
+          pieceDefinition(candidate)?.effects.some(
+            (effect) => effect.kind === 'passive' && effect.id === 'draw-on-ally-death',
+          ),
+      );
+      for (let index = 0; index < necromancers.length; index += 1) {
+        next = resolveDrawAndDiscard(next, target.owner, 1, 0);
+      }
+    }
   }
   return next;
+};
+
+/** Paladín Glorioso: sus aliados adyacentes no pueden ser congelados por ninguna vía. */
+const isProtectedFromFreeze = (state: MatchState, pieceId: string): boolean => {
+  const piece = state.board.find((candidate) => candidate.instanceId === pieceId);
+  if (!piece) return false;
+  return state.board.some(
+    (ally) =>
+      ally.owner === piece.owner &&
+      ally.instanceId !== piece.instanceId &&
+      distance(ally.position, piece.position) === 1 &&
+      pieceDefinition(ally)?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'protect-adjacent-from-freeze'),
+  );
 };
 
 const addStatus = (
@@ -399,7 +458,7 @@ const addStatus = (
   duration: number,
 ): MatchState => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
-  if (!target) return state;
+  if (!target || isProtectedFromFreeze(state, pieceId)) return state;
   const expiresOnTurn = state.turn + Math.max(1, duration) * 2;
   let next = updatePiece(state, pieceId, (piece) => ({
     ...piece,
@@ -417,6 +476,14 @@ const requireTargetPiece = (
     ? state.board.find((piece) => piece.instanceId === target.pieceId)
     : undefined;
 
+/** Cura el Nexo propio sin superar el máximo del comandante. */
+const healNexus = (state: MatchState, playerId: PlayerId, amount: number): MatchState => {
+  if (amount <= 0) return state;
+  const player = state.players[playerId];
+  const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 25;
+  return withPlayer(state, playerId, { ...player, nexusHealth: Math.min(maximum, player.nexusHealth + amount) });
+};
+
 const spellNeedsPiece = (card: CardDefinition): boolean =>
   card.effects.some(
     (effect) =>
@@ -424,6 +491,7 @@ const spellNeedsPiece = (card: CardDefinition): boolean =>
       effect.kind === 'freeze' ||
       effect.kind === 'scorch' ||
       effect.kind === 'refresh-move' ||
+      (effect.kind === 'passive' && effect.id === 'curse-drain-health') ||
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
   );
 
@@ -457,6 +525,7 @@ const resolveSpell = (
   const frozenAtCast = initialTarget ? isFrozen(next, initialTarget) : false;
   let draws = 0;
   let discards = 0;
+  let damageDealt = 0;
   for (const effect of card.effects) {
     const targetPiece = requireTargetPiece(next, target);
     if (effect.kind === 'damage' && targetPiece) {
@@ -464,7 +533,43 @@ const resolveSpell = (
         ? card.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'frozen-bonus-damage')
         : undefined;
       const bonusDamage = bonus?.kind === 'passive' ? bonus.value ?? 0 : 0;
+      const before = targetPiece.currentHealth;
       next = damagePiece(next, targetPiece.instanceId, effect.amount + bonusDamage, caster, card.vfx.impactEffect);
+      damageDealt += Math.min(effect.amount + bonusDamage, before);
+    } else if (effect.kind === 'damage-all-enemies') {
+      const enemy = opponentOf(caster);
+      for (const piece of next.board.filter((candidate) => candidate.owner === enemy && pieceDefinition(candidate)?.type === 'unit')) {
+        const before = piece.currentHealth;
+        next = damagePiece(next, piece.instanceId, effect.amount, caster, card.vfx.impactEffect);
+        damageDealt += Math.min(effect.amount, before);
+        if (effect.scorch) {
+          const expiresOnTurn = state.turn + 2;
+          next = {
+            ...next,
+            tileEffects: [
+              ...next.tileEffects.filter((tile) => tile.position.x !== piece.position.x || tile.position.y !== piece.position.y),
+              { kind: 'scorched', position: piece.position, sourceOwner: caster, expiresOnTurn },
+            ],
+          };
+        }
+      }
+    } else if (effect.kind === 'destroy-all-enemy-structures') {
+      const enemy = opponentOf(caster);
+      const structures = next.board.filter((piece) => piece.owner === enemy && pieceDefinition(piece)?.type === 'structure');
+      let gainedEssence = 0;
+      for (const structure of structures) {
+        gainedEssence += pieceDefinition(structure)?.resistance ?? 0;
+        next = damagePiece(next, structure.instanceId, structure.currentHealth, caster, card.vfx.impactEffect);
+      }
+      if (effect.gainEssencePerResistance && gainedEssence > 0) {
+        const player = next.players[caster];
+        const newResources = Array.from({ length: gainedEssence }, (_, index) => ({
+          instanceId: `${caster}-void-essence-${next.nextId + index}`,
+          cardId: card.id, faction: card.faction, exhausted: false,
+        }));
+        next = { ...next, nextId: next.nextId + gainedEssence };
+        next = withPlayer(next, caster, { ...player, resources: [...player.resources, ...newResources] });
+      }
     } else if (effect.kind === 'freeze' && targetPiece) {
       next = addStatus(next, targetPiece.instanceId, effect.duration);
     } else if (effect.kind === 'scorch' && initialTarget) {
@@ -487,9 +592,7 @@ const resolveSpell = (
         type: 'spell', actorId: caster, amount: effect.amount, effectId: 'scry-top-cards', durationMs: 300,
       });
     } else if (effect.kind === 'heal-nexus') {
-      const player = next.players[caster];
-      const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 25;
-      next = withPlayer(next, caster, { ...player, nexusHealth: Math.min(maximum, player.nexusHealth + effect.amount) });
+      next = healNexus(next, caster, effect.amount);
     } else if (effect.kind === 'refresh-move' && targetPiece?.owner === caster) {
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece,
@@ -514,22 +617,45 @@ const resolveSpell = (
         );
       const weakest = candidates[0];
       if (weakest) {
+        const before = weakest.currentHealth;
         next = damagePiece(next, weakest.instanceId, effect.amount, caster, card.vfx.impactEffect);
+        damageDealt += Math.min(effect.amount, before);
       }
     } else if (effect.kind === 'passive' && effect.id === 'target-attack-until-end' && targetPiece?.owner === caster) {
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece,
         attackModifier: piece.attackModifier + (effect.value ?? 0),
       }));
+    } else if (effect.kind === 'passive' && effect.id === 'target-health-permanent' && targetPiece?.owner === caster) {
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({
+        ...piece, currentHealth: piece.currentHealth + (effect.value ?? 1),
+      }));
+    } else if (effect.kind === 'passive' && effect.id === 'curse-drain-health' && targetPiece && targetPiece.owner !== caster) {
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({
+        ...piece, statuses: [...piece.statuses.filter((status) => status.kind !== 'cursed'), { kind: 'cursed', amount: effect.value ?? 1 }],
+      }));
     }
+  }
+  // Nigromante Oscuro: los hechizos propios que hayan hecho daño drenan esa Vida al Nexo.
+  if (damageDealt > 0 && next.board.some(
+    (piece) => piece.owner === caster && pieceDefinition(piece)?.effects.some((e) => e.kind === 'passive' && e.id === 'drain-spells'),
+  )) {
+    next = healNexus(next, caster, damageDealt);
   }
   return resolveDrawAndDiscard(next, caster, draws, discards);
 };
+
+/** Las 4 casillas ortogonales adyacentes a una posición, dentro del tablero. */
+const orthogonalNeighbors = (position: Position): readonly Position[] =>
+  ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const)
+    .map(([dx, dy]) => ({ x: position.x + dx, y: position.y + dy }))
+    .filter(isInsideBoard);
 
 const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDefinition): MatchState => {
   let next = state;
   for (const effect of card.effects) {
     if (effect.kind === 'adjacent-damage') {
+      if (effect.trigger === 'attack') continue;
       const targets = next.board.filter(
         (candidate) =>
           candidate.instanceId !== piece.instanceId &&
@@ -541,6 +667,8 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
       }
     } else if (effect.kind === 'draw') {
       next = resolveDrawAndDiscard(next, piece.owner, effect.amount, 0);
+    } else if (effect.kind === 'heal-nexus') {
+      next = healNexus(next, piece.owner, effect.amount);
     } else if (effect.kind === 'scry') {
       next = enqueue(next, {
         type: 'spell', actorId: piece.owner, targetId: piece.instanceId,
@@ -551,31 +679,64 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
         (candidate) => candidate.owner !== piece.owner && distance(candidate.position, piece.position) === 1,
       );
       if (target) next = damagePiece(next, target.instanceId, effect.value ?? 1, piece.owner, card.vfx.impactEffect);
+    } else if (effect.kind === 'passive' && effect.id === 'copy-adjacent-attack') {
+      const ally = next.board.find(
+        (candidate) =>
+          candidate.instanceId !== piece.instanceId &&
+          candidate.owner === piece.owner &&
+          distance(candidate.position, piece.position) === 1,
+      );
+      const allyAttack = ally ? pieceDefinition(ally)?.attack ?? 0 : 0;
+      if (allyAttack > 0) {
+        next = updatePiece(next, piece.instanceId, (candidate) => ({
+          ...candidate, attackModifier: candidate.attackModifier + allyAttack,
+        }));
+      }
+    } else if (effect.kind === 'passive' && effect.id === 'scorch-adjacents') {
+      const expiresOnTurn = state.turn + 2;
+      const scorched = orthogonalNeighbors(piece.position).map((position) => ({
+        kind: 'scorched' as const, position, sourceOwner: piece.owner, expiresOnTurn,
+      }));
+      next = {
+        ...next,
+        tileEffects: [
+          ...next.tileEffects.filter((tile) => !scorched.some((added) => added.position.x === tile.position.x && added.position.y === tile.position.y)),
+          ...scorched,
+        ],
+      };
     }
   }
   const discardEffect = card.effects.find((effect) => effect.kind === 'discard');
   if (discardEffect?.kind === 'discard') {
-    next = resolveDrawAndDiscard(next, piece.owner, 0, discardEffect.amount);
+    const target = discardEffect.target === 'enemy-hand' ? opponentOf(piece.owner) : piece.owner;
+    next = resolveDrawAndDiscard(next, target, 0, discardEffect.amount);
+    // Pesadilla Mortal: además de descartar de la mano enemiga, debilita a las unidades enemigas en juego.
+    if (discardEffect.target === 'enemy-hand' && card.effects.some((e) => e.kind === 'passive' && e.id === 'discarded-units-weaken')) {
+      const weaken = card.effects.find((e) => e.kind === 'passive' && e.id === 'discarded-units-weaken');
+      const amount = weaken?.kind === 'passive' ? weaken.value ?? 1 : 1;
+      for (const enemyUnit of next.board.filter((p) => p.owner === target && pieceDefinition(p)?.type === 'unit')) {
+        next = damagePiece(next, enemyUnit.instanceId, amount, piece.owner, card.vfx.impactEffect);
+      }
+    }
   }
   return next;
 };
 
-/** Pasiva de Malachar: cada ataque de sus unidades roba 1 Vida al Nexo enemigo. */
-const applyMalacharDrain = (state: MatchState, attackerOwner: PlayerId): MatchState => {
-  if (state.players[attackerOwner].commanderId !== 'malachar-reidor-sombra') return state;
+/**
+ * Drena Vida del Nexo enemigo al propio (Malachar, Murciélago Sombra): resta
+ * al rival, suma al propio Nexo y comprueba si eso decide la partida.
+ */
+const applyNexusDrain = (state: MatchState, attackerOwner: PlayerId, amount: number, effectId: string): MatchState => {
+  if (amount <= 0) return state;
   const enemyId = opponentOf(attackerOwner);
   const enemy = state.players[enemyId];
   if (enemy.nexusHealth <= 0) return state;
-  const owner = state.players[attackerOwner];
-  const maximum = COMMANDER_BY_ID[owner.commanderId]?.nexusHealth ?? 25;
-  let next = withPlayer(state, enemyId, { ...enemy, nexusHealth: Math.max(0, enemy.nexusHealth - 1) });
-  next = withPlayer(next, attackerOwner, {
-    ...next.players[attackerOwner],
-    nexusHealth: Math.min(maximum, owner.nexusHealth + 1),
-  });
+  const drained = Math.min(amount, enemy.nexusHealth);
+  let next = withPlayer(state, enemyId, { ...enemy, nexusHealth: enemy.nexusHealth - drained });
+  next = healNexus(next, attackerOwner, drained);
   next = enqueue(next, {
     type: 'nexus-damage', actorId: attackerOwner, targetId: `${enemyId}-nexus`,
-    amount: 1, effectId: 'commander-shadow-drain', durationMs: 320,
+    amount: drained, effectId, durationMs: 320,
   });
   if (next.players[enemyId].nexusHealth <= 0) {
     next = { ...next, winner: attackerOwner, phase: 'finished' };
@@ -584,6 +745,12 @@ const applyMalacharDrain = (state: MatchState, attackerOwner: PlayerId): MatchSt
     });
   }
   return next;
+};
+
+/** Pasiva de Malachar: cada ataque de sus unidades roba 1 Vida al Nexo enemigo. */
+const applyMalacharDrain = (state: MatchState, attackerOwner: PlayerId): MatchState => {
+  if (state.players[attackerOwner].commanderId !== 'malachar-reidor-sombra') return state;
+  return applyNexusDrain(state, attackerOwner, 1, 'commander-shadow-drain');
 };
 
 const validateTurn = (state: MatchState, playerId: PlayerId): ActionResult | undefined => {
@@ -639,6 +806,10 @@ const cardTargetIsValid = (
   const damage = card.effects.find((effect) => effect.kind === 'damage');
   if (damage?.kind === 'damage' && damage.target === 'enemy-piece' && piece.owner === playerId) return false;
   if ((card.id === 'lluvia-ceniza' || card.effects.some((effect) => effect.kind === 'freeze')) && pieceDefinition(piece)?.type !== 'unit') return false;
+  // Juicio Divino: solo puede destruir unidades enemigas con 2 Vida o menos.
+  if (card.id === 'juicio-divino' && piece.currentHealth > 2) return false;
+  const curseDrain = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'curse-drain-health');
+  if (curseDrain && piece.owner === playerId) return false;
   const friendlyBuff = card.effects.some(
     (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
   );
@@ -662,7 +833,7 @@ export const effectiveCost = (
     for (const piece of state.board) {
       if (piece.owner !== playerId) continue;
       const discount = CARD_BY_ID[piece.cardId]?.effects.find(
-        (effect) => effect.kind === 'passive' && effect.id === 'spell-generic-discount',
+        (effect) => effect.kind === 'passive' && (effect.id === 'spell-generic-discount' || effect.id === 'instant-cost-discount'),
       );
       if (discount?.kind === 'passive') generic = Math.max(0, generic - (discount.value ?? 1));
     }
@@ -732,7 +903,25 @@ export const playCard = (
     if (maximumHealth === undefined) return fail(state, 'invalid-card-type', 'La carta no tiene resistencia válida.');
     const commanderId = player.commanderId;
     const verdaniaBonus = commanderId === 'verdania-guardiana-raices' && card.type === 'unit' ? 1 : 0;
-    const asterinShield = commanderId === 'asterin-protector-luz' && card.type === 'unit';
+    // Oso Forestal / Arboleda Sagrada: cada aliada propia en juego con esta aura suma su bono
+    // a toda unidad nueva que entra (no a estructuras, el texto dice "unidades aliadas").
+    const alliedAuraBonus = card.type === 'unit'
+      ? state.board.reduce((sum, ally) => {
+          if (ally.owner !== playerId) return sum;
+          const auraEffect = CARD_BY_ID[ally.cardId]?.effects.find(
+            (effect) => effect.kind === 'passive' && (effect.id === 'buff-allied-units-health' || effect.id === 'entry-allied-units-gain-health'),
+          );
+          return auraEffect?.kind === 'passive' ? sum + (auraEffect.value ?? 1) : sum;
+        }, 0)
+      : 0;
+    // El escudo preventivo al entrar lo concede la aura de Asterin o la propia carta (Ángel Celestial).
+    const ownShieldEffect = card.type === 'unit'
+      ? card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'entry-shield-gain')
+      : undefined;
+    const shieldAmount = commanderId === 'asterin-protector-luz' && card.type === 'unit'
+      ? 1
+      : ownShieldEffect?.kind === 'passive' ? ownShieldEffect.value ?? 1 : 0;
+    const asterinShield = shieldAmount > 0;
     const nyxarisRush =
       commanderId === 'nyxaris-heraldo-vacio' && card.type === 'unit' && !player.firstUnitDeployedThisTurn;
     const piece: BoardPiece = {
@@ -740,12 +929,12 @@ export const playCard = (
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus,
+      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus,
       attackModifier: receivesForgeBuff ? 1 : 0,
       movedThisTurn: false,
       attackedThisTurn: false,
       enteredOnTurn: nyxarisRush ? state.turn - 1 : state.turn,
-      statuses: asterinShield ? [{ kind: 'shielded', amount: 1 }] : [],
+      statuses: asterinShield ? [{ kind: 'shielded', amount: shieldAmount }] : [],
     };
     next = { ...next, board: [...next.board, piece] };
     if (card.type === 'unit') {
@@ -767,10 +956,16 @@ export const playCard = (
         amount: verdaniaBonus, effectId: 'commander-nature-aura', durationMs: 300,
       });
     }
+    if (alliedAuraBonus > 0) {
+      next = enqueue(next, {
+        type: 'shield', actorId: playerId, targetId: piece.instanceId, to: position,
+        amount: alliedAuraBonus, effectId: 'nature-ally-aura', durationMs: 300,
+      });
+    }
     if (asterinShield) {
       next = enqueue(next, {
         type: 'shield', actorId: playerId, targetId: piece.instanceId, to: position,
-        amount: 1, effectId: 'commander-order-aura', durationMs: 300,
+        amount: shieldAmount, effectId: 'commander-order-aura', durationMs: 300,
       });
     }
     next = resolveEntryEffects(next, piece, card);
@@ -831,6 +1026,145 @@ export const movePiece = (
   return success(next);
 };
 
+/**
+ * Bono de daño adicional al atacar, según los pasivos propios del atacante
+ * (daño a distancia, contra estructuras, contra objetivos solitarios...) y
+ * las penalizaciones de pasivos enemigos adyacentes (Grifo de Orden).
+ * `defender` se omite al atacar el Nexo: los bonos que dependen del objetivo
+ * (estructura, aislamiento) no aplican ahí.
+ */
+const attackBonus = (state: MatchState, attacker: BoardPiece, card: CardDefinition, defender?: BoardPiece): number => {
+  let bonus = 0;
+  const flatDamage = card.effects.find((effect) => effect.kind === 'damage');
+  if (flatDamage?.kind === 'damage') bonus += flatDamage.amount;
+  if (defender) {
+    if (pieceDefinition(defender)?.type === 'structure') {
+      const structureBonus = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'structure-bonus-damage');
+      if (structureBonus?.kind === 'passive') bonus += structureBonus.value ?? 0;
+    }
+    const isolatedBonus = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'bonus-damage-isolated-target');
+    if (isolatedBonus?.kind === 'passive') {
+      const hasNeighbor = state.board.some(
+        (piece) =>
+          piece.instanceId !== defender.instanceId &&
+          piece.instanceId !== attacker.instanceId &&
+          distance(piece.position, defender.position) === 1,
+      );
+      if (!hasNeighbor) bonus += isolatedBonus.value ?? 1;
+    }
+    const rangedBonus = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'ranged-attack-bonus');
+    if (rangedBonus?.kind === 'passive' && distance(attacker.position, defender.position) > 1) bonus += rangedBonus.value ?? 1;
+  }
+  let weaken = 0;
+  for (const piece of state.board) {
+    if (piece.owner === attacker.owner || distance(piece.position, attacker.position) !== 1) continue;
+    const effect = pieceDefinition(piece)?.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'weaken-adjacent-enemies');
+    if (effect?.kind === 'passive') weaken += effect.value ?? 1;
+  }
+  return bonus - weaken;
+};
+
+/** Efectos secundarios que se disparan al atacar (drenar, congelar, ralentizar, descartar…). */
+const applyOnAttackExtras = (
+  state: MatchState,
+  playerId: PlayerId,
+  attackerId: string,
+  card: CardDefinition,
+  dealt: number,
+  defenderId?: string,
+  defenderPosition?: Position,
+): MatchState => {
+  let next = state;
+  const defender = defenderId ? next.board.find((piece) => piece.instanceId === defenderId) : undefined;
+  const defenderIsUnit = defender ? pieceDefinition(defender)?.type === 'unit' : false;
+
+  if (defenderIsUnit && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'freeze-on-damage')) {
+    next = addStatus(next, defenderId!, 1);
+  }
+  const rawFreeze = card.effects.find((effect) => effect.kind === 'freeze');
+  if (defenderIsUnit && rawFreeze?.kind === 'freeze') {
+    next = addStatus(next, defenderId!, rawFreeze.duration);
+  }
+  // Draco de Magma: al atacar, daña también las casillas adyacentes al objetivo.
+  const attackAdjacent = card.effects.find((effect) => effect.kind === 'adjacent-damage' && effect.trigger === 'attack');
+  const splashOrigin = defender?.position ?? defenderPosition;
+  if (attackAdjacent?.kind === 'adjacent-damage' && splashOrigin) {
+    const splashTargets = next.board.filter(
+      (piece) =>
+        piece.instanceId !== defenderId &&
+        piece.instanceId !== attackerId &&
+        distance(piece.position, splashOrigin) === 1 &&
+        (attackAdjacent.includeAllies || piece.owner !== playerId),
+    );
+    for (const splashed of splashTargets) {
+      next = damagePiece(next, splashed.instanceId, attackAdjacent.amount, playerId, card.vfx.impactEffect);
+    }
+  }
+  const drainLife = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'drain-life-on-attack');
+  if (drainLife?.kind === 'passive') {
+    next = applyNexusDrain(next, playerId, drainLife.value ?? 1, `${card.faction}-lifedrain`);
+  }
+  if (dealt > 0 && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'lifesteal-on-attack')) {
+    next = healNexus(next, playerId, dealt);
+  }
+  const slow = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'slow-enemies-on-attack');
+  if (slow?.kind === 'passive') {
+    const enemyId = opponentOf(playerId);
+    next = {
+      ...next,
+      board: next.board.map((piece) =>
+        piece.owner === enemyId ? { ...piece, movementModifier: (piece.movementModifier ?? 0) + (slow.value ?? 1) } : piece,
+      ),
+    };
+  }
+  const knockback = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'push-adjacent-enemies-on-attack');
+  if (knockback?.kind === 'passive' && splashOrigin) {
+    const attackerPiece = next.board.find((piece) => piece.instanceId === attackerId);
+    if (attackerPiece) {
+      const pushTargets = next.board.filter(
+        (piece) => piece.owner !== playerId && distance(piece.position, splashOrigin) === 1,
+      );
+      for (const target of pushTargets) {
+        const dx = Math.sign(target.position.x - attackerPiece.position.x);
+        const dy = Math.sign(target.position.y - attackerPiece.position.y);
+        const destination = { x: target.position.x + dx, y: target.position.y + dy };
+        if (isInsideBoard(destination) && !pieceAt(next, destination)) {
+          next = updatePiece(next, target.instanceId, (piece) => ({ ...piece, position: destination }));
+        }
+      }
+    }
+  }
+  const discardEnemy = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'discard-enemy-on-damage');
+  if (dealt > 0 && discardEnemy?.kind === 'passive') {
+    next = resolveDrawAndDiscard(next, opponentOf(playerId), 0, discardEnemy.value ?? 1);
+  }
+  const nearbyAllyBuff = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'attack-buff-nearby-allies');
+  if (nearbyAllyBuff?.kind === 'passive') {
+    const attackerPiece = next.board.find((piece) => piece.instanceId === attackerId);
+    if (attackerPiece) {
+      next = {
+        ...next,
+        board: next.board.map((piece) =>
+          piece.owner === playerId && piece.instanceId !== attackerId && distance(piece.position, attackerPiece.position) === 1
+            ? { ...piece, attackModifier: piece.attackModifier + (nearbyAllyBuff.value ?? 1) }
+            : piece,
+        ),
+      };
+    }
+  }
+  const firstAttackHeal = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'first-attack-heal');
+  if (firstAttackHeal?.kind === 'passive') {
+    const attackerPiece = next.board.find((piece) => piece.instanceId === attackerId);
+    if (attackerPiece && !attackerPiece.firstAttackHealUsed) {
+      const maxHealth = pieceDefinition(attackerPiece)?.health ?? attackerPiece.currentHealth;
+      next = updatePiece(next, attackerId, (piece) => ({
+        ...piece, firstAttackHealUsed: true, currentHealth: Math.min(maxHealth, piece.currentHealth + (firstAttackHeal.value ?? 1)),
+      }));
+    }
+  }
+  return next;
+};
+
 export const attackPiece = (
   state: MatchState,
   playerId: PlayerId,
@@ -847,24 +1181,17 @@ export const attackPiece = (
   const card = pieceDefinition(attacker);
   if (!card || card.attack === undefined) return fail(state, 'cannot-attack', 'La carta no puede atacar.');
   const attackBuff = card.effects.find((effect) => effect.kind === 'buff-self-on-attack');
-  const structureBonus = pieceDefinition(defender)?.type === 'structure'
-    ? card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'structure-bonus-damage')
-    : undefined;
-  const amount = card.attack + attacker.attackModifier +
+  const amount = Math.max(0, card.attack + attacker.attackModifier +
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    (structureBonus?.kind === 'passive' ? structureBonus.value ?? 0 : 0);
+    attackBonus(state, attacker, card, defender));
   let next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: defenderId,
     from: attacker.position, to: defender.position, effectId: card.vfx.attackEffect, durationMs: 380,
   });
+  const defenderPosition = defender.position;
   next = damagePiece(next, defenderId, amount, playerId, card.vfx.impactEffect);
-  if (
-    pieceDefinition(defender)?.type === 'unit' &&
-    card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'freeze-on-damage')
-  ) {
-    next = addStatus(next, defenderId, 1);
-  }
+  next = applyOnAttackExtras(next, playerId, attackerId, card, amount, defenderId, defenderPosition);
   next = applyMalacharDrain(next, playerId);
   return success(next);
 };
@@ -883,8 +1210,9 @@ export const attackNexus = (
   const card = pieceDefinition(attacker);
   if (!card || card.attack === undefined) return fail(state, 'cannot-attack', 'La carta no puede atacar.');
   const attackBuff = card.effects.find((effect) => effect.kind === 'buff-self-on-attack');
-  const amount = card.attack + attacker.attackModifier +
-    (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0);
+  const amount = Math.max(0, card.attack + attacker.attackModifier +
+    (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
+    attackBonus(state, attacker, card));
   const enemyId = opponentOf(playerId);
   const enemy = state.players[enemyId];
   const source = state.players[playerId];
@@ -908,6 +1236,7 @@ export const attackNexus = (
     type: 'nexus-damage', actorId: attackerId, targetId: `${enemyId}-nexus`, amount,
     effectId: card.vfx.impactEffect ?? `${card.faction}-nexus-impact`, durationMs: 440,
   });
+  next = applyOnAttackExtras(next, playerId, attackerId, card, amount);
   if (enemy.nexusHealth - amount <= 0) {
     next = { ...next, winner: playerId, phase: 'finished' };
     next = enqueue(next, {
@@ -955,10 +1284,17 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
       movedThisTurn: piece.owner === nextPlayerId ? false : piece.movedThisTurn,
       attackedThisTurn: piece.owner === nextPlayerId ? false : piece.attackedThisTurn,
       attackModifier: piece.owner === playerId ? 0 : piece.attackModifier,
+      // Horror Abisal: la ralentización dura exactamente el siguiente turno del enemigo.
+      movementModifier: piece.owner === playerId ? 0 : piece.movementModifier,
       statuses: piece.statuses.filter((status) => status.kind !== 'frozen' || status.expiresOnTurn > nextTurn),
     })),
     tileEffects: state.tileEffects.filter((tile) => tile.expiresOnTurn > nextTurn),
   };
+  // Maldición Sombra: cada unidad maldita pierde Vida al final de cada turno.
+  for (const cursed of state.board.filter((piece) => piece.statuses.some((status) => status.kind === 'cursed'))) {
+    const curse = cursed.statuses.find((status) => status.kind === 'cursed');
+    if (curse?.kind === 'cursed') next = damagePiece(next, cursed.instanceId, curse.amount, undefined, 'curse-drain');
+  }
   next = enqueue(next, {
     type: 'turn', actorId: nextPlayerId, effectId: 'turn-transition', durationMs: 400,
   });

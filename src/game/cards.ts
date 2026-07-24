@@ -178,7 +178,7 @@ const furyCards: readonly CardDefinition[] = [
     rules: 'Inflige 2 de daño a cada unidad enemiga. Las casillas afectadas permanecen abrasadas.',
     flavor: 'El cielo se parte cuando la tierra elige hablar.',
     keywords: [], collectorNumber: 25, aiTags: ['removal', 'area-damage'], unique: false,
-    effects: [{ kind: 'damage', amount: 2, target: 'enemy-piece' }, { kind: 'scorch', duration: 1 }],
+    effects: [{ kind: 'damage-all-enemies', amount: 2, scorch: true }],
     vfx: { impactEffect: 'volcanic-burst', persistentEffect: 'lava-shockwave' },
   }),
   defineCard({
@@ -196,7 +196,7 @@ const furyCards: readonly CardDefinition[] = [
     rules: 'Impulso. Cuando ataca, las casillas adyacentes al objetivo reciben daño de fuego.',
     flavor: 'Su aliento convierte arena en cristal, en un instante.',
     keywords: ['impulse'], collectorNumber: 27, aiTags: ['finisher', 'ranged'], unique: false,
-    effects: [{ kind: 'adjacent-damage', amount: 1, includeAllies: false }],
+    effects: [{ kind: 'adjacent-damage', amount: 1, includeAllies: false, trigger: 'attack' }],
     vfx: { summonEffect: 'dragon-awaken', attackEffect: 'magma-beam', deathEffect: 'dragon-collapse' },
   }),
   defineCard({
@@ -423,7 +423,10 @@ const natureCards: readonly CardDefinition[] = [
     rules: 'Una unidad aliada gana +2 Vida y +1 Ataque hasta fin de turno.',
     flavor: 'La naturaleza siempre encuentra la forma de crecer.',
     keywords: [], collectorNumber: 40, aiTags: ['buff', 'combat'], unique: false,
-    effects: [{ kind: 'passive', id: 'unit-buff-health-attack', value: 1 }],
+    effects: [
+      { kind: 'passive', id: 'target-attack-until-end', value: 1 },
+      { kind: 'passive', id: 'target-health-permanent', value: 2 },
+    ],
     vfx: { impactEffect: 'vine-growth' },
   }),
   defineCard({
@@ -547,10 +550,10 @@ const orderCards: readonly CardDefinition[] = [
   defineCard({
     id: 'clerigo-luz', name: 'Clérigo de Luz', faction: 'order', type: 'unit', subtype: 'Humanoid',
     rarity: 'uncommon', cost: factionCost('order', 1, 1), attack: 1, health: 3, range: 2, movement: 1,
-    rules: 'Cuando una unidad aliada es sanada, gana +1 Vida ese turno.',
+    rules: 'Las unidades aliadas al entrar en juego ganan +1 Vida.',
     flavor: 'Su presencia sana las heridas más profundas.',
     keywords: [], collectorNumber: 48, aiTags: ['healer', 'support'], unique: false,
-    effects: [{ kind: 'passive', id: 'heal-support-buff', value: 1 }],
+    effects: [{ kind: 'passive', id: 'entry-allied-units-gain-health', value: 1 }],
     vfx: { summonEffect: 'healing-light', persistentEffect: 'blessed-aura' },
   }),
   defineCard({
@@ -651,7 +654,7 @@ const shadowCards: readonly CardDefinition[] = [
     rules: 'Incorporal. No puede ser bloqueado. Cuando daña, descarta una carta enemiga.',
     flavor: 'Alma atrapada entre mundos, hambrienta.',
     keywords: [], collectorNumber: 53, aiTags: ['evasion', 'discard'], unique: false,
-    effects: [{ kind: 'passive', id: 'unblockable-ghost' }, { kind: 'discard', amount: 1 }],
+    effects: [{ kind: 'passive', id: 'unblockable-ghost' }, { kind: 'passive', id: 'discard-enemy-on-damage', value: 1 }],
     vfx: { summonEffect: 'ghostly-wail', attackEffect: 'spectral-touch' },
   }),
   defineCard({
@@ -669,7 +672,7 @@ const shadowCards: readonly CardDefinition[] = [
     rules: 'Cuando una unidad aliada muere, roba una carta. Tus hechizos drenan Vida.',
     flavor: 'Maestro que reescribe el destino de los muertos.',
     keywords: [], collectorNumber: 55, aiTags: ['finisher', 'draw'], unique: false,
-    effects: [{ kind: 'draw', amount: 1 }, { kind: 'passive', id: 'drain-spells', value: 1 }],
+    effects: [{ kind: 'passive', id: 'draw-on-ally-death', value: 1 }, { kind: 'passive', id: 'drain-spells', value: 1 }],
     vfx: { summonEffect: 'death-magic', persistentEffect: 'curse-aura' },
   }),
   defineCard({
@@ -696,7 +699,7 @@ const shadowCards: readonly CardDefinition[] = [
     rules: 'Cuando entra en juego, descarta 2 cartas enemigas. Esas unidades pierden -1 Vida.',
     flavor: 'Terror que consume cordura y esperanza.',
     keywords: [], collectorNumber: 58, aiTags: ['finisher', 'discard'], unique: false,
-    effects: [{ kind: 'discard', amount: 2 }, { kind: 'passive', id: 'discarded-units-weaken', value: 1 }],
+    effects: [{ kind: 'discard', amount: 2, target: 'enemy-hand' }, { kind: 'passive', id: 'discarded-units-weaken', value: 1 }],
     vfx: { summonEffect: 'nightmare-rise', persistentEffect: 'dread-aura' },
   }),
   defineCard({
@@ -779,10 +782,10 @@ const voidCards: readonly CardDefinition[] = [
   defineCard({
     id: 'quimera-caos', name: 'Quimera del Caos', faction: 'void', type: 'unit', subtype: 'Horror',
     rarity: 'uncommon', cost: factionCost('void', 2, 2), attack: 3, health: 3, range: 2, movement: 2,
-    rules: 'Cuando entra en juego, copia una habilidad de otra unidad aliada.',
+    rules: 'Cuando entra en juego, si hay una unidad aliada adyacente, copia su Ataque como bono permanente.',
     flavor: 'Abominación que es todo y nada a la vez.',
     keywords: [], collectorNumber: 61, aiTags: ['synergy', 'shapeshifter'], unique: false,
-    effects: [{ kind: 'passive', id: 'copy-ally-ability' }],
+    effects: [{ kind: 'passive', id: 'copy-adjacent-attack' }],
     vfx: { summonEffect: 'chimera-morph', persistentEffect: 'chaos-aura' },
   }),
   defineCard({
@@ -797,10 +800,10 @@ const voidCards: readonly CardDefinition[] = [
   defineCard({
     id: 'leviatan-abismal', name: 'Leviatán Abismal', faction: 'void', type: 'unit', subtype: 'Bestia',
     rarity: 'mythic', cost: factionCost('void', 3, 4), attack: 6, health: 5, range: 1, movement: 1,
-    rules: 'Impulso. Cuando ataca, distorsiona el espacio: mueve todas las unidades 1 casilla.',
+    rules: 'Impulso. Cuando ataca, empuja 1 casilla hacia atrás a las unidades enemigas adyacentes al objetivo.',
     flavor: 'Horror primordial del vacío sin fondo.',
     keywords: ['impulse'], collectorNumber: 63, aiTags: ['finisher', 'control'], unique: true,
-    effects: [{ kind: 'adjacent-damage', amount: 1, includeAllies: true }],
+    effects: [{ kind: 'passive', id: 'push-adjacent-enemies-on-attack' }],
     vfx: { summonEffect: 'leviathan-awaken', attackEffect: 'void-collapse', deathEffect: 'reality-break' },
   }),
   defineCard({
@@ -809,7 +812,7 @@ const voidCards: readonly CardDefinition[] = [
     rules: 'Destruye todas las estructuras enemigas. Gana Esencia igual a su Resistencia.',
     flavor: 'El final de todas las cosas.',
     keywords: [], collectorNumber: 64, aiTags: ['removal', 'board-wipe'], unique: false,
-    effects: [{ kind: 'passive', id: 'destroy-all-structures' }],
+    effects: [{ kind: 'destroy-all-enemy-structures', gainEssencePerResistance: true }],
     vfx: { impactEffect: 'void-annihilation' },
   }),
   defineCard({

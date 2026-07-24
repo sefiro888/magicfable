@@ -46,16 +46,21 @@ export const CardSfxSchema = z
 
 export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('damage'), amount: z.number().int().positive(), target: z.enum(['enemy-piece', 'any-piece']) }),
+  z.object({ kind: z.literal('damage-all-enemies'), amount: z.number().int().positive(), scorch: z.boolean().optional() }),
   z.object({ kind: z.literal('freeze'), duration: z.number().int().positive() }),
   z.object({ kind: z.literal('draw'), amount: z.number().int().positive() }),
-  z.object({ kind: z.literal('discard'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('discard'), amount: z.number().int().positive(), target: z.enum(['own-hand', 'enemy-hand']).optional() }),
   z.object({ kind: z.literal('heal-nexus'), amount: z.number().int().positive() }),
-  z.object({ kind: z.literal('adjacent-damage'), amount: z.number().int().positive(), includeAllies: z.boolean() }),
+  z.object({
+    kind: z.literal('adjacent-damage'), amount: z.number().int().positive(), includeAllies: z.boolean(),
+    trigger: z.enum(['entry', 'attack']).optional(),
+  }),
   z.object({ kind: z.literal('buff-self-on-attack'), attack: z.number().int().positive() }),
   z.object({ kind: z.literal('scry'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('scorch'), duration: z.number().int().positive() }),
   z.object({ kind: z.literal('refresh-move') }),
   z.object({ kind: z.literal('splash-weakest-enemy'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('destroy-all-enemy-structures'), gainEssencePerResistance: z.boolean() }),
   z.object({ kind: z.literal('passive'), id: z.string().min(1), value: z.number().optional() }),
 ]);
 

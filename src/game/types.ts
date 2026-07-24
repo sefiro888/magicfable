@@ -59,16 +59,24 @@ export interface CardSfx {
 
 export type CardEffect =
   | { readonly kind: 'damage'; readonly amount: number; readonly target: 'enemy-piece' | 'any-piece' }
+  | { readonly kind: 'damage-all-enemies'; readonly amount: number; readonly scorch?: boolean }
   | { readonly kind: 'freeze'; readonly duration: number }
   | { readonly kind: 'draw'; readonly amount: number }
-  | { readonly kind: 'discard'; readonly amount: number }
+  | { readonly kind: 'discard'; readonly amount: number; readonly target?: 'own-hand' | 'enemy-hand' }
   | { readonly kind: 'heal-nexus'; readonly amount: number }
-  | { readonly kind: 'adjacent-damage'; readonly amount: number; readonly includeAllies: boolean }
+  | {
+      readonly kind: 'adjacent-damage';
+      readonly amount: number;
+      readonly includeAllies: boolean;
+      /** Cuándo se dispara: al entrar en juego (por defecto) o al atacar. */
+      readonly trigger?: 'entry' | 'attack';
+    }
   | { readonly kind: 'buff-self-on-attack'; readonly attack: number }
   | { readonly kind: 'scry'; readonly amount: number }
   | { readonly kind: 'scorch'; readonly duration: number }
   | { readonly kind: 'refresh-move' }
   | { readonly kind: 'splash-weakest-enemy'; readonly amount: number }
+  | { readonly kind: 'destroy-all-enemy-structures'; readonly gainEssencePerResistance: boolean }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 export interface CardDefinition {
@@ -146,7 +154,9 @@ export interface CardInstance {
 
 export type PieceStatus =
   | { readonly kind: 'frozen'; readonly expiresOnTurn: number }
-  | { readonly kind: 'shielded'; readonly amount: number };
+  | { readonly kind: 'shielded'; readonly amount: number }
+  /** Maldición Sombra: pierde 1 Vida al final de cada turno hasta que muere. */
+  | { readonly kind: 'cursed'; readonly amount: number };
 
 export interface TileEffect {
   readonly kind: 'scorched';
@@ -162,11 +172,15 @@ export interface BoardPiece {
   readonly position: Position;
   readonly currentHealth: number;
   readonly attackModifier: number;
+  /** Casillas de Movimiento restadas hasta que su dueño termine su turno (p. ej. Horror Abisal). */
+  readonly movementModifier?: number;
   readonly movedThisTurn: boolean;
   readonly attackedThisTurn: boolean;
   readonly enteredOnTurn: number;
   /** Turno en el que la pieza ya consumió su reducción de primer daño (pasiva del Gólem Azur). */
   readonly reductionUsedOnTurn?: number;
+  /** Pégaso Celestial: si ya curó en su primer ataque (solo ocurre una vez por pieza). */
+  readonly firstAttackHealUsed?: boolean;
   readonly statuses: readonly PieceStatus[];
 }
 
