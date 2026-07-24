@@ -102,12 +102,12 @@ const drainAnimations = (state: MatchState): { match: MatchState; events: readon
 })
 
 /**
- * Sube esta versión siempre que cambie la forma de MatchState/PlayerState
- * (por ejemplo, un campo nuevo como fatigueStacks). Sin `migrate`, zustand
- * descarta silenciosamente cualquier partida guardada con una versión
- * distinta en vez de arriesgarse a hidratar un estado incompleto.
+ * Sube esta versión siempre que cambie la forma de MatchState/PlayerState.
+ * Sin `migrate`, zustand descarta silenciosamente cualquier partida
+ * guardada con una versión distinta en vez de arriesgarse a hidratar un
+ * estado incompleto.
  */
-const MATCH_PERSIST_VERSION = 1
+const MATCH_PERSIST_VERSION = 2
 
 export const useMatchStore = create<MatchStore>()(
   persist(

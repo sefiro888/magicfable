@@ -207,8 +207,6 @@ export interface PlayerState {
   readonly unitDiscountPending: boolean;
   /** Pasiva de Nyxaris: la primera unidad del turno ya entró en juego. */
   readonly firstUnitDeployedThisTurn: boolean;
-  /** Veces que se ha intentado robar con el mazo vacío. Cada una inflige esa cantidad de daño al Nexo propio. */
-  readonly fatigueStacks: number;
   readonly mulliganTaken: boolean;
   readonly stats: PlayerStats;
 }

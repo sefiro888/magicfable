@@ -109,40 +109,25 @@ describe('inicio, robo y mulligan', () => {
     expect(result.state.players.player.hand).toHaveLength(5);
   });
 
-  it('inflige fatiga creciente cuando el mazo está vacío en vez de no hacer nada', () => {
-    const state: MatchState = { ...withPlayer(freshMatch(), 'player', { deck: [] }), phase: 'draw' };
+  it('robar con el mazo vacío no hace nada: ni carta ni daño al Nexo', () => {
+    const state: MatchState = { ...withPlayer(freshMatch(), 'player', { deck: [], nexusHealth: 24 }), phase: 'draw' };
     const first = applyAction(state, { type: 'draw', playerId: 'player' });
     expect(first.ok).toBe(true);
-    expect(first.state.players.player.fatigueStacks).toBe(1);
     expect(first.state.players.player.nexusHealth).toBe(24);
     expect(first.state.players.player.hand).toHaveLength(5); // no se añade carta alguna
-    expect(first.state.animations.at(-1)?.type).toBe('nexus-damage');
+    expect(first.state.winner).toBeUndefined();
 
     const second = applyAction({ ...first.state, activePlayer: 'player', phase: 'draw' }, { type: 'draw', playerId: 'player' });
-    expect(second.state.players.player.fatigueStacks).toBe(2);
-    expect(second.state.players.player.nexusHealth).toBe(22); // 24 - 2, la carga crece
+    expect(second.state.players.player.nexusHealth).toBe(24); // sigue sin penalización, por más veces que se intente
   });
 
-  it('la fatiga puede terminar la partida si el Nexo llega a cero', () => {
-    const state: MatchState = {
-      ...withPlayer(freshMatch(), 'player', { deck: [], nexusHealth: 3, fatigueStacks: 2 }),
-      phase: 'draw',
-    };
-    const result = applyAction(state, { type: 'draw', playerId: 'player' });
-    expect(result.ok).toBe(true);
-    expect(result.state.players.player.nexusHealth).toBe(0);
-    expect(result.state.winner).toBe('ai');
-    expect(result.state.phase).toBe('finished');
-    expect(result.state.animations.at(-1)?.type).toBe('victory');
-  });
-
-  it('la fatiga también termina la partida en el robo automático de endTurn', () => {
-    const state: MatchState = withPlayer(freshMatch(), 'ai', { deck: [], nexusHealth: 1, fatigueStacks: 0 });
+  it('el robo automático de endTurn con el mazo vacío tampoco daña el Nexo ni termina la partida', () => {
+    const state: MatchState = withPlayer(freshMatch(), 'ai', { deck: [], nexusHealth: 1 });
     const result = applyAction(state, { type: 'end-turn', playerId: 'player' });
     expect(result.ok).toBe(true);
-    expect(result.state.players.ai.nexusHealth).toBe(0);
-    expect(result.state.winner).toBe('player');
-    expect(result.state.phase).toBe('finished');
+    expect(result.state.players.ai.nexusHealth).toBe(1);
+    expect(result.state.winner).toBeUndefined();
+    expect(result.state.phase).not.toBe('finished');
   });
 
   it('hace mulligan determinista y conserva las 50 instancias', () => {
