@@ -1,15 +1,27 @@
 .battle { height: 100vh; min-height: 720px; min-width: 1180px; position: relative; overflow: hidden; background: #06080d; }
-.topbar { height: 60px; position: relative; z-index: 30; display: grid; grid-template-columns: 260px 1fr 260px; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(8,10,16,.92); backdrop-filter: blur(14px); }
+.topbar { height: 60px; position: relative; z-index: 30; display: grid; grid-template-columns: 340px 1fr 340px; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(8,10,16,.92); backdrop-filter: blur(14px); }
 .exit { width: max-content; padding: 7px 11px; border: 1px solid rgba(255,255,255,.12); color: #aaa69e; background: rgba(255,255,255,.025); cursor: pointer; font-size: 10px; letter-spacing: .11em; text-transform: uppercase; }
 .exit:hover { border-color: var(--line-bright); color: var(--ivory); }
 .turn { text-align: center; }
 .turn strong { display: block; font-family: var(--display); color: var(--gold-bright); font-size: 17px; font-weight: 500; }
 .turn span { color: #848179; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
-.enemySummary { justify-self: end; display: flex; align-items: center; gap: 12px; text-align: right; background: none; border: 0; padding: 4px 6px; margin: -4px -6px; cursor: pointer; font: inherit; color: inherit; border-radius: 4px; transition: background .15s ease; }
+/* Resumen del rival: antes era una línea comprimida en 260px que además
+   quedaba tapada por los botones flotantes §/? (position:absolute,
+   right:12px/54px, top:12px — caen justo encima de la esquina derecha de
+   esta caja). Se ensancha la columna del header y se reserva un margen
+   propio (padding-right) del ancho de esos dos botones para que nunca se
+   solapen, y se muestran mana/mano/mazo siempre visibles, sin necesitar clic. */
+.enemySummary { justify-self: end; display: flex; align-items: center; gap: 10px; text-align: right; background: none; border: 0; padding: 5px 90px 5px 8px; margin: -5px -8px; cursor: pointer; font: inherit; color: inherit; border-radius: 6px; transition: background .15s ease; }
 .enemySummary:hover, .enemySummary[aria-expanded="true"] { background: rgba(255,255,255,.06); }
-.enemySummary strong { display: block; font-family: var(--display); font-size: 14px; }
-.enemySummary span { color: #85827a; font-size: 10px; }
-.nexusOrb { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(104,205,255,.55); border-radius: 50%; color: #bcecff; background: radial-gradient(circle, rgba(66,184,245,.42), rgba(18,48,76,.18)); box-shadow: 0 0 20px rgba(59,176,242,.18); font-family: var(--display); }
+.enemyStats { display: grid; gap: 4px; justify-items: end; min-width: 0; }
+.enemyName { display: flex; align-items: center; gap: 6px; }
+.enemyName strong { font-family: var(--display); font-size: 14px; white-space: nowrap; }
+.enemyChips { display: flex; gap: 6px; }
+.enemyChip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border: 1px solid rgba(255,255,255,.1); border-radius: 99px; background: rgba(255,255,255,.035); color: #c9c4b8; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.enemyChip[data-kind='mana'] { border-color: rgba(121,200,255,.28); color: #9ddaff; }
+.enemyChip[data-kind='hand'] { border-color: rgba(228,192,105,.28); color: #e8d9ab; }
+.enemyChip[data-kind='deck'] { border-color: rgba(255,255,255,.14); }
+.nexusOrb { flex: 0 0 auto; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(104,205,255,.55); border-radius: 50%; color: #bcecff; background: radial-gradient(circle, rgba(66,184,245,.42), rgba(18,48,76,.18)); box-shadow: 0 0 20px rgba(59,176,242,.18); font-family: var(--display); font-size: 13px; font-weight: 600; }
 
 /* Panel de datos del rival: se abre bajo el resumen del rival en la cabecera. */
 .enemyPanel {
@@ -439,10 +451,10 @@
   .turn { overflow: hidden; }
   .turn strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .turn span { font-size: 7.5px; white-space: nowrap; }
-  .enemySummary { gap: 7px; }
-  .enemySummary span { display: none; }
-  .enemySummary strong { max-width: 68px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .nexusOrb { width: 28px; height: 28px; font-size: 11px; }
+  .enemySummary { gap: 7px; padding-right: 8px; }
+  .enemyChips { display: none; }
+  .enemyName strong { max-width: 68px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nexusOrb { width: 28px; height: 28px; font-size: 9px; }
   .enemyPanel { top: 56px; right: 6px; width: 44vw; padding: 12px 10px; font-size: 12px; }
   .enemyPanel .deckCounters { gap: 4px; }
   .enemyPanel .counter { padding: 5px 3px; }

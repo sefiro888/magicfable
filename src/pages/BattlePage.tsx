@@ -26,7 +26,7 @@ import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../battle/ui/GlossaryPanel'
-import { Card, formatManaCost } from '../components'
+import { Card, FactionSigil, formatManaCost } from '../components'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
@@ -731,8 +731,24 @@ export function BattlePage() {
           aria-expanded={enemyPanelOpen}
           title="Ver los datos del rival: vida, esencia, mazo y descarte"
         >
-          <div><strong>{aiCommander?.name}</strong><span>{ai.hand.length} cartas · {ai.deck.length} en mazo</span></div>
-          <div className={styles.nexusOrb}>{ai.nexusHealth}</div>
+          <div className={styles.enemyStats}>
+            <div className={styles.enemyName}>
+              {aiCommander && <FactionSigil faction={aiCommander.faction} size="small" decorative />}
+              <strong>{aiCommander?.name}</strong>
+            </div>
+            <div className={styles.enemyChips}>
+              <span className={styles.enemyChip} data-kind="mana" title="Esencia disponible del rival">
+                ◆ {aiMana.available}/{aiMana.total}
+              </span>
+              <span className={styles.enemyChip} data-kind="hand" title="Cartas en la mano del rival">
+                🂠 {ai.hand.length}
+              </span>
+              <span className={styles.enemyChip} data-kind="deck" title="Cartas en el mazo del rival">
+                ▤ {ai.deck.length}
+              </span>
+            </div>
+          </div>
+          <div className={styles.nexusOrb} title="Vida del Nexo rival">♥{ai.nexusHealth}</div>
         </button>
       </header>
 
