@@ -37,12 +37,25 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     // síncrono del efecto (mismo patrón que el resto de canales laterales).
     const reset = window.setTimeout(() => setPeerLeft(false), 0)
     const wasConnected = { current: room.getStatus() === 'connected' }
+    // Margen antes de dar al rival por desconectado de verdad: la presencia
+    // del canal puede parpadear un instante (la pestaña pasa a segundo
+    // plano, un corte de red breve, el propio servidor de Supabase
+    // resincronizando) sin que el rival se haya ido realmente. Declararlo
+    // en el acto convertía cualquier parpadeo en un falso aviso permanente.
+    let graceTimer: number | undefined
     const off = room.onStatusChange((status) => {
-      if (status === 'connected') wasConnected.current = true
-      else if (status === 'waiting' && wasConnected.current) setPeerLeft(true)
+      if (status === 'connected') {
+        wasConnected.current = true
+        if (graceTimer !== undefined) window.clearTimeout(graceTimer)
+        graceTimer = undefined
+        setPeerLeft(false)
+      } else if (status === 'waiting' && wasConnected.current && graceTimer === undefined) {
+        graceTimer = window.setTimeout(() => setPeerLeft(true), 5000)
+      }
     })
     return () => {
       window.clearTimeout(reset)
+      if (graceTimer !== undefined) window.clearTimeout(graceTimer)
       off()
     }
   }, [room])
