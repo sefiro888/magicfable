@@ -1166,7 +1166,18 @@ export const attackPiece = (
     from: attacker.position, to: defender.position, effectId: card.vfx.attackEffect, durationMs: 380,
   });
   const defenderPosition = defender.position;
+  const defenderCard = pieceDefinition(defender);
   next = damagePiece(next, defenderId, amount, playerId, card.vfx.impactEffect);
+  // Combate cuerpo a cuerpo: si el atacante golpea con Alcance 1, la
+  // defensora devuelve daño igual a su propio Ataque — simultáneo, así
+  // que golpea de vuelta aunque el ataque recibido la mate (como un
+  // intercambio real, no un tiro libre para quien ataca). Las unidades a
+  // distancia (Alcance 2+) no reciben este contragolpe, ni las
+  // estructuras (no tienen Ataque).
+  if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
+    const retaliation = Math.max(0, defenderCard.attack + defender.attackModifier);
+    next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect);
+  }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount, defenderId, defenderPosition);
   next = applyMalacharDrain(next, playerId);
   return success(next);

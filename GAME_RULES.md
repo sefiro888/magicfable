@@ -69,7 +69,11 @@ Cada facción canaliza una variante:
   invocación), salvo palabras clave.
 - Cada unidad puede mover **una vez** y atacar **una vez** por turno.
 - Al atacar a una pieza, el atacante inflige su ATQ (más modificadores) a la
-  vida/resistencia del objetivo. El daño **permanece** entre turnos.
+  vida/resistencia del objetivo. Si el ataque es cuerpo a cuerpo (Alcance 1),
+  el combate es **mutuo**: la defensora responde con su propio ATQ contra el
+  atacante, simultáneamente (aunque muera en el intercambio). Los ataques a
+  distancia (Alcance 2+) y los que golpean una estructura (sin ATQ) no
+  reciben contragolpe. El daño **permanece** entre turnos.
 - Una pieza con vida/resistencia 0 se destruye y va al descarte de su dueño.
 
 ## 6. Hechizos

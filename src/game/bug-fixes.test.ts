@@ -721,7 +721,12 @@ describe('Bug #31 (rediseñado) — Leviatán Abismal empuja a los enemigos adya
     state = {
       ...state,
       board: [
-        makePiece('leviatan', 'leviatan-abismal', 'player', { x: 2, y: 7 }, { enteredOnTurn: -1 }),
+        // Vida artificialmente alta: el combate cuerpo a cuerpo ahora es mutuo
+        // (ver bug de diseño «combate real») y el Gigante de Magma (Ataque 5)
+        // devolvería el golpe — sin este margen, el Leviatán (Vida 5) moriría
+        // en el propio ataque y el empujón (que exige que el atacante siga en
+        // pie) no se probaría de forma aislada.
+        makePiece('leviatan', 'leviatan-abismal', 'player', { x: 2, y: 7 }, { enteredOnTurn: -1, currentHealth: 20 }),
         makePiece('objetivo', 'gigante-magma', 'ai', { x: 2, y: 6 }, { currentHealth: 10 }),
         makePiece('cercana', 'centinela-cristal', 'ai', { x: 2, y: 5 }),
       ],
@@ -737,7 +742,7 @@ describe('Bug #31 (rediseñado) — Leviatán Abismal empuja a los enemigos adya
     state = {
       ...state,
       board: [
-        makePiece('leviatan', 'leviatan-abismal', 'player', { x: 2, y: 1 }, { enteredOnTurn: -1 }),
+        makePiece('leviatan', 'leviatan-abismal', 'player', { x: 2, y: 1 }, { enteredOnTurn: -1, currentHealth: 20 }),
         makePiece('objetivo', 'gigante-magma', 'ai', { x: 2, y: 0 }, { currentHealth: 10 }),
         makePiece('en-el-borde', 'centinela-cristal', 'ai', { x: 1, y: 0 }),
       ],

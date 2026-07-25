@@ -285,7 +285,71 @@ describe('combate, daño y destrucción', () => {
     expect(result.state.board.some((piece) => piece.instanceId === 'target')).toBe(false);
     expect(result.state.players.ai.discard).toContainEqual({ instanceId: 'target', cardId: 'centinela-cristal' });
     expect(result.state.players.player.stats.damageDealt).toBe(4);
-    expect(result.state.animations.map((event) => event.type)).toEqual(['attack', 'damage', 'destroy']);
+    // Combate cuerpo a cuerpo mutuo: aunque el Centinela muere, alcanza a devolver
+    // su propio Ataque (1) al Berserker antes de ser destruido — de ahí el segundo "damage".
+    expect(result.state.animations.map((event) => event.type)).toEqual(['attack', 'damage', 'destroy', 'damage']);
+    expect(result.state.board.find((piece) => piece.instanceId === 'berserker')?.currentHealth)
+      .toBe((CARD_BY_ID['berserker-ignivoro']!.health ?? 0) - 1);
+  });
+
+  it('el combate cuerpo a cuerpo (Alcance 1) es mutuo: la defensora también daña al atacante', () => {
+    const state: MatchState = {
+      ...freshMatch(),
+      board: [
+        makePiece('atacante', 'gigante-magma', 'player', { x: 2, y: 2 }),
+        makePiece('defensora', 'sabueso-brasa', 'ai', { x: 2, y: 3 }, { currentHealth: 5 }),
+      ],
+    };
+    const result = applyAction(state, { type: 'attack-piece', playerId: 'player', attackerId: 'atacante', defenderId: 'defensora' });
+    expect(result.ok).toBe(true);
+    // Gigante de Magma (ATQ 5) deja a la defensora (5 vida) en 0: destruida.
+    expect(result.state.board.some((piece) => piece.instanceId === 'defensora')).toBe(false);
+    // Sabueso de Brasa (ATQ 2) devuelve 2 de daño al Gigante (6 de vida) antes de morir.
+    expect(result.state.board.find((piece) => piece.instanceId === 'atacante')?.currentHealth).toBe(4);
+  });
+
+  it('un ataque a distancia (Alcance 2+) no recibe contragolpe', () => {
+    const state: MatchState = {
+      ...freshMatch(),
+      board: [
+        makePiece('mago', 'mago-celestial', 'player', { x: 2, y: 0 }),
+        makePiece('defensora', 'gigante-magma', 'ai', { x: 2, y: 2 }, { currentHealth: 10 }),
+      ],
+    };
+    const result = applyAction(state, { type: 'attack-piece', playerId: 'player', attackerId: 'mago', defenderId: 'defensora' });
+    expect(result.ok).toBe(true);
+    // Mago Celestial (Alcance 3, ataca desde distancia 2) no recibe contragolpe:
+    // sigue con su vida máxima intacta.
+    expect(result.state.board.find((piece) => piece.instanceId === 'mago')?.currentHealth)
+      .toBe(CARD_BY_ID['mago-celestial']!.health);
+  });
+
+  it('atacar una estructura (sin Ataque) tampoco causa contragolpe', () => {
+    const state: MatchState = {
+      ...freshMatch(),
+      board: [
+        makePiece('atacante', 'sabueso-brasa', 'player', { x: 2, y: 2 }),
+        makePiece('muro', 'altar-combustion', 'ai', { x: 2, y: 3 }),
+      ],
+    };
+    const result = applyAction(state, { type: 'attack-piece', playerId: 'player', attackerId: 'atacante', defenderId: 'muro' });
+    expect(result.ok).toBe(true);
+    expect(result.state.board.find((piece) => piece.instanceId === 'atacante')?.currentHealth)
+      .toBe(CARD_BY_ID['sabueso-brasa']!.health);
+  });
+
+  it('un intercambio cuerpo a cuerpo puede matar a las dos piezas a la vez', () => {
+    const state: MatchState = {
+      ...freshMatch(),
+      board: [
+        makePiece('atacante', 'sabueso-brasa', 'player', { x: 2, y: 2 }, { currentHealth: 1 }),
+        makePiece('defensora', 'sabueso-tumba', 'ai', { x: 2, y: 3 }, { currentHealth: 1 }),
+      ],
+    };
+    const result = applyAction(state, { type: 'attack-piece', playerId: 'player', attackerId: 'atacante', defenderId: 'defensora' });
+    expect(result.ok).toBe(true);
+    expect(result.state.board.some((piece) => piece.instanceId === 'atacante')).toBe(false);
+    expect(result.state.board.some((piece) => piece.instanceId === 'defensora')).toBe(false);
   });
 
   it('respeta alcance y bloqueos de línea', () => {
