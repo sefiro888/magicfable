@@ -160,6 +160,15 @@
   .rarity span { display: none; }
 }
 
+/* Móvil: los mínimos de la rejilla de dos columnas (18rem + 23rem = 41rem,
+   656px) siguen sin caber en un teléfono — se apila en una sola columna. */
+@media (max-width: 700px) {
+  .dialog { grid-template-columns: 1fr; width: min(26rem, 100%); gap: 1rem; padding: 1.1rem; }
+  .cardStage > article { width: min(70%, 18rem); }
+  .details { padding: 0; max-height: 55vh; }
+  .identity h2 { font-size: 1.5rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .backdrop, .dialog, .artHaze { animation: none; }
   .close { transition: none; }

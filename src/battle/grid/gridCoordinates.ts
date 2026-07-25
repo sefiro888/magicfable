@@ -64,5 +64,12 @@ export const SCENERY_SCALE = BOARD_WORLD_SIZE / LEGACY_FOOTPRINT
 export const CAMERA_POSITION: readonly [number, number, number] = [0, 6.7, 8.8]
 export const CAMERA_FOV = 44
 export const CAMERA_TARGET: readonly [number, number, number] = [0, 0, -0.6]
-export const CAMERA_MIN_DISTANCE = 8.5
+/**
+ * El mínimo baja de 8.5 a 7 para dejar sitio a la distancia por defecto en
+ * móvil vertical (Board3D.tsx, MOBILE_DISTANCE=7.4, ResponsiveCamera) — si
+ * quedara por encima, OrbitControls empujaría la cámara de vuelta a 8.5 en
+ * cuanto actualizara, deshaciendo el acercamiento pensado para que el tablero
+ * llene la pantalla en vertical.
+ */
+export const CAMERA_MIN_DISTANCE = 7
 export const CAMERA_MAX_DISTANCE = 16.2

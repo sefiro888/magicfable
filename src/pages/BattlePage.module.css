@@ -432,7 +432,7 @@
   .enemyPanel .deckCounters { gap: 4px; }
   .enemyPanel .counter { padding: 5px 3px; }
 
-  .arena { inset: 52px 0 128px; }
+  .arena { inset: 52px 0 150px; }
   .boardFrame { inset: 0 4px; }
 
   /* Paneles compactos y semitransparentes: informan sin tapar el tablero. */
@@ -460,13 +460,18 @@
 
   /* El botón de turno vive fuera del panel lateral: siempre visible sobre
      la mano, no depende de que el panel de contexto esté a la vista. */
-  .turnDock { position: fixed; z-index: 46; left: 6px; right: 6px; bottom: 128px; padding: 6px; border-top: 0; background: rgba(9,12,20,.94); border: 1px solid var(--line-bright); }
+  .turnDock { position: fixed; z-index: 46; left: 6px; right: 6px; bottom: 150px; padding: 6px; border-top: 0; background: rgba(9,12,20,.94); border: 1px solid var(--line-bright); }
   .endTurn { height: 40px; font-size: 10px; }
 
-  .handBar { height: 128px; }
+  /* Carril de la mano: sube de 128 a 150px. Las cartas de la mano no tienen
+     ":hover" táctil que las levante para leerlas (ver HandFan.module.css,
+     regla @media (hover:none)), así que en reposo dependen de que el carril
+     deje ver lo suficiente de cada una (nombre, coste, arte) sin necesidad de
+     tocarlas primero — con 128px solo asomaba una franja muy fina. */
+  .handBar { height: 150px; }
   .handBar[data-tucked] { height: 46px; }
   .hints { display: none; }
-  .helpButton, .glossaryButton { top: auto; bottom: 188px; width: 30px; height: 30px; font-size: 15px; }
+  .helpButton, .glossaryButton { top: auto; bottom: 210px; width: 30px; height: 30px; font-size: 15px; }
   .helpButton { right: 6px; }
   .glossaryButton { right: 44px; }
 
@@ -481,4 +486,28 @@
     transition: color .15s ease, border-color .15s ease;
   }
   .ownPanelToggle[aria-pressed="true"] { color: var(--gold-bright); border-color: var(--gold); }
+
+  /* Modal de inspección de carta: en desktop es una ficha fija de 720px con
+     dos columnas de ancho fijo (290px + 1fr) — en un móvil de ~360-420px eso
+     desborda por completo hacia la derecha (imagen y botón "Cerrar" quedan
+     fuera de pantalla). En vertical se apila en una sola columna que escala
+     con el viewport y se puede desplazar si el contenido no cabe en alto. */
+  .inspectBackdrop { padding: 10px; overflow-y: auto; align-items: flex-start; }
+  .inspect {
+    width: min(420px, 100%);
+    max-height: none;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
+    margin: auto 0;
+  }
+  .inspect img { width: 100%; height: auto; max-height: 42vh; aspect-ratio: 290 / 310; }
+  .inspect h2 { font-size: 22px; }
+  .inspectText { font-size: 12px; }
+
+  /* Resultado de partida: mismo problema, 530px fijo no cabe en móvil. */
+  .result { width: min(480px, 100%); padding: 22px; }
+  .result h2 { font-size: 34px; }
+  .resultStats { grid-template-columns: repeat(2, 1fr); }
+  .resultStats div:nth-child(2) { border-right: 0; }
 }

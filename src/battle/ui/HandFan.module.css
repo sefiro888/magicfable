@@ -41,3 +41,13 @@
 @media (max-width: 760px) {
   .hand { transform: scale(0.74); transform-origin: 50% 100%; }
 }
+
+/* ── Táctil: sin ratón no hay ":hover" que levante la carta para leerla, así
+   que en reposo se queda hundida bajo el borde inferior de la pantalla (el
+   offset de +22/+34px pensado para asomar solo mientras se pasa el cursor
+   por encima). Se reduce ese hundimiento por defecto en dispositivos sin
+   puntero de precisión, para que nombre/coste se lean sin tener que tocar la
+   carta primero. */
+@media (hover: none) and (pointer: coarse) {
+  .fanCard { transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 4px)); }
+}

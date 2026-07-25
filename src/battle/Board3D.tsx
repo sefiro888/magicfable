@@ -1,7 +1,7 @@
 import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { MathUtils, Vector3 } from 'three'
+import { MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
@@ -10,6 +10,7 @@ import { withBase } from '../utils/assets'
 import { DamageNumbers } from './DamageNumbers'
 import { EventEffects } from './EventEffects'
 import {
+  BOARD_WORLD_HALF,
   CAMERA_FOV,
   CAMERA_MAX_DISTANCE,
   CAMERA_MIN_DISTANCE,
@@ -337,6 +338,56 @@ function Nexus({
 }
 
 /** Sacudida sutil de cámara en los golpes al Nexo. Respeta el movimiento reducido. */
+/**
+ * CAMERA_FOV/CAMERA_POSITION se afinaron mirando una pantalla ancha (desktop):
+ * a ese aspect ratio el tablero llena el encuadre sin recortarse. En un móvil
+ * en vertical el aspect ratio es muy estrecho (p. ej. 0.46) y una cámara en
+ * perspectiva a esa misma distancia y FOV recorta los lados del tablero — solo
+ * se ve entero si el jugador aleja la cámara a mano.
+ *
+ * En vertical sobra alto de sobra (la pantalla es más alta que ancha), así que
+ * en vez de alejar la cámara (que encoge el tablero en pantalla) se acerca
+ * (MOBILE_DISTANCE, menor que la distancia de escritorio) para que el tablero
+ * se vea grande, y se ensancha el FOV vertical lo justo para que ese ancho
+ * quepa entero a esa distancia más corta — el hueco vertical de sobra que deja
+ * un FOV más ancho es justo el que regala una pantalla vertical.
+ */
+const REFERENCE_ASPECT = 1.7
+const MOBILE_DISTANCE = 7.4
+const MOBILE_FOV_MAX = 84
+/** Medio ancho del tablero + un margen para que no quede pegado al borde. */
+const BOARD_HALF_WIDTH_WITH_MARGIN = BOARD_WORLD_HALF * 1.14
+function ResponsiveCamera() {
+  // Se aplica desde useFrame (no useEffect+useThree) a propósito: mutar
+  // directamente el objeto `camera` que devuelve el hook useThree() choca con
+  // la regla de lint react-hooks/immutability. Tomarlo del parámetro de
+  // useFrame (como ya hace CameraRig más abajo) es el escape hatch estándar
+  // de R3F para este tipo de mutación imperativa; la comparación con
+  // appliedKey evita recalcular en cada frame, solo cuando cambia el tamaño.
+  const appliedKey = useRef<string | null>(null)
+  useFrame(({ camera, size }) => {
+    if (!(camera instanceof ThreePerspectiveCamera)) return
+    const key = `${size.width}x${size.height}`
+    if (appliedKey.current === key) return
+    appliedKey.current = key
+    const aspect = size.width / size.height
+    if (aspect >= REFERENCE_ASPECT) {
+      camera.fov = CAMERA_FOV
+      camera.position.set(...CAMERA_POSITION)
+      camera.updateProjectionMatrix()
+      return
+    }
+    const neededHalfTan = BOARD_HALF_WIDTH_WITH_MARGIN / MOBILE_DISTANCE
+    const vFovHalfTan = neededHalfTan / aspect
+    const fov = Math.min(MOBILE_FOV_MAX, MathUtils.radToDeg(Math.atan(vFovHalfTan) * 2))
+    camera.fov = Math.max(fov, CAMERA_FOV)
+    const scale = MOBILE_DISTANCE / new Vector3(...CAMERA_POSITION).length()
+    camera.position.set(CAMERA_POSITION[0] * scale, CAMERA_POSITION[1] * scale, CAMERA_POSITION[2] * scale)
+    camera.updateProjectionMatrix()
+  })
+  return null
+}
+
 function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
   const shakeStart = useRef(-10)
   const base = useRef(new Vector3())
@@ -459,6 +510,7 @@ function Scene(props: Board3DProps) {
       <DamageNumbers event={props.activeEvent} />
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
+      <ResponsiveCamera />
       <OrbitControls makeDefault enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[...CAMERA_TARGET]} />
     </>
   )
