@@ -18,3 +18,7 @@ test-results/
 *.blend2
 tools/captures/
 tools/art-inbox/
+
+# Salidas del simulador de equilibrio (src/game/balance-sim.test.ts)
+balance-result.txt
+balance-decks.txt

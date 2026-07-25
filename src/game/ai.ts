@@ -16,9 +16,20 @@ import type {
   FactionId,
   GameAction,
   MatchState,
+  PlayerId,
   Position,
   SpellTarget,
 } from './types';
+
+/**
+ * Todas las rutinas de decisión reciben el asiento en el que juegan (`me`).
+ * En la partida real siempre es 'ai' —el valor por defecto, para no cambiar
+ * ninguna llamada existente—, pero dejarlo parametrizado permite enfrentar a
+ * la IA contra sí misma en los dos bandos (ver la simulación de balance),
+ * que es la única forma de medir el equilibrio entre facciones sin que el
+ * resultado dependa de qué lado juega mejor.
+ */
+const rivalOf = (me: PlayerId): PlayerId => (me === 'player' ? 'ai' : 'player');
 
 const MAX_AI_ACTIONS = 64;
 
@@ -51,8 +62,8 @@ export const factionCardBias = (card: CardDefinition, faction: FactionId | undef
   }
 };
 
-const aiFaction = (state: MatchState): FactionId | undefined =>
-  COMMANDER_BY_ID[state.players.ai.commanderId]?.faction;
+const seatFaction = (state: MatchState, me: PlayerId): FactionId | undefined =>
+  COMMANDER_BY_ID[state.players[me].commanderId]?.faction;
 
 const cardScore = (card: CardDefinition, faction?: FactionId): number => {
   const cost = card.cost.generic + Object.values(card.cost.colored).reduce<number>((sum, value) => sum + (value ?? 0), 0);
@@ -70,8 +81,8 @@ const stableTieBreaker = (value: string, seed: number): number => {
   return hash;
 };
 
-const chooseEnemyTarget = (state: MatchState, card: CardDefinition): BoardPiece | undefined => {
-  const enemies = state.board.filter((piece) => piece.owner === 'player');
+const chooseEnemyTarget = (state: MatchState, card: CardDefinition, me: PlayerId): BoardPiece | undefined => {
+  const enemies = state.board.filter((piece) => piece.owner === rivalOf(me));
   // El motor rechaza estos hechizos sobre estructuras; filtrar aquí evita gastar el turno en una acción inválida.
   const unitsOnly = card.id === 'lluvia-ceniza' || card.effects.some((effect) => effect.kind === 'freeze');
   const allowed = unitsOnly
@@ -86,13 +97,13 @@ const chooseEnemyTarget = (state: MatchState, card: CardDefinition): BoardPiece 
   })[0];
 };
 
-const targetForCard = (state: MatchState, card: CardDefinition): SpellTarget | undefined => {
+const targetForCard = (state: MatchState, card: CardDefinition, me: PlayerId): SpellTarget | undefined => {
   const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move');
   if (refreshMove) {
     const movedAlly = state.board
       .filter(
         (piece) =>
-          piece.owner === 'ai' && piece.movedThisTurn && CARD_BY_ID[piece.cardId]?.type === 'unit',
+          piece.owner === me && piece.movedThisTurn && CARD_BY_ID[piece.cardId]?.type === 'unit',
       )
       .sort((left, right) => left.instanceId.localeCompare(right.instanceId))[0];
     return movedAlly ? { kind: 'piece', pieceId: movedAlly.instanceId } : undefined;
@@ -102,7 +113,7 @@ const targetForCard = (state: MatchState, card: CardDefinition): SpellTarget | u
   );
   if (friendlyBuff) {
     const ally = state.board
-      .filter((piece) => piece.owner === 'ai' && CARD_BY_ID[piece.cardId]?.type === 'unit')
+      .filter((piece) => piece.owner === me && CARD_BY_ID[piece.cardId]?.type === 'unit')
       .sort((left, right) => {
         const attackDifference = (CARD_BY_ID[right.cardId]?.attack ?? 0) - (CARD_BY_ID[left.cardId]?.attack ?? 0);
         return attackDifference || left.instanceId.localeCompare(right.instanceId);
@@ -113,14 +124,14 @@ const targetForCard = (state: MatchState, card: CardDefinition): SpellTarget | u
     (effect) => effect.kind === 'damage' || effect.kind === 'freeze' || effect.kind === 'scorch',
   );
   if (!needsEnemy) return { kind: 'none' };
-  const target = chooseEnemyTarget(state, card);
+  const target = chooseEnemyTarget(state, card, me);
   return target ? { kind: 'piece', pieceId: target.instanceId } : undefined;
 };
 
-const chooseDeployment = (state: MatchState): Position | undefined => {
-  const positions = getValidDeploymentPositions(state, 'ai');
+const chooseDeployment = (state: MatchState, me: PlayerId): Position | undefined => {
+  const positions = getValidDeploymentPositions(state, me);
   if (positions.length === 0) return undefined;
-  const enemyPieces = state.board.filter((piece) => piece.owner === 'player');
+  const enemyPieces = state.board.filter((piece) => piece.owner === rivalOf(me));
   return [...positions].sort((left, right) => {
     const proximity = (position: Position): number =>
       enemyPieces.length === 0
@@ -130,17 +141,17 @@ const chooseDeployment = (state: MatchState): Position | undefined => {
   })[0];
 };
 
-const actionForCard = (state: MatchState, instance: CardInstance): GameAction | undefined => {
+const actionForCard = (state: MatchState, instance: CardInstance, me: PlayerId): GameAction | undefined => {
   const card = CARD_BY_ID[instance.cardId];
   if (!card || card.type === 'mana') return undefined;
-  if (!planManaPayment(state.players.ai.resources, effectiveCost(state, 'ai', card)).payable) return undefined;
+  if (!planManaPayment(state.players[me].resources, effectiveCost(state, me, card)).payable) return undefined;
   if (card.type === 'unit' || card.type === 'structure') {
-    const position = chooseDeployment(state);
+    const position = chooseDeployment(state, me);
     return position
-      ? { type: 'play-card', playerId: 'ai', cardInstanceId: instance.instanceId, position }
+      ? { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, position }
       : undefined;
   }
-  const target = targetForCard(state, card);
+  const target = targetForCard(state, card, me);
   const needsPiece = card.effects.some(
     (effect) =>
       effect.kind === 'damage' ||
@@ -150,12 +161,12 @@ const actionForCard = (state: MatchState, instance: CardInstance): GameAction | 
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
   );
   if (needsPiece && (!target || target.kind !== 'piece')) return undefined;
-  return { type: 'play-card', playerId: 'ai', cardInstanceId: instance.instanceId, target };
+  return { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, target };
 };
 
-const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>): GameAction | undefined => {
-  const faction = aiFaction(state);
-  const candidates = state.players.ai.hand
+const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>, me: PlayerId): GameAction | undefined => {
+  const faction = seatFaction(state, me);
+  const candidates = state.players[me].hand
     .filter((instance) => !skipped.has(instance.instanceId))
     .map((instance) => ({ instance, card: CARD_BY_ID[instance.cardId] }))
     .filter((candidate): candidate is { instance: CardInstance; card: CardDefinition } => Boolean(candidate.card))
@@ -165,7 +176,7 @@ const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>): Game
         stableTieBreaker(right.instance.instanceId, state.seed + state.turn),
     );
   for (const candidate of candidates) {
-    const action = actionForCard(state, candidate.instance);
+    const action = actionForCard(state, candidate.instance, me);
     if (action) return action;
   }
   return undefined;
@@ -178,23 +189,24 @@ const targetScore = (state: MatchState, pieceId: string): number => {
   return (definition?.attack ?? 0) * 4 + (definition?.type === 'structure' ? 2 : 0) - piece.currentHealth;
 };
 
-const chooseMove = (state: MatchState, pieceId: string): Position | undefined => {
+const chooseMove = (state: MatchState, pieceId: string, me: PlayerId): Position | undefined => {
   const moves = getValidMoves(state, pieceId);
+  const rival = rivalOf(me);
   return [...moves].sort((left, right) => {
-    // La IA avanza hacia el Nexo del jugador (fila BOARD_SIZE).
-    const leftDistance = distanceToEnemyNexusRow('ai', left.y);
-    const rightDistance = distanceToEnemyNexusRow('ai', right.y);
-    const leftTargets = state.board.filter((piece) => piece.owner === 'player' && Math.abs(piece.position.x - left.x) + Math.abs(piece.position.y - left.y) === 1).length;
-    const rightTargets = state.board.filter((piece) => piece.owner === 'player' && Math.abs(piece.position.x - right.x) + Math.abs(piece.position.y - right.y) === 1).length;
+    // Avanza hacia el Nexo rival y prefiere casillas con objetivos adyacentes.
+    const leftDistance = distanceToEnemyNexusRow(me, left.y);
+    const rightDistance = distanceToEnemyNexusRow(me, right.y);
+    const leftTargets = state.board.filter((piece) => piece.owner === rival && Math.abs(piece.position.x - left.x) + Math.abs(piece.position.y - left.y) === 1).length;
+    const rightTargets = state.board.filter((piece) => piece.owner === rival && Math.abs(piece.position.x - right.x) + Math.abs(piece.position.y - right.y) === 1).length;
     return rightTargets - leftTargets || leftDistance - rightDistance || left.x - right.x;
   })[0];
 };
 
-const actWithPiece = (state: MatchState, pieceId: string): MatchState => {
+const actWithPiece = (state: MatchState, pieceId: string, me: PlayerId): MatchState => {
   let next = state;
   let attacks = getValidAttacks(next, pieceId);
   if (attacks.canAttackNexus) {
-    const result = applyAction(next, { type: 'attack-nexus', playerId: 'ai', attackerId: pieceId });
+    const result = applyAction(next, { type: 'attack-nexus', playerId: me, attackerId: pieceId });
     return result.ok ? result.state : next;
   }
   if (attacks.pieceIds.length > 0) {
@@ -202,25 +214,25 @@ const actWithPiece = (state: MatchState, pieceId: string): MatchState => {
       (left, right) => targetScore(next, right) - targetScore(next, left) || left.localeCompare(right),
     )[0];
     if (targetId) {
-      const result = applyAction(next, { type: 'attack-piece', playerId: 'ai', attackerId: pieceId, defenderId: targetId });
+      const result = applyAction(next, { type: 'attack-piece', playerId: me, attackerId: pieceId, defenderId: targetId });
       return result.ok ? result.state : next;
     }
   }
-  const move = chooseMove(next, pieceId);
+  const move = chooseMove(next, pieceId, me);
   if (move) {
-    const result = applyAction(next, { type: 'move', playerId: 'ai', pieceId, to: move });
+    const result = applyAction(next, { type: 'move', playerId: me, pieceId, to: move });
     if (result.ok) next = result.state;
   }
   attacks = getValidAttacks(next, pieceId);
   if (attacks.canAttackNexus) {
-    const result = applyAction(next, { type: 'attack-nexus', playerId: 'ai', attackerId: pieceId });
+    const result = applyAction(next, { type: 'attack-nexus', playerId: me, attackerId: pieceId });
     return result.ok ? result.state : next;
   }
   const targetId = [...attacks.pieceIds].sort(
     (left, right) => targetScore(next, right) - targetScore(next, left) || left.localeCompare(right),
   )[0];
   if (targetId) {
-    const result = applyAction(next, { type: 'attack-piece', playerId: 'ai', attackerId: pieceId, defenderId: targetId });
+    const result = applyAction(next, { type: 'attack-piece', playerId: me, attackerId: pieceId, defenderId: targetId });
     if (result.ok) next = result.state;
   }
   return next;
@@ -236,52 +248,53 @@ export const chooseNextAiAction = (
   state: MatchState,
   skippedCardIds: ReadonlySet<string> = new Set(),
   difficulty: AiDifficulty = 'normal',
+  me: PlayerId = 'ai',
 ): GameAction => {
-  const endTurn: GameAction = { type: 'end-turn', playerId: 'ai' };
-  if (state.activePlayer !== 'ai' || state.phase === 'finished') return endTurn;
+  const endTurn: GameAction = { type: 'end-turn', playerId: me };
+  if (state.activePlayer !== me || state.phase === 'finished') return endTurn;
 
-  const resource = state.players.ai.hand.find((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana');
-  if (resource && !state.players.ai.resourcePlayedThisTurn && !skippedCardIds.has(resource.instanceId)) {
-    return { type: 'play-resource', playerId: 'ai', cardInstanceId: resource.instanceId };
+  const resource = state.players[me].hand.find((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana');
+  if (resource && !state.players[me].resourcePlayedThisTurn && !skippedCardIds.has(resource.instanceId)) {
+    return { type: 'play-resource', playerId: me, cardInstanceId: resource.instanceId };
   }
 
-  const cardAction = chooseCardAction(state, skippedCardIds);
+  const cardAction = chooseCardAction(state, skippedCardIds, me);
   if (cardAction) return cardAction;
 
   const pieces = state.board
-    .filter((piece) => piece.owner === 'ai')
+    .filter((piece) => piece.owner === me)
     .sort((left, right) => left.instanceId.localeCompare(right.instanceId));
   for (const piece of pieces) {
     const attacks = getValidAttacks(state, piece.instanceId);
     // En fácil la IA no remata el Nexo: pelea en el tablero y deja respirar al jugador.
     if (attacks.canAttackNexus && difficulty !== 'easy') {
-      return { type: 'attack-nexus', playerId: 'ai', attackerId: piece.instanceId };
+      return { type: 'attack-nexus', playerId: me, attackerId: piece.instanceId };
     }
     if (attacks.pieceIds.length > 0) {
       const targetId = [...attacks.pieceIds].sort(
         (left, right) => targetScore(state, right) - targetScore(state, left) || left.localeCompare(right),
       )[0];
       if (targetId) {
-        return { type: 'attack-piece', playerId: 'ai', attackerId: piece.instanceId, defenderId: targetId };
+        return { type: 'attack-piece', playerId: me, attackerId: piece.instanceId, defenderId: targetId };
       }
     }
   }
   for (const piece of pieces) {
     if (piece.movedThisTurn) continue;
-    const move = chooseMove(state, piece.instanceId);
-    if (move) return { type: 'move', playerId: 'ai', pieceId: piece.instanceId, to: move };
+    const move = chooseMove(state, piece.instanceId, me);
+    if (move) return { type: 'move', playerId: me, pieceId: piece.instanceId, to: move };
   }
   return endTurn;
 };
 
 /** Runs a complete, bounded and deterministic AI turn, always yielding control when possible. */
-export const runAiTurn = (state: MatchState): MatchState => {
-  if (state.activePlayer !== 'ai' || state.phase === 'finished') return state;
+export const runAiTurn = (state: MatchState, me: PlayerId = 'ai'): MatchState => {
+  if (state.activePlayer !== me || state.phase === 'finished') return state;
   let next = state;
   let actions = 0;
-  const resource = next.players.ai.hand.find((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana');
-  if (resource && !next.players.ai.resourcePlayedThisTurn) {
-    const result = applyAction(next, { type: 'play-resource', playerId: 'ai', cardInstanceId: resource.instanceId });
+  const resource = next.players[me].hand.find((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana');
+  if (resource && !next.players[me].resourcePlayedThisTurn) {
+    const result = applyAction(next, { type: 'play-resource', playerId: me, cardInstanceId: resource.instanceId });
     if (result.ok) {
       next = result.state;
       actions += 1;
@@ -290,7 +303,7 @@ export const runAiTurn = (state: MatchState): MatchState => {
 
   const skipped = new Set<string>();
   while (actions < MAX_AI_ACTIONS && next.phase !== 'finished') {
-    const action = chooseCardAction(next, skipped);
+    const action = chooseCardAction(next, skipped, me);
     if (!action || action.type !== 'play-card') break;
     const result = applyAction(next, action);
     if (!result.ok) {
@@ -302,16 +315,16 @@ export const runAiTurn = (state: MatchState): MatchState => {
   }
 
   const pieceIds = next.board
-    .filter((piece) => piece.owner === 'ai')
+    .filter((piece) => piece.owner === me)
     .map((piece) => piece.instanceId)
     .sort();
   for (const pieceId of pieceIds) {
     if (actions >= MAX_AI_ACTIONS || next.phase === 'finished') break;
     const before = next;
-    next = actWithPiece(next, pieceId);
+    next = actWithPiece(next, pieceId, me);
     if (next !== before) actions += 1;
   }
   if (next.phase === 'finished') return next;
-  const ended = applyAction(next, { type: 'end-turn', playerId: 'ai' });
+  const ended = applyAction(next, { type: 'end-turn', playerId: me });
   return ended.ok ? ended.state : next;
 };
