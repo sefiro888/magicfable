@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { ChunkErrorBoundary, clearChunkReloadFlag } from './ChunkErrorBoundary'
 import { AppShell } from './layout/AppShell'
 import { HomePage } from './pages/HomePage'
 
@@ -11,20 +12,27 @@ const PlayPage = lazy(() => import('./pages/PlayPage').then((module) => ({ defau
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 
 export function App() {
+  // Un montaje sin errores confirma que los fragmentos de esta sesión
+  // cargan bien: libera el aviso de recarga por si hiciera falta otra
+  // vez más adelante (otro despliegue mientras esta pestaña sigue abierta).
+  useEffect(() => clearChunkReloadFlag(), [])
+
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: 'var(--gold)' }}>Abriendo la crónica…</div>}>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route index element={<HomePage />} />
-          <Route path="play" element={<PlayPage />} />
-          <Route path="multiplayer" element={<MultiplayerPage />} />
-          <Route path="gallery" element={<GalleryPage />} />
-          <Route path="decks" element={<DecksPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="battle" element={<BattlePage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+    <ChunkErrorBoundary>
+      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: 'var(--gold)' }}>Abriendo la crónica…</div>}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route index element={<HomePage />} />
+            <Route path="play" element={<PlayPage />} />
+            <Route path="multiplayer" element={<MultiplayerPage />} />
+            <Route path="gallery" element={<GalleryPage />} />
+            <Route path="decks" element={<DecksPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="battle" element={<BattlePage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </ChunkErrorBoundary>
   )
 }
