@@ -10,8 +10,60 @@ import {
   type AnimationEvent,
   type GameAction,
   type MatchState,
+  type Position,
   type SpellTarget,
 } from '../game'
+
+/**
+ * Entrada compacta del registro de partida (para el botón "Descargar
+ * registro" de la pantalla de resultado, ver MatchExport en BattlePage.tsx).
+ * Deliberadamente reducida a IDs y campos cortos, no texto libre repetido
+ * como en `history`: el objetivo es que el archivo exportado sea barato de
+ * pegar en un chat sin perder ninguna información reconstruible.
+ */
+export interface MatchLogEntry {
+  readonly turn: number
+  readonly by?: 'player' | 'ai'
+  readonly type: GameAction['type'] | 'info' | 'js-error'
+  readonly card?: string
+  readonly from?: string
+  readonly to?: string
+  readonly target?: string
+  readonly ok: boolean
+  readonly note?: string
+}
+
+const posKey = (position: Position): string => `${position.x},${position.y}`
+
+/** cardId de una pieza en el tablero (no el nombre legible: más compacto y sin ambigüedad de idioma). */
+const pieceCardId = (state: MatchState, pieceId: string): string | undefined =>
+  state.board.find((candidate) => candidate.instanceId === pieceId)?.cardId
+
+const spellTargetKey = (state: MatchState, target: SpellTarget | undefined): string | undefined => {
+  if (!target) return undefined
+  if (target.kind === 'piece') return pieceCardId(state, target.pieceId) ?? target.pieceId
+  if (target.kind === 'nexus') return `nexus:${target.playerId}`
+  return undefined
+}
+
+/** Igual que actionDescription pero en campos compactos, para el registro exportable. */
+const compactAction = (state: MatchState, action: GameAction): Pick<MatchLogEntry, 'card' | 'from' | 'to' | 'target'> => {
+  if (action.type === 'play-resource' || action.type === 'play-card') {
+    const player = state.players[action.playerId]
+    const instance = player.hand.find((card) => card.instanceId === action.cardInstanceId)
+    return {
+      card: instance?.cardId,
+      to: action.type === 'play-card' ? (action.position ? posKey(action.position) : undefined) : undefined,
+      target: action.type === 'play-card' ? spellTargetKey(state, action.target) : undefined,
+    }
+  }
+  if (action.type === 'move') return { card: pieceCardId(state, action.pieceId), to: posKey(action.to) }
+  if (action.type === 'attack-piece') {
+    return { card: pieceCardId(state, action.attackerId), target: pieceCardId(state, action.defenderId) ?? action.defenderId }
+  }
+  if (action.type === 'attack-nexus') return { card: pieceCardId(state, action.attackerId) }
+  return {}
+}
 
 interface MatchStore {
   match?: MatchState
@@ -20,6 +72,8 @@ interface MatchStore {
   inspectedCardId?: string
   message?: string
   history: readonly string[]
+  /** Registro compacto de toda la partida, para exportar (ver MatchLogEntry). Nunca se recorta. */
+  matchLog: readonly MatchLogEntry[]
   aiThinking: boolean
   startedAtMs: number
   elapsedSeconds: number
@@ -40,6 +94,8 @@ interface MatchStore {
   inspect: (cardId?: string) => void
   setMessage: (message?: string) => void
   setAiThinking: (thinking: boolean) => void
+  /** Registra un error de JS atrapado durante la partida en el registro exportable. */
+  logError: (message: string) => void
   reset: () => void
 }
 
@@ -88,6 +144,7 @@ const actionDescription = (state: MatchState, action: GameAction): string => {
 
 const initialState = {
   history: [] as readonly string[],
+  matchLog: [] as readonly MatchLogEntry[],
   aiThinking: false,
   startedAtMs: 0,
   elapsedSeconds: 0,
@@ -158,15 +215,25 @@ export const useMatchStore = create<MatchStore>()(
     if (!match) return false
     const result = applyAction(match, action)
     if (!result.ok) {
-      set({ message: result.error?.message ?? 'La acción no es válida.' })
+      const errorEntry: MatchLogEntry = {
+        turn: match.turn,
+        by: action.playerId,
+        type: action.type,
+        ...compactAction(match, action),
+        ok: false,
+        note: result.error?.message,
+      }
+      set((current) => ({ message: result.error?.message ?? 'La acción no es válida.', matchLog: [...current.matchLog, errorEntry] }))
       return false
     }
     const description = actionDescription(match, action)
+    const logEntry: MatchLogEntry = { turn: match.turn, by: action.playerId, type: action.type, ...compactAction(match, action), ok: true }
     const { match: cleaned, events } = drainAnimations(result.state)
     set((current) => ({
       match: cleaned,
       message: undefined,
       history: [...current.history.slice(-9), description],
+      matchLog: [...current.matchLog, logEntry],
       pendingAnimations: [...current.pendingAnimations, ...events],
       elapsedSeconds: cleaned.winner ? Math.max(1, Math.round((Date.now() - current.startedAtMs) / 1000)) : current.elapsedSeconds,
     }))
@@ -178,6 +245,10 @@ export const useMatchStore = create<MatchStore>()(
       match: cleaned,
       message,
       history: message ? [...current.history.slice(-9), message] : current.history,
+      // `replaceMatch` la usa el sincronizador multijugador: aquí llegan eventos de
+      // red (jugada rechazada por el anfitrión, aviso de desconexión...) que no
+      // pasan por `dispatch`, así que se registran aparte como entradas 'info'.
+      matchLog: message ? [...current.matchLog, { turn: cleaned.turn, type: 'info' as const, ok: true, note: message }] : current.matchLog,
       pendingAnimations: [...current.pendingAnimations, ...events],
       elapsedSeconds: cleaned.winner ? Math.max(1, Math.round((Date.now() - current.startedAtMs) / 1000)) : current.elapsedSeconds,
     }))
@@ -194,6 +265,10 @@ export const useMatchStore = create<MatchStore>()(
   inspect: (inspectedCardId) => set({ inspectedCardId }),
   setMessage: (message) => set({ message }),
   setAiThinking: (aiThinking) => set({ aiThinking }),
+  logError: (message) =>
+    set((current) => ({
+      matchLog: [...current.matchLog, { turn: current.match?.turn ?? 0, type: 'js-error' as const, ok: false, note: message }],
+    })),
   reset: () => set({ match: undefined, selectedHandId: undefined, selectedPieceId: undefined, inspectedCardId: undefined, message: undefined, ...initialState }),
     }),
     {
@@ -204,6 +279,7 @@ export const useMatchStore = create<MatchStore>()(
       partialize: (state) => ({
         match: state.match,
         history: state.history,
+        matchLog: state.matchLog,
         startedAtMs: state.startedAtMs,
         elapsedSeconds: state.elapsedSeconds,
       }),

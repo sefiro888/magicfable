@@ -355,6 +355,10 @@
 .resultActions button, .resultActions a { padding: 11px 18px; border: 1px solid var(--line-bright); background: rgba(215,180,103,.1); cursor: pointer; }
 .resultActions button:disabled { opacity: .5; cursor: default; }
 .rematchWaiting { margin: -12px 0 20px; color: var(--gold); font-size: 11px; }
+/* Botón secundario, discreto a propósito: es para quien quiera dar feedback
+   detallado, no una acción principal de la pantalla de resultado. */
+.downloadLog { display: block; width: 100%; margin-top: 14px; padding: 8px; border: 1px dashed rgba(255,255,255,.18); background: none; color: #8f8b82; cursor: pointer; font-size: 10px; letter-spacing: .04em; transition: color .15s ease, border-color .15s ease; }
+.downloadLog:hover { color: var(--gold-bright); border-color: var(--gold); }
 .mulligan { width: min(850px, 90vw); padding: 34px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; }
 .mulligan > small { color: var(--gold); font-weight: 800; letter-spacing: .28em; text-transform: uppercase; }
 .abandonDialog { width: min(440px, 90vw); padding: 30px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; }

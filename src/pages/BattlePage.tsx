@@ -399,6 +399,24 @@ export function BattlePage() {
     return () => window.removeEventListener('keydown', cancel)
   }, [store, ME])
 
+  // Captura errores de JS mientras dura la partida para el registro exportable
+  // (botón "Descargar registro" en la pantalla de resultado): son la señal más
+  // directa de un bug real, y sin esto solo quedarían en la consola del
+  // navegador del jugador, invisibles para cualquiera que no sea él.
+  useEffect(() => {
+    const onError = (event: ErrorEvent) => useMatchStore.getState().logError(event.message)
+    const onRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason instanceof Error ? event.reason.message : String(event.reason)
+      useMatchStore.getState().logError(reason)
+    }
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onRejection)
+    return () => {
+      window.removeEventListener('error', onError)
+      window.removeEventListener('unhandledrejection', onRejection)
+    }
+  }, [])
+
   const player = match?.players[ME]
   const ai = match?.players[RIVAL]
   const selectedInstance = player?.hand.find((instance) => instance.instanceId === store.selectedHandId)
@@ -594,6 +612,56 @@ export function BattlePage() {
     store.reset()
     setConfirmAbandon(false)
     navigate('/play')
+  }
+
+  /**
+   * Genera y descarga el registro de la partida terminada: pensado para que
+   * el jugador me lo pueda pegar como feedback. Deliberadamente compacto
+   * (IDs y códigos cortos en vez de texto repetido, sin snapshots del
+   * tablero turno a turno) — con la semilla + el registro de acciones se
+   * puede reconstruir casi cualquier situación sin inflar el archivo.
+   */
+  const downloadMatchLog = () => {
+    const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === player.commanderId)
+    const rivalDeck = STARTER_DECKS.find((deck) => deck.commanderId === ai.commanderId)
+    const exportData = {
+      meta: {
+        generatedAt: new Date().toISOString(),
+        device: {
+          userAgent: navigator.userAgent,
+          screen: `${window.screen.width}x${window.screen.height}`,
+          pixelRatio: window.devicePixelRatio,
+        },
+        settings: {
+          graphicsQuality: preferences.graphicsQuality,
+          scenario: preferences.scenario,
+          reducedMotion: preferences.reducedMotion,
+        },
+      },
+      setup: {
+        seed: match.seed,
+        mode: room ? 'pvp' : 'ai',
+        player: { faction: commander?.faction, commander: player.commanderId, deck: playerDeck?.id },
+        rival: { faction: aiCommander?.faction, commander: ai.commanderId, deck: rivalDeck?.id },
+        dailyChallenge: daily.done ? daily.id : undefined,
+      },
+      result: {
+        winner: match.winner,
+        turns: match.turn,
+        durationSeconds: store.elapsedSeconds,
+        playerNexusHealth: player.nexusHealth,
+        rivalNexusHealth: ai.nexusHealth,
+        playerStats: player.stats,
+      },
+      log: store.matchLog,
+    }
+    const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `cronicas-partida-${new Date().toISOString().slice(0, 10)}-${match.seed}.json`
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   const repeat = () => {
@@ -1145,6 +1213,9 @@ export function BattlePage() {
                   con ganador) en vez de empezar una nueva. */}
               <button onClick={() => { room?.leave(); useNetworkStore.getState().clear(); store.reset(); navigate('/') }}>Volver al inicio</button>
             </div>
+            <button className={styles.downloadLog} onClick={downloadMatchLog} title="Descarga un archivo con el registro de esta partida, útil para reportar un problema">
+              ⬇ Descargar registro de la partida
+            </button>
           </section>
         </div>
       )}
