@@ -104,18 +104,24 @@ const furyDeck = DeckDefinitionSchema.parse({
   faction: 'fury',
   commanderId: 'kaela-corazon-caldera',
   cards: [
+    // Equilibrio (25 jul): Furia tenía fuera del mazo a sus dos mayores
+    // amenazas (Gigante y Draco de Magma) y abusaba de criaturas de 1-2 de
+    // Vida, que con el combate cuerpo a cuerpo mutuo mueren en cada cambio.
     { cardId: 'fuente-furia', count: 20 },
-    { cardId: 'sabueso-brasa', count: 4 },
+    { cardId: 'sabueso-brasa', count: 2 },
     { cardId: 'berserker-ignivoro', count: 3 },
     { cardId: 'dragon-caldera', count: 1 },
     { cardId: 'lluvia-ceniza', count: 3 },
     { cardId: 'forja-carmesi', count: 2 },
-    { cardId: 'lancera-magma', count: 4 },
+    { cardId: 'lancera-magma', count: 3 },
     { cardId: 'fenix-pavesa', count: 3 },
     { cardId: 'ariete-volcanico', count: 3 },
-    { cardId: 'pacto-ascuas', count: 2 },
+    { cardId: 'pacto-ascuas', count: 1 },
     { cardId: 'altar-combustion', count: 2 },
-    { cardId: 'temblor-rojo', count: 3 },
+    { cardId: 'temblor-rojo', count: 2 },
+    { cardId: 'gigante-magma', count: 2 },
+    { cardId: 'draco-magma', count: 1 },
+    { cardId: 'elemental-tormenta', count: 2 },
   ],
 }) as DeckDefinition;
 
@@ -125,18 +131,28 @@ const arcaneDeck = DeckDefinitionSchema.parse({
   faction: 'arcane',
   commanderId: 'oriel-custodio-septima-runa',
   cards: [
+    // Equilibrio (25 jul): era la facción más débil con diferencia (0,80 de
+    // Ataque por carta frente a 1,6-2,0 del resto). Llevaba 13 instantes y
+    // unidades de 1/2 y 1/3, y dejaba fuera del mazo a sus dos amenazas
+    // reales: Dragón de Escarcha y Mago Celestial.
+    // v2: subió de 12% a 72% — se pasó de frenada por meter demasiado
+    // Alcance de golpe (Dragón de Escarcha + Mago Celestial). Se recorta a
+    // la mitad y se devuelve peso a cuerpos cuerpo a cuerpo.
     { cardId: 'fuente-arcana', count: 20 },
-    { cardId: 'centinela-cristal', count: 4 },
+    { cardId: 'centinela-cristal', count: 3 },
     { cardId: 'tejedora-escarcha', count: 3 },
     { cardId: 'prision-glacial', count: 3 },
     { cardId: 'cometa-arcano', count: 2 },
     { cardId: 'torre-horizonte', count: 2 },
-    { cardId: 'duelista-prisma', count: 4 },
+    { cardId: 'duelista-prisma', count: 3 },
     { cardId: 'golem-azur', count: 3 },
     { cardId: 'niebla-espejada', count: 2 },
-    { cardId: 'eco-cronomante', count: 3 },
+    { cardId: 'eco-cronomante', count: 1 },
     { cardId: 'archivo-viviente', count: 1 },
-    { cardId: 'convergencia-astral', count: 3 },
+    { cardId: 'convergencia-astral', count: 2 },
+    { cardId: 'dragon-escarcha', count: 1 },
+    { cardId: 'mago-celestial', count: 2 },
+    { cardId: 'destello-runico', count: 2 },
   ],
 }) as DeckDefinition;
 
@@ -146,14 +162,16 @@ const natureDeck = DeckDefinitionSchema.parse({
   faction: 'nature',
   commanderId: 'verdania-guardiana-raices',
   cards: [
+    // Equilibrio (25 jul): segunda más fuerte; se le recortan Guardias
+    // (de 5 copias a 3) que es la palabra clave que más desnivela.
     { cardId: 'fuente-naturaleza', count: 20 },
     { cardId: 'ciervo-sagrado', count: 3 },
-    { cardId: 'lobo-salvaje', count: 3 },
+    { cardId: 'lobo-salvaje', count: 4 },
     { cardId: 'driada-manantial', count: 3 },
     { cardId: 'jabali-embestida', count: 3 },
-    { cardId: 'guardian-robledal', count: 3 },
-    { cardId: 'crecimiento-salvaje', count: 3 },
-    { cardId: 'oso-forestal', count: 2 },
+    { cardId: 'guardian-robledal', count: 2 },
+    { cardId: 'crecimiento-salvaje', count: 4 },
+    { cardId: 'oso-forestal', count: 1 },
     { cardId: 'centauro-cazador', count: 2 },
     { cardId: 'elfo-ancestral', count: 2 },
     { cardId: 'arboleda-sagrada', count: 2 },
@@ -169,20 +187,31 @@ const orderDeck = DeckDefinitionSchema.parse({
   faction: 'order',
   commanderId: 'asterin-protector-luz',
   cards: [
+    // Equilibrio (25 jul): dominaba con un 95% de victorias por acumular 7
+    // copias de Guardia (Lancero, Paladín y Grifo). Guardia obliga a atacar
+    // al muro y bloquea el Nexo, y con el combate mutuo romperlo cuesta aún
+    // más: se baja a 3 copias y se compensa con cartas sin Guardia.
+    // v2: aun así subió a 74% — el problema real no era solo Guardia, era
+    // que 17 de sus 21 unidades tenían Alcance 2+ (el mayor desequilibrio
+    // de los 6 mazos). Se recorta el Alcance también, no solo Guardia.
+    // v3: subió a 77% — sin querer también le había subido su remoción y
+    // curación (Bendición del Escudo, Columna de Luz, Juicio Divino) a la
+    // vez que recortaba Guardia/Alcance, tapando el efecto del recorte.
+    // Se corrige eso específicamente y se devuelve peso a cuerpos simples.
     { cardId: 'fuente-orden', count: 20 },
     { cardId: 'lancero-alba', count: 3 },
-    { cardId: 'clerigo-luz', count: 3 },
-    { cardId: 'aguila-celestial', count: 3 },
-    { cardId: 'centinela-solar', count: 3 },
-    { cardId: 'angel-celestial', count: 3 },
-    { cardId: 'bendicion-escudo', count: 3 },
-    { cardId: 'pegaso-celestial', count: 2 },
-    { cardId: 'paladin-glorioso', count: 2 },
-    { cardId: 'grifo-orden', count: 2 },
-    { cardId: 'heraldo-juicio', count: 2 },
+    { cardId: 'clerigo-luz', count: 2 },
+    { cardId: 'aguila-celestial', count: 2 },
+    { cardId: 'centinela-solar', count: 2 },
+    { cardId: 'angel-celestial', count: 2 },
+    { cardId: 'bendicion-escudo', count: 2 },
+    { cardId: 'pegaso-celestial', count: 3 },
+    { cardId: 'paladin-glorioso', count: 3 },
+    { cardId: 'grifo-orden', count: 1 },
+    { cardId: 'heraldo-juicio', count: 4 },
     { cardId: 'columna-luz', count: 2 },
     { cardId: 'juicio-divino', count: 1 },
-    { cardId: 'bastion-marmoreo', count: 1 },
+    { cardId: 'bastion-marmoreo', count: 3 },
   ],
 }) as DeckDefinition;
 
@@ -192,20 +221,29 @@ const shadowDeck = DeckDefinitionSchema.parse({
   faction: 'shadow',
   commanderId: 'malachar-reidor-sombra',
   cards: [
+    // Equilibrio (25 jul): la más castigada por el combate mutuo (21%). Es
+    // la única sin Guardias y la de menos Vida total, y su plan es atacar:
+    // se cambian las criaturas de 1 de Vida (Sabueso de la Tumba 3/1) por
+    // cuerpos que aguanten el intercambio.
+    // v2: solo Nigromante Oscuro tiene Alcance 2+ en todo el pool de
+    // Sombra (ya al máximo, 4 copias) — no hay más margen de Alcance por
+    // lista. Se compensa subiendo cuerpos duros (Señor del Osario 5/4,
+    // Sacerdote de Carroña) y estructura segura (Cripta) en vez de piezas
+    // frágiles que mueren en cualquier intercambio.
     { cardId: 'fuente-sombra', count: 20 },
-    { cardId: 'murcielago-sombra', count: 3 },
-    { cardId: 'sabueso-tumba', count: 3 },
-    { cardId: 'esqueleto-guerrero', count: 3 },
-    { cardId: 'espectro-siniestro', count: 3 },
-    { cardId: 'sacerdote-carrona', count: 3 },
-    { cardId: 'ritual-sanguino', count: 3 },
-    { cardId: 'nigromante-oscuro', count: 2 },
-    { cardId: 'maldicion-sombra', count: 2 },
+    { cardId: 'murcielago-sombra', count: 2 },
+    { cardId: 'sabueso-tumba', count: 1 },
+    { cardId: 'esqueleto-guerrero', count: 1 },
+    { cardId: 'espectro-siniestro', count: 2 },
+    { cardId: 'sacerdote-carrona', count: 4 },
+    { cardId: 'ritual-sanguino', count: 2 },
+    { cardId: 'nigromante-oscuro', count: 4 },
+    { cardId: 'maldicion-sombra', count: 3 },
     { cardId: 'vampiro-siniestro', count: 2 },
     { cardId: 'guadana-espectral', count: 2 },
     { cardId: 'pesadilla-mortal', count: 2 },
-    { cardId: 'senor-osario', count: 1 },
-    { cardId: 'cripta-olvidada', count: 1 },
+    { cardId: 'senor-osario', count: 3 },
+    { cardId: 'cripta-olvidada', count: 2 },
   ],
 }) as DeckDefinition;
 
