@@ -137,7 +137,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
  * viven en useFrame, así que el re-render solo hace falta cuando cambian
  * la pieza o sus marcas (selección, objetivo, disponibilidad).
  */
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, onPiece, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; onPiece: (pieceId: string) => void; reducedMotion: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, onPiece, reducedMotion, localPlayerId }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; onPiece: (pieceId: string) => void; reducedMotion: boolean; localPlayerId: PlayerId }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -197,7 +197,16 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             emissiveIntensity={glow ? 0.55 : frozen ? 0.35 : 0}
           />
         </mesh>
-        <mesh position={[0, 0.038, 0]} rotation={[-Math.PI / 2, 0, piece.owner === 'ai' ? Math.PI : 0]}>
+        {/* El arte se gira 180° cuando la pieza queda en el lado "lejano" tal
+            como la ve la cámara — no cuando su dueño es 'ai' a secas. Para el
+            anfitrión (localPlayerId='player') coincide siempre con las
+            piezas de la IA/rival, pero para el invitado en PvP su propio
+            bando ES 'ai' (ver ME en BattlePage.tsx) y todo el tablero ya gira
+            180° aparte (grupo padre en Scene) para acercarle su Nexo: sin
+            esta comparación relativa, el arte de sus propias piezas quedaba
+            girada dos veces (grupo + esta condición) y se veía al revés,
+            obligándole a orbitar la cámara para leerla bien. */}
+        <mesh position={[0, 0.038, 0]} rotation={[-Math.PI / 2, 0, piece.owner !== localPlayerId ? Math.PI : 0]}>
           <planeGeometry args={[0.73, 0.9]} />
           <meshStandardMaterial map={texture} roughness={0.62} color={frozen ? '#9fd4ef' : spent ? '#8f8f96' : '#ffffff'} />
         </mesh>
@@ -485,6 +494,7 @@ function Scene(props: Board3DProps) {
             active={piece.owner === props.state.activePlayer}
             onPiece={props.onPiece}
             reducedMotion={props.reducedMotion}
+            localPlayerId={props.localPlayerId}
           />
         ))}
       </Suspense>
