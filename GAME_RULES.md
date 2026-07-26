@@ -53,6 +53,12 @@ Cada facción canaliza una variante:
 
 - Rejilla de **8 × 8** casillas (64 en total) sobre la plataforma del Santuario.
 - Tu fila de despliegue es la más cercana a tu Nexo; la de la IA, la opuesta.
+- También puedes desplegar en cualquiera de las 8 casillas alrededor de una
+  unidad propia que ya lleve al menos un turno en el tablero, o que ya haya
+  actuado este turno (por ejemplo, con Impulso) — así puedes reforzar una
+  posición avanzada sin mandar refuerzos a pie desde tu fila inicial cada vez.
+  Una unidad recién desplegada este mismo turno que todavía no ha actuado no
+  sirve de ancla.
 - Una casilla solo admite una pieza (unidad o estructura).
 - Tu **Nexo** está detrás de tu fila; solo puede ser atacado si el atacante
   tiene línea y alcance hasta él.

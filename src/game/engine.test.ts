@@ -235,6 +235,73 @@ describe('fuentes y despliegue', () => {
     expect(second.ok).toBe(true);
     expect(second.state.board.find((piece) => piece.instanceId === 'second')?.attackModifier).toBe(0);
   });
+
+  it('permite desplegar junto a una unidad propia que ya lleva un turno en el tablero, incluida diagonal', () => {
+    let state: MatchState = {
+      ...freshMatch(),
+      turn: 3,
+      board: [makePiece('vet', 'sabueso-brasa', 'player', { x: 3, y: 3 }, { enteredOnTurn: 1 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('sabueso-brasa', 'reinforcement')],
+      resources: resources('fury', 1),
+    });
+    // Diagonal (3,3) -> (4,4): no es adyacencia ortogonal, pero sí cuenta.
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'reinforcement', position: { x: 4, y: 4 },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.state.board.find((piece) => piece.instanceId === 'reinforcement')?.position).toEqual({ x: 4, y: 4 });
+  });
+
+  it('no deja usar de ancla una unidad recién desplegada este mismo turno sin haber actuado', () => {
+    let state: MatchState = {
+      ...freshMatch(),
+      turn: 3,
+      board: [makePiece('fresh', 'sabueso-brasa', 'player', { x: 3, y: 3 }, { enteredOnTurn: 3 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('sabueso-brasa', 'reinforcement')],
+      resources: resources('fury', 1),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'reinforcement', position: { x: 4, y: 4 },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.error?.code).toBe('out-of-bounds');
+  });
+
+  it('una unidad desplegada este turno SÍ sirve de ancla si ya ha atacado o movido (p. ej. con Impulso)', () => {
+    let state: MatchState = {
+      ...freshMatch(),
+      turn: 3,
+      board: [makePiece('haste', 'sabueso-brasa', 'player', { x: 3, y: 3 }, { enteredOnTurn: 3, attackedThisTurn: true })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('sabueso-brasa', 'reinforcement')],
+      resources: resources('fury', 1),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'reinforcement', position: { x: 4, y: 4 },
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('las unidades rivales adyacentes no sirven de ancla para desplegar', () => {
+    let state: MatchState = {
+      ...freshMatch(),
+      turn: 3,
+      board: [makePiece('enemy-vet', 'centinela-cristal', 'ai', { x: 4, y: 4 }, { enteredOnTurn: 1 })],
+    };
+    state = withPlayer(state, 'player', {
+      hand: [handCard('sabueso-brasa', 'reinforcement')],
+      resources: resources('fury', 1),
+    });
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'reinforcement', position: { x: 3, y: 3 },
+    });
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe('movimiento táctico', () => {

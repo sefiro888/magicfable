@@ -293,14 +293,39 @@ export const getValidAttacks = (state: MatchState, pieceId: string): ValidAttack
   };
 };
 
+/**
+ * Una unidad propia "veterana" habilita las 8 casillas a su alrededor como
+ * despliegue adicional (más allá de la fila inicial) — así se puede reforzar
+ * una posición avanzada sin mandar refuerzos a pie desde atrás cada vez. Debe
+ * llevar al menos un turno en el tablero (`enteredOnTurn < state.turn`) o
+ * haber actuado ya este turno (mover/atacar, p. ej. con Impulso): a propósito
+ * para que no se pueda desplegar una unidad y usarla de ancla en el mismo
+ * turno sin que haya hecho nada, lo que equivaldría a "teletransportar" un
+ * despliegue entero a primera línea de golpe.
+ */
+const isVeteranAlly = (state: MatchState, piece: BoardPiece): boolean =>
+  piece.enteredOnTurn < state.turn || piece.movedThisTurn || piece.attackedThisTurn;
+
 export const getValidDeploymentPositions = (
   state: MatchState,
   playerId: PlayerId,
 ): readonly Position[] => {
   const row = deploymentRow(playerId);
-  return Array.from({ length: BOARD_SIZE }, (_, x) => ({ x, y: row })).filter(
-    (position) => !pieceAt(state, position),
-  );
+  const positions = new Map<string, Position>();
+  const add = (position: Position): void => {
+    if (!isInsideBoard(position) || pieceAt(state, position)) return;
+    positions.set(`${position.x},${position.y}`, position);
+  };
+  for (let x = 0; x < BOARD_SIZE; x += 1) add({ x, y: row });
+  for (const piece of state.board) {
+    if (piece.owner !== playerId || !isVeteranAlly(state, piece)) continue;
+    for (let dx = -1; dx <= 1; dx += 1) {
+      for (let dy = -1; dy <= 1; dy += 1) {
+        if (dx !== 0 || dy !== 0) add({ x: piece.position.x + dx, y: piece.position.y + dy });
+      }
+    }
+  }
+  return [...positions.values()];
 };
 
 const updatePiece = (
@@ -840,10 +865,13 @@ export const playCard = (
   if (isPiece) {
     if (!position) return fail(state, 'position-required', 'Debes elegir una casilla de despliegue.');
     if (!isInsideBoard(position)) return fail(state, 'out-of-bounds', 'La casilla está fuera del tablero.');
-    if (position.y !== deploymentRow(playerId)) {
-      return fail(state, 'out-of-bounds', 'Solo puedes desplegar en tu fila inicial.');
-    }
     if (pieceAt(state, position)) return fail(state, 'occupied', 'La casilla ya está ocupada.');
+    const isValidDeployment = getValidDeploymentPositions(state, playerId).some(
+      (candidate) => candidate.x === position.x && candidate.y === position.y,
+    );
+    if (!isValidDeployment) {
+      return fail(state, 'out-of-bounds', 'Solo puedes desplegar en tu fila inicial o junto a una unidad propia que ya haya actuado.');
+    }
   } else if (!cardTargetIsValid(state, playerId, card, target)) {
     return fail(state, 'target-required', 'El hechizo necesita un objetivo válido.');
   }
