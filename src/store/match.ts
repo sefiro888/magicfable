@@ -69,6 +69,14 @@ interface MatchStore {
   match?: MatchState
   selectedHandId?: string
   selectedPieceId?: string
+  /**
+   * Ficha del tablero que se está "consultando" con un clic normal — propia
+   * o rival, sin desencadenar ninguna acción. Deliberadamente independiente
+   * de `selectedPieceId` (esa sí implica "mi ficha, quiero moverla o
+   * atacar con ella"): así se puede consultar una ficha rival sin perder de
+   * vista la propia que ya tenías seleccionada para actuar.
+   */
+  viewedPieceId?: string
   inspectedCardId?: string
   message?: string
   history: readonly string[]
@@ -91,6 +99,8 @@ interface MatchStore {
   skipAnimations: () => void
   selectHand: (instanceId?: string) => void
   selectPiece: (instanceId?: string) => void
+  /** Consulta (o deja de consultar) una ficha del tablero, propia o rival. */
+  viewPiece: (instanceId?: string) => void
   inspect: (cardId?: string) => void
   setMessage: (message?: string) => void
   setAiThinking: (thinking: boolean) => void
@@ -193,6 +203,7 @@ export const useMatchStore = create<MatchStore>()(
       history: ['La escaramuza comienza. Robas cinco cartas.'],
       selectedHandId: undefined,
       selectedPieceId: undefined,
+      viewedPieceId: undefined,
       inspectedCardId: undefined,
       message: undefined,
       startedAtMs: Date.now(),
@@ -205,6 +216,7 @@ export const useMatchStore = create<MatchStore>()(
       history: ['La escaramuza comienza. Robas cinco cartas.'],
       selectedHandId: undefined,
       selectedPieceId: undefined,
+      viewedPieceId: undefined,
       inspectedCardId: undefined,
       message: undefined,
       startedAtMs: Date.now(),
@@ -260,8 +272,9 @@ export const useMatchStore = create<MatchStore>()(
     })),
   finishEvent: () => set({ currentEvent: undefined }),
   skipAnimations: () => set({ pendingAnimations: [], currentEvent: undefined }),
-  selectHand: (selectedHandId) => set({ selectedHandId, selectedPieceId: undefined, message: undefined }),
-  selectPiece: (selectedPieceId) => set({ selectedPieceId, selectedHandId: undefined, message: undefined }),
+  selectHand: (selectedHandId) => set({ selectedHandId, selectedPieceId: undefined, viewedPieceId: undefined, message: undefined }),
+  selectPiece: (selectedPieceId) => set({ selectedPieceId, selectedHandId: undefined, viewedPieceId: undefined, message: undefined }),
+  viewPiece: (viewedPieceId) => set({ viewedPieceId }),
   inspect: (inspectedCardId) => set({ inspectedCardId }),
   setMessage: (message) => set({ message }),
   setAiThinking: (aiThinking) => set({ aiThinking }),
@@ -269,7 +282,7 @@ export const useMatchStore = create<MatchStore>()(
     set((current) => ({
       matchLog: [...current.matchLog, { turn: current.match?.turn ?? 0, type: 'js-error' as const, ok: false, note: message }],
     })),
-  reset: () => set({ match: undefined, selectedHandId: undefined, selectedPieceId: undefined, inspectedCardId: undefined, message: undefined, ...initialState }),
+  reset: () => set({ match: undefined, selectedHandId: undefined, selectedPieceId: undefined, viewedPieceId: undefined, inspectedCardId: undefined, message: undefined, ...initialState }),
     }),
     {
       name: 'cronicas-nexo-match',

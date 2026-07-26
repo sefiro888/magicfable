@@ -164,6 +164,39 @@ describe('store de partida: descripciones del historial', () => {
     expect(latest()).toBe('Sabueso de Brasa golpea el Nexo enemigo.')
   })
 
+  it('viewPiece guarda la ficha consultada sin tocar la selección de acción', () => {
+    const match = baseMatch()
+    useMatchStore.setState({
+      match: { ...match, board: [playerPiece('mia', 'sabueso-brasa', 3, 6), aiPiece('rival', 'duelista-prisma', 3, 5)] },
+    })
+    useMatchStore.getState().selectPiece('mia')
+    useMatchStore.getState().viewPiece('rival')
+    expect(useMatchStore.getState().viewedPieceId).toBe('rival')
+    // Consultar una ficha rival no debe deseleccionar la propia que ya tenías
+    // elegida para actuar: son estados independientes a propósito.
+    expect(useMatchStore.getState().selectedPieceId).toBe('mia')
+  })
+
+  it('viewPiece se puede alternar (mismo id apaga la consulta)', () => {
+    useMatchStore.getState().viewPiece('rival')
+    useMatchStore.getState().viewPiece(undefined)
+    expect(useMatchStore.getState().viewedPieceId).toBeUndefined()
+  })
+
+  it('seleccionar una carta de la mano o una ficha propia cancela la consulta en curso', () => {
+    const match = baseMatch()
+    useMatchStore.setState({
+      match: { ...match, board: [playerPiece('mia', 'sabueso-brasa', 3, 6)] },
+    })
+    useMatchStore.getState().viewPiece('otra')
+    useMatchStore.getState().selectPiece('mia')
+    expect(useMatchStore.getState().viewedPieceId).toBeUndefined()
+
+    useMatchStore.getState().viewPiece('otra')
+    useMatchStore.getState().selectHand('carta-en-mano')
+    expect(useMatchStore.getState().viewedPieceId).toBeUndefined()
+  })
+
   it('el historial conserva como mucho las últimas 10 entradas', () => {
     const match = baseMatch()
     useMatchStore.setState({ match: { ...match, board: [playerPiece('mover', 'sabueso-brasa', 3, 6)] }, history: [] })

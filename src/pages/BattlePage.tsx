@@ -423,6 +423,10 @@ export function BattlePage() {
   const selectedCard = selectedInstance ? CARD_BY_ID[selectedInstance.cardId] : undefined
   const selectedPiece = match?.board.find((piece) => piece.instanceId === store.selectedPieceId)
   const selectedBoardCard = selectedPiece ? CARD_BY_ID[selectedPiece.cardId] : undefined
+  // Ficha "consultada" con un clic normal, propia o rival: solo para verla,
+  // no implica poder actuar con ella (eso sigue siendo selectedPiece).
+  const viewedPiece = match?.board.find((piece) => piece.instanceId === store.viewedPieceId)
+  const viewedBoardCard = viewedPiece ? CARD_BY_ID[viewedPiece.cardId] : undefined
   const moves = useMemo(
     () => (match && selectedPiece ? getValidMoves(match, selectedPiece.instanceId) : []),
     [match, selectedPiece],
@@ -535,19 +539,27 @@ export function BattlePage() {
   const onPiece = useCallback((pieceId: string) => {
     if (!match) return
     const piece = match.board.find((candidate) => candidate.instanceId === pieceId)
-    if (!piece || match.activePlayer !== ME) return
-    if (selectedInstance && selectedCard && !isBoardCard(selectedCard)) {
-      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId } })) finishSelection()
-      return
+    if (!piece) return
+    if (match.activePlayer === ME) {
+      if (selectedInstance && selectedCard && !isBoardCard(selectedCard)) {
+        if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId } })) finishSelection()
+        return
+      }
+      if (selectedPiece && attacks.pieceIds.includes(pieceId)) {
+        if (doAction({ type: 'attack-piece', playerId: ME, attackerId: selectedPiece.instanceId, defenderId: pieceId })) finishSelection()
+        return
+      }
+      if (piece.owner === ME) {
+        useMatchStore.getState().selectPiece(store.selectedPieceId === pieceId ? undefined : pieceId)
+        return
+      }
     }
-    if (selectedPiece && attacks.pieceIds.includes(pieceId)) {
-      if (doAction({ type: 'attack-piece', playerId: ME, attackerId: selectedPiece.instanceId, defenderId: pieceId })) finishSelection()
-      return
-    }
+    // Consultar información completa de cualquier ficha (propia o rival) con
+    // un clic normal, sin desencadenar ninguna acción — también fuera de tu
+    // turno, para poder planear mientras observas la jugada del rival.
     const state = useMatchStore.getState()
-    if (piece.owner === ME) state.selectPiece(state.selectedPieceId === pieceId ? undefined : pieceId)
-    else state.inspect(piece.cardId)
-  }, [match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection, ME])
+    state.viewPiece(state.viewedPieceId === pieceId ? undefined : pieceId)
+  }, [match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection, ME, store.selectedPieceId])
 
   const onNexus = useCallback((playerId: PlayerId) => {
     if (playerId === RIVAL && selectedPiece && attacks.canAttackNexus) {
@@ -725,17 +737,26 @@ export function BattlePage() {
     store.replaceMatch(mutate(match))
   }
 
-  const activeInfo = selectedCard ?? selectedBoardCard
-  const canCastDirectly = selectedCard && !isBoardCard(selectedCard) && !requiresPieceTarget(selectedCard)
+  // La ficha "consultada" manda sobre la propia seleccionada: así se puede
+  // asomarse a una pieza rival (o repasar la propia) sin perder la selección
+  // de acción que ya tenías en marcha por debajo.
+  const activeInfo = viewedBoardCard ?? selectedCard ?? selectedBoardCard
+  const viewingForeign = Boolean(viewedPiece && viewedPiece.owner !== ME)
+  const canCastDirectly = !viewedBoardCard && selectedCard && !isBoardCard(selectedCard) && !requiresPieceTarget(selectedCard)
   const revealedCard = revealedCardId ? CARD_BY_ID[revealedCardId] : undefined
 
   /** Estado visual del botón de turno: listo, resolviendo, turno rival o fin. */
   const turnState = match.winner ? 'over' : match.activePlayer !== ME ? 'enemy' : queueBusy ? 'busy' : 'ready'
 
-  /** Línea compacta de estadísticas de la carta o unidad seleccionada. */
+  /** Línea compacta de estadísticas de la carta o unidad seleccionada/consultada. */
   const contextStats = (() => {
     const parts: string[] = []
-    if (selectedPiece && selectedBoardCard) {
+    if (viewedPiece && viewedBoardCard) {
+      if (viewedBoardCard.attack !== undefined) parts.push(`ATQ ${Math.max(0, viewedBoardCard.attack + viewedPiece.attackModifier)}`)
+      parts.push(`VID ${viewedPiece.currentHealth}`)
+      if (viewedBoardCard.range !== undefined) parts.push(`ALC ${viewedBoardCard.range}`)
+      if (viewedBoardCard.movement !== undefined) parts.push(`MOV ${viewedBoardCard.movement}`)
+    } else if (selectedPiece && selectedBoardCard) {
       if (selectedBoardCard.attack !== undefined) parts.push(`ATQ ${Math.max(0, selectedBoardCard.attack + selectedPiece.attackModifier)}`)
       parts.push(`VID ${selectedPiece.currentHealth}`)
       if (selectedBoardCard.range !== undefined) parts.push(`ALC ${selectedBoardCard.range}`)
@@ -753,6 +774,14 @@ export function BattlePage() {
   /** Guía inmediata: qué puede hacer el jugador con la selección actual. */
   const actionHint = (() => {
     if (match.winner) return undefined
+    // Consultar una ficha es válido en cualquier turno y nunca desencadena
+    // una acción: se comprueba antes que nada, incluso antes del aviso de
+    // "turno rival", para poder seguir mirando unidades mientras juega.
+    if (viewedPiece) {
+      return viewingForeign
+        ? 'Consultando una unidad rival: solo información, no puedes actuar sobre ella.'
+        : 'Consultando esta unidad.'
+    }
     if (match.activePlayer !== ME) return 'Turno rival: observa sus movimientos.'
     if (selectedCard) {
       if (payment && !payment.payable) return 'No tienes Esencia suficiente para esta carta.'
@@ -916,7 +945,7 @@ export function BattlePage() {
         </aside>
         <aside className={styles.rightPanel}>
           <section className={`${styles.panelSection} ${styles.context}`} data-empty={!activeInfo || undefined}>
-            <span className={styles.panelLabel}>{activeInfo ? 'Selección' : 'Contexto'}</span>
+            <span className={styles.panelLabel}>{viewedBoardCard ? (viewingForeign ? 'Ficha rival' : 'Consulta') : activeInfo ? 'Selección' : 'Contexto'}</span>
             {activeInfo && (
               <>
                 <div className={styles.contextArt}>
