@@ -57,8 +57,10 @@ const CELL_POSITIONS: readonly Position[] = Array.from({ length: BOARD_CELL_COUN
 }))
 const cellKey = (position: Position) => `${position.x},${position.y}`
 
-/** Las cartas se diseñaron para un paso de casilla de 1.18; se reescalan al actual. */
-const CARD_SCALE = CELL_SIZE / 1.18
+/** Las cartas se diseñaron para un paso de casilla de 1.18; se reescalan al actual.
+    Subido ligeramente (antes /1.18) a petición del usuario, para que se lean mejor
+    sin llegar a solaparse con las casillas vecinas. */
+const CARD_SCALE = CELL_SIZE / 1.08
 
 /**
  * PRUEBA: inclinación tipo «standee» en vez de tumbada del todo, para que el
@@ -137,7 +139,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
  * viven en useFrame, así que el re-render solo hace falta cuando cambian
  * la pieza o sus marcas (selección, objetivo, disponibilidad).
  */
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, onPiece, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; onPiece: (pieceId: string) => void; reducedMotion: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; reducedMotion: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -172,9 +174,16 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const onClick = () => onPiece(piece.instanceId)
   const maxHealth = card.health ?? card.resistance ?? 1
   const damaged = piece.currentHealth < maxHealth
-  const frameColor = card.faction === 'fury' ? '#5a2116' : '#173858'
+  // El marco distingue "mía" de "del rival" a simple vista (a petición del
+  // usuario: costaba distinguirlas) — dorado/bronce para las propias, rojo
+  // oscuro para las rivales. Antes salía de la facción (solo Furia vs. resto),
+  // que no decía nada sobre quién la controla.
+  const frameColor = mine ? '#6b4a1e' : '#5a1a1a'
   const glow = selected || targetable
-  const glowColor = targetable ? '#ffd257' : card.faction === 'fury' ? '#ff572f' : '#39baff'
+  const glowColor = targetable ? '#ffd257' : mine ? '#f1c15f' : '#ff6b65'
+  // Brillo ambiental permanente y suave (no solo al seleccionar/objetivo):
+  // así se distingue mío/rival incluso en reposo, sin esperar a interactuar.
+  const ownershipGlow = mine ? '#caa04a' : '#ff5a4d'
   return (
     <group
       ref={group}
@@ -193,8 +202,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             color={frozen ? '#2b4a63' : frameColor}
             metalness={0.35}
             roughness={0.42}
-            emissive={glow ? glowColor : frozen ? '#79e7ff' : '#000000'}
-            emissiveIntensity={glow ? 0.55 : frozen ? 0.35 : 0}
+            emissive={glow ? glowColor : frozen ? '#79e7ff' : ownershipGlow}
+            emissiveIntensity={glow ? 0.55 : frozen ? 0.35 : 0.16}
           />
         </mesh>
         {/* El arte NUNCA se gira según el dueño de la pieza: sin rotación del
@@ -494,6 +503,7 @@ function Scene(props: Board3DProps) {
             targetable={targetSet.has(piece.instanceId)}
             ready={props.readyPieceIds.has(piece.instanceId)}
             active={piece.owner === props.state.activePlayer}
+            mine={piece.owner === props.localPlayerId}
             onPiece={props.onPiece}
             reducedMotion={props.reducedMotion}
           />
