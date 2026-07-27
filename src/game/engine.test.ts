@@ -85,8 +85,8 @@ describe('inicio, robo y mulligan', () => {
     expect(first.players.ai.hand).toEqual(second.players.ai.hand);
     expect(first.players.player.hand).toHaveLength(5);
     expect(first.players.player.deck).toHaveLength(45);
-    expect(first.players.player.nexusHealth).toBe(25);
-    expect(first.players.ai.nexusHealth).toBe(25);
+    expect(first.players.player.nexusHealth).toBe(35);
+    expect(first.players.ai.nexusHealth).toBe(35);
   });
 
   it('roba del tope y crea un evento sin mutar el estado anterior', () => {
@@ -141,6 +141,23 @@ describe('inicio, robo y mulligan', () => {
     const allIds = [...one.state.players.player.hand, ...one.state.players.player.deck].map((card) => card.instanceId);
     expect(new Set(allIds).size).toBe(50);
     expect(mulliganOpeningHand(one.state, 'player', []).ok).toBe(false);
+  });
+
+  it('el mulligan del rival sigue disponible aunque el turno global ya haya avanzado (bug de PvP)', () => {
+    // `state.turn` es un contador COMPARTIDO: al terminar el turno 1 de
+    // 'player', pasa a ser el turno 2 — el primer turno de 'ai' — pero eso no
+    // debe cerrarle a 'ai' su propia ventana de mulligan, que depende de SU
+    // estado (no ha jugado nada, no tiene fichas, no lo ha tomado ya), no del
+    // número de turno global.
+    let state = freshMatch();
+    const ended = applyAction(state, { type: 'end-turn', playerId: 'player' });
+    expect(ended.ok).toBe(true);
+    state = ended.state;
+    expect(state.turn).toBe(2);
+    const selected = state.players.ai.hand.slice(0, 1).map((card) => card.instanceId);
+    const result = mulliganOpeningHand(state, 'ai', selected);
+    expect(result.ok).toBe(true);
+    expect(result.state.players.ai.mulliganTaken).toBe(true);
   });
 
   it('aplica el orden elegido a las cartas observadas por escrutinio', () => {
@@ -671,7 +688,7 @@ describe('habilidades de comandante', () => {
       type: 'attack-piece', playerId: 'player', attackerId: 'shadow-unit', defenderId: 'ai-target',
     });
     expect(result.ok).toBe(true);
-    expect(result.state.players.ai.nexusHealth).toBe(24);
+    expect(result.state.players.ai.nexusHealth).toBe(34);
     expect(result.state.players.player.nexusHealth).toBe(21);
     expect(result.state.animations.some((event) => event.effectId === 'commander-shadow-drain')).toBe(true);
   });
@@ -689,8 +706,8 @@ describe('habilidades de comandante', () => {
       type: 'attack-piece', playerId: 'player', attackerId: 'shadow-unit', defenderId: 'ai-target',
     });
     expect(result.ok).toBe(true);
-    expect(result.state.players.player.nexusHealth).toBe(25);
-    expect(result.state.players.ai.nexusHealth).toBe(24);
+    expect(result.state.players.player.nexusHealth).toBe(35);
+    expect(result.state.players.ai.nexusHealth).toBe(34);
   });
 
   it('Nyxaris libra del mareo de invocación solo a la primera unidad del turno', () => {

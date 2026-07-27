@@ -1319,14 +1319,30 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
   return success(next);
 };
 
+/**
+ * Si un bando puede tomar el mulligan: antes se exigía `state.turn === 1`,
+ * pero `turn` es un contador COMPARTIDO que avanza en cada fin de turno de
+ * cualquiera de los dos bandos (turno 1 = primer turno de quien empieza,
+ * turno 2 = primer turno del otro bando, etc.) — en cuanto el primer
+ * jugador terminaba su turno 1, `state.turn` pasaba a 2 y el SEGUNDO
+ * jugador, que aún no había decidido su propio mulligan, se quedaba sin
+ * poder hacerlo nunca (bug real en PvP: terminar tu turno le cerraba la
+ * ventana de mulligan al rival). La condición correcta es por bando: sigue
+ * disponible mientras ese jugador no haya jugado nada ni tomado ya su
+ * mulligan, sin importar en qué turno global vaya la partida.
+ */
+export const canTakeMulligan = (state: MatchState, playerId: PlayerId): boolean => {
+  const player = state.players[playerId];
+  return !player.mulliganTaken && player.stats.cardsPlayed === 0 && !state.board.some((piece) => piece.owner === playerId);
+};
+
 export const mulliganOpeningHand = (
   state: MatchState,
   playerId: PlayerId,
   cardInstanceIds: readonly string[],
 ): ActionResult => {
   const player = state.players[playerId];
-  const canMulligan = state.turn === 1 && state.board.length === 0 && player.stats.cardsPlayed === 0 && !player.mulliganTaken;
-  if (!canMulligan) return fail(state, 'wrong-phase', 'El mulligan solo está disponible al comienzo de la partida.');
+  if (!canTakeMulligan(state, playerId)) return fail(state, 'wrong-phase', 'El mulligan solo está disponible al comienzo de la partida.');
   const selected = new Set(cardInstanceIds);
   if (selected.size !== cardInstanceIds.length) {
     return fail(state, 'card-not-found', 'La selección de mulligan contiene cartas duplicadas.');

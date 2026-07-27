@@ -7,7 +7,7 @@ export const COMMANDERS = [
     name: 'Kaela',
     title: 'Corazón de la Caldera',
     faction: 'fury',
-    nexusHealth: 25,
+    nexusHealth: 35,
     rules: 'La primera vez que tu Nexo reciba daño cada turno, tu siguiente unidad cuesta 1 genérico menos.',
     flavor: 'Mientras quede una brasa, la montaña tendrá voz.',
     art: {
@@ -22,7 +22,7 @@ export const COMMANDERS = [
     name: 'Oriel',
     title: 'Custodio de la Séptima Runa',
     faction: 'arcane',
-    nexusHealth: 25,
+    nexusHealth: 35,
     rules: 'La primera vez que lances tu segundo hechizo cada turno, observa la primera carta de tu mazo.',
     flavor: 'Las respuestas son puertas; las preguntas deciden cuál abrir.',
     art: {
@@ -37,7 +37,7 @@ export const COMMANDERS = [
     name: 'Verdania',
     title: 'Guardiana de las Raíces',
     faction: 'nature',
-    nexusHealth: 25,
+    nexusHealth: 35,
     rules: 'Siempre que una unidad aliada entra en juego, gana +1 Vida.',
     flavor: 'El bosque antigua que recuerda tiempos antes de las montañas.',
     art: {
@@ -52,7 +52,7 @@ export const COMMANDERS = [
     name: 'Asterin',
     title: 'Protector de la Luz Eterna',
     faction: 'order',
-    nexusHealth: 25,
+    nexusHealth: 35,
     rules: 'Cuando una unidad aliada entra en juego, gana escudo preventivo 1.',
     flavor: 'Portador de la luz que juzga con justicia y protege sin error.',
     art: {
@@ -67,7 +67,7 @@ export const COMMANDERS = [
     name: 'Malachar',
     title: 'Reidores de la Sombra',
     faction: 'shadow',
-    nexusHealth: 25,
+    nexusHealth: 35,
     rules: 'Tus unidades drenan 1 Vida adicional cuando atacan.',
     flavor: 'Rey del vacío que sonríe mientras sus enemigos olvidan cómo vivir sin miedo.',
     art: {
@@ -82,7 +82,7 @@ export const COMMANDERS = [
     name: 'Nyxaris',
     title: 'Heraldo del Vacío',
     faction: 'void',
-    nexusHealth: 25,
+    nexusHealth: 35,
     rules: 'La primera unidad que despliegues cada turno entra sin mareo de invocación.',
     flavor: 'Donde el espacio se pliega, Nyxaris ya estaba esperando.',
     art: {

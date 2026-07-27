@@ -62,10 +62,10 @@ describe('catálogo del Nexo', () => {
     });
   });
 
-  it('define un comandante de 25 de vida por facción con datos válidos', () => {
+  it('define un comandante de 35 de vida por facción con datos válidos', () => {
     expect(COMMANDERS).toHaveLength(6);
     expect(COMMANDERS.map((commander) => commander.faction)).toEqual(PLAYABLE_FACTIONS.map((faction) => faction.id));
-    expect(COMMANDERS.every((commander) => commander.nexusHealth === 25)).toBe(true);
+    expect(COMMANDERS.every((commander) => commander.nexusHealth === 35)).toBe(true);
     for (const commander of COMMANDERS) {
       expect(CommanderDefinitionSchema.safeParse(commander).success).toBe(true);
     }

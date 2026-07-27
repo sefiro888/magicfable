@@ -45,7 +45,7 @@ const STEPS: readonly Step[] = [
   {
     n: '4',
     title: 'Quiebra el Nexo',
-    body: 'Cada bando tiene un Nexo con 25 de Vida. Lleva tus unidades hasta el borde rival y golpea su Nexo. El primero en reducir el Nexo enemigo a cero gana la crónica.',
+    body: 'Cada bando tiene un Nexo con 35 de Vida. Lleva tus unidades hasta el borde rival y golpea su Nexo. El primero en reducir el Nexo enemigo a cero gana la crónica.',
   },
 ]
 

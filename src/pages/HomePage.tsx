@@ -31,7 +31,7 @@ export function HomePage() {
         <div className={styles.feature}><strong>8 × 8</strong><span>Tablero táctico</span></div>
         <div className={styles.feature}><strong>90</strong><span>Cartas originales</span></div>
         <div className={styles.feature}><strong>6 × 50</strong><span>Mazos completos</span></div>
-        <div className={styles.feature}><strong>25</strong><span>Vida del Nexo</span></div>
+        <div className={styles.feature}><strong>35</strong><span>Vida del Nexo</span></div>
       </div>
 
       <section className={styles.section}>

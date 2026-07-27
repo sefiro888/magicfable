@@ -42,7 +42,7 @@ export function PlayPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div><small>Escaramuza contra la IA</small><h1>Selecciona tu mazo</h1></div>
-        <p>Cada mazo contiene 50 cartas y un comandante. Tu rival utilizará la facción opuesta.<br /><span className={styles.note}>Nexo a 25 · tablero 8 × 8</span></p>
+        <p>Cada mazo contiene 50 cartas y un comandante. Tu rival utilizará la facción opuesta.<br /><span className={styles.note}>Nexo a 35 · tablero 8 × 8</span></p>
       </header>
       <div className={styles.daily} data-done={daily.done}>
         <span className={styles.dailyBadge}>{daily.done ? '✓' : '◆'}</span>

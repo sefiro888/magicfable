@@ -148,7 +148,7 @@ describe('el motor sobre el tablero 8×8', () => {
     };
     const hit = applyAction(state, { type: 'attack-nexus', playerId: 'ai', attackerId: 'asaltante' });
     expect(hit.ok).toBe(true);
-    expect(hit.state.players.player.nexusHealth).toBe(23);
+    expect(hit.state.players.player.nexusHealth).toBe(33);
   });
 });
 

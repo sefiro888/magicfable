@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
+  canTakeMulligan,
   chooseNextAiAction,
   COMMANDER_BY_ID,
   effectiveCost,
@@ -1132,7 +1133,7 @@ export function BattlePage() {
         />
       )}
 
-      {!player.mulliganTaken && match.turn === 1 && !match.winner && (
+      {canTakeMulligan(match, ME) && !match.winner && (
         <div className={styles.resultBackdrop}>
           <section className={styles.mulligan}>
             <small>Preparación de la crónica</small>

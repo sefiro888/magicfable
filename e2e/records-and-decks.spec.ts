@@ -92,7 +92,8 @@ test('una victoria en el primer turno celebra los logros recién desbloqueados',
   await page.getByRole('button', { name: 'Conservar las cinco' }).click()
   await page.keyboard.press('Control+Shift+D')
   const nexusHit = page.getByRole('button', { name: '-5 al Nexo rival' })
-  for (let i = 0; i < 5; i += 1) {
+  // Nexo a 35 de vida, -5 por clic: hacen falta 7 clics para llegar a 0.
+  for (let i = 0; i < 7; i += 1) {
     await nexusHit.click()
   }
   await expect(page.getByRole('heading', { name: 'Victoria' })).toBeVisible()
@@ -107,7 +108,8 @@ test('«Volver al inicio» no deja la partida terminada a medias para la siguien
   await page.getByRole('button', { name: 'Conservar las cinco' }).click()
   await page.keyboard.press('Control+Shift+D')
   const nexusHit = page.getByRole('button', { name: '-5 al Nexo rival' })
-  for (let i = 0; i < 5; i += 1) {
+  // Nexo a 35 de vida, -5 por clic: hacen falta 7 clics para llegar a 0.
+  for (let i = 0; i < 7; i += 1) {
     await nexusHit.click()
   }
   await expect(page.getByRole('heading', { name: 'Victoria' })).toBeVisible()

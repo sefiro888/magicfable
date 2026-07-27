@@ -6,7 +6,7 @@ referencia canónica; `docs/game-design.md` conserva la visión original.
 ## 1. Partida
 
 - **Jugadores**: 2 (humano contra IA en este slice).
-- **Vida inicial**: cada Nexo comienza con **25** puntos.
+- **Vida inicial**: cada Nexo comienza con **35** puntos.
 - **Mazo**: exactamente **50 cartas** — 20 fuentes de Esencia + 30 cartas de
   acción. Máximo 4 copias por carta normal; 1 copia si es única (✦).
 - **Comandante**: cada mazo tiene un comandante fuera del mazo, con una

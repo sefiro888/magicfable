@@ -426,14 +426,14 @@ describe('Savia Restauradora — cura el Nexo y roba una carta', () => {
   it('no supera la Vida máxima del Nexo', () => {
     let state = freshMatch();
     state = withPlayer(state, 'player', {
-      nexusHealth: 24,
+      nexusHealth: 33,
       hand: [handCard('savia-restauradora', 'savia')], resources: resources('nature', 3),
     });
     const result = applyAction(state, {
       type: 'play-card', playerId: 'player', cardInstanceId: 'savia', target: { kind: 'none' },
     });
     expect(result.ok).toBe(true);
-    expect(result.state.players.player.nexusHealth).toBe(25);
+    expect(result.state.players.player.nexusHealth).toBe(35);
   });
 });
 
