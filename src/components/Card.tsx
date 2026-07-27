@@ -136,14 +136,19 @@ export function formatManaCost(cost: ManaCost): string {
   return parts.length > 0 ? parts.join(' y ') : 'sin coste';
 }
 
-function ManaCostBadge({ cost }: { readonly cost: ManaCost }) {
+function ManaCostBadge({ cost, affordable }: { readonly cost: ManaCost; readonly affordable?: boolean }) {
   const colored = FACTION_ORDER.flatMap((faction) => {
     const amount = cost.colored[faction];
     return amount ? [{ faction, amount }] : [];
   });
 
   return (
-    <div className={styles.cost} aria-label={`Coste: ${formatManaCost(cost)}`} title={`Coste: ${formatManaCost(cost)}`}>
+    <div
+      className={styles.cost}
+      data-affordable={affordable === undefined ? undefined : String(affordable)}
+      aria-label={`Coste: ${formatManaCost(cost)}${affordable === false ? '. No tienes Esencia suficiente.' : ''}`}
+      title={`Coste: ${formatManaCost(cost)}`}
+    >
       {colored.map(({ faction, amount }) => (
         <span className={styles.coloredCost} data-faction={faction} key={faction}>
           <strong>{amount}</strong>
@@ -288,7 +293,7 @@ export function Card({
     >
       <span className={styles.frameFiligree} aria-hidden="true" />
       <span className={styles.foil} aria-hidden="true" />
-      <ManaCostBadge cost={card.cost} />
+      <ManaCostBadge cost={card.cost} affordable={playable} />
       <div className={styles.header}>
         <h3 className={styles.name}>{card.name}</h3>
         {card.unique && <span className={styles.unique} title="Carta única" aria-label="Carta única">✦</span>}

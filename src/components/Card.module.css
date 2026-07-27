@@ -274,6 +274,20 @@
 .card[data-rarity='rare'] .coloredCost, .card[data-rarity='rare'] .genericCost { filter: drop-shadow(0 0 0.3em var(--frame-glow)); }
 .card[data-rarity='mythic'] .coloredCost, .card[data-rarity='mythic'] .genericCost { filter: drop-shadow(0 0 0.42em color-mix(in srgb, #d86cff 70%, var(--frame-glow))); }
 
+/* Coste sin Esencia suficiente ahora mismo: el cristal se apaga y vira a un
+   rojo apagado en vez del dorado/metal habitual — solo el propio badge de
+   coste, no toda la carta, para que la señal sea sutil pero inequívoca. */
+.cost[data-affordable='false'] .coloredCost::before,
+.cost[data-affordable='false'] .genericCost::before {
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.28), transparent 44%),
+    radial-gradient(ellipse at 45% 30%, #8a3a3a, #3a1414 60%, #0b0810 100%);
+}
+.cost[data-affordable='false'] .coloredCost,
+.cost[data-affordable='false'] .genericCost {
+  filter: saturate(0.55) brightness(0.82);
+}
+
 .artwork {
   position: relative;
   z-index: 2;
