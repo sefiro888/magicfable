@@ -1,6 +1,6 @@
 import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
-import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
@@ -22,11 +22,18 @@ import {
   nexusWorldZ,
   TILE_SIZE,
 } from './grid/gridCoordinates'
-import { AetherCitadel } from './scenarios/AetherCitadel'
-import { SanctuaryScenario } from './scenarios/SanctuaryScenario'
-import { CalderaScenario } from './scenarios/CalderaScenario'
 import { slabTexture } from './textures'
 import styles from './Board3D.module.css'
+
+const AetherCitadel = lazy(() =>
+  import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
+)
+const SanctuaryScenario = lazy(() =>
+  import('./scenarios/SanctuaryScenario').then((m) => ({ default: m.SanctuaryScenario })),
+)
+const CalderaScenario = lazy(() =>
+  import('./scenarios/CalderaScenario').then((m) => ({ default: m.CalderaScenario })),
+)
 
 interface Board3DProps {
   state: MatchState
