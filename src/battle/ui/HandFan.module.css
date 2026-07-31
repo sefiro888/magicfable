@@ -2,7 +2,11 @@
 .fanCard {
   flex: 0 0 auto;
   margin: 0 var(--fan-overlap, -34px);
-  transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 22px));
+  /* Antes +22px: escondía más carta de la que hacía falta en reposo (sin
+     pasar el ratón por encima) — se reduce para que se lea el nombre, coste
+     y buena parte del arte sin necesitar hover, ahora que el carril de la
+     mano también es más alto. */
+  transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 8px));
   transform-origin: 50% 128%;
   transition: transform 0.22s cubic-bezier(0.25, 0.8, 0.35, 1), filter 0.2s ease;
   filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.5));
@@ -32,7 +36,7 @@
   .fanCard { transition: none; animation: none; }
 }
 @media (max-height: 820px) {
-  .fanCard { transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 34px)); }
+  .fanCard { transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 18px)); }
   .fanCard:hover, .fanCard:focus-within { transform: rotate(0deg) translateY(-28px) scale(1.05); }
   .fanCard[data-selected='true'] { transform: rotate(0deg) translateY(-36px) scale(1.07); }
 }

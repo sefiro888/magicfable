@@ -35,7 +35,7 @@
 .enemyPanelClose:hover { color: var(--ivory); border-color: var(--gold); }
 
 /* ── Arena: el tablero es el protagonista ─────────────────────────────────── */
-.arena { position: absolute; inset: 60px 0 158px; }
+.arena { position: absolute; inset: 60px 0 210px; }
 .boardFrame { position: absolute; inset: 0 206px; }
 .leftPanel, .rightPanel { position: absolute; z-index: 20; top: 12px; width: 186px; border: 1px solid var(--line); background: rgba(11,13,20,.84); box-shadow: 0 18px 45px rgba(0,0,0,.3); }
 .leftPanel { backdrop-filter: blur(12px); }
@@ -186,7 +186,7 @@
 @keyframes statPop { 0% { transform: scale(1.35); filter: brightness(1.6); } 100% { transform: scale(1); } }
 
 /* ── Carril de la mano ────────────────────────────────────────────────────── */
-.handBar { height: 158px; position: absolute; z-index: 25; left: 0; right: 0; bottom: 0; border-top: 1px solid var(--line); background: linear-gradient(rgba(12,14,21,.94), #080a10); box-shadow: 0 -16px 45px rgba(0,0,0,.4); transition: height .32s ease; }
+.handBar { height: 210px; position: absolute; z-index: 25; left: 0; right: 0; bottom: 0; border-top: 1px solid var(--line); background: linear-gradient(rgba(12,14,21,.94), #080a10); box-shadow: 0 -16px 45px rgba(0,0,0,.4); transition: height .32s ease; }
 /* La mano (primer div: raíz de HandFan) se desliza al recogerse. */
 .handBar > div:first-of-type { transition: transform .32s cubic-bezier(.25,.8,.35,1); }
 .handBar[data-tucked] { height: 56px; }
@@ -304,7 +304,7 @@
   position: absolute;
   z-index: 90;
   left: 18px;
-  bottom: 178px;
+  bottom: 230px;
   display: grid;
   gap: 6px;
   padding: 12px;
@@ -322,7 +322,7 @@
   text-align: left;
 }
 .devPanel button:hover { border-color: #ffb066; }
-.message { position: absolute; z-index: 50; left: 50%; bottom: 171px; transform: translateX(-50%); max-width: 520px; padding: 10px 16px; border: 1px solid rgba(255,104,91,.45); color: #ffc1b9; background: rgba(64,21,21,.92); box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 11px; animation: hintIn .2s ease; }
+.message { position: absolute; z-index: 50; left: 50%; bottom: 223px; transform: translateX(-50%); max-width: 520px; padding: 10px 16px; border: 1px solid rgba(255,104,91,.45); color: #ffc1b9; background: rgba(64,21,21,.92); box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 11px; animation: hintIn .2s ease; }
 .inspectBackdrop, .resultBackdrop { position: absolute; z-index: 100; inset: 0; display: grid; place-items: center; background: rgba(3,4,7,.82); backdrop-filter: blur(10px); animation: backdropFadeIn .2s ease; }
 @keyframes backdropFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .inspect { width: 720px; display: grid; grid-template-columns: 290px 1fr; gap: 25px; padding: 24px; border: 2px solid var(--line-bright); background: linear-gradient(135deg, #0f1219 0%, #191d27 100%); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08); border-radius: 2px; animation: cardSlideUp .3s cubic-bezier(0.25, 0.8, 0.35, 1); }
@@ -436,10 +436,10 @@
 @media (max-height: 820px) {
   .battle { min-height: 700px; }
   .topbar { height: 54px; }
-  .arena { inset: 54px 0 146px; }
-  .handBar { height: 146px; }
-  .message { bottom: 159px; }
-  .devPanel { bottom: 166px; }
+  .arena { inset: 54px 0 180px; }
+  .handBar { height: 180px; }
+  .message { bottom: 193px; }
+  .devPanel { bottom: 200px; }
 }
 
 /* ── Móvil: paneles compactos y batalla usable en vertical y horizontal ──
