@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
   canTakeMulligan,
-  chooseNextAiAction,
   COMMANDER_BY_ID,
   effectiveCost,
   getValidAttacks,
@@ -14,102 +13,39 @@ import {
   reorderTopCards,
   STARTER_DECKS,
   summarizeMana,
-  type AnimationEvent,
-  type CardDefinition,
   type GameAction,
   type MatchState,
   type PlayerId,
   type Position,
 } from '../game'
 import { Board3D } from '../battle/Board3D'
+import { useAiTurn } from '../battle/hooks/useAiTurn'
+import { useEventDirector } from '../battle/hooks/useEventDirector'
+import { useMatchRecorder } from '../battle/hooks/useMatchRecorder'
+import { downloadMatchLog } from '../battle/matchLog'
 import { HandFan } from '../battle/ui/HandFan'
 import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../battle/ui/GlossaryPanel'
-import { Card, FactionSigil, formatManaCost } from '../components'
+import { actionHintFor, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
+import { FactionSigil } from '../components'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
-import { playSynthCue, type SoundCue } from '../services/audio'
 import { useMatchStore } from '../store/match'
 import { useNetworkStore } from '../store/network'
 import { usePreferences } from '../store/preferences'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
-import { evaluateAchievements, type Achievement } from '../store/achievements'
 import { withBase } from '../utils/assets'
 import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS } from '../utils/cardLabels'
+import { DevPanel } from './battle/DevPanel'
+import { EnemyPanel } from './battle/EnemyPanel'
+import { ESSENCE_LABELS, PHASE_LABELS } from './battle/labels'
+import { MatchResultDialog } from './battle/MatchResultDialog'
+import { MulliganDialog } from './battle/MulliganDialog'
+import { ScryDialog } from './battle/ScryDialog'
+import { SelectionPanel } from './battle/SelectionPanel'
 import styles from './BattlePage.module.css'
-
-const requiresPieceTarget = (card: CardDefinition) => card.effects.some((effect) =>
-  effect.kind === 'damage' ||
-  effect.kind === 'freeze' ||
-  effect.kind === 'scorch' ||
-  effect.kind === 'refresh-move' ||
-  (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
-)
-const isBoardCard = (card: CardDefinition) => card.type === 'unit' || card.type === 'structure'
-
-const PHASE_LABELS: Record<string, string> = {
-  start: 'Preparación',
-  draw: 'Robo',
-  main: 'Principal',
-  combat: 'Combate',
-  end: 'Fin',
-  finished: 'Terminada',
-}
-
-const BATTLE_KEYWORD_LABELS: Record<string, string> = {
-  impulse: 'Impulso',
-  'swift-strike': 'Golpe veloz',
-  guard: 'Guardia',
-  flying: 'Volador',
-}
-
-const ESSENCE_LABELS: Record<string, string> = {
-  fury: 'Esencia Carmesí',
-  arcane: 'Esencia Celeste',
-  nature: 'Esencia Verde',
-  order: 'Esencia Áurea',
-  shadow: 'Esencia Umbría',
-  void: 'Esencia del Vacío',
-}
-
-/** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
-const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
-  switch (event.type) {
-    case 'draw': return 'draw'
-    case 'resource': return 'resource'
-    case 'mana-flow': return undefined
-    case 'summon': return 'summon'
-    case 'spell': return 'spell'
-    case 'move': return 'move'
-    case 'attack': return 'attack'
-    case 'damage': return 'impact'
-    case 'nexus-damage': return 'impact'
-    case 'shield': return 'shield'
-    case 'destroy': return 'destroy'
-    case 'freeze': return 'freeze'
-    case 'reveal': return 'reveal'
-    case 'turn': return 'turn'
-    case 'victory': return event.actorId === me ? 'victory' : 'defeat'
-    default: return undefined
-  }
-}
-
-const MAX_AI_STEPS = 72
-
-/**
- * Ritmo de reproducción por tipo de evento: la contabilidad (robos, fuentes,
- * flujo de maná) corre más deprisa que los golpes para que los turnos fluyan
- * sin perder la lectura de las acciones importantes.
- */
-const EVENT_PACE: Readonly<Partial<Record<AnimationEvent['type'], number>>> = {
-  draw: 0.6,
-  resource: 0.6,
-  'mana-flow': 0.5,
-  reveal: 0.85,
-  turn: 0.9,
-}
 
 export function BattlePage() {
   const navigate = useNavigate()
@@ -131,14 +67,6 @@ export function BattlePage() {
     return Number.isFinite(parsed) ? parsed >>> 0 : undefined
   }, [searchParams])
   const [mulliganIds, setMulliganIds] = useState<readonly string[]>([])
-  const [scryAmount, setScryAmount] = useState(0)
-  const [scryOrder, setScryOrder] = useState<readonly string[]>([])
-  const [revealedCardId, setRevealedCardId] = useState<string>()
-  const [banner, setBanner] = useState<string>()
-  /** Aviso central de eventos: qué acaba de pasar (ataques, hechizos, despliegues…). */
-  const [eventBanner, setEventBanner] = useState<string>()
-  /** Longitud de historial ya anunciada: evita reanunciar entradas viejas al recargar una partida guardada. */
-  const lastHistoryLength = useRef(store.history.length)
   const [devOpen, setDevOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(() => !hasSeenHowTo())
   /** Coach interactivo de la primera partida: arranca solo tras cerrar la guía la primerísima vez. */
@@ -155,20 +83,34 @@ export function BattlePage() {
       en el tablero y en la píldora inferior, así que se oculta por defecto para dejar
       sitio al tablero. En PC siempre está visible, este estado no se usa ahí. */
   const [ownPanelOpenMobile, setOwnPanelOpenMobile] = useState(false)
-  const aiSteps = useRef(0)
-  const aiSkipped = useRef(new Set<string>())
-  /** Semilla de la última partida ya anotada, para no duplicar el registro entre renders. */
-  const recordedSeed = useRef<number | undefined>(undefined)
-  /** Semilla de la última desconexión del rival ya anotada como victoria propia. */
-  const peerLeftRecordedSeed = useRef<number | undefined>(undefined)
-  /** Logros que este resultado concreto acaba de desbloquear, para celebrarlos en la pantalla final. */
-  const [matchAchievements, setMatchAchievements] = useState<readonly Achievement[]>([])
 
   const match = store.match
   const currentEvent = store.currentEvent
   const pendingCount = store.pendingAnimations.length
   const queueBusy = Boolean(currentEvent) || pendingCount > 0
-  const scryOpen = scryAmount > 0
+
+  // Reproducción de la cola de animaciones, avisos y canales laterales
+  // (escrutinio, revelaciones): todo eso vive en su propio hook.
+  const director = useEventDirector(ME, preferences)
+  const scryOpen = director.scryAmount > 0
+
+  const recorder = useMatchRecorder({
+    me: ME,
+    rival: RIVAL,
+    fallbackDeckId: preferences.selectedDeckId,
+    isPvp: Boolean(room),
+    peerLeft,
+    queueBusy,
+  })
+
+  const ai = useAiTurn({
+    // En multijugador el bando 'ai' del motor es un humano de verdad (el
+    // invitado): este bot nunca debe jugar por él.
+    enabled: !room,
+    difficulty: preferences.aiDifficulty,
+    delayMs: preferences.aiDelayMs,
+    blocked: queueBusy || scryOpen,
+  })
 
   useEffect(() => {
     // En multijugador la partida la siembra el anfitrión vía useNetworkSync,
@@ -185,190 +127,6 @@ export function BattlePage() {
       useMatchStore.getState().startMatch(preferences.selectedDeckId, forcedSeed)
     }
   }, [preferences.selectedDeckId, store.match, forcedSeed, room])
-
-  // ── Director de animaciones ────────────────────────────────────────────────
-  // 1) Si no hay evento en reproducción, avanza la cola.
-  useEffect(() => {
-    if (!currentEvent && pendingCount > 0) {
-      useMatchStore.getState().advanceEvent()
-    }
-  }, [currentEvent, pendingCount])
-
-  // 2) Reproduce el evento actual: sonido, canales laterales y temporización.
-  useEffect(() => {
-    if (!currentEvent) return
-    const state = useMatchStore.getState()
-    const cue = cueForEvent(currentEvent, ME)
-    if (cue && !preferences.muted) {
-      playSynthCue(cue, preferences.masterVolume * preferences.effectsVolume)
-    }
-    // Los canales laterales actualizan estado de React fuera del cuerpo del
-    // efecto para no encadenar renders síncronos.
-    const sideChannel = window.setTimeout(() => {
-      if (currentEvent.type === 'turn') {
-        setBanner(currentEvent.actorId === ME ? 'Tu turno' : 'Turno rival')
-      }
-      if (currentEvent.type === 'spell' && currentEvent.effectId === 'scry-top-cards' && currentEvent.actorId === ME) {
-        const amount = Math.min(currentEvent.amount ?? 1, state.match?.players[ME].deck.length ?? 0)
-        if (amount > 0) {
-          setScryAmount(amount)
-          setScryOrder(state.match?.players[ME].deck.slice(0, amount).map((card) => card.instanceId) ?? [])
-        }
-      }
-      if (currentEvent.type === 'reveal' && currentEvent.actorId === ME) {
-        const revealed = state.match?.players[ME].deck.find((card) => card.instanceId === currentEvent.targetId)
-        if (revealed) setRevealedCardId(revealed.cardId)
-      }
-    }, 0)
-    const pace = EVENT_PACE[currentEvent.type] ?? 1
-    const duration = preferences.reducedMotion
-      ? 40
-      : Math.max(70, (currentEvent.durationMs * pace) / preferences.animationSpeed)
-    const timer = window.setTimeout(() => useMatchStore.getState().finishEvent(), duration)
-    return () => {
-      window.clearTimeout(sideChannel)
-      window.clearTimeout(timer)
-    }
-  }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, ME])
-
-  useEffect(() => {
-    if (!banner) return
-    const timer = window.setTimeout(() => setBanner(undefined), 1400)
-    return () => window.clearTimeout(timer)
-  }, [banner])
-
-  // ── Aviso central de eventos: anuncia cada acción según ocurre ────────────
-  // Reutiliza el mismo texto que ya se anota en «Crónica de batalla», para no
-  // mantener dos redacciones distintas del mismo suceso.
-  useEffect(() => {
-    const entries = store.history
-    if (entries.length <= lastHistoryLength.current) {
-      lastHistoryLength.current = entries.length
-      return undefined
-    }
-    const latest = entries[entries.length - 1]
-    lastHistoryLength.current = entries.length
-    if (!latest || latest === 'Has cedido el turno.' || latest === 'Se cede el turno.') return undefined
-    // setState se difiere fuera del cuerpo del efecto: mismo patrón que ya usa
-    // el director de animaciones un poco más arriba para sus canales laterales.
-    const sideChannel = window.setTimeout(() => setEventBanner(latest), 0)
-    return () => window.clearTimeout(sideChannel)
-  }, [store.history])
-
-  useEffect(() => {
-    if (!eventBanner) return
-    const timer = window.setTimeout(() => setEventBanner(undefined), 1900)
-    return () => window.clearTimeout(timer)
-  }, [eventBanner])
-
-  // ── Historial: anota la partida una sola vez, al terminar de reproducirse ──
-  // También se registran las escaramuzas PvP (mode:'pvp'), pero aparte: los
-  // logros y el coach de campaña siguen pensados solo para partidas contra la IA.
-  useEffect(() => {
-    const finished = store.match
-    if (!finished?.winner || queueBusy) return
-    if (recordedSeed.current === finished.seed) return
-    recordedSeed.current = finished.seed
-    const playerState = finished.players[ME]
-    const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
-    const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === finished.players[RIVAL].commanderId)
-    const unlockedBefore = new Set(
-      evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked).map((a) => a.id),
-    )
-    useRecords.getState().addRecord({
-      finishedAt: Date.now(),
-      deckId: playerDeck?.id ?? preferences.selectedDeckId,
-      deckName: playerDeck?.name ?? 'Mazo desconocido',
-      commanderName: COMMANDER_BY_ID[playerState.commanderId]?.name ?? '—',
-      opponentDeckName: opponentDeck?.name ?? 'Rival desconocido',
-      won: finished.winner === ME,
-      turns: finished.turn,
-      seconds: store.elapsedSeconds,
-      damageDealt: playerState.stats.damageDealt,
-      seed: finished.seed,
-      mode: room ? 'pvp' : 'ai',
-    })
-    if (!room) {
-      // Diferido: evita anidar el setState dentro de un bloque condicional
-      // del cuerpo síncrono del efecto (mismo patrón que otros canales
-      // laterales de esta pantalla).
-      window.setTimeout(() => {
-        setMatchAchievements(
-          evaluateAchievements(useRecords.getState().records).filter((a) => a.unlocked && !unlockedBefore.has(a.id)),
-        )
-      }, 0)
-    }
-  }, [store.match, queueBusy, store.elapsedSeconds, preferences.selectedDeckId, room, ME, RIVAL])
-
-  // Si el rival se desconecta a mitad de partida (cierra la pestaña sin
-  // pulsar «Abandonar»), el motor nunca llega a poner un ganador: sin este
-  // efecto, quien se queda no veía ninguna victoria anotada en su historial,
-  // aunque la desconexión ajena es en la práctica un abandono del rival.
-  useEffect(() => {
-    const current = store.match
-    if (!peerLeft || !current || current.winner) return
-    if (peerLeftRecordedSeed.current === current.seed) return
-    peerLeftRecordedSeed.current = current.seed
-    const playerState = current.players[ME]
-    const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
-    const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === current.players[RIVAL].commanderId)
-    useRecords.getState().addRecord({
-      finishedAt: Date.now(),
-      deckId: playerDeck?.id ?? preferences.selectedDeckId,
-      deckName: playerDeck?.name ?? 'Mazo desconocido',
-      commanderName: COMMANDER_BY_ID[playerState.commanderId]?.name ?? '—',
-      opponentDeckName: opponentDeck?.name ?? 'Rival desconocido',
-      won: true,
-      turns: current.turn,
-      seconds: Math.max(1, Math.round((Date.now() - store.startedAtMs) / 1000)),
-      damageDealt: playerState.stats.damageDealt,
-      seed: current.seed,
-      mode: 'pvp',
-    })
-  }, [peerLeft, store.match, store.startedAtMs, preferences.selectedDeckId, ME, RIVAL])
-
-  useEffect(() => {
-    if (!revealedCardId) return
-    const timer = window.setTimeout(() => setRevealedCardId(undefined), 2600)
-    return () => window.clearTimeout(timer)
-  }, [revealedCardId])
-
-  // ── Turno de la IA, paso a paso ───────────────────────────────────────────
-  // En multijugador el bando 'ai' del motor es un humano de verdad (el
-  // invitado): este bot nunca debe jugar por él.
-  useEffect(() => {
-    if (room) return
-    const current = useMatchStore.getState().match
-    if (!current || current.activePlayer !== 'ai' || current.winner || queueBusy || scryOpen) return
-    const timer = window.setTimeout(() => {
-      const stateNow = useMatchStore.getState()
-      const matchNow = stateNow.match
-      if (!matchNow || matchNow.activePlayer !== 'ai' || matchNow.winner) return
-      if (stateNow.currentEvent || stateNow.pendingAnimations.length > 0) return
-      stateNow.setAiThinking(true)
-      const action: GameAction =
-        aiSteps.current >= MAX_AI_STEPS
-          ? { type: 'end-turn', playerId: 'ai' }
-          : chooseNextAiAction(matchNow, aiSkipped.current, preferences.aiDifficulty)
-      const ok = stateNow.dispatch(action)
-      if (!ok) {
-        stateNow.setMessage(undefined)
-        if (action.type === 'play-card' || action.type === 'play-resource') {
-          aiSkipped.current.add(action.cardInstanceId)
-        } else {
-          const forced = stateNow.dispatch({ type: 'end-turn', playerId: 'ai' })
-          if (!forced) stateNow.setMessage(undefined)
-        }
-      }
-      aiSteps.current += 1
-      if (action.type === 'end-turn') {
-        aiSteps.current = 0
-        aiSkipped.current = new Set()
-      }
-      stateNow.setAiThinking(false)
-    }, Math.max(140, preferences.aiDelayMs / 3))
-    return () => window.clearTimeout(timer)
-  }, [match?.activePlayer, match?.turn, match?.winner, queueBusy, scryOpen, preferences.aiDelayMs, preferences.aiDifficulty, pendingCount, room])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {
@@ -419,7 +177,7 @@ export function BattlePage() {
   }, [])
 
   const player = match?.players[ME]
-  const ai = match?.players[RIVAL]
+  const rival = match?.players[RIVAL]
   const selectedInstance = player?.hand.find((instance) => instance.instanceId === store.selectedHandId)
   const selectedCard = selectedInstance ? CARD_BY_ID[selectedInstance.cardId] : undefined
   const selectedPiece = match?.board.find((piece) => piece.instanceId === store.selectedPieceId)
@@ -445,12 +203,12 @@ export function BattlePage() {
   }, [match, selectedCard, ME])
   const validCells = selectedCard ? deployCells : moves
   const mana = summarizeMana(player?.resources ?? [])
-  const aiMana = summarizeMana(ai?.resources ?? [])
+  const rivalMana = summarizeMana(rival?.resources ?? [])
   const payment = match && selectedCard
     ? planManaPayment(player?.resources ?? [], effectiveCost(match, ME, selectedCard))
     : undefined
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
-  const aiCommander = ai ? COMMANDER_BY_ID[ai.commanderId] : undefined
+  const rivalCommander = rival ? COMMANDER_BY_ID[rival.commanderId] : undefined
   const inspected = store.inspectedCardId ? CARD_BY_ID[store.inspectedCardId] : undefined
   const storedRecords = useRecords((state) => state.records)
   const tally = useMemo(() => summarizeRecords(storedRecords), [storedRecords])
@@ -581,7 +339,14 @@ export function BattlePage() {
     if (firstTime) setTutorialActive(true)
   }, [])
 
-  if (!match || !player || !ai) {
+  const leaveToHome = useCallback((to: string) => {
+    room?.leave()
+    useNetworkStore.getState().clear()
+    useMatchStore.getState().reset()
+    navigate(to)
+  }, [room, navigate])
+
+  if (!match || !player || !rival) {
     return (
       <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
         {room && (
@@ -599,94 +364,17 @@ export function BattlePage() {
   }
 
   const abandonMatch = () => {
-    // Abandonar cuenta como derrota: sin esto se podía esquivar una derrota
-    // segura saliendo a mitad de partida, y el historial quedaba mintiendo.
-    // Se anota también en PvP (mode:'pvp'), cada jugador en su propio historial local.
-    if (!match.winner) {
-      const playerState = match.players[ME]
-      const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === playerState.commanderId)
-      const opponentDeck = STARTER_DECKS.find((deck) => deck.commanderId === match.players[RIVAL].commanderId)
-      useRecords.getState().addRecord({
-        finishedAt: Date.now(),
-        deckId: playerDeck?.id ?? preferences.selectedDeckId,
-        deckName: playerDeck?.name ?? 'Mazo desconocido',
-        commanderName: COMMANDER_BY_ID[playerState.commanderId]?.name ?? '—',
-        opponentDeckName: opponentDeck?.name ?? 'Rival desconocido',
-        won: false,
-        turns: match.turn,
-        seconds: Math.max(1, Math.round((Date.now() - store.startedAtMs) / 1000)),
-        damageDealt: playerState.stats.damageDealt,
-        seed: match.seed,
-        mode: room ? 'pvp' : 'ai',
-      })
-    }
-    room?.leave()
-    useNetworkStore.getState().clear()
-    store.reset()
+    recorder.recordAbandon(match)
     setConfirmAbandon(false)
-    navigate('/play')
-  }
-
-  /**
-   * Genera y descarga el registro de la partida terminada: pensado para que
-   * el jugador me lo pueda pegar como feedback. Deliberadamente compacto
-   * (IDs y códigos cortos en vez de texto repetido, sin snapshots del
-   * tablero turno a turno) — con la semilla + el registro de acciones se
-   * puede reconstruir casi cualquier situación sin inflar el archivo.
-   */
-  const downloadMatchLog = () => {
-    const playerDeck = STARTER_DECKS.find((deck) => deck.commanderId === player.commanderId)
-    const rivalDeck = STARTER_DECKS.find((deck) => deck.commanderId === ai.commanderId)
-    const exportData = {
-      meta: {
-        generatedAt: new Date().toISOString(),
-        device: {
-          userAgent: navigator.userAgent,
-          screen: `${window.screen.width}x${window.screen.height}`,
-          pixelRatio: window.devicePixelRatio,
-        },
-        settings: {
-          graphicsQuality: preferences.graphicsQuality,
-          scenario: preferences.scenario,
-          reducedMotion: preferences.reducedMotion,
-        },
-      },
-      setup: {
-        seed: match.seed,
-        mode: room ? 'pvp' : 'ai',
-        player: { faction: commander?.faction, commander: player.commanderId, deck: playerDeck?.id },
-        rival: { faction: aiCommander?.faction, commander: ai.commanderId, deck: rivalDeck?.id },
-        dailyChallenge: daily.done ? daily.id : undefined,
-      },
-      result: {
-        winner: match.winner,
-        turns: match.turn,
-        durationSeconds: store.elapsedSeconds,
-        playerNexusHealth: player.nexusHealth,
-        rivalNexusHealth: ai.nexusHealth,
-        playerStats: player.stats,
-      },
-      log: store.matchLog,
-    }
-    const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `cronicas-partida-${new Date().toISOString().slice(0, 10)}-${match.seed}.json`
-    link.click()
-    URL.revokeObjectURL(url)
+    leaveToHome('/play')
   }
 
   const repeat = () => {
     store.reset()
     setMulliganIds([])
-    aiSteps.current = 0
-    aiSkipped.current = new Set()
-    // Con «?seed=N» la revancha repite semilla: sin esto la nueva partida no se anotaría.
-    recordedSeed.current = undefined
-    setMatchAchievements([])
-    lastHistoryLength.current = 0
-    setEventBanner(undefined)
+    ai.reset()
+    recorder.reset()
+    director.resetBanners()
     store.startMatch(preferences.selectedDeckId, forcedSeed)
   }
 
@@ -709,21 +397,21 @@ export function BattlePage() {
 
   const confirmScry = () => {
     if (role === 'guest') {
-      sendIntent({ kind: 'scry', order: scryOrder })
-      setScryAmount(0)
-      setScryOrder([])
+      sendIntent({ kind: 'scry', order: director.scryOrder })
+      director.setScryAmount(0)
+      director.setScryOrder([])
       return
     }
-    const result = reorderTopCards(match, ME, scryOrder)
+    const result = reorderTopCards(match, ME, director.scryOrder)
     if (result.ok) {
       store.replaceMatch(result.state, 'Ordenas la parte superior de tu mazo.')
     }
-    setScryAmount(0)
-    setScryOrder([])
+    director.setScryAmount(0)
+    director.setScryOrder([])
   }
 
   const moveScryCard = (instanceId: string, direction: -1 | 1) => {
-    setScryOrder((current) => {
+    director.setScryOrder((current) => {
       const index = current.indexOf(instanceId)
       const swap = index + direction
       if (index < 0 || swap < 0 || swap >= current.length) return current
@@ -743,66 +431,32 @@ export function BattlePage() {
   // de acción que ya tenías en marcha por debajo.
   const activeInfo = viewedBoardCard ?? selectedCard ?? selectedBoardCard
   const viewingForeign = Boolean(viewedPiece && viewedPiece.owner !== ME)
-  const canCastDirectly = !viewedBoardCard && selectedCard && !isBoardCard(selectedCard) && !requiresPieceTarget(selectedCard)
-  const revealedCard = revealedCardId ? CARD_BY_ID[revealedCardId] : undefined
+  const canCastDirectly = Boolean(!viewedBoardCard && selectedCard && !isBoardCard(selectedCard) && !requiresPieceTarget(selectedCard))
+  const revealedCard = director.revealedCardId ? CARD_BY_ID[director.revealedCardId] : undefined
 
   /** Estado visual del botón de turno: listo, resolviendo, turno rival o fin. */
   const turnState = match.winner ? 'over' : match.activePlayer !== ME ? 'enemy' : queueBusy ? 'busy' : 'ready'
 
-  /** Línea compacta de estadísticas de la carta o unidad seleccionada/consultada. */
-  const contextStats = (() => {
-    const parts: string[] = []
-    if (viewedPiece && viewedBoardCard) {
-      if (viewedBoardCard.attack !== undefined) parts.push(`ATQ ${Math.max(0, viewedBoardCard.attack + viewedPiece.attackModifier)}`)
-      parts.push(`VID ${viewedPiece.currentHealth}`)
-      if (viewedBoardCard.range !== undefined) parts.push(`ALC ${viewedBoardCard.range}`)
-      if (viewedBoardCard.movement !== undefined) parts.push(`MOV ${viewedBoardCard.movement}`)
-    } else if (selectedPiece && selectedBoardCard) {
-      if (selectedBoardCard.attack !== undefined) parts.push(`ATQ ${Math.max(0, selectedBoardCard.attack + selectedPiece.attackModifier)}`)
-      parts.push(`VID ${selectedPiece.currentHealth}`)
-      if (selectedBoardCard.range !== undefined) parts.push(`ALC ${selectedBoardCard.range}`)
-      if (selectedBoardCard.movement !== undefined) parts.push(`MOV ${selectedBoardCard.movement}`)
-    } else if (selectedCard) {
-      if (selectedCard.attack !== undefined) parts.push(`ATQ ${selectedCard.attack}`)
-      if (selectedCard.health !== undefined) parts.push(`VID ${selectedCard.health}`)
-      if (selectedCard.resistance !== undefined) parts.push(`RES ${selectedCard.resistance}`)
-      if (selectedCard.range !== undefined) parts.push(`ALC ${selectedCard.range}`)
-      if (selectedCard.movement !== undefined) parts.push(`MOV ${selectedCard.movement}`)
-    }
-    return parts.length > 0 ? parts.join(' · ') : undefined
-  })()
+  const contextStats = viewedPiece && viewedBoardCard
+    ? pieceStatLine(viewedPiece, viewedBoardCard)
+    : selectedPiece && selectedBoardCard
+      ? pieceStatLine(selectedPiece, selectedBoardCard)
+      : selectedCard
+        ? cardStatLine(selectedCard)
+        : undefined
 
-  /** Guía inmediata: qué puede hacer el jugador con la selección actual. */
-  const actionHint = (() => {
-    if (match.winner) return undefined
-    // Consultar una ficha es válido en cualquier turno y nunca desencadena
-    // una acción: se comprueba antes que nada, incluso antes del aviso de
-    // "turno rival", para poder seguir mirando unidades mientras juega.
-    if (viewedPiece) {
-      return viewingForeign
-        ? 'Consultando una unidad rival: solo información, no puedes actuar sobre ella.'
-        : 'Consultando esta unidad.'
-    }
-    if (match.activePlayer !== ME) return 'Turno rival: observa sus movimientos.'
-    if (selectedCard) {
-      if (payment && !payment.payable) return 'No tienes Esencia suficiente para esta carta.'
-      if (isBoardCard(selectedCard)) return 'Elige una casilla iluminada en azul para desplegar.'
-      if (requiresPieceTarget(selectedCard)) return 'Selecciona un objetivo resaltado en dorado.'
-      return 'Pulsa «Resolver carta» para lanzarla.'
-    }
-    if (selectedPiece) {
-      const frozen = selectedPiece.statuses.some((status) => status.kind === 'frozen')
-      if (frozen) return 'Unidad congelada: no puede actuar este turno.'
-      const canMove = moves.length > 0
-      const canAttack = attacks.pieceIds.length > 0 || attacks.canAttackNexus
-      if (canMove && canAttack) return 'Casillas azules: mover · Objetivos dorados: atacar.'
-      if (canMove) return 'Elige una casilla azul para mover.'
-      if (canAttack) return 'Elige un objetivo dorado para atacar.'
-      if (selectedPiece.movedThisTurn || selectedPiece.attackedThisTurn) return 'Esta unidad ya ha agotado sus acciones este turno.'
-      return 'Esta unidad no tiene acciones disponibles ahora mismo.'
-    }
-    return 'Selecciona una carta de tu mano o una unidad aliada.'
-  })()
+  const actionHint = actionHintFor({
+    finished: Boolean(match.winner),
+    isMyTurn: match.activePlayer === ME,
+    viewedPiece,
+    viewingForeign,
+    selectedCard,
+    canPaySelectedCard: payment?.payable !== false,
+    selectedPiece,
+    moveCount: moves.length,
+    canAttackPiece: attacks.pieceIds.length > 0,
+    canAttackNexus: attacks.canAttackNexus,
+  })
 
   return (
     <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
@@ -831,46 +485,26 @@ export function BattlePage() {
         >
           <div className={styles.enemyStats}>
             <div className={styles.enemyName}>
-              {aiCommander && <FactionSigil faction={aiCommander.faction} size="small" decorative />}
-              <strong>{aiCommander?.name}</strong>
+              {rivalCommander && <FactionSigil faction={rivalCommander.faction} size="small" decorative />}
+              <strong>{rivalCommander?.name}</strong>
             </div>
             <div className={styles.enemyChips}>
               <span className={styles.enemyChip} data-kind="mana" title="Esencia disponible del rival">
-                ◆ {aiMana.available}/{aiMana.total}
+                ◆ {rivalMana.available}/{rivalMana.total}
               </span>
               <span className={styles.enemyChip} data-kind="hand" title="Cartas en la mano del rival">
-                🂠 {ai.hand.length}
+                🂠 {rival.hand.length}
               </span>
               <span className={styles.enemyChip} data-kind="deck" title="Cartas en el mazo del rival">
-                ▤ {ai.deck.length}
+                ▤ {rival.deck.length}
               </span>
             </div>
           </div>
-          <div className={styles.nexusOrb} title="Vida del Nexo rival">♥{ai.nexusHealth}</div>
+          <div className={styles.nexusOrb} title="Vida del Nexo rival">♥{rival.nexusHealth}</div>
         </button>
       </header>
 
-      {enemyPanelOpen && (
-        <aside className={styles.enemyPanel} role="dialog" aria-label="Datos del rival">
-          <button className={styles.enemyPanelClose} onClick={() => setEnemyPanelOpen(false)} aria-label="Cerrar">×</button>
-          <div className={styles.commander}>
-            <img className={styles.portrait} src={aiCommander ? withBase(aiCommander.art.webp) : undefined} alt="" />
-            <div><strong>{aiCommander?.name}</strong><small>{aiCommander?.title}</small></div>
-          </div>
-          <div className={styles.lifeRow}>
-            <span>Vida del Nexo</span>
-            <span key={ai.nexusHealth} className={styles.life}>♥ {ai.nexusHealth}</span>
-          </div>
-          <div className={styles.deckCounters}>
-            <div className={styles.counter}><strong key={ai.hand.length}>{ai.hand.length}</strong><span>Mano</span></div>
-            <div className={styles.counter}><strong key={ai.deck.length}>{ai.deck.length}</strong><span>Mazo</span></div>
-            <div className={styles.counter}><strong key={ai.discard.length}>{ai.discard.length}</strong><span>Descarte</span></div>
-          </div>
-          <p className={styles.essenceNote} title={ESSENCE_LABELS[aiCommander?.faction ?? 'fury']}>
-            Esencia: <strong>{aiMana.available} / {aiMana.total}</strong>{aiMana.exhausted > 0 ? ` · ${aiMana.exhausted} agotadas` : ''}
-          </p>
-        </aside>
-      )}
+      {enemyPanelOpen && <EnemyPanel rival={rival} onClose={() => setEnemyPanelOpen(false)} />}
 
       <div className={styles.arena}>
         <div className={styles.boardFrame}>
@@ -889,8 +523,8 @@ export function BattlePage() {
             scenario={preferences.scenario}
             activeEvent={currentEvent}
           />
-          {banner && <div className={styles.turnBanner} role="status">{banner}</div>}
-          {eventBanner && <div key={eventBanner} className={styles.eventBanner} role="status">{eventBanner}</div>}
+          {director.banner && <div className={styles.turnBanner} role="status">{director.banner}</div>}
+          {director.eventBanner && <div key={director.eventBanner} className={styles.eventBanner} role="status">{director.eventBanner}</div>}
           {queueBusy && pendingCount >= 2 && (
             <button className={styles.skipQueue} onClick={() => store.skipAnimations()}>
               Saltar animaciones ({pendingCount})
@@ -945,39 +579,14 @@ export function BattlePage() {
           </section>
         </aside>
         <aside className={styles.rightPanel}>
-          <section className={`${styles.panelSection} ${styles.context}`} data-empty={!activeInfo || undefined}>
-            <span className={styles.panelLabel}>{viewedBoardCard ? (viewingForeign ? 'Ficha rival' : 'Consulta') : activeInfo ? 'Selección' : 'Contexto'}</span>
-            {activeInfo && (
-              <>
-                <div className={styles.contextArt}>
-                  <img src={withBase(activeInfo.art.webp)} alt="" loading="lazy" />
-                </div>
-                <h3>{activeInfo.name}</h3>
-                <p className={styles.contextType}>
-                  {FACTION_LABELS[activeInfo.faction]} · {TYPE_LABELS[activeInfo.type]}{activeInfo.subtype ? ` — ${activeInfo.subtype}` : ''} · {RARITY_LABELS[activeInfo.rarity]}
-                </p>
-                <p className={styles.contextCost}>Coste: {formatManaCost(activeInfo.cost)}</p>
-                {contextStats && <p className={styles.contextStats}>{contextStats}</p>}
-                <p className={styles.contextRules}>{activeInfo.rules}</p>
-                {activeInfo.keywords.length > 0 && (
-                  <div className={styles.contextKeywords}>
-                    {activeInfo.keywords.map((keyword) => (
-                      <span key={keyword}>{BATTLE_KEYWORD_LABELS[keyword] ?? keyword}</span>
-                    ))}
-                  </div>
-                )}
-                <p className={styles.contextFlavor}>«{activeInfo.flavor}»</p>
-              </>
-            )}
-            {actionHint && (
-              <p key={actionHint} className={styles.actionHint} data-warning={actionHint.startsWith('No tienes') || undefined} role="status">
-                {actionHint}
-              </p>
-            )}
-            {canCastDirectly && payment?.payable && (
-              <button className={styles.cast} onClick={playSelectedWithoutTarget} title="Lanza este hechizo, que no necesita objetivo en el tablero.">Resolver carta</button>
-            )}
-          </section>
+          <SelectionPanel
+            card={activeInfo}
+            heading={viewedBoardCard ? (viewingForeign ? 'Ficha rival' : 'Consulta') : activeInfo ? 'Selección' : 'Contexto'}
+            stats={contextStats}
+            hint={actionHint}
+            canCast={canCastDirectly && payment?.payable === true}
+            onCast={playSelectedWithoutTarget}
+          />
           {/* En móvil se oculta: el aviso central de eventos ya anuncia cada
               acción, así que este registro es redundante ahí y solo le quita
               sitio al tablero. En PC se conserva, plegado por defecto. */}
@@ -1033,31 +642,12 @@ export function BattlePage() {
       )}
 
       {scryOpen && (
-        <div className={styles.resultBackdrop}>
-          <section className={styles.scry} role="dialog" aria-modal="true" aria-label="Observar el mazo">
-            <small>Escrutinio</small>
-            <h2>Ordena la parte superior de tu mazo</h2>
-            <p>La primera carta de la lista será la próxima que robes.</p>
-            <div className={styles.scryCards}>
-              {scryOrder.map((instanceId, index) => {
-                const instance = match.players[ME].deck.find((card) => card.instanceId === instanceId)
-                const card = instance ? CARD_BY_ID[instance.cardId] : undefined
-                if (!card) return null
-                return (
-                  <div key={instanceId} className={styles.scryCard}>
-                    <span className={styles.scryPosition}>{index + 1}ª</span>
-                    <Card card={card} size="thumbnail" />
-                    <div className={styles.scryControls}>
-                      <button onClick={() => moveScryCard(instanceId, -1)} disabled={index === 0} aria-label="Subir">↑</button>
-                      <button onClick={() => moveScryCard(instanceId, 1)} disabled={index === scryOrder.length - 1} aria-label="Bajar">↓</button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <button className={styles.confirmMulligan} onClick={confirmScry}>Confirmar orden</button>
-          </section>
-        </div>
+        <ScryDialog
+          order={director.scryOrder}
+          deck={player.deck}
+          onMove={moveScryCard}
+          onConfirm={confirmScry}
+        />
       )}
 
       {/* Solo visible en móvil (CSS): tu vida y esencia ya se ven en el tablero y
@@ -1118,7 +708,7 @@ export function BattlePage() {
             <h2>Tu rival se ha desconectado</h2>
             <p>La partida no se puede continuar ni reanudar sin él. Puedes volver al inicio.</p>
             <div className={styles.resultActions}>
-              <button onClick={() => { room?.leave(); useNetworkStore.getState().clear(); store.reset(); navigate('/') }}>Volver al inicio</button>
+              <button onClick={() => leaveToHome('/')}>Volver al inicio</button>
             </div>
           </section>
         </div>
@@ -1134,53 +724,14 @@ export function BattlePage() {
       )}
 
       {canTakeMulligan(match, ME) && !match.winner && (
-        <div className={styles.resultBackdrop}>
-          <section className={styles.mulligan}>
-            <small>Preparación de la crónica</small>
-            <h2>Tu mano inicial</h2>
-            <p>
-              El <strong>mulligan</strong> te deja cambiar cartas de tu mano de salida una sola vez:
-              marca las que no te convenzan y roba otras tantas nuevas.
-            </p>
-            {(() => {
-              const fuentes = player.hand.filter((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana').length
-              const equilibrada = fuentes >= 2 && fuentes <= 4
-              return (
-                <p className={styles.mulliganHint} data-ok={equilibrada}>
-                  Tienes <strong>{fuentes}</strong> {fuentes === 1 ? 'fuente' : 'fuentes'} de Esencia en la mano.
-                  {equilibrada
-                    ? ' Es un buen arranque para desplegar cartas pronto.'
-                    : fuentes < 2
-                      ? ' Con menos de dos te costará pagar tus cartas: valora cambiar alguna.'
-                      : ' Demasiadas fuentes y pocas jugadas: valora cambiar alguna.'}
-                </p>
-              )
-            })()}
-            <div className={styles.mulliganCards}>
-              {player.hand.map((instance) => {
-                const card = CARD_BY_ID[instance.cardId]
-                if (!card) return null
-                const selected = mulliganIds.includes(instance.instanceId)
-                return (
-                  <button
-                    key={instance.instanceId}
-                    className={styles.mulliganCard}
-                    data-selected={selected}
-                    aria-pressed={selected}
-                    onClick={() => setMulliganIds((current) => current.includes(instance.instanceId) ? current.filter((id) => id !== instance.instanceId) : [...current, instance.instanceId])}
-                  >
-                    <img src={withBase(card.art.webp)} alt="" />
-                    <strong>{card.name}</strong>
-                    <span>{selected ? 'Cambiar' : 'Conservar'}</span>
-                  </button>
-                )
-              })}
-            </div>
-            <button className={styles.confirmMulligan} onClick={confirmMulligan}>
-              {mulliganIds.length > 0 ? `Cambiar ${mulliganIds.length} cartas` : 'Conservar las cinco'}
-            </button>
-          </section>
-        </div>
+        <MulliganDialog
+          hand={player.hand}
+          selectedIds={mulliganIds}
+          onToggle={(instanceId) => setMulliganIds((current) =>
+            current.includes(instanceId) ? current.filter((id) => id !== instanceId) : [...current, instanceId],
+          )}
+          onConfirm={confirmMulligan}
+        />
       )}
 
       {inspected && (
@@ -1200,104 +751,41 @@ export function BattlePage() {
       )}
 
       {match.winner && !queueBusy && (
-        <div className={styles.resultBackdrop}>
-          <section className={styles.result}>
-            <small>La crónica ha concluido</small>
-            <h2>{match.winner === ME ? 'Victoria' : 'Derrota'}</h2>
-            <p>{match.winner === ME ? 'El Nexo rival se quiebra bajo tu voluntad.' : 'Tu Nexo se desvanece. La siguiente crónica aún puede cambiar.'}</p>
-            <div className={styles.resultStats}>
-              <div><strong>{match.turn}</strong><span>Turnos</span></div>
-              <div><strong>{store.elapsedSeconds}s</strong><span>Duración</span></div>
-              <div><strong>{player.stats.damageDealt}</strong><span>Daño</span></div>
-              <div><strong>{player.stats.cardsPlayed}</strong><span>Jugadas</span></div>
-            </div>
-            {tally.played > 1 && (
-              <p className={styles.resultTally}>
-                Llevas <strong>{tally.won}</strong> {tally.won === 1 ? 'victoria' : 'victorias'} de <strong>{tally.played}</strong> escaramuzas · {tally.winRate}%
-              </p>
-            )}
-            {match.winner === ME && daily.done && (
-              <p className={styles.dailyResultNote}>✓ Reto de hoy completado: {daily.title}</p>
-            )}
-            {matchAchievements.length > 0 && (
-              <div className={styles.resultAchievements}>
-                <small>Logro{matchAchievements.length > 1 ? 's' : ''} desbloqueado{matchAchievements.length > 1 ? 's' : ''}</small>
-                {matchAchievements.map((achievement) => (
-                  <p key={achievement.id}>
-                    <span aria-hidden="true">{achievement.icon}</span> {achievement.name}
-                  </p>
-                ))}
-              </div>
-            )}
-            {/* En PvP la revancha exige que los dos lados la pidan: uno solo
-                repitiendo no basta, sería jugar contra un rival que no lo sabe. */}
-            {room && rematchSelf && !rematchPeer && (
-              <p className={styles.rematchWaiting}>Esperando a que tu rival acepte la revancha…</p>
-            )}
-            <div className={styles.resultActions}>
-              {room
-                ? <button onClick={requestRematch} disabled={rematchSelf}>{rematchPeer ? 'Aceptar revancha' : 'Jugar otra vez'}</button>
-                : <button onClick={repeat}>Repetir</button>}
-              {/* Sin el reset, la partida terminada quedaba persistida: si luego se
-                  elegía la misma facción, se reanudaba esta misma (mismo rival, ya
-                  con ganador) en vez de empezar una nueva. */}
-              <button onClick={() => { room?.leave(); useNetworkStore.getState().clear(); store.reset(); navigate('/') }}>Volver al inicio</button>
-            </div>
-            <button className={styles.downloadLog} onClick={downloadMatchLog} title="Descarga un archivo con el registro de esta partida, útil para reportar un problema">
-              ⬇ Descargar registro de la partida
-            </button>
-          </section>
-        </div>
+        <MatchResultDialog
+          match={match}
+          me={ME}
+          stats={player.stats}
+          elapsedSeconds={store.elapsedSeconds}
+          tally={tally}
+          daily={daily}
+          achievements={recorder.achievements}
+          isPvp={Boolean(room)}
+          rematchSelf={rematchSelf}
+          rematchPeer={rematchPeer}
+          onRematch={requestRematch}
+          onRepeat={repeat}
+          onHome={() => leaveToHome('/')}
+          onDownloadLog={() => downloadMatchLog({
+            match,
+            me: ME,
+            rival: RIVAL,
+            preferences,
+            isPvp: Boolean(room),
+            dailyChallengeId: daily.done ? daily.id : undefined,
+            elapsedSeconds: store.elapsedSeconds,
+            log: store.matchLog,
+          })}
+        />
       )}
 
       {import.meta.env.DEV && devOpen && !room && (
-        <section className={styles.devPanel} aria-label="Modo desarrollador">
-          <strong>Modo desarrollador</strong>
-          <button onClick={() => devApply((current) => ({
-            ...current,
-            players: {
-              ...current.players,
-              player: {
-                ...current.players.player,
-                resources: [
-                  ...current.players.player.resources,
-                  {
-                    instanceId: `dev-essence-${Date.now()}`,
-                    cardId: commander?.faction === 'arcane' ? 'fuente-arcana' : 'fuente-furia',
-                    faction: commander?.faction ?? 'fury',
-                    exhausted: false,
-                  },
-                ],
-              },
-            },
-          }))}>+1 Esencia</button>
-          <button onClick={() => devApply((current) => {
-            const top = current.players.player.deck[0]
-            if (!top) return current
-            return {
-              ...current,
-              players: {
-                ...current.players,
-                player: {
-                  ...current.players.player,
-                  deck: current.players.player.deck.slice(1),
-                  hand: [...current.players.player.hand, top],
-                },
-              },
-            }
-          })}>Robar carta</button>
-          <button onClick={() => devApply((current) => {
-            const health = Math.max(0, current.players.ai.nexusHealth - 5)
-            return {
-              ...current,
-              players: { ...current.players, ai: { ...current.players.ai, nexusHealth: health } },
-              ...(health === 0 ? { winner: 'player' as const, phase: 'finished' as const } : {}),
-            }
-          })}>-5 al Nexo rival</button>
-          <button onClick={() => doAction({ type: 'end-turn', playerId: match.activePlayer })}>Forzar fin de turno</button>
-          <button onClick={repeat}>Reiniciar partida</button>
-          <button onClick={() => console.info('MatchState', match)}>Volcar estado</button>
-        </section>
+        <DevPanel
+          match={match}
+          faction={commander?.faction ?? 'fury'}
+          onApply={devApply}
+          onForceEndTurn={() => doAction({ type: 'end-turn', playerId: match.activePlayer })}
+          onRestart={repeat}
+        />
       )}
     </div>
   )
