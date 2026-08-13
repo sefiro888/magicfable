@@ -33,7 +33,17 @@ const rivalOf = (me: PlayerId): PlayerId => (me === 'player' ? 'ai' : 'player');
 
 const MAX_AI_ACTIONS = 64;
 
-/** Nivel de la IA rival. Solo cambia su agresividad, no su validez de jugadas. */
+/**
+ * Nivel de la IA rival. Nunca cambia qué jugadas son legales, solo cuáles elige:
+ *
+ * - `easy`: no remata el Nexo, pelea solo en el tablero y deja respirar.
+ * - `normal`: ataca el Nexo en cuanto puede y golpea al objetivo más amenazante,
+ *   pieza por pieza en un orden fijo. Es directa y previsible.
+ * - `hard`: evalúa TODOS los pares atacante-objetivo posibles antes de mover
+ *   ficha y elige el mejor intercambio, midiendo qué muere de cada lado y el
+ *   contragolpe que va a recibir. Solo golpea el Nexo cuando eso vale más que
+ *   el mejor intercambio disponible (o cuando es letal).
+ */
 export type AiDifficulty = 'easy' | 'normal' | 'hard';
 
 /**
@@ -197,6 +207,110 @@ const targetScore = (state: MatchState, pieceId: string): number => {
   return (definition?.attack ?? 0) * 4 + (definition?.type === 'structure' ? 2 : 0) - piece.currentHealth;
 };
 
+/** Lo que vale una ficha en el tablero: perderla o matarla pesa esto. */
+const pieceValue = (piece: BoardPiece): number => {
+  const definition = CARD_BY_ID[piece.cardId];
+  if (!definition) return 0;
+  const keywordBonus =
+    (definition.keywords.includes('guard') ? 2 : 0) +
+    (definition.keywords.includes('flying') ? 2 : 0) +
+    (definition.keywords.includes('lifelink') ? 2 : 0) +
+    (definition.keywords.includes('pierce') ? 2 : 0) +
+    (definition.keywords.includes('stun') ? 2 : 0);
+  return (definition.attack ?? 0) * 2 + piece.currentHealth + keywordBonus;
+};
+
+/** Daño que reparte `piece` al atacar, con sus modificadores ya aplicados. */
+const attackPower = (piece: BoardPiece): number => {
+  const definition = CARD_BY_ID[piece.cardId];
+  if (!definition || definition.attack === undefined) return 0;
+  const onAttackBuff = definition.effects.find((effect) => effect.kind === 'buff-self-on-attack');
+  return Math.max(0, definition.attack + piece.attackModifier +
+    (onAttackBuff?.kind === 'buff-self-on-attack' ? onAttackBuff.attack : 0));
+};
+
+/**
+ * Cuánto gana la IA con un intercambio concreto. Positivo = le compensa.
+ *
+ * Suma lo que destruye y resta lo que va a perder por el contragolpe: por eso
+ * la IA difícil no lanza un 2/2 contra un Guardia 4/5 solo porque «podía
+ * atacar», que es justo lo que hace la normal.
+ */
+const tradeValue = (attacker: BoardPiece, defender: BoardPiece): number => {
+  const attackerCard = CARD_BY_ID[attacker.cardId];
+  const damage = attackPower(attacker);
+  const defenderDies = damage >= defender.currentHealth;
+  // El contragolpe solo existe cuerpo a cuerpo y si la defensora tiene Ataque.
+  const meleeRange = (attackerCard?.range ?? 1) === 1;
+  const retaliation = meleeRange ? attackPower(defender) : 0;
+  const attackerDies = retaliation >= attacker.currentHealth;
+  let value = defenderDies ? pieceValue(defender) : Math.min(damage, defender.currentHealth);
+  if (attackerDies) value -= pieceValue(attacker);
+  // Rematar a la defensora con Perforar además empuja daño al Nexo.
+  if (defenderDies && attackerCard?.keywords.includes('pierce')) {
+    value += Math.max(0, damage - defender.currentHealth) * NEXUS_DAMAGE_WEIGHT;
+  }
+  return value;
+};
+
+/**
+ * Cuánto vale cada punto de daño al Nexo frente a un intercambio de fichas.
+ *
+ * Valor calibrado a base de simular, no elegido a ojo: ver
+ * `ai-strength-sim.test.ts`. Pesos altos (10-40) hacen que la difícil corra al
+ * Nexo ignorando el tablero y PIERDA contra la normal (45-48%); por debajo de
+ * 1 se estabiliza en un 57% de victorias. Un golpe letal se trata aparte, como
+ * infinito, así que bajar este peso nunca le hace perder un remate.
+ */
+const NEXUS_DAMAGE_WEIGHT = 0.5;
+
+interface AttackPlan {
+  readonly action: GameAction;
+  readonly value: number;
+  /** Solo para desempatar de forma determinista. */
+  readonly key: string;
+}
+
+/**
+ * Plan de ataque de la IA difícil: mira todos los pares atacante-objetivo del
+ * tablero de una vez, en lugar de recorrer sus fichas en orden fijo y lanzar
+ * la primera que tenga algo a tiro.
+ */
+const chooseBestAttack = (state: MatchState, me: PlayerId): GameAction | undefined => {
+  const enemy = state.players[rivalOf(me)];
+  const plans: AttackPlan[] = [];
+  for (const piece of state.board) {
+    if (piece.owner !== me) continue;
+    const attacks = getValidAttacks(state, piece.instanceId);
+    if (attacks.canAttackNexus) {
+      const damage = attackPower(piece);
+      const lethal = damage >= enemy.nexusHealth;
+      plans.push({
+        action: { type: 'attack-nexus', playerId: me, attackerId: piece.instanceId },
+        // Un golpe letal termina la partida: nada puede valer más que eso.
+        value: lethal ? Number.POSITIVE_INFINITY : damage * NEXUS_DAMAGE_WEIGHT,
+        key: `nexus-${piece.instanceId}`,
+      });
+    }
+    for (const defenderId of attacks.pieceIds) {
+      const defender = state.board.find((candidate) => candidate.instanceId === defenderId);
+      if (!defender) continue;
+      plans.push({
+        action: { type: 'attack-piece', playerId: me, attackerId: piece.instanceId, defenderId },
+        value: tradeValue(piece, defender),
+        key: `piece-${piece.instanceId}-${defenderId}`,
+      });
+    }
+  }
+  // Siempre se ataca si hay con qué: se probó a que la difícil rechazara los
+  // intercambios malos y salía perdiendo (45-50% frente al 57% de atacar
+  // siempre). Quedarse quieta le regala el tempo al rival, y la ficha que
+  // «salva» acaba muriendo igual un turno después. Lo que la hace fuerte no es
+  // atacar menos, sino elegir mejor con qué ficha y contra cuál.
+  const best = plans.sort((left, right) => right.value - left.value || left.key.localeCompare(right.key))[0];
+  return best?.action;
+};
+
 const chooseMove = (state: MatchState, pieceId: string, me: PlayerId): Position | undefined => {
   const moves = getValidMoves(state, pieceId);
   const rival = rivalOf(me);
@@ -269,21 +383,30 @@ export const chooseNextAiAction = (
   const cardAction = chooseCardAction(state, skippedCardIds, me);
   if (cardAction) return cardAction;
 
+  // En difícil el combate se decide mirando el tablero entero de una vez y
+  // eligiendo el mejor intercambio, no ficha por ficha en orden fijo.
+  if (difficulty === 'hard') {
+    const best = chooseBestAttack(state, me);
+    if (best) return best;
+  }
+
   const pieces = state.board
     .filter((piece) => piece.owner === me)
     .sort((left, right) => left.instanceId.localeCompare(right.instanceId));
-  for (const piece of pieces) {
-    const attacks = getValidAttacks(state, piece.instanceId);
-    // En fácil la IA no remata el Nexo: pelea en el tablero y deja respirar al jugador.
-    if (attacks.canAttackNexus && difficulty !== 'easy') {
-      return { type: 'attack-nexus', playerId: me, attackerId: piece.instanceId };
-    }
-    if (attacks.pieceIds.length > 0) {
-      const targetId = [...attacks.pieceIds].sort(
-        (left, right) => targetScore(state, right) - targetScore(state, left) || left.localeCompare(right),
-      )[0];
-      if (targetId) {
-        return { type: 'attack-piece', playerId: me, attackerId: piece.instanceId, defenderId: targetId };
+  if (difficulty !== 'hard') {
+    for (const piece of pieces) {
+      const attacks = getValidAttacks(state, piece.instanceId);
+      // En fácil la IA no remata el Nexo: pelea en el tablero y deja respirar al jugador.
+      if (attacks.canAttackNexus && difficulty !== 'easy') {
+        return { type: 'attack-nexus', playerId: me, attackerId: piece.instanceId };
+      }
+      if (attacks.pieceIds.length > 0) {
+        const targetId = [...attacks.pieceIds].sort(
+          (left, right) => targetScore(state, right) - targetScore(state, left) || left.localeCompare(right),
+        )[0];
+        if (targetId) {
+          return { type: 'attack-piece', playerId: me, attackerId: piece.instanceId, defenderId: targetId };
+        }
       }
     }
   }

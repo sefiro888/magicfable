@@ -3,8 +3,8 @@ import styles from './SettingsPage.module.css'
 
 const DIFFICULTY_OPTIONS: readonly { value: AiDifficulty; label: string; hint: string }[] = [
   { value: 'easy', label: 'Fácil', hint: 'El rival pelea en el tablero pero no remata tu Nexo. Ideal para aprender.' },
-  { value: 'normal', label: 'Normal', hint: 'El rival juega a por la victoria con su táctica completa.' },
-  { value: 'hard', label: 'Difícil', hint: 'El rival aprovecha cada apertura para golpear tu Nexo.' },
+  { value: 'normal', label: 'Normal', hint: 'Ataca en cuanto tiene algo a tiro, ficha por ficha. Directo y previsible.' },
+  { value: 'hard', label: 'Difícil', hint: 'Estudia el tablero entero antes de mover y escoge el cambio que más le conviene.' },
 ]
 
 const SCENARIO_OPTIONS: readonly { value: ScenarioId; label: string; hint: string }[] = [
