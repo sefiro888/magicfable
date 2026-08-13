@@ -25,6 +25,9 @@ const KEYWORD_LABELS: Readonly<Record<Keyword, string>> = {
   'swift-strike': 'Golpe veloz',
   guard: 'Guardia',
   flying: 'Volador',
+  pierce: 'Perforar',
+  lifelink: 'Vínculo vital',
+  stun: 'Aturdir',
 };
 
 const focusableSelector = [

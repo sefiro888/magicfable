@@ -35,6 +35,24 @@ export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
     definition: 'Una carta congelada no puede moverse ni atacar mientras dure el efecto.',
   },
   {
+    id: 'perforar',
+    terms: ['Perforar', 'Perfora'],
+    label: 'Perforar',
+    definition: 'Si esta unidad destruye a la defensora, el daño que sobra golpea directamente al Nexo enemigo.',
+  },
+  {
+    id: 'vinculo-vital',
+    terms: ['Vínculo vital'],
+    label: 'Vínculo vital',
+    definition: 'Cada vez que esta unidad reparte daño en combate, tu Nexo recupera esa misma cantidad de Vida (sin pasar de su máximo).',
+  },
+  {
+    id: 'aturdir',
+    terms: ['Aturdir', 'Aturde', 'Aturdida', 'Aturdido'],
+    label: 'Aturdir',
+    definition: 'La unidad golpeada no podrá atacar en su próximo turno, aunque sí moverse. A diferencia de Congelar, no le impide desplazarse.',
+  },
+  {
     id: 'abrasar',
     terms: ['Abrasa', 'Abrasada', 'Abrasado', 'Abrasadas', 'Abrasados'],
     label: 'Abrasada',

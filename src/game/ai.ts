@@ -72,7 +72,15 @@ const cardScore = (card: CardDefinition, faction?: FactionId): number => {
     (sum, effect) => sum + (effect.kind === 'damage' ? effect.amount * 3 : effect.kind === 'freeze' ? 4 : effect.kind === 'draw' ? effect.amount * 2 : 0),
     0,
   );
-  return boardValue + removalValue + cost + (card.unique ? 2 : 0) + factionCardBias(card, faction);
+  // Palabras clave que valen más de lo que dicen los números impresos: sin
+  // esto la IA trataba a un Ariete con Perforar igual que a un 4/5 cualquiera.
+  const keywordValue =
+    (card.keywords.includes('pierce') ? (card.attack ?? 0) : 0) +
+    (card.keywords.includes('lifelink') ? (card.attack ?? 0) : 0) +
+    (card.keywords.includes('stun') ? 3 : 0) +
+    (card.keywords.includes('guard') ? 2 : 0) +
+    (card.keywords.includes('flying') ? 2 : 0);
+  return boardValue + removalValue + keywordValue + cost + (card.unique ? 2 : 0) + factionCardBias(card, faction);
 };
 
 const stableTieBreaker = (value: string, seed: number): number => {

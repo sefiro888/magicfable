@@ -14,6 +14,7 @@ import type {
   DeckDefinition,
   GameAction,
   GameErrorCode,
+  Keyword,
   MatchState,
   PlayerId,
   PlayerState,
@@ -174,6 +175,10 @@ const pieceAt = (state: MatchState, position: Position): BoardPiece | undefined 
 const isFrozen = (state: MatchState, piece: BoardPiece): boolean =>
   piece.statuses.some((status) => status.kind === 'frozen' && status.expiresOnTurn > state.turn);
 
+/** Aturdida: no puede atacar este turno, pero sí moverse (Congelado bloquea ambas). */
+const isStunned = (state: MatchState, piece: BoardPiece): boolean =>
+  piece.statuses.some((status) => status.kind === 'stunned' && status.expiresOnTurn > state.turn);
+
 const pathIsClear = (
   state: MatchState,
   from: Position,
@@ -195,7 +200,7 @@ const pathIsClear = (
   return true;
 };
 
-const hasKeyword = (piece: BoardPiece, keyword: 'guard' | 'flying' | 'impulse' | 'swift-strike'): boolean =>
+const hasKeyword = (piece: BoardPiece, keyword: Keyword): boolean =>
   Boolean(pieceDefinition(piece)?.keywords.includes(keyword));
 
 /**
@@ -258,6 +263,7 @@ const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: Board
   const definition = pieceDefinition(attacker);
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.owner === defender.owner || attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
+  if (isStunned(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
   if (isPacified(state, attacker)) return false;
   // Guardia: si hay Guardias enemigos adyacentes, el objetivo debe ser uno de ellos (salvo incorpóreos).
@@ -272,6 +278,7 @@ const canAttackEnemyNexus = (state: MatchState, attacker: BoardPiece): boolean =
   const definition = pieceDefinition(attacker);
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
+  if (isStunned(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
   if (isPacified(state, attacker)) return false;
   // Guardia: no se puede golpear el Nexo mientras un Guardia enemigo esté adyacente (salvo incorpóreos).
@@ -337,15 +344,29 @@ const updatePiece = (
   board: state.board.map((piece) => (piece.instanceId === pieceId ? transform(piece) : piece)),
 });
 
-const damagePiece = (
+interface DamageOutcome {
+  readonly state: MatchState;
+  /** Daño que atravesó reducciones y escudos y llegó de verdad a la Vida de la ficha. */
+  readonly dealt: number;
+  /** Vida que le quedaba justo antes del golpe: `dealt - healthBefore` es el exceso. */
+  readonly healthBefore: number;
+}
+
+/**
+ * Variante de `damagePiece` que además informa de cuánto daño acabó llegando.
+ *
+ * Hace falta para Perforar y Vínculo vital, que dependen del daño real —el que
+ * queda tras reducciones y escudos—, no del que se anunció.
+ */
+const damagePieceDetailed = (
   state: MatchState,
   pieceId: string,
   amount: number,
   sourceOwner?: PlayerId,
   effectId = 'impact',
-): MatchState => {
+): DamageOutcome => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
-  if (!target || amount <= 0) return state;
+  if (!target || amount <= 0) return { state, dealt: 0, healthBefore: target?.currentHealth ?? 0 };
   const targetDefinition = pieceDefinition(target);
   const reduction = targetDefinition?.effects.find(
     (effect) => effect.kind === 'passive' && effect.id === 'first-damage-reduction',
@@ -378,7 +399,7 @@ const damagePiece = (
       type: 'shield', targetId: pieceId, to: target.position, amount: absorbedByShield, effectId: 'commander-order-shield', durationMs: 260,
     });
   }
-  if (finalAmount <= 0) return next;
+  if (finalAmount <= 0) return { state: next, dealt: 0, healthBefore: target.currentHealth };
   next = {
     ...next,
     board: next.board.map((piece) =>
@@ -437,7 +458,54 @@ const damagePiece = (
       }
     }
   }
-  return next;
+  return { state: next, dealt: finalAmount, healthBefore: target.currentHealth };
+};
+
+const damagePiece = (
+  state: MatchState,
+  pieceId: string,
+  amount: number,
+  sourceOwner?: PlayerId,
+  effectId = 'impact',
+): MatchState => damagePieceDetailed(state, pieceId, amount, sourceOwner, effectId).state;
+
+/**
+ * Daño al Nexo de un bando, con su contabilidad completa: estadística de daño
+ * del atacante, marca de «ya sangró este turno» (pasiva de Kaela) y evento de
+ * impacto. No decide la victoria: devuelve `lethal` para que quien llama la
+ * declare donde le corresponda en su propia secuencia.
+ *
+ * Lo comparten el ataque directo al Nexo y el exceso de Perforar, para que las
+ * dos vías apliquen exactamente las mismas reglas.
+ */
+const damageNexus = (
+  state: MatchState,
+  targetId: PlayerId,
+  amount: number,
+  sourceId: PlayerId,
+  actorId: string,
+  card: CardDefinition,
+): { readonly state: MatchState; readonly lethal: boolean } => {
+  if (amount <= 0) return { state, lethal: false };
+  const target = state.players[targetId];
+  const source = state.players[sourceId];
+  const kaelaTriggers =
+    COMMANDER_BY_ID[target.commanderId]?.id === 'kaela-corazon-caldera' && !target.nexusDamagedThisTurn;
+  let next = withPlayer(state, targetId, {
+    ...target,
+    nexusHealth: Math.max(0, target.nexusHealth - amount),
+    nexusDamagedThisTurn: true,
+    unitDiscountPending: target.unitDiscountPending || kaelaTriggers,
+  });
+  next = withPlayer(next, sourceId, {
+    ...source,
+    stats: { ...source.stats, damageDealt: source.stats.damageDealt + amount },
+  });
+  next = enqueue(next, {
+    type: 'nexus-damage', actorId, targetId: `${targetId}-nexus`, amount,
+    effectId: card.vfx.impactEffect ?? `${card.faction}-nexus-impact`, durationMs: 440,
+  });
+  return { state: next, lethal: target.nexusHealth - amount <= 0 };
 };
 
 /** Paladín Glorioso: sus aliados adyacentes no pueden ser congelados por ninguna vía. */
@@ -1108,9 +1176,6 @@ const applyOnAttackExtras = (
   if (drainLife?.kind === 'passive') {
     next = applyNexusDrain(next, playerId, drainLife.value ?? 1, `${card.faction}-lifedrain`);
   }
-  if (dealt > 0 && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'lifesteal-on-attack')) {
-    next = healNexus(next, playerId, dealt);
-  }
   const slow = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'slow-enemies-on-attack');
   if (slow?.kind === 'passive') {
     const enemyId = opponentOf(playerId);
@@ -1195,7 +1260,41 @@ export const attackPiece = (
   });
   const defenderPosition = defender.position;
   const defenderCard = pieceDefinition(defender);
-  next = damagePiece(next, defenderId, amount, playerId, card.vfx.impactEffect);
+  const hit = damagePieceDetailed(next, defenderId, amount, playerId, card.vfx.impactEffect);
+  next = hit.state;
+  // Vínculo vital: el Nexo propio se cura por el daño que llegó de verdad, no
+  // por el anunciado — escudos y reducciones lo recortan antes.
+  if (hit.dealt > 0 && card.keywords.includes('lifelink')) {
+    next = healNexus(next, playerId, hit.dealt);
+  }
+  // Perforar: si el golpe destruye a la defensora, lo que sobra pasa al Nexo
+  // enemigo. Solo cuenta el exceso real sobre la Vida que le quedaba.
+  const overkill = hit.dealt - hit.healthBefore;
+  if (overkill > 0 && card.keywords.includes('pierce')) {
+    const enemyId = opponentOf(playerId);
+    const pierced = damageNexus(next, enemyId, overkill, playerId, attackerId, card);
+    next = pierced.state;
+    if (pierced.lethal) {
+      next = { ...next, winner: playerId, phase: 'finished' };
+      next = enqueue(next, {
+        type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`, effectId: `${card.faction}-victory`, durationMs: 900,
+      });
+      return success(next);
+    }
+  }
+  // Aturdir: la superviviente no podrá atacar en su próximo turno (sí moverse).
+  if (hit.dealt > 0 && card.keywords.includes('stun') && next.board.some((piece) => piece.instanceId === defenderId)) {
+    next = updatePiece(next, defenderId, (piece) => ({
+      ...piece,
+      statuses: [
+        ...piece.statuses.filter((status) => status.kind !== 'stunned'),
+        { kind: 'stunned', expiresOnTurn: state.turn + 2 },
+      ],
+    }));
+    next = enqueue(next, {
+      type: 'freeze', targetId: defenderId, to: defenderPosition, effectId: 'stun-daze', durationMs: 300,
+    });
+  }
   // Combate cuerpo a cuerpo: si el atacante golpea con Alcance 1, la
   // defensora devuelve daño igual a su propio Ataque — simultáneo, así
   // que golpea de vuelta aunque el ataque recibido la mate (como un
@@ -1229,30 +1328,19 @@ export const attackNexus = (
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
     attackBonus(state, attacker, card));
   const enemyId = opponentOf(playerId);
-  const enemy = state.players[enemyId];
-  const source = state.players[playerId];
-  const kaelaTriggers =
-    COMMANDER_BY_ID[enemy.commanderId]?.id === 'kaela-corazon-caldera' && !enemy.nexusDamagedThisTurn;
   let next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
-  next = withPlayer(next, enemyId, {
-    ...enemy,
-    nexusHealth: Math.max(0, enemy.nexusHealth - amount),
-    nexusDamagedThisTurn: true,
-    unitDiscountPending: enemy.unitDiscountPending || kaelaTriggers,
-  });
-  next = withPlayer(next, playerId, {
-    ...source,
-    stats: { ...source.stats, damageDealt: source.stats.damageDealt + amount },
-  });
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: `${enemyId}-nexus`,
     effectId: card.vfx.attackEffect, durationMs: 380,
-  }, {
-    type: 'nexus-damage', actorId: attackerId, targetId: `${enemyId}-nexus`, amount,
-    effectId: card.vfx.impactEffect ?? `${card.faction}-nexus-impact`, durationMs: 440,
   });
+  const struck = damageNexus(next, enemyId, amount, playerId, attackerId, card);
+  next = struck.state;
+  // Vínculo vital: golpear el Nexo enemigo también cura el propio.
+  if (amount > 0 && card.keywords.includes('lifelink')) {
+    next = healNexus(next, playerId, amount);
+  }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount);
-  if (enemy.nexusHealth - amount <= 0) {
+  if (struck.lethal) {
     next = { ...next, winner: playerId, phase: 'finished' };
     next = enqueue(next, {
       type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`, effectId: `${card.faction}-victory`, durationMs: 900,
@@ -1301,7 +1389,9 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
       attackModifier: piece.owner === playerId ? 0 : piece.attackModifier,
       // Horror Abisal: la ralentización dura exactamente el siguiente turno del enemigo.
       movementModifier: piece.owner === playerId ? 0 : piece.movementModifier,
-      statuses: piece.statuses.filter((status) => status.kind !== 'frozen' || status.expiresOnTurn > nextTurn),
+      statuses: piece.statuses.filter((status) =>
+        (status.kind !== 'frozen' && status.kind !== 'stunned') || status.expiresOnTurn > nextTurn,
+      ),
     })),
     tileEffects: state.tileEffects.filter((tile) => tile.expiresOnTurn > nextTurn),
   };

@@ -14,6 +14,9 @@ export const BATTLE_KEYWORD_LABELS: Record<string, string> = {
   'swift-strike': 'Golpe veloz',
   guard: 'Guardia',
   flying: 'Volador',
+  pierce: 'Perforar',
+  lifelink: 'Vínculo vital',
+  stun: 'Aturdir',
 }
 
 /** Nombre temático de la Esencia de cada facción, para los tooltips. */

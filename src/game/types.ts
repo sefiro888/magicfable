@@ -17,6 +17,12 @@ export const KEYWORDS = [
   'swift-strike',
   'guard',
   'flying',
+  /** Perforar: el daño que sobra al destruir a la defensora golpea el Nexo enemigo. */
+  'pierce',
+  /** Vínculo vital: el daño de combate que reparte cura tu Nexo en la misma cantidad. */
+  'lifelink',
+  /** Aturdir: la unidad golpeada no puede atacar en su próximo turno. */
+  'stun',
 ] as const;
 export type Keyword = (typeof KEYWORDS)[number];
 
@@ -156,7 +162,14 @@ export type PieceStatus =
   | { readonly kind: 'frozen'; readonly expiresOnTurn: number }
   | { readonly kind: 'shielded'; readonly amount: number }
   /** Maldición Sombra: pierde 1 Vida al final de cada turno hasta que muere. */
-  | { readonly kind: 'cursed'; readonly amount: number };
+  | { readonly kind: 'cursed'; readonly amount: number }
+  /**
+   * Aturdir: no puede atacar, pero sí moverse — a diferencia de Congelado, que
+   * bloquea ambas cosas. Se mide con el contador de turno compartido, igual que
+   * Congelado: aturdir en el turno N pone `expiresOnTurn` en N+2, de modo que
+   * cubre exactamente el siguiente turno de su dueño.
+   */
+  | { readonly kind: 'stunned'; readonly expiresOnTurn: number };
 
 export interface TileEffect {
   readonly kind: 'scorched';

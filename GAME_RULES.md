@@ -97,8 +97,13 @@ Cada facción canaliza una variante:
 | **Impulso** | Puede moverse el turno en que entra en juego (no atacar). |
 | **Golpe veloz** | Puede atacar el turno en que entra en juego. *(reservada)* |
 | **Congelada** | No puede mover ni atacar hasta que expire. |
+| **Aturdida** | No puede atacar hasta que expire, pero sí moverse. |
 | **Abrasada** (casilla) | Casilla marcada por fuego hasta que expire. |
 | **Guardia** | Presencia defensiva; bloquea la ruta como toda pieza. |
+| **Volador** | Ignora las piezas del camino al moverse. |
+| **Perforar** | Si destruye a la defensora, el daño sobrante golpea el Nexo enemigo. |
+| **Vínculo vital** | El daño de combate que reparte cura tu Nexo en la misma cantidad. |
+| **Aturdir** | La unidad a la que hiere queda Aturdida en su próximo turno. |
 | **Canalizar** | Marca sinergias de Esencia. *(reservada)* |
 | **Agotada** | Fuente ya gastada este turno / pieza que ya actuó. |
 | **Única ✦** | Máximo una copia por mazo. |
