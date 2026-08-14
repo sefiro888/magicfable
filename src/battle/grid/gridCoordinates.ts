@@ -30,6 +30,18 @@ export const gridToWorld = (position: Position): readonly [number, number] => [
   gridToWorldZ(position.y),
 ]
 
+/**
+ * Inversa de `gridToWorld`: de un punto del suelo a la casilla que lo contiene.
+ * Devuelve `undefined` si cae fuera del tablero. La usa el arrastre de cartas
+ * para saber sobre qué casilla se está soltando.
+ */
+export const worldToGrid = (worldX: number, worldZ: number): Position | undefined => {
+  const x = Math.round((worldX + ORIGIN_OFFSET) / CELL_SIZE)
+  const y = Math.round((worldZ + ORIGIN_OFFSET) / CELL_SIZE)
+  if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) return undefined
+  return { x, y }
+}
+
 /** Posición visual del Nexo: media casilla más allá de su fila lógica. */
 export const nexusWorldZ = (playerId: PlayerId): number =>
   gridToWorldZ(nexusRow(playerId)) - (playerId === 'player' ? -0.18 : 0.18) * CELL_SIZE

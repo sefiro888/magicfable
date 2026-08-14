@@ -1,7 +1,7 @@
 import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
-import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
+import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Vector3 } from 'three'
+import { MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
@@ -21,6 +21,7 @@ import {
   gridToWorldZ,
   nexusWorldZ,
   TILE_SIZE,
+  worldToGrid,
 } from './grid/gridCoordinates'
 import { slabTexture } from './textures'
 import styles from './Board3D.module.css'
@@ -54,6 +55,10 @@ interface Board3DProps {
   onCell: (position: Position) => void
   onPiece: (pieceId: string) => void
   onNexus: (playerId: PlayerId) => void
+  /** Casilla bajo el puntero, para saber dónde se suelta una carta arrastrada. */
+  onCellHover?: (position?: Position) => void
+  /** Hay una carta en la mano siendo arrastrada: la cámara no debe orbitar. */
+  dragging?: boolean
   reducedMotion: boolean
   quality: GraphicsQuality
   scenario: ScenarioId
@@ -116,7 +121,7 @@ const ZONE_TINTS = {
  * estable solo se re-renderiza cuando cambia su propio estado (válida,
  * ocupada, abrasada), no en cada evento visual de la partida.
  */
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, intent, onCell }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; onCell: (position: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, intent, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -143,8 +148,8 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
         position={[boardX(position.x), valid ? 0.035 : 0.012, boardZ(position.y)]}
         receiveShadow
         onClick={(event) => { event.stopPropagation(); onClick() }}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
+        onPointerEnter={() => { setHovered(true); onHover?.(position) }}
+        onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
       >
         <boxGeometry args={[TILE_SIZE, 0.06, TILE_SIZE]} />
         <meshStandardMaterial
@@ -173,8 +178,8 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       position={[boardX(position.x), 0, boardZ(position.y)]}
       receiveShadow
       onClick={(event) => { event.stopPropagation(); onClick() }}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
+      onPointerEnter={() => { setHovered(true); onHover?.(position) }}
+      onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
       <boxGeometry args={[TILE_SIZE, valid ? 0.13 : 0.08, TILE_SIZE]} />
       <meshStandardMaterial
@@ -586,6 +591,50 @@ function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMo
   return null
 }
 
+/**
+ * Casilla sobre la que se está soltando una carta arrastrada desde la mano.
+ *
+ * Lo calcula por su cuenta en vez de fiarse del `hover` de las casillas: el
+ * gesto empieza en un elemento HTML fuera del lienzo, y en ese caso react-three
+ * no llega a emitir los eventos de entrada/salida sobre las mallas, así que el
+ * tablero nunca se enteraba de dónde estaba el puntero. Aquí se lanza un rayo
+ * contra el plano del suelo y se traduce el punto a coordenadas de casilla.
+ */
+function DropTargeting({ active, localPlayerId, onCell }: { active: boolean; localPlayerId: PlayerId; onCell: (position?: Position) => void }) {
+  const { camera, gl } = useThree()
+  useEffect(() => {
+    if (!active) return
+    const raycaster = new Raycaster()
+    const pointer = new Vector2()
+    const ground = new Plane(new Vector3(0, 1, 0), 0)
+    const hit = new Vector3()
+    const onMove = (event: PointerEvent) => {
+      const rect = gl.domElement.getBoundingClientRect()
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+      if (Math.abs(pointer.x) > 1 || Math.abs(pointer.y) > 1) {
+        onCell(undefined)
+        return
+      }
+      raycaster.setFromCamera(pointer, camera)
+      if (!raycaster.ray.intersectPlane(ground, hit)) {
+        onCell(undefined)
+        return
+      }
+      // El invitado ve la escena girada 180°: el punto del mundo hay que
+      // deshacerle ese giro antes de traducirlo a casilla.
+      const flip = localPlayerId === 'ai' ? -1 : 1
+      onCell(worldToGrid(hit.x * flip, hit.z * flip))
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      onCell(undefined)
+    }
+  }, [active, camera, gl, localPlayerId, onCell])
+  return null
+}
+
 /** Base mínima mientras el GLB de Aether Citadel se descarga. */
 function LoadingStage() {
   return (
@@ -674,6 +723,7 @@ function Scene(props: Board3DProps) {
             threatened={!occupiedSet.has(key) && threatenedSet.has(key)}
             intent={props.cellIntent}
             onCell={props.onCell}
+            onHover={props.onCellHover}
           />
         )
       })}
@@ -716,7 +766,12 @@ function Scene(props: Board3DProps) {
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ResponsiveCamera />
-      <OrbitControls makeDefault enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[...CAMERA_TARGET]} />
+      {props.onCellHover && (
+        <DropTargeting active={Boolean(props.dragging)} localPlayerId={props.localPlayerId} onCell={props.onCellHover} />
+      )}
+      {/* Con una carta en la mano siendo arrastrada, orbitar convertiría el
+          gesto de soltarla en un giro de cámara. */}
+      <OrbitControls makeDefault enabled={!props.dragging} enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[...CAMERA_TARGET]} />
     </>
   )
 }

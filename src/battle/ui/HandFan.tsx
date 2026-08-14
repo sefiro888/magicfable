@@ -11,13 +11,17 @@ interface HandFanProps {
   readonly selectedHandId?: string
   readonly onSelect: (instanceId: string) => void
   readonly onInspect: (cardId: string) => void
+  /** Empieza a arrastrar esta carta hacia el tablero. */
+  readonly onDragStart?: (instanceId: string, event: React.PointerEvent) => void
+  /** Carta que se está arrastrando: se atenúa en el abanico mientras vuela. */
+  readonly draggingId?: string
 }
 
 /**
  * Mano en abanico del jugador. Memoizada: solo se vuelve a renderizar cuando
  * cambia la partida o la selección, no en cada evento visual de la cola.
  */
-export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHandId, onSelect, onInspect }: HandFanProps) {
+export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHandId, onSelect, onInspect, onDragStart, draggingId }: HandFanProps) {
   const player = match.players[localPlayerId]
   const count = player.hand.length
   // El solape y la rotación se comprimen con la mano llena para que el abanico
@@ -44,7 +48,14 @@ export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHan
           zIndex: selected ? 40 : 10 + index,
         } as CSSProperties
         return (
-          <div key={instance.instanceId} className={styles.fanCard} style={style} data-selected={selected}>
+          <div
+            key={instance.instanceId}
+            className={styles.fanCard}
+            style={style}
+            data-selected={selected}
+            data-dragging={draggingId === instance.instanceId || undefined}
+            onPointerDown={(event) => { if (playable) onDragStart?.(instance.instanceId, event) }}
+          >
             <Card
               card={card}
               size="hand"

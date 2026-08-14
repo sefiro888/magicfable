@@ -32,6 +32,12 @@
   z-index: 61 !important;
   filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(228, 192, 105, 0.42));
 }
+/* Mientras vuela hacia el tablero, la carta se atenúa en su hueco del abanico:
+   la que sigue al cursor es la «de verdad» y así no parece que haya dos. */
+.fanCard[data-dragging] {
+  opacity: 0.26;
+  filter: grayscale(0.55);
+}
 @media (prefers-reduced-motion: reduce) {
   .fanCard { transition: none; animation: none; }
 }

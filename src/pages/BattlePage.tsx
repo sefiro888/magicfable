@@ -20,6 +20,7 @@ import {
 } from '../game'
 import { Board3D } from '../battle/Board3D'
 import { useAiTurn } from '../battle/hooks/useAiTurn'
+import { useCardDrag } from '../battle/hooks/useCardDrag'
 import { useEventDirector } from '../battle/hooks/useEventDirector'
 import { useMatchRecorder } from '../battle/hooks/useMatchRecorder'
 import { downloadMatchLog } from '../battle/matchLog'
@@ -39,6 +40,7 @@ import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
 import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS } from '../utils/cardLabels'
 import { DevPanel } from './battle/DevPanel'
+import { DragGhost } from './battle/DragGhost'
 import { EnemyPanel } from './battle/EnemyPanel'
 import { ESSENCE_LABELS, PHASE_LABELS } from './battle/labels'
 import { MatchResultDialog } from './battle/MatchResultDialog'
@@ -88,6 +90,28 @@ export function BattlePage() {
   const currentEvent = store.currentEvent
   const pendingCount = store.pendingAnimations.length
   const queueBusy = Boolean(currentEvent) || pendingCount > 0
+
+  // ── Arrastrar una carta de la mano hasta su casilla ───────────────────────
+  // La casilla bajo el cursor se guarda además en un ref porque la consultan
+  // manejadores de evento (soltar) que no deben depender de un render nuevo;
+  // el estado solo se actualiza mientras se arrastra, para no re-renderizar la
+  // pantalla entera cada vez que el ratón cruza una casilla.
+  const hoveredCellRef = useRef<Position | undefined>(undefined)
+  const draggingRef = useRef(false)
+  const [hoveredCell, setHoveredCell] = useState<Position>()
+  const playDraggedRef = useRef<((instanceId: string, position: Position) => void) | undefined>(undefined)
+  const onCellHover = useCallback((position?: Position) => {
+    hoveredCellRef.current = position
+    if (draggingRef.current) setHoveredCell(position)
+  }, [])
+  const drag = useCardDrag({
+    onDrop: useCallback((instanceId: string) => {
+      const cell = hoveredCellRef.current
+      if (cell) playDraggedRef.current?.(instanceId, cell)
+    }, []),
+    onDragStart: useCallback(() => { draggingRef.current = true }, []),
+    onDragEnd: useCallback(() => { draggingRef.current = false; setHoveredCell(undefined) }, []),
+  })
 
   // Reproducción de la cola de animaciones, avisos y canales laterales
   // (escrutinio, revelaciones): todo eso vive en su propio hook.
@@ -178,7 +202,11 @@ export function BattlePage() {
 
   const player = match?.players[ME]
   const rival = match?.players[RIVAL]
-  const selectedInstance = player?.hand.find((instance) => instance.instanceId === store.selectedHandId)
+  // La carta «activa» es la que se está arrastrando o, si no hay ninguna en
+  // vuelo, la seleccionada con un clic: así las casillas válidas se iluminan
+  // igual con las dos formas de jugar.
+  const activeHandId = drag.draggingId ?? store.selectedHandId
+  const selectedInstance = player?.hand.find((instance) => instance.instanceId === activeHandId)
   const selectedCard = selectedInstance ? CARD_BY_ID[selectedInstance.cardId] : undefined
   const selectedPiece = match?.board.find((piece) => piece.instanceId === store.selectedPieceId)
   const selectedBoardCard = selectedPiece ? CARD_BY_ID[selectedPiece.cardId] : undefined
@@ -270,7 +298,34 @@ export function BattlePage() {
     state.selectPiece(undefined)
   }, [])
 
+  // Soltar una carta sobre una casilla la juega ahí directamente. Se mantiene
+  // en un ref porque quien lo dispara es el hook de arrastre, montado antes de
+  // que existan `doAction` y compañía.
+  useEffect(() => {
+    playDraggedRef.current = (instanceId, position) => {
+      const instance = player?.hand.find((candidate) => candidate.instanceId === instanceId)
+      const card = instance ? CARD_BY_ID[instance.cardId] : undefined
+      if (!card || !match || match.activePlayer !== ME || match.winner) return
+      // Las fuentes no ocupan casilla: soltarlas en cualquier punto del tablero
+      // las juega, que es lo que espera quien las arrastra.
+      if (card.type === 'mana') {
+        if (doAction({ type: 'play-resource', playerId: ME, cardInstanceId: instanceId })) finishSelection()
+        return
+      }
+      // Los hechizos con objetivo siguen pidiendo clic sobre la ficha: una
+      // casilla vacía no les dice a quién apuntar.
+      if (!isBoardCard(card)) return
+      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: instanceId, position, target: { kind: 'none' } })) {
+        finishSelection()
+      }
+    }
+  }, [player, match, ME, doAction, finishSelection])
+
+  const consumeDragged = drag.consumeDragged
   const onHandSelect = useCallback((instanceId: string) => {
+    // Al soltar tras un arrastre el navegador dispara además un clic; sin esto
+    // ese clic alternaría la selección de la carta recién jugada.
+    if (consumeDragged()) return
     if (!match || !player) return
     if (match.activePlayer !== ME || match.winner || queueBusy) return
     const instance = player.hand.find((candidate) => candidate.instanceId === instanceId)
@@ -281,7 +336,7 @@ export function BattlePage() {
       return
     }
     useMatchStore.getState().selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
-  }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection, ME])
+  }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection, ME, consumeDragged])
 
   const inspectCard = useCallback((cardId?: string) => useMatchStore.getState().inspect(cardId), [])
 
@@ -519,6 +574,8 @@ export function BattlePage() {
             onCell={onCell}
             onPiece={onPiece}
             onNexus={onNexus}
+            onCellHover={onCellHover}
+            dragging={Boolean(drag.draggingId)}
             reducedMotion={preferences.reducedMotion}
             quality={preferences.graphicsQuality}
             scenario={preferences.scenario}
@@ -626,11 +683,27 @@ export function BattlePage() {
         >
           {handTucked ? '▲ Mano' : '▼ Recoger'}
         </button>
-        <HandFan match={match} localPlayerId={ME} selectedHandId={store.selectedHandId} onSelect={onHandSelect} onInspect={inspectCard} />
+        <HandFan
+          match={match}
+          localPlayerId={ME}
+          selectedHandId={store.selectedHandId}
+          onSelect={onHandSelect}
+          onInspect={inspectCard}
+          onDragStart={drag.start}
+          draggingId={drag.draggingId}
+        />
         <div className={styles.hints} aria-hidden="true">
           Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar
         </div>
       </footer>
+
+      {drag.draggingId && drag.pointer && selectedCard && (
+        <DragGhost
+          card={selectedCard}
+          pointer={drag.pointer}
+          overValidCell={Boolean(hoveredCell && validCells.some((cell) => cell.x === hoveredCell.x && cell.y === hoveredCell.y))}
+        />
+      )}
 
       {store.message && <button className={styles.message} onClick={() => store.setMessage(undefined)}>{store.message}</button>}
 

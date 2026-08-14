@@ -204,6 +204,43 @@
 .handToggle:focus-visible { outline: 2px solid #fff1b8; outline-offset: 2px; }
 .hints { position: absolute; right: 16px; bottom: 10px; color: #63615b; font-size: 9px; letter-spacing: .04em; pointer-events: none; }
 
+/* Carta fantasma que sigue al cursor al arrastrarla al tablero. Sin
+   pointer-events: si los capturara, el tablero dejaría de recibir el
+   pointermove y no sabría sobre qué casilla se está soltando. */
+.dragGhost {
+  position: fixed;
+  z-index: 90;
+  transform: translate(-50%, -50%) rotate(-4deg);
+  width: 108px;
+  padding: 6px 6px 8px;
+  border: 2px solid rgba(228, 192, 105, 0.75);
+  border-radius: 10px;
+  background: rgba(10, 12, 18, 0.93);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  text-align: center;
+}
+.dragGhost img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.dragGhost span {
+  display: block;
+  margin-top: 5px;
+  color: #ecdfb8;
+  font: 700 11px var(--display);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dragGhost[data-valid] {
+  border-color: rgba(126, 230, 168, 0.95);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.6), 0 0 22px rgba(126, 230, 168, 0.45);
+}
+
 /* Sube a la banda superior y encoge: a 34% de altura y 34px tapaba justo el
    centro del tablero —la parte que hay que mirar al empezar el turno— durante
    segundo y medio. Arriba queda sobre el cielo, que no estorba a nadie. */
