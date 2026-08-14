@@ -204,18 +204,21 @@
 .handToggle:focus-visible { outline: 2px solid #fff1b8; outline-offset: 2px; }
 .hints { position: absolute; right: 16px; bottom: 10px; color: #63615b; font-size: 9px; letter-spacing: .04em; pointer-events: none; }
 
+/* Sube a la banda superior y encoge: a 34% de altura y 34px tapaba justo el
+   centro del tablero —la parte que hay que mirar al empezar el turno— durante
+   segundo y medio. Arriba queda sobre el cielo, que no estorba a nadie. */
 .turnBanner {
   position: absolute;
   z-index: 40;
-  top: 34%;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 14px 46px;
+  padding: 8px 34px;
   border-top: 1px solid var(--line-bright);
   border-bottom: 1px solid var(--line-bright);
   color: var(--gold-bright);
-  background: linear-gradient(90deg, transparent, rgba(8, 10, 16, 0.9) 18%, rgba(8, 10, 16, 0.9) 82%, transparent);
-  font: 500 34px var(--display);
+  background: linear-gradient(90deg, transparent, rgba(8, 10, 16, 0.88) 18%, rgba(8, 10, 16, 0.88) 82%, transparent);
+  font: 500 24px var(--display);
   letter-spacing: 0.14em;
   pointer-events: none;
   animation: bannerIn 1.4s ease forwards;

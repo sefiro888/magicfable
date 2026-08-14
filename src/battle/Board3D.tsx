@@ -41,6 +41,13 @@ interface Board3DProps {
   localPlayerId: PlayerId
   selectedPieceId?: string
   validCells: readonly Position[]
+  /**
+   * Qué significan las casillas iluminadas ahora mismo. Antes «mover aquí» y
+   * «desplegar aquí» compartían el mismo azul, aunque son acciones distintas
+   * y llegan desde sitios distintos (una unidad del tablero o una carta de la
+   * mano).
+   */
+  cellIntent: 'move' | 'deploy'
   validTargets: readonly string[]
   /** Unidades propias con acciones disponibles: reciben el anillo de listas. */
   readyPieceIds: ReadonlySet<string>
@@ -109,19 +116,23 @@ const ZONE_TINTS = {
  * estable solo se re-renderiza cuando cambia su propio estado (válida,
  * ocupada, abrasada), no en cada evento visual de la partida.
  */
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, onCell }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; onCell: (position: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, intent, onCell }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; onCell: (position: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
   const zone = own ? 'own' : 'enemy'
+  // Desplegar se marca en verde y mover en azul: son acciones distintas y
+  // antes compartían color, así que la casilla iluminada no decía cuál era.
+  const validColor = intent === 'deploy' ? '#7ee6a8' : '#8fd4ff'
+  const validEmissive = intent === 'deploy' ? '#1c7a4a' : '#1f6f9e'
   if (subtle) {
     // Aether Citadel: la casilla ES una losa de roca tallada, opaca y a ras
     // de la plaza; la junta oscura entre losas es la piedra del GLB que asoma.
     const slab = slabTexture(((position.x * 3 + position.y * 5) % 4) as 0 | 1 | 2 | 3)
     const tint = ZONE_TINTS[zone][(position.x * 7 + position.y * 13) % 3]!
-    const color = valid ? (hovered ? '#ffe9a8' : '#8fd4ff') : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
+    const color = valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
     const emissive = valid
-      ? '#1f6f9e'
+      ? validEmissive
       : scorched ? '#7a2c12'
       : hovered && !occupied ? '#4a3c22'
       : threatened ? '#5e1414'
@@ -150,9 +161,9 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
     )
   }
   const base = own ? '#4c4235' : '#3a3f4c'
-  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : base
+  const color = valid ? (hovered ? '#f6d77e' : intent === 'deploy' ? '#4bbf83' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : base
   const emissive = valid
-    ? '#1b6384'
+    ? (intent === 'deploy' ? '#166647' : '#1b6384')
     : scorched ? '#68240f'
     : threatened ? '#5e1414'
     : deployRow ? '#4a3410'
@@ -661,6 +672,7 @@ function Scene(props: Board3DProps) {
             own={isOwnHalf(position.y, props.localPlayerId)}
             deployRow={position.y === ownDeployRow}
             threatened={!occupiedSet.has(key) && threatenedSet.has(key)}
+            intent={props.cellIntent}
             onCell={props.onCell}
           />
         )

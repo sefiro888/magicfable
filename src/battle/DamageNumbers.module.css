@@ -6,7 +6,24 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 12px rgba(0, 0, 0, 0.6);
   pointer-events: none;
   white-space: nowrap;
-  will-change: opacity;
+  will-change: transform, opacity;
+  /* La subida la lleva el CSS y no JavaScript: antes el progreso se leía
+     durante el render, así que el número solo se movía cuando React volvía a
+     renderizar por otro motivo. La duración debe casar con FLOAT_MS. */
+  animation: floatUp 1200ms ease-out forwards;
+}
+@keyframes floatUp {
+  0% { transform: translateY(6px); opacity: 0; }
+  14% { transform: translateY(0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translateY(-38px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .number { animation: fadeOnly 1200ms ease-out forwards; }
+  @keyframes fadeOnly {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0; }
+  }
 }
 .number[data-color='damage'] {
   color: #ff6b5b;
