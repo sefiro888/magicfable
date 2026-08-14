@@ -191,3 +191,79 @@ describe('sesgo de arquetipo por facción', () => {
     expect(action.type === 'play-card' && action.cardInstanceId).toBe('ai-freeze');
   });
 });
+
+describe('Regresión: Maldición Sombra dejaba a la IA jugándola en vacío para siempre', () => {
+  /**
+   * `ai.ts` mantenía su propia copia, incompleta, de la lista de hechizos que
+   * necesitan objetivo — le faltaba `curse-drain-health` (Maldición Sombra).
+   * La IA elegía esta carta como su mejor jugada, la intentaba lanzar sin
+   * objetivo, el motor la rechazaba, y como seguía siendo su mejor jugada la
+   * repetía turno tras turno sin que la partida avanzara nunca. Reproducido
+   * con `RUN_AI_HANG=1 npx vitest run src/game/ai-hang-repro.test.ts` antes
+   * de arreglarlo: cientos de turnos consecutivos fallando la misma carta.
+   */
+  it('con un enemigo a la vista, apunta a él en vez de intentar lanzarla sin objetivo', () => {
+    const base = match();
+    const state: MatchState = {
+      ...base,
+      activePlayer: 'ai',
+      turn: 4,
+      players: {
+        ...base.players,
+        ai: {
+          ...base.players.ai,
+          hand: [{ instanceId: 'ai-curse', cardId: 'maldicion-sombra' }],
+          deck: [],
+          resources: [
+            { instanceId: 'r1', cardId: 'fuente-arcana', faction: 'shadow', exhausted: false },
+            { instanceId: 'r2', cardId: 'fuente-arcana', faction: 'shadow', exhausted: false },
+            { instanceId: 'r3', cardId: 'fuente-arcana', faction: 'shadow', exhausted: false },
+          ],
+          resourcePlayedThisTurn: true,
+        },
+      },
+      board: [{
+        instanceId: 'player-unit', cardId: 'duelista-prisma', owner: 'player',
+        position: { x: 3, y: 7 }, currentHealth: 2, attackModifier: 0,
+        movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [],
+      }],
+      animations: [],
+    };
+    const action = chooseNextAiAction(state);
+    expect(action).toEqual({
+      type: 'play-card', playerId: 'ai', cardInstanceId: 'ai-curse',
+      target: { kind: 'piece', pieceId: 'player-unit' },
+    });
+    const result = applyAction(state, action);
+    expect(result.ok).toBe(true);
+  });
+
+  it('sin ningún enemigo al que apuntar, no la propone: mejor no gastar el turno en algo inválido', () => {
+    const base = match();
+    const state: MatchState = {
+      ...base,
+      activePlayer: 'ai',
+      turn: 4,
+      players: {
+        ...base.players,
+        ai: {
+          ...base.players.ai,
+          hand: [{ instanceId: 'ai-curse', cardId: 'maldicion-sombra' }],
+          deck: [],
+          resources: [
+            { instanceId: 'r1', cardId: 'fuente-arcana', faction: 'shadow', exhausted: false },
+            { instanceId: 'r2', cardId: 'fuente-arcana', faction: 'shadow', exhausted: false },
+            { instanceId: 'r3', cardId: 'fuente-arcana', faction: 'shadow', exhausted: false },
+          ],
+          resourcePlayedThisTurn: true,
+        },
+      },
+      board: [],
+      animations: [],
+    };
+    // Sin objetivo válido, la IA cede el turno en vez de intentar (y fallar)
+    // la única carta de la mano: es justo la falta de este comportamiento lo
+    // que causaba el bucle.
+    expect(chooseNextAiAction(state)).toEqual({ type: 'end-turn', playerId: 'ai' });
+  });
+});

@@ -553,7 +553,20 @@ const healNexus = (state: MatchState, playerId: PlayerId, amount: number): Match
   return withPlayer(state, playerId, { ...player, nexusHealth: Math.min(maximum, player.nexusHealth + amount) });
 };
 
-const spellNeedsPiece = (card: CardDefinition): boolean =>
+/**
+ * Si un hechizo necesita señalar una ficha del tablero para resolverse.
+ *
+ * Fuente única de verdad: antes `ai.ts` y `battleHints.ts` mantenían cada uno
+ * su propia copia de esta lista a mano, y se desincronizaron — a Maldición
+ * Sombra (`curse-drain-health`) se le añadió aquí el requisito de objetivo
+ * pero nunca se propagó a esas dos copias. La IA intentaba lanzarla sin
+ * objetivo, el motor la rechazaba, y como seguía siendo su mejor jugada cada
+ * turno, la repetía indefinidamente turno tras turno sin que la partida
+ * avanzara nunca — un jugador humano con esa carta se topaba con el mismo
+ * rechazo al intentar «Resolver carta» directamente, porque la interfaz
+ * tampoco sabía que hacía falta apuntar.
+ */
+export const spellNeedsPiece = (card: CardDefinition): boolean =>
   card.effects.some(
     (effect) =>
       effect.kind === 'damage' ||

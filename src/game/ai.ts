@@ -7,6 +7,7 @@ import {
   getValidAttacks,
   getValidDeploymentPositions,
   getValidMoves,
+  spellNeedsPiece,
 } from './engine';
 import { planManaPayment } from './mana';
 import type {
@@ -138,10 +139,13 @@ const targetForCard = (state: MatchState, card: CardDefinition, me: PlayerId): S
       })[0];
     return ally ? { kind: 'piece', pieceId: ally.instanceId } : undefined;
   }
-  const needsEnemy = card.effects.some(
-    (effect) => effect.kind === 'damage' || effect.kind === 'freeze' || effect.kind === 'scorch',
-  );
-  if (!needsEnemy) return { kind: 'none' };
+  // A estas alturas ya se han resuelto los efectos con objetivo propio
+  // (arriba); lo que quede que pida ficha es, por descarte, sobre una
+  // enemiga. Usa la misma lista que valida el motor (`spellNeedsPiece`) en
+  // vez de mantener aquí una copia — una copia separada fue justo lo que
+  // dejó a Maldición Sombra sin detectar y a la IA lanzándola en vacío turno
+  // tras turno sin que la partida avanzara nunca.
+  if (!spellNeedsPiece(card)) return { kind: 'none' };
   const target = chooseEnemyTarget(state, card, me);
   return target ? { kind: 'piece', pieceId: target.instanceId } : undefined;
 };
@@ -170,15 +174,7 @@ const actionForCard = (state: MatchState, instance: CardInstance, me: PlayerId):
       : undefined;
   }
   const target = targetForCard(state, card, me);
-  const needsPiece = card.effects.some(
-    (effect) =>
-      effect.kind === 'damage' ||
-      effect.kind === 'freeze' ||
-      effect.kind === 'scorch' ||
-      effect.kind === 'refresh-move' ||
-      (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
-  );
-  if (needsPiece && (!target || target.kind !== 'piece')) return undefined;
+  if (spellNeedsPiece(card) && (!target || target.kind !== 'piece')) return undefined;
   return { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, target };
 };
 

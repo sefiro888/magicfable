@@ -1,13 +1,13 @@
-import type { BoardPiece, CardDefinition } from '../../game'
+import { spellNeedsPiece, type BoardPiece, type CardDefinition } from '../../game'
 
-/** Hechizos que exigen señalar una ficha concreta del tablero antes de resolverse. */
-export const requiresPieceTarget = (card: CardDefinition): boolean => card.effects.some((effect) =>
-  effect.kind === 'damage' ||
-  effect.kind === 'freeze' ||
-  effect.kind === 'scorch' ||
-  effect.kind === 'refresh-move' ||
-  (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
-)
+/**
+ * Hechizos que exigen señalar una ficha concreta del tablero antes de
+ * resolverse. Reexporta la lista del motor en vez de mantener aquí una copia
+ * propia: una copia separada (sin Maldición Sombra) llevaba a que el botón
+ * «Resolver carta» apareciera para un hechizo que el motor iba a rechazar
+ * igualmente por falta de objetivo.
+ */
+export const requiresPieceTarget = spellNeedsPiece
 
 /** Cartas que ocupan casilla al jugarse (frente a hechizos y fuentes). */
 export const isBoardCard = (card: CardDefinition): boolean => card.type === 'unit' || card.type === 'structure'
