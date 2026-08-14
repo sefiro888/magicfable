@@ -22,3 +22,6 @@ tools/art-inbox/
 # Salidas del simulador de equilibrio (src/game/balance-sim.test.ts)
 balance-result.txt
 balance-decks.txt
+
+# Capturas de revisión visual del tablero (RUN_SHOTS=1)
+e2e/__shots__/

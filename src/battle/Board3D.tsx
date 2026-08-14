@@ -78,25 +78,50 @@ const CARD_STAND_TILT = Math.PI / 3
 /** Compensa que, al inclinar la carta desde su centro, el borde inferior se hunda en la casilla. */
 const CARD_STAND_RISE = 0.51 * CARD_SCALE * Math.sin(Math.abs(CARD_STAND_TILT))
 
-/** Tinte determinista por casilla para romper la repetición del pavimento. */
-const SLAB_TINTS = ['#ffffff', '#f1efe9', '#e8e9f1'] as const
+/**
+ * Mitad del tablero que pertenece a quien mira la pantalla. El jugador
+ * despliega en la fila 7 y el rival en la 0, así que las filas 4-7 son «casa»
+ * para 'player' y las 0-3 lo son para el invitado ('ai').
+ */
+const isOwnHalf = (y: number, localPlayerId: PlayerId): boolean =>
+  localPlayerId === 'player' ? y >= BOARD_SIZE / 2 : y < BOARD_SIZE / 2
+
+/**
+ * Tinte de territorio: cálido en tu mitad, frío en la del rival.
+ *
+ * El tablero eran 64 losas idénticas y no había forma de saber de un vistazo
+ * dónde acababa tu campo — con 8 filas y unidades que avanzan una casilla por
+ * turno, eso es información que hace falta en cada jugada. Se mantiene la
+ * variación por casilla para que el suelo no quede plano.
+ */
+const ZONE_TINTS = {
+  own: ['#ffeed2', '#f8e4c6', '#f2dcbe'],
+  enemy: ['#d8e2f7', '#ccd8f0', '#c6d3ee'],
+} as const
 
 /**
  * Casilla del tablero. Memoizada: con los conjuntos precalculados y el handler
  * estable solo se re-renderiza cuando cambia su propio estado (válida,
  * ocupada, abrasada), no en cada evento visual de la partida.
  */
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, onCell }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; onCell: (position: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, onCell }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; onCell: (position: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
+  const zone = own ? 'own' : 'enemy'
   if (subtle) {
     // Aether Citadel: la casilla ES una losa de roca tallada, opaca y a ras
     // de la plaza; la junta oscura entre losas es la piedra del GLB que asoma.
     const slab = slabTexture(((position.x * 3 + position.y * 5) % 4) as 0 | 1 | 2 | 3)
-    const tint = SLAB_TINTS[(position.x * 7 + position.y * 13) % 3]!
+    const tint = ZONE_TINTS[zone][(position.x * 7 + position.y * 13) % 3]!
     const color = valid ? (hovered ? '#ffe9a8' : '#8fd4ff') : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
-    const emissive = valid ? '#1f6f9e' : scorched ? '#7a2c12' : hovered && !occupied ? '#4a3c22' : '#000000'
+    const emissive = valid
+      ? '#1f6f9e'
+      : scorched ? '#7a2c12'
+      : hovered && !occupied ? '#4a3c22'
+      : threatened ? '#5e1414'
+      : deployRow ? '#4a3410'
+      : '#000000'
     return (
       <mesh
         position={[boardX(position.x), valid ? 0.035 : 0.012, boardZ(position.y)]}
@@ -114,13 +139,19 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
           roughness={0.9}
           metalness={0.05}
           emissive={emissive}
-          emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : 0}
+          emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : threatened ? 0.55 : deployRow ? 0.3 : 0}
         />
       </mesh>
     )
   }
-  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : '#464038'
-  const emissive = valid ? '#1b6384' : scorched ? '#68240f' : '#26201a'
+  const base = own ? '#4c4235' : '#3a3f4c'
+  const color = valid ? (hovered ? '#f6d77e' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : base
+  const emissive = valid
+    ? '#1b6384'
+    : scorched ? '#68240f'
+    : threatened ? '#5e1414'
+    : deployRow ? '#4a3410'
+    : own ? '#2a231a' : '#1e2330'
   return (
     <mesh
       position={[boardX(position.x), 0, boardZ(position.y)]}
@@ -135,11 +166,25 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
         roughness={0.66}
         metalness={0.18}
         emissive={emissive}
-        emissiveIntensity={valid ? 1.05 : scorched ? 0.9 : 0.62}
+        emissiveIntensity={valid ? 1.05 : scorched ? 0.9 : threatened ? 0.85 : deployRow ? 0.78 : 0.62}
       />
     </mesh>
   )
 })
+
+/**
+ * Costura del mediocampo: separa visualmente las dos mitades del tablero.
+ * Cae exactamente en z=0 (entre las filas 3 y 4) por cómo está centrada la
+ * cuadrícula, así que no hace falta calcular nada.
+ */
+function Midline() {
+  return (
+    <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[BOARD_WORLD_HALF * 2, 0.045]} />
+      <meshBasicMaterial color="#e8c98a" transparent opacity={0.5} depthWrite={false} />
+    </mesh>
+  )
+}
 
 /**
  * Carta física sobre el tablero. Memoizada: el deslizamiento y los pulsos
@@ -470,6 +515,38 @@ function Scene(props: Board3DProps) {
     [props.state.tileEffects],
   )
   const targetSet = useMemo(() => new Set(props.validTargets), [props.validTargets])
+  /**
+   * Casillas que una unidad rival ya alcanza desde donde está: pisar ahí es
+   * ofrecerse a que te golpeen. Antes esto solo se podía deducir contando
+   * casillas a mano, carta por carta.
+   *
+   * Es una lectura geométrica (distancia Manhattan ≤ Alcance), no una
+   * simulación del turno rival: no descuenta Guardias ni caminos bloqueados,
+   * pero como aviso de «aquí te ven» acierta en lo que importa y se recalcula
+   * gratis. Deliberadamente NO incluye a dónde podrían moverse antes de
+   * atacar: marcaría medio tablero y dejaría de decir nada.
+   */
+  const threatenedSet = useMemo(() => {
+    const cells = new Set<string>()
+    for (const piece of props.state.board) {
+      if (piece.owner === props.localPlayerId) continue
+      const definition = CARD_BY_ID[piece.cardId]
+      if (definition?.type !== 'unit' || definition.attack === undefined) continue
+      const range = definition.range ?? 1
+      for (let dx = -range; dx <= range; dx += 1) {
+        for (let dy = -range; dy <= range; dy += 1) {
+          const steps = Math.abs(dx) + Math.abs(dy)
+          if (steps === 0 || steps > range) continue
+          const x = piece.position.x + dx
+          const y = piece.position.y + dy
+          if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) continue
+          cells.add(`${x},${y}`)
+        }
+      }
+    }
+    return cells
+  }, [props.state.board, props.localPlayerId])
+  const ownDeployRow = props.localPlayerId === 'player' ? BOARD_SIZE - 1 : 0
   const subtleCells = props.scenario === 'aether-citadel'
   return (
     <>
@@ -497,10 +574,14 @@ function Scene(props: Board3DProps) {
             occupied={occupiedSet.has(key)}
             scorched={scorchedSet.has(key)}
             subtle={subtleCells}
+            own={isOwnHalf(position.y, props.localPlayerId)}
+            deployRow={position.y === ownDeployRow}
+            threatened={!occupiedSet.has(key) && threatenedSet.has(key)}
             onCell={props.onCell}
           />
         )
       })}
+      <Midline />
       <Suspense fallback={null}>
         {props.state.board.map((piece) => (
           <BoardCard
