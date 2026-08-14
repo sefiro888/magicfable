@@ -515,11 +515,16 @@ const MOBILE_FOV_MAX = 82
  * cámara. El máximo sobre todos los puntos es la distancia buscada, exacta
  * para cualquier proporción de pantalla.
  */
-const fitDistance = (fovDegrees: number, aspect: number): number => {
+const frameBasis = () => {
   const target = new Vector3(...CAMERA_TARGET)
   const dir = new Vector3(...CAMERA_POSITION).sub(target).normalize()
   const right = new Vector3(0, 1, 0).cross(dir).normalize()
   const up = new Vector3().copy(dir).cross(right).normalize()
+  return { target, dir, right, up }
+}
+
+const fitDistance = (fovDegrees: number, aspect: number): number => {
+  const { target, dir, right, up } = frameBasis()
   const tanV = Math.tan(MathUtils.degToRad(fovDegrees) / 2)
   const tanH = tanV * aspect
   let needed = 0
@@ -530,6 +535,23 @@ const fitDistance = (fovDegrees: number, aspect: number): number => {
     needed = Math.max(needed, relative.dot(dir) + Math.max(lateral, vertical) * FRAME_MARGIN)
   }
   return needed
+}
+
+/** La otra cara del cálculo: ángulo mínimo para que todo quepa SIN alejarse más. */
+const fitFov = (distance: number, aspect: number): number => {
+  const { target, dir, right, up } = frameBasis()
+  let tanV = 0
+  for (const point of FRAME_POINTS) {
+    const relative = new Vector3(...point).sub(target)
+    const depth = distance - relative.dot(dir)
+    if (depth <= 0.1) return MOBILE_FOV_MAX
+    tanV = Math.max(
+      tanV,
+      (Math.abs(relative.dot(up)) * FRAME_MARGIN) / depth,
+      (Math.abs(relative.dot(right)) * FRAME_MARGIN) / (depth * aspect),
+    )
+  }
+  return MathUtils.radToDeg(Math.atan(tanV) * 2)
 }
 
 function ResponsiveCamera() {
@@ -546,13 +568,20 @@ function ResponsiveCamera() {
     if (appliedKey.current === key) return
     appliedKey.current = key
     const aspect = size.width / size.height
-    // En vertical se ensancha el FOV antes de alejar la cámara: una pantalla
-    // alta y estrecha regala altura, y aprovecharla mantiene el tablero grande
-    // en vez de encogerlo retrocediendo.
-    const fov = aspect < 1 ? Math.min(MOBILE_FOV_MAX, CAMERA_FOV / aspect) : CAMERA_FOV
-    const distance = MathUtils.clamp(fitDistance(fov, aspect), CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE)
-    const target = new Vector3(...CAMERA_TARGET)
-    const dir = new Vector3(...CAMERA_POSITION).sub(target).normalize()
+    // Se prefiere SIEMPRE el ángulo estrecho por defecto y ajustar la
+    // distancia: un ángulo ancho encoge todo lo que hay en pantalla. Solo si
+    // ni retrocediendo al máximo cabe el tablero —el caso del móvil en
+    // vertical, donde el ancho es lo que aprieta— se abre el ángulo, y solo
+    // lo justo. Medido: en vertical, abrir el ángulo «porque sobra alto»
+    // dejaba las casillas en 11 px; así se quedan en 17.
+    let fov = CAMERA_FOV
+    let distance = fitDistance(fov, aspect)
+    if (distance > CAMERA_MAX_DISTANCE) {
+      distance = CAMERA_MAX_DISTANCE
+      fov = MathUtils.clamp(fitFov(distance, aspect), CAMERA_FOV, MOBILE_FOV_MAX)
+    }
+    distance = MathUtils.clamp(distance, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE)
+    const { target, dir } = frameBasis()
     camera.fov = fov
     camera.position.copy(target).addScaledVector(dir, distance)
     camera.updateProjectionMatrix()
