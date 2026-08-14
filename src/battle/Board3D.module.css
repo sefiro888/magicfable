@@ -1,23 +1,59 @@
 .viewport { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #1a1e2a, #05070d 75%); }
 .fallback { height: 100%; display: grid; place-items: center; color: var(--muted); }
+/* Chapa de la unidad. Subida de tamaño respecto a la primera versión: en una
+   captura real del tablero el nombre a 10px y las cifras a 11px eran ilegibles
+   a la distancia de cámara del juego. */
 .cardLabel {
-  width: 92px;
+  width: 116px;
   pointer-events: none;
-  transform: translateY(-44px);
+  transform: translateY(-52px);
   text-align: center;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   text-shadow: 0 2px 4px #000, 0 0 5px #000;
   white-space: nowrap;
 }
+/* El nombre también dice de quién es la unidad, no solo el marco 3D: es la
+   parte que se lee primero y a esta distancia el color del marco cuesta más. */
+/* Recortado con puntos suspensivos: sin esto, dos unidades vecinas con nombre
+   largo («Centinela de Cristal» y «Duelista del Prisma») se pisaban la una a la
+   otra y no se leía ninguna de las dos. */
+.cardName {
+  color: #ff9d94;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cardName[data-mine] { color: #f7d99a; }
 .cardName[data-frozen] { color: #bdeaff; }
 .cardName[data-spent] { color: #a9a497; }
 .cardStats { display: flex; justify-content: center; gap: 5px; margin-top: 3px; }
-.cardStats span { min-width: 21px; padding: 2px 5px; border-radius: 7px; background: rgba(5, 6, 9, 0.92); border: 1px solid rgba(255, 255, 255, 0.26); font-size: 11px; }
+.cardStats span {
+  min-width: 26px;
+  padding: 2px 6px;
+  border-radius: 7px;
+  background: rgba(5, 6, 9, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  font-size: 13px;
+  font-weight: 900;
+}
+.cardStatuses { display: flex; justify-content: center; gap: 4px; margin-top: 3px; }
+.cardStatuses span {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(5, 6, 9, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  font-size: 11px;
+  font-weight: 800;
+}
 .attackStat { color: #ffca94; }
 .healthStat { color: #b8f2c8; }
-.damagedStat { color: #ff8a80; border-color: rgba(255, 110, 100, 0.55) !important; }
+.damagedStat { color: #ff8a80; border-color: rgba(255, 110, 100, 0.6) !important; }
 .frozenStat { color: #a8ecff; border-color: rgba(140, 220, 255, 0.55) !important; }
+/* Aturdida: ámbar, para no confundirla con el azul de Congelada — son estados
+   distintos (aturdida sí puede moverse) y se leen de un vistazo. */
+.stunnedStat { color: #ffd166; border-color: rgba(255, 209, 102, 0.6) !important; }
+.shieldStat { color: #cfe3ff; border-color: rgba(190, 215, 255, 0.6) !important; }
+.cursedStat { color: #d59cff; border-color: rgba(196, 140, 255, 0.55) !important; }
 .spentStat { color: #a9a497; }
 .nexusLabel { width: 110px; text-align: center; color: var(--gold-bright); font: 700 10px var(--display); text-shadow: 0 2px 6px #000; pointer-events: none; }
 .nexusLabel [data-targetable] { color: #ffd257; animation: nexusPulse 1.1s ease-in-out infinite; }

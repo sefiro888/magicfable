@@ -63,7 +63,13 @@ export const SCENERY_SCALE = BOARD_WORLD_SIZE / LEGACY_FOOTPRINT
  */
 export const CAMERA_POSITION: readonly [number, number, number] = [0, 6.7, 8.8]
 export const CAMERA_FOV = 44
-export const CAMERA_TARGET: readonly [number, number, number] = [0, 0, -0.6]
+/**
+ * Centro exacto del tablero. Antes estaba desplazado a -0.6 hacia el campo
+ * rival, un sesgo que en la práctica cortaba el Nexo propio por el borde
+ * inferior. Con el encuadre calculado (ResponsiveCamera) ya no hace falta
+ * compensar nada a mano: centrado deja los dos Nexos a la misma distancia.
+ */
+export const CAMERA_TARGET: readonly [number, number, number] = [0, 0, 0]
 /**
  * El mínimo baja de 8.5 a 7 para dejar sitio a la distancia por defecto en
  * móvil vertical (Board3D.tsx, MOBILE_DISTANCE=7.4, ResponsiveCamera) — si

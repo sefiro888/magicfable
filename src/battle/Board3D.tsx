@@ -65,16 +65,21 @@ const CELL_POSITIONS: readonly Position[] = Array.from({ length: BOARD_CELL_COUN
 const cellKey = (position: Position) => `${position.x},${position.y}`
 
 /** Las cartas se diseñaron para un paso de casilla de 1.18; se reescalan al actual.
-    Subido ligeramente (antes /1.18) a petición del usuario, para que se lean mejor
-    sin llegar a solaparse con las casillas vecinas. */
-const CARD_SCALE = CELL_SIZE / 1.08
+    Subido dos veces (1.18 → 1.08 → 1.0) porque en una captura real del tablero las
+    unidades eran rectángulos de ~30 px frente a las cartas de la mano de ~150:
+    no se distinguía qué había desplegado sin leer el nombre. El marco mide 0.83
+    de ancho, así que a esta escala sigue dejando junta libre con la casilla vecina. */
+const CARD_SCALE = CELL_SIZE / 1.0
 
 /**
- * PRUEBA: inclinación tipo «standee» en vez de tumbada del todo, para que el
- * arte se lea mejor desde la cámara picada. 0 = tumbada (como antes), PI/2 =
- * de pie recta. A ajustar o retirar según el resultado visual.
+ * Inclinación tipo «standee»: 0 = tumbada del todo, PI/2 = de pie recta.
+ *
+ * Enderezada de 60° a ~70°: la cámara mira desde unos 35° sobre el horizonte,
+ * así que cuanto más vertical esté la carta más superficie de arte le ofrece
+ * sin ocupar ni un milímetro más de casilla — la huella en el suelo es
+ * `alto × cos(inclinación)`, que ENCOGE al enderezarla.
  */
-const CARD_STAND_TILT = Math.PI / 3
+const CARD_STAND_TILT = 1.22
 /** Compensa que, al inclinar la carta desde su centro, el borde inferior se hunda en la casilla. */
 const CARD_STAND_RISE = 0.51 * CARD_SCALE * Math.sin(Math.abs(CARD_STAND_TILT))
 
@@ -201,6 +206,9 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   useCursor(hovered)
   const target = useMemo(() => ({ x: boardX(piece.position.x), z: boardZ(piece.position.y) }), [piece.position.x, piece.position.y])
   const frozen = piece.statuses.some((status) => status.kind === 'frozen')
+  const stunned = piece.statuses.some((status) => status.kind === 'stunned')
+  const cursed = piece.statuses.some((status) => status.kind === 'cursed')
+  const shielded = piece.statuses.reduce((total, status) => total + (status.kind === 'shielded' ? status.amount : 0), 0)
   const spent = active && piece.attackedThisTurn
   useFrame(({ clock }, delta) => {
     const node = group.current
@@ -269,9 +277,21 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             quitarlo: con el giro fijo en 0 para TODAS las piezas, los cuatro
             casos (propia/rival × anfitrión/invitado) dan la misma
             orientación "hacia arriba", la correcta. */}
+        {/* El arte se auto-ilumina (emissiveMap con el mismo mapa): con solo
+            `map` dependía de la luz del escenario y en Aether Citadel o la
+            Caldera las unidades salían casi negras — ilegibles en la captura
+            real. Así la ilustración se lee igual en los tres escenarios sin
+            tocar la iluminación de ninguno. */}
         <mesh position={[0, 0.038, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.73, 0.9]} />
-          <meshStandardMaterial map={texture} roughness={0.62} color={frozen ? '#9fd4ef' : spent ? '#8f8f96' : '#ffffff'} />
+          <meshStandardMaterial
+            map={texture}
+            emissiveMap={texture}
+            emissive="#ffffff"
+            emissiveIntensity={spent ? 0.3 : 0.6}
+            roughness={0.62}
+            color={frozen ? '#9fd4ef' : spent ? '#8f8f96' : '#ffffff'}
+          />
         </mesh>
         {frozen && (
           <mesh position={[0, 0.075, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -300,13 +320,23 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           carta tumbada de antes: si no, el nombre y las estadísticas quedan
           flotando muy por encima de la carta en vez de justo sobre ella. */}
       <Html center position={[0, CARD_STAND_RISE * 2 + 0.05, 0]} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
-        <div className={styles.cardName} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
+        <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats}>
           {card.attack !== undefined && <span className={styles.attackStat}>⚔ {Math.max(0, card.attack + piece.attackModifier)}</span>}
           <span className={damaged ? styles.damagedStat : styles.healthStat}>♥ {piece.currentHealth}</span>
-          {frozen && <span className={styles.frozenStat}>❄</span>}
-          {spent && <span className={styles.spentStat}>◒</span>}
         </div>
+        {/* Estados: solo aparecen cuando los hay, en su propia fila para que no
+            empujen a las estadísticas. «Aturdida» faltaba desde que se añadió
+            la palabra clave: la unidad no podía atacar y nada lo indicaba. */}
+        {(frozen || stunned || shielded > 0 || cursed || spent) && (
+          <div className={styles.cardStatuses}>
+            {frozen && <span className={styles.frozenStat} title="Congelada: no puede mover ni atacar">❄</span>}
+            {stunned && <span className={styles.stunnedStat} title="Aturdida: no puede atacar este turno (sí moverse)">✷</span>}
+            {shielded > 0 && <span className={styles.shieldStat} title={`Escudo: absorbe ${shielded} de daño`}>⛨ {shielded}</span>}
+            {cursed && <span className={styles.cursedStat} title="Maldita: pierde Vida al final de cada turno">☠</span>}
+            {spent && <span className={styles.spentStat} title="Ya ha actuado este turno">◒</span>}
+          </div>
+        )}
       </Html>
     </group>
   )
@@ -424,11 +454,68 @@ function Nexus({
  * quepa entero a esa distancia más corta — el hueco vertical de sobra que deja
  * un FOV más ancho es justo el que regala una pantalla vertical.
  */
-const REFERENCE_ASPECT = 1.7
-const MOBILE_DISTANCE = 7.4
-const MOBILE_FOV_MAX = 84
-/** Medio ancho del tablero + un margen para que no quede pegado al borde. */
-const BOARD_HALF_WIDTH_WITH_MARGIN = BOARD_WORLD_HALF * 1.14
+/**
+ * Puntos que el encuadre debe contener sí o sí.
+ *
+ * Es una lista y no una caja a propósito: una caja obliga a meter en cuadro
+ * las cuatro esquinas a la altura del Nexo, donde no hay absolutamente nada, y
+ * eso empujaba la cámara casi un metro más atrás encogiendo el tablero un 8%
+ * para nada. Aquí las esquinas del tablero solo piden el alto de una unidad
+ * de pie, y los Nexos —que solo ocupan el centro en X— piden su altura
+ * completa únicamente ahí.
+ */
+const FRAME_POINTS: readonly (readonly [number, number, number])[] = (() => {
+  const points: [number, number, number][] = []
+  const edge = BOARD_WORLD_HALF + 0.15
+  /** Alto de una unidad de pie con su chapa de nombre encima. */
+  const pieceTop = 1.05
+  for (const x of [-edge, edge]) {
+    for (const z of [-edge, edge]) {
+      for (const y of [0, pieceTop]) points.push([x, y, z])
+    }
+  }
+  const nexusZ = Math.abs(nexusWorldZ('player')) + 0.3
+  for (const x of [-0.75, 0.75]) {
+    for (const z of [-nexusZ, nexusZ]) {
+      for (const y of [0, 1.45]) points.push([x, y, z])
+    }
+  }
+  return points
+})()
+/** Aire alrededor del tablero: 1 = pegado al borde exacto. */
+const FRAME_MARGIN = 1.05
+/** FOV vertical máximo en pantallas muy estrechas, antes de que deforme. */
+const MOBILE_FOV_MAX = 82
+
+/**
+ * Distancia mínima (a lo largo de la dirección de cámara) para que todos los
+ * FRAME_POINTS entren en el encuadre.
+ *
+ * Antes esto eran dos casos cosidos a mano —un encuadre fijo para escritorio y
+ * un apaño para móvil vertical—, y el fijo se quedaba corto: el Nexo propio
+ * salía cortado por abajo. Aquí se calcula de verdad: para una cámara a
+ * distancia `d` sobre una dirección fija, cada punto P impone
+ * `d >= dot(P-objetivo, dir) + max(|x|/tanH, |y|/tanV)` en coordenadas de
+ * cámara. El máximo sobre todos los puntos es la distancia buscada, exacta
+ * para cualquier proporción de pantalla.
+ */
+const fitDistance = (fovDegrees: number, aspect: number): number => {
+  const target = new Vector3(...CAMERA_TARGET)
+  const dir = new Vector3(...CAMERA_POSITION).sub(target).normalize()
+  const right = new Vector3(0, 1, 0).cross(dir).normalize()
+  const up = new Vector3().copy(dir).cross(right).normalize()
+  const tanV = Math.tan(MathUtils.degToRad(fovDegrees) / 2)
+  const tanH = tanV * aspect
+  let needed = 0
+  for (const point of FRAME_POINTS) {
+    const relative = new Vector3(...point).sub(target)
+    const lateral = Math.abs(relative.dot(right)) / tanH
+    const vertical = Math.abs(relative.dot(up)) / tanV
+    needed = Math.max(needed, relative.dot(dir) + Math.max(lateral, vertical) * FRAME_MARGIN)
+  }
+  return needed
+}
+
 function ResponsiveCamera() {
   // Se aplica desde useFrame (no useEffect+useThree) a propósito: mutar
   // directamente el objeto `camera` que devuelve el hook useThree() choca con
@@ -443,18 +530,15 @@ function ResponsiveCamera() {
     if (appliedKey.current === key) return
     appliedKey.current = key
     const aspect = size.width / size.height
-    if (aspect >= REFERENCE_ASPECT) {
-      camera.fov = CAMERA_FOV
-      camera.position.set(...CAMERA_POSITION)
-      camera.updateProjectionMatrix()
-      return
-    }
-    const neededHalfTan = BOARD_HALF_WIDTH_WITH_MARGIN / MOBILE_DISTANCE
-    const vFovHalfTan = neededHalfTan / aspect
-    const fov = Math.min(MOBILE_FOV_MAX, MathUtils.radToDeg(Math.atan(vFovHalfTan) * 2))
-    camera.fov = Math.max(fov, CAMERA_FOV)
-    const scale = MOBILE_DISTANCE / new Vector3(...CAMERA_POSITION).length()
-    camera.position.set(CAMERA_POSITION[0] * scale, CAMERA_POSITION[1] * scale, CAMERA_POSITION[2] * scale)
+    // En vertical se ensancha el FOV antes de alejar la cámara: una pantalla
+    // alta y estrecha regala altura, y aprovecharla mantiene el tablero grande
+    // en vez de encogerlo retrocediendo.
+    const fov = aspect < 1 ? Math.min(MOBILE_FOV_MAX, CAMERA_FOV / aspect) : CAMERA_FOV
+    const distance = MathUtils.clamp(fitDistance(fov, aspect), CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE)
+    const target = new Vector3(...CAMERA_TARGET)
+    const dir = new Vector3(...CAMERA_POSITION).sub(target).normalize()
+    camera.fov = fov
+    camera.position.copy(target).addScaledVector(dir, distance)
     camera.updateProjectionMatrix()
   })
   return null
