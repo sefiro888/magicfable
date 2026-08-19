@@ -8,6 +8,7 @@ import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from 
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
 import { DamageNumbers } from './DamageNumbers'
+import { RecentHits } from './RecentHits'
 import { EventEffects } from './EventEffects'
 import {
   BOARD_WORLD_HALF,
@@ -217,6 +218,18 @@ function Midline() {
  * viven en useFrame, así que el re-render solo hace falta cuando cambian
  * la pieza o sus marcas (selección, objetivo, disponibilidad).
  */
+/** Cuánto dura cada salto de un paso de movimiento, en milisegundos. */
+const HOP_STEP_MS = 190
+/** Altura del arco de cada salto: sutil, solo para separar visualmente cada casilla cruzada. */
+const HOP_HEIGHT = 0.16
+
+interface HopPath {
+  /** Casillas cruzadas, incluida la de salida y la de llegada. Siempre en línea recta: el motor nunca permite mover en diagonal. */
+  readonly cells: readonly Position[]
+  index: number
+  segmentStart: number
+}
+
 const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, onHover, previewLines, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
@@ -226,6 +239,40 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const [hovered, setHovered] = useState(false)
   useCursor(hovered)
   const target = useMemo(() => ({ x: boardX(piece.position.x), z: boardZ(piece.position.y) }), [piece.position.x, piece.position.y])
+  /**
+   * Trayectoria de salto: antes un movimiento de varias casillas se veía como
+   * un deslizamiento continuo hacia el destino final, sin distinguir cuántas
+   * casillas cruzaba. Como el motor nunca permite mover en diagonal
+   * (`pathIsClear` lo rechaza), la ruta entre la posición anterior y la
+   * nueva es siempre una línea recta de casillas — se anima cruzándolas una
+   * a una, con un pequeño arco por salto, en vez de una sola línea continua.
+   */
+  const prevGridPos = useRef(piece.position)
+  const hop = useRef<HopPath | null>(null)
+  useEffect(() => {
+    const prev = prevGridPos.current
+    prevGridPos.current = piece.position
+    if (reducedMotion || (prev.x === piece.position.x && prev.y === piece.position.y)) return
+    const dx = Math.sign(piece.position.x - prev.x)
+    const dy = Math.sign(piece.position.y - prev.y)
+    const cells: Position[] = [prev]
+    let x = prev.x
+    let y = prev.y
+    // Tope de seguridad (BOARD_SIZE pasos): si algún día un efecto teletransporta
+    // en vez de mover, esto evita un bucle infinito en vez de una animación rara.
+    for (let steps = 0; steps < BOARD_SIZE && (x !== piece.position.x || y !== piece.position.y); steps += 1) {
+      x += dx
+      y += dy
+      cells.push({ x, y })
+    }
+    hop.current = { cells, index: 0, segmentStart: performance.now() }
+    // Depende de x/y sueltos, no del objeto `piece.position`: MatchState es
+    // inmutable, así que solo cambia de referencia cuando de verdad cambia el
+    // valor, pero depender del objeto entero perdería la comparación
+    // primitiva y volvería a disparar el efecto en cualquier otro cambio de
+    // la ficha (Vida, estados...) que reconstruya `piece` sin mover nada.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [piece.position.x, piece.position.y, reducedMotion])
   const frozen = piece.statuses.some((status) => status.kind === 'frozen')
   const stunned = piece.statuses.some((status) => status.kind === 'stunned')
   const cursed = piece.statuses.some((status) => status.kind === 'cursed')
@@ -236,9 +283,27 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
     if (!node) return
     const speed = reducedMotion ? 100 : 8
     const lift = selected ? 0.3 : hovered ? 0.22 : 0.15
-    node.position.x = MathUtils.damp(node.position.x, target.x, speed, delta)
-    node.position.z = MathUtils.damp(node.position.z, target.z, speed, delta)
-    node.position.y = MathUtils.damp(node.position.y, lift, speed, delta)
+    const path = hop.current
+    if (path && path.index < path.cells.length - 1) {
+      const elapsed = performance.now() - path.segmentStart
+      const progress = Math.min(1, elapsed / HOP_STEP_MS)
+      const from = path.cells[path.index]!
+      const to = path.cells[path.index + 1]!
+      node.position.x = MathUtils.lerp(boardX(from.x), boardX(to.x), progress)
+      node.position.z = MathUtils.lerp(boardZ(from.y), boardZ(to.y), progress)
+      // Arco por salto: sube y baja dentro de cada casilla cruzada, para que
+      // se lean como pasos separados en vez de un deslizamiento continuo.
+      node.position.y = MathUtils.damp(node.position.y, lift + Math.sin(progress * Math.PI) * HOP_HEIGHT, speed, delta)
+      if (progress >= 1) {
+        path.index += 1
+        path.segmentStart = performance.now()
+        if (path.index >= path.cells.length - 1) hop.current = null
+      }
+    } else {
+      node.position.x = MathUtils.damp(node.position.x, target.x, speed, delta)
+      node.position.z = MathUtils.damp(node.position.z, target.z, speed, delta)
+      node.position.y = MathUtils.damp(node.position.y, lift, speed, delta)
+    }
     node.rotation.y = MathUtils.damp(node.rotation.y, selected ? (piece.owner === 'player' ? -0.08 : 0.08) : 0, speed, delta)
     // Agotada: la carta descansa ligeramente girada, como una carta «tapeada».
     node.rotation.z = MathUtils.damp(node.rotation.z, spent ? 0.16 : 0, speed, delta)
@@ -821,6 +886,7 @@ function Scene(props: Board3DProps) {
       />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
       <DamageNumbers event={props.activeEvent} />
+      <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ResponsiveCamera />
