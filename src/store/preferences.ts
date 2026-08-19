@@ -29,6 +29,8 @@ export interface PreferencesState {
    * chocan entre sí.
    */
   colorblindMode: boolean
+  /** Escala del texto sobre las cartas del tablero (nombre, ATQ/VID, estados). 1 = tamaño original. */
+  boardTextScale: 1 | 1.2 | 1.4
   setVolume: (channel: 'masterVolume' | 'musicVolume' | 'effectsVolume', value: number) => void
   setMuted: (muted: boolean) => void
   setReducedMotion: (reduced: boolean) => void
@@ -39,6 +41,7 @@ export interface PreferencesState {
   setScenario: (scenario: ScenarioId) => void
   setAnimationSpeed: (speed: 1 | 1.5 | 2) => void
   setColorblindMode: (enabled: boolean) => void
+  setBoardTextScale: (scale: 1 | 1.2 | 1.4) => void
   reset: () => void
 }
 
@@ -55,6 +58,7 @@ const defaults = {
   scenario: 'aether-citadel' as ScenarioId,
   animationSpeed: 1 as const,
   colorblindMode: false,
+  boardTextScale: 1 as const,
 }
 
 export const usePreferences = create<PreferencesState>()(
@@ -71,6 +75,7 @@ export const usePreferences = create<PreferencesState>()(
       setScenario: (scenario) => set({ scenario }),
       setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
       setColorblindMode: (colorblindMode) => set({ colorblindMode }),
+      setBoardTextScale: (boardTextScale) => set({ boardTextScale }),
       reset: () => set(defaults),
     }),
     {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { currentStreak, summarizeByDeck, summarizeRecords, useRecords, type MatchRecord } from './records'
+import { currentStreak, summarizeByDeck, summarizeByOpponent, summarizeRecords, useRecords, type MatchRecord } from './records'
 
 const record = (values: Partial<MatchRecord> = {}): Omit<MatchRecord, 'id'> => ({
   finishedAt: 1_000,
@@ -71,6 +71,18 @@ describe('historial de partidas', () => {
     expect(summarizeByDeck(entries)).toEqual([
       { deckId: 'furia-caldera', deckName: 'Furia', played: 2, won: 1 },
       { deckId: 'orden-celestial', deckName: 'Orden', played: 1, won: 1 },
+    ])
+  })
+
+  it('agrupa por rival y ordena por enfrentamientos', () => {
+    const entries: MatchRecord[] = [
+      { ...record({ opponentDeckName: 'Fractura del Vacío', won: true }), id: 'a' },
+      { ...record({ opponentDeckName: 'Fractura del Vacío', won: false }), id: 'b' },
+      { ...record({ opponentDeckName: 'Reidores de la Sombra', won: true }), id: 'c' },
+    ]
+    expect(summarizeByOpponent(entries)).toEqual([
+      { opponentDeckName: 'Fractura del Vacío', played: 2, won: 1 },
+      { opponentDeckName: 'Reidores de la Sombra', played: 1, won: 1 },
     ])
   })
 })

@@ -112,3 +112,27 @@ export const summarizeByDeck = (
   }
   return [...byDeck.values()].sort((left, right) => right.played - left.played || left.deckName.localeCompare(right.deckName))
 }
+
+/**
+ * Victorias y derrotas contra cada rival, ordenadas de más a menos
+ * enfrentamientos. `opponentDeckName` ya se guardaba en cada registro pero
+ * nunca se agregaba — solo se veía suelto, fila a fila, en el historial.
+ */
+export const summarizeByOpponent = (
+  records: readonly MatchRecord[],
+): readonly { opponentDeckName: string; played: number; won: number }[] => {
+  const byOpponent = new Map<string, { opponentDeckName: string; played: number; won: number }>()
+  for (const record of records) {
+    const entry = byOpponent.get(record.opponentDeckName) ?? {
+      opponentDeckName: record.opponentDeckName,
+      played: 0,
+      won: 0,
+    }
+    byOpponent.set(record.opponentDeckName, {
+      ...entry,
+      played: entry.played + 1,
+      won: entry.won + (record.won ? 1 : 0),
+    })
+  }
+  return [...byOpponent.values()].sort((left, right) => right.played - left.played || left.opponentDeckName.localeCompare(right.opponentDeckName))
+}

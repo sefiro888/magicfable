@@ -1,6 +1,6 @@
 import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
-import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
@@ -52,6 +52,8 @@ interface Board3DProps {
   cellIntent: 'move' | 'deploy'
   /** Cambia el verde de despliegue por ámbar: no choca con el rojo de amenaza para daltonismo rojo-verde. */
   colorblindMode?: boolean
+  /** Escala del texto sobre las cartas del tablero (nombre, ATQ/VID, estados). */
+  boardTextScale?: number
   validTargets: readonly string[]
   /** Unidades propias con acciones disponibles: reciben el anillo de listas. */
   readyPieceIds: ReadonlySet<string>
@@ -925,7 +927,11 @@ function Scene(props: Board3DProps) {
 export function Board3D(props: Board3DProps) {
   const dpr: [number, number] = props.quality === 'high' ? [1, 2] : props.quality === 'medium' ? [1, 1.5] : [0.75, 1]
   return (
-    <div className={styles.viewport} data-testid="battle-board">
+    <div
+      className={styles.viewport}
+      data-testid="battle-board"
+      style={{ '--label-scale': props.boardTextScale ?? 1 } as CSSProperties}
+    >
       <Canvas shadows={props.quality !== 'low'} dpr={dpr} camera={{ position: [...CAMERA_POSITION], fov: CAMERA_FOV }} gl={{ antialias: props.quality !== 'low', alpha: false }}>
         <Scene {...props} />
       </Canvas>

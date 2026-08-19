@@ -4,11 +4,14 @@
    captura real del tablero el nombre a 10px y las cifras a 11px eran ilegibles
    a la distancia de cámara del juego. */
 .cardLabel {
-  width: 116px;
+  /* La chapa entera crece con el texto (no solo la letra): con el ancho fijo
+     de antes, un tamaño de letra más grande en "Modo daltonismo y texto" de
+     Ajustes desbordaba el marco en vez de ensancharlo. */
+  width: calc(116px * var(--label-scale, 1));
   pointer-events: none;
   transform: translateY(-52px);
   text-align: center;
-  font-size: 12px;
+  font-size: calc(12px * var(--label-scale, 1));
   font-weight: 800;
   text-shadow: 0 2px 4px #000, 0 0 5px #000;
   white-space: nowrap;
@@ -33,7 +36,7 @@
   border-radius: 7px;
   background: rgba(5, 6, 9, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.34);
-  font-size: 13px;
+  font-size: calc(13px * var(--label-scale, 1));
   font-weight: 900;
 }
 .cardStatuses { display: flex; justify-content: center; gap: 4px; margin-top: 3px; }
@@ -42,7 +45,7 @@
   border-radius: 6px;
   background: rgba(5, 6, 9, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.24);
-  font-size: 11px;
+  font-size: calc(11px * var(--label-scale, 1));
   font-weight: 800;
 }
 .attackStat { color: #ffca94; }

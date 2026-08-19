@@ -25,6 +25,12 @@ const SPEED_OPTIONS = [
   { value: 2, label: 'Muy rápida' },
 ] as const
 
+const TEXT_SCALE_OPTIONS = [
+  { value: 1, label: 'Normal' },
+  { value: 1.2, label: 'Grande' },
+  { value: 1.4, label: 'Muy grande' },
+] as const
+
 export function SettingsPage() {
   const settings = usePreferences()
   const volumes = [
@@ -97,6 +103,20 @@ export function SettingsPage() {
           <h2>Accesibilidad y ritmo</h2><p>Ajusta la presentación sin alterar las reglas.</p>
           <div className={styles.toggleRow}><span><strong>Reducir movimiento</strong><small>Acorta transiciones, golpes de cámara y partículas.</small></span><button className={styles.toggle} data-on={settings.reducedMotion} onClick={() => settings.setReducedMotion(!settings.reducedMotion)} aria-label="Reducir movimiento" aria-pressed={settings.reducedMotion} /></div>
           <div className={styles.toggleRow}><span><strong>Modo daltonismo</strong><small>Cambia el verde de "casilla de despliegue" por ámbar, para no confundirlo con el rojo de "casilla amenazada".</small></span><button className={styles.toggle} data-on={settings.colorblindMode} onClick={() => settings.setColorblindMode(!settings.colorblindMode)} aria-label="Modo daltonismo" aria-pressed={settings.colorblindMode} /></div>
+          <div className={styles.control}>
+            <label htmlFor="boardTextScale">Tamaño del texto en el tablero</label>
+            <select
+              id="boardTextScale"
+              className={styles.select}
+              value={settings.boardTextScale}
+              onChange={(event) => settings.setBoardTextScale(Number(event.target.value) as 1 | 1.2 | 1.4)}
+            >
+              {TEXT_SCALE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <output>Nombre, Ataque y Vida sobre las cartas del tablero.</output>
+          </div>
           <div className={styles.control}>
             <label htmlFor="aiDifficulty">Dificultad del rival</label>
             <select

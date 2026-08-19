@@ -4,7 +4,7 @@ import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, cardsForFaction, validateDe
 import type { DeckDefinition, DeckEntry } from '../game'
 import { FactionSigil } from '../components/FactionSigil'
 import { usePreferences } from '../store/preferences'
-import { aiRecords, currentStreak, pvpRecords, summarizeByDeck, summarizeRecords, useRecords } from '../store/records'
+import { aiRecords, currentStreak, pvpRecords, summarizeByDeck, summarizeByOpponent, summarizeRecords, useRecords } from '../store/records'
 import { evaluateAchievements } from '../store/achievements'
 import { withBase } from '../utils/assets'
 import { decodeDeckCode, encodeDeckCode } from '../utils/deckCode'
@@ -241,6 +241,11 @@ function MatchHistory() {
   const tally = useMemo(() => summarizeRecords(vsAi), [vsAi])
   const pvpTally = useMemo(() => summarizeRecords(vsPvp), [vsPvp])
   const byDeck = useMemo(() => summarizeByDeck(vsAi), [vsAi])
+  // Solo contra la IA, igual que `byDeck`: mezclar rivales humanos y bots en
+  // el mismo ratio no tendría sentido (dificultad muy distinta). El nombre
+  // del rival ya se guardaba en cada registro pero nunca se agregaba — solo
+  // se veía suelto, fila a fila, en la lista de abajo.
+  const byOpponent = useMemo(() => summarizeByOpponent(vsAi), [vsAi])
   const streak = useMemo(() => currentStreak(vsAi), [vsAi])
   const streakLabel = streak > 0 ? `${streak} victoria${streak === 1 ? '' : 's'}` : streak < 0 ? `${-streak} derrota${streak === -1 ? '' : 's'}` : '—'
 
@@ -267,14 +272,30 @@ function MatchHistory() {
         <div className={styles.stat} data-streak={streak > 0 ? 'win' : streak < 0 ? 'loss' : undefined}><strong>{streakLabel}</strong><span>Racha actual</span></div>
       </div>
       {byDeck.length > 1 && (
-        <ul className={styles.byDeck}>
-          {byDeck.map((entry) => (
-            <li key={entry.deckId}>
-              <span>{entry.deckName}</span>
-              <strong>{entry.won}/{entry.played}</strong>
-            </li>
-          ))}
-        </ul>
+        <>
+          <span className={styles.pvpTallyLabel}>Tus mazos</span>
+          <ul className={styles.byDeck}>
+            {byDeck.map((entry) => (
+              <li key={entry.deckId}>
+                <span>{entry.deckName}</span>
+                <strong>{entry.won}/{entry.played}</strong>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {byOpponent.length > 1 && (
+        <>
+          <span className={styles.pvpTallyLabel}>Contra cada rival</span>
+          <ul className={styles.byDeck}>
+            {byOpponent.map((entry) => (
+              <li key={entry.opponentDeckName}>
+                <span>{entry.opponentDeckName}</span>
+                <strong>{entry.won}/{entry.played}</strong>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       {vsPvp.length > 0 && (
         <div className={styles.pvpTally}>

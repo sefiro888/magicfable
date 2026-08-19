@@ -643,6 +643,7 @@ export function BattlePage() {
             validCells={validCells}
             cellIntent={selectedCard ? 'deploy' : 'move'}
             colorblindMode={preferences.colorblindMode}
+            boardTextScale={preferences.boardTextScale}
             validTargets={boardTargets}
             readyPieceIds={readyPieceIds}
             onCell={onCell}
