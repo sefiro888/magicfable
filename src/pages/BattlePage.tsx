@@ -642,6 +642,7 @@ export function BattlePage() {
             selectedPieceId={store.selectedPieceId}
             validCells={validCells}
             cellIntent={selectedCard ? 'deploy' : 'move'}
+            colorblindMode={preferences.colorblindMode}
             validTargets={boardTargets}
             readyPieceIds={readyPieceIds}
             onCell={onCell}

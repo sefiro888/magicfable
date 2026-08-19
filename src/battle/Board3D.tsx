@@ -50,6 +50,8 @@ interface Board3DProps {
    * mano).
    */
   cellIntent: 'move' | 'deploy'
+  /** Cambia el verde de despliegue por ámbar: no choca con el rojo de amenaza para daltonismo rojo-verde. */
+  colorblindMode?: boolean
   validTargets: readonly string[]
   /** Unidades propias con acciones disponibles: reciben el anillo de listas. */
   readyPieceIds: ReadonlySet<string>
@@ -129,15 +131,19 @@ const ZONE_TINTS = {
  * estable solo se re-renderiza cuando cambia su propio estado (válida,
  * ocupada, abrasada), no en cada evento visual de la partida.
  */
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, intent, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
   const zone = own ? 'own' : 'enemy'
   // Desplegar se marca en verde y mover en azul: son acciones distintas y
   // antes compartían color, así que la casilla iluminada no decía cuál era.
-  const validColor = intent === 'deploy' ? '#7ee6a8' : '#8fd4ff'
-  const validEmissive = intent === 'deploy' ? '#1c7a4a' : '#1f6f9e'
+  // En modo daltonismo el verde de despliegue pasa a ámbar: puede aparecer
+  // en el tablero a la vez que el rojo de "casilla amenazada" (en casillas
+  // distintas), justo el par más difícil de distinguir para la forma más
+  // común de daltonismo.
+  const validColor = intent === 'deploy' ? (colorblindMode ? '#ffb648' : '#7ee6a8') : '#8fd4ff'
+  const validEmissive = intent === 'deploy' ? (colorblindMode ? '#8a5411' : '#1c7a4a') : '#1f6f9e'
   if (subtle) {
     // Aether Citadel: la casilla ES una losa de roca tallada, opaca y a ras
     // de la plaza; la junta oscura entre losas es la piedra del GLB que asoma.
@@ -174,9 +180,9 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
     )
   }
   const base = own ? '#4c4235' : '#3a3f4c'
-  const color = valid ? (hovered ? '#f6d77e' : intent === 'deploy' ? '#4bbf83' : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : base
+  const color = valid ? (hovered ? '#f6d77e' : intent === 'deploy' ? (colorblindMode ? '#e6a23c' : '#4bbf83') : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : base
   const emissive = valid
-    ? (intent === 'deploy' ? '#166647' : '#1b6384')
+    ? (intent === 'deploy' ? (colorblindMode ? '#7a4a0f' : '#166647') : '#1b6384')
     : scorched ? '#68240f'
     : threatened ? '#5e1414'
     : deployRow ? '#4a3410'
@@ -841,6 +847,7 @@ function Scene(props: Board3DProps) {
             deployRow={position.y === ownDeployRow}
             threatened={!occupiedSet.has(key) && threatenedSet.has(key)}
             intent={props.cellIntent}
+            colorblindMode={props.colorblindMode}
             onCell={props.onCell}
             onHover={props.onCellHover}
           />

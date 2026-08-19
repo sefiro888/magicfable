@@ -96,6 +96,7 @@ export function SettingsPage() {
         <section className={styles.section}>
           <h2>Accesibilidad y ritmo</h2><p>Ajusta la presentación sin alterar las reglas.</p>
           <div className={styles.toggleRow}><span><strong>Reducir movimiento</strong><small>Acorta transiciones, golpes de cámara y partículas.</small></span><button className={styles.toggle} data-on={settings.reducedMotion} onClick={() => settings.setReducedMotion(!settings.reducedMotion)} aria-label="Reducir movimiento" aria-pressed={settings.reducedMotion} /></div>
+          <div className={styles.toggleRow}><span><strong>Modo daltonismo</strong><small>Cambia el verde de "casilla de despliegue" por ámbar, para no confundirlo con el rojo de "casilla amenazada".</small></span><button className={styles.toggle} data-on={settings.colorblindMode} onClick={() => settings.setColorblindMode(!settings.colorblindMode)} aria-label="Modo daltonismo" aria-pressed={settings.colorblindMode} /></div>
           <div className={styles.control}>
             <label htmlFor="aiDifficulty">Dificultad del rival</label>
             <select
