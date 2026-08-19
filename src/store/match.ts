@@ -33,6 +33,21 @@ export interface MatchLogEntry {
   readonly note?: string
 }
 
+/** Una lectura de la Vida de los dos Nexos en un momento dado, para la gráfica del resumen final. */
+export interface HealthSnapshot {
+  readonly turn: number
+  readonly player: number
+  readonly ai: number
+}
+
+/** La jugada de un solo golpe más dañina de toda la partida, para el resumen final. */
+export interface BestPlay {
+  readonly turn: number
+  readonly amount: number
+  readonly cardId?: string
+  readonly by: 'player' | 'ai'
+}
+
 const posKey = (position: Position): string => `${position.x},${position.y}`
 
 /** cardId de una pieza en el tablero (no el nombre legible: más compacto y sin ambigüedad de idioma). */
@@ -82,6 +97,10 @@ interface MatchStore {
   history: readonly string[]
   /** Registro compacto de toda la partida, para exportar (ver MatchLogEntry). Nunca se recorta. */
   matchLog: readonly MatchLogEntry[]
+  /** Vida de los dos Nexos tras cada acción, para la gráfica del resumen final. */
+  healthHistory: readonly HealthSnapshot[]
+  /** El golpe más dañino de la partida hasta ahora, para el resumen final. */
+  bestPlay?: BestPlay
   aiThinking: boolean
   startedAtMs: number
   elapsedSeconds: number
@@ -155,11 +174,41 @@ const actionDescription = (state: MatchState, action: GameAction): string => {
 const initialState = {
   history: [] as readonly string[],
   matchLog: [] as readonly MatchLogEntry[],
+  healthHistory: [] as readonly HealthSnapshot[],
+  bestPlay: undefined as BestPlay | undefined,
   aiThinking: false,
   startedAtMs: 0,
   elapsedSeconds: 0,
   pendingAnimations: [] as readonly AnimationEvent[],
   currentEvent: undefined as AnimationEvent | undefined,
+}
+
+/** Snapshot de Vida de ambos Nexos justo después de resolver una acción. */
+const healthSnapshot = (state: MatchState): HealthSnapshot => ({
+  turn: state.turn,
+  player: state.players.player.nexusHealth,
+  ai: state.players.ai.nexusHealth,
+})
+
+/**
+ * Si alguno de los eventos recién generados supera al mejor golpe registrado
+ * hasta ahora, lo sustituye. Solo cuentan `damage`/`nexus-damage`: son los
+ * únicos tipos de evento que representan daño de verdad repartido de un
+ * golpe (un escudo absorbe, no hace daño).
+ */
+const updateBestPlay = (
+  current: BestPlay | undefined,
+  events: readonly AnimationEvent[],
+  turn: number,
+  by: 'player' | 'ai',
+  cardId?: string,
+): BestPlay | undefined => {
+  let best = current
+  for (const event of events) {
+    if ((event.type !== 'damage' && event.type !== 'nexus-damage') || !event.amount) continue
+    if (!best || event.amount > best.amount) best = { turn, amount: event.amount, cardId, by }
+  }
+  return best
 }
 
 /** Extrae la cola de eventos del estado del motor y la deja limpia para el siguiente paso. */
@@ -197,10 +246,12 @@ export const useMatchStore = create<MatchStore>()(
     const aiDeck = opponents[opponentIndex] ?? opponents[0]
     if (!playerDeck || !aiDeck) throw new Error('Faltan mazos iniciales para crear la partida.')
     const match = createMatch(playerDeck, aiDeck, matchSeed)
+    const cleaned = clearAnimationQueue(match)
     set({
       ...initialState,
-      match: clearAnimationQueue(match),
+      match: cleaned,
       history: ['La escaramuza comienza. Robas cinco cartas.'],
+      healthHistory: [healthSnapshot(cleaned)],
       selectedHandId: undefined,
       selectedPieceId: undefined,
       viewedPieceId: undefined,
@@ -210,10 +261,12 @@ export const useMatchStore = create<MatchStore>()(
     })
   },
   startFromMatch: (match) => {
+    const cleaned = clearAnimationQueue(match)
     set({
       ...initialState,
-      match: clearAnimationQueue(match),
+      match: cleaned,
       history: ['La escaramuza comienza. Robas cinco cartas.'],
+      healthHistory: [healthSnapshot(cleaned)],
       selectedHandId: undefined,
       selectedPieceId: undefined,
       viewedPieceId: undefined,
@@ -246,6 +299,10 @@ export const useMatchStore = create<MatchStore>()(
       message: undefined,
       history: [...current.history.slice(-9), description],
       matchLog: [...current.matchLog, logEntry],
+      healthHistory: [...current.healthHistory, healthSnapshot(cleaned)],
+      bestPlay: action.playerId
+        ? updateBestPlay(current.bestPlay, events, match.turn, action.playerId, logEntry.card)
+        : current.bestPlay,
       pendingAnimations: [...current.pendingAnimations, ...events],
       elapsedSeconds: cleaned.winner ? Math.max(1, Math.round((Date.now() - current.startedAtMs) / 1000)) : current.elapsedSeconds,
     }))
@@ -257,6 +314,7 @@ export const useMatchStore = create<MatchStore>()(
       match: cleaned,
       message,
       history: message ? [...current.history.slice(-9), message] : current.history,
+      healthHistory: [...current.healthHistory, healthSnapshot(cleaned)],
       // `replaceMatch` la usa el sincronizador multijugador: aquí llegan eventos de
       // red (jugada rechazada por el anfitrión, aviso de desconexión...) que no
       // pasan por `dispatch`, así que se registran aparte como entradas 'info'.
@@ -293,6 +351,8 @@ export const useMatchStore = create<MatchStore>()(
         match: state.match,
         history: state.history,
         matchLog: state.matchLog,
+        healthHistory: state.healthHistory,
+        bestPlay: state.bestPlay,
         startedAtMs: state.startedAtMs,
         elapsedSeconds: state.elapsedSeconds,
       }),

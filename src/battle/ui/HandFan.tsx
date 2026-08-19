@@ -15,15 +15,24 @@ interface HandFanProps {
   readonly onDragStart?: (instanceId: string, event: React.PointerEvent) => void
   /** Carta que se está arrastrando: se atenúa en el abanico mientras vuela. */
   readonly draggingId?: string
+  /** Cartas fijadas: se muestran primero en el abanico, en su mismo orden relativo. */
+  readonly favoriteIds?: ReadonlySet<string>
+  readonly onToggleFavorite?: (instanceId: string) => void
 }
 
 /**
  * Mano en abanico del jugador. Memoizada: solo se vuelve a renderizar cuando
  * cambia la partida o la selección, no en cada evento visual de la cola.
  */
-export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHandId, onSelect, onInspect, onDragStart, draggingId }: HandFanProps) {
+export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHandId, onSelect, onInspect, onDragStart, draggingId, favoriteIds, onToggleFavorite }: HandFanProps) {
   const player = match.players[localPlayerId]
   const count = player.hand.length
+  // Las cartas fijadas van primero, conservando su orden relativo entre sí
+  // (Array.prototype.sort es estable): es solo un reordenamiento visual, no
+  // afecta a la partida — la mano real (`player.hand`) no cambia.
+  const orderedHand = favoriteIds?.size
+    ? [...player.hand].sort((a, b) => Number(favoriteIds.has(b.instanceId)) - Number(favoriteIds.has(a.instanceId)))
+    : player.hand
   // El solape y la rotación se comprimen con la mano llena para que el abanico
   // no invada el tablero ni se salga del carril inferior.
   const overlap = count <= 4 ? 20 : count <= 6 ? 32 : count <= 8 ? 42 : 50
@@ -31,7 +40,7 @@ export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHan
   const liftStep = Math.min(3.6, 20 / Math.max(1, count))
   return (
     <div className={styles.hand} aria-label="Tu mano">
-      {player.hand.map((instance, index) => {
+      {orderedHand.map((instance, index) => {
         const card = CARD_BY_ID[instance.cardId]
         if (!card) return null
         const playable = match.activePlayer === localPlayerId && !match.winner && (
@@ -64,6 +73,20 @@ export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHan
               onSelect={() => onSelect(instance.instanceId)}
               onInspect={() => onInspect(card.id)}
             />
+            {onToggleFavorite && (
+              <button
+                type="button"
+                className={styles.favoriteToggle}
+                data-favorite={favoriteIds?.has(instance.instanceId) || undefined}
+                aria-pressed={favoriteIds?.has(instance.instanceId) ?? false}
+                aria-label={favoriteIds?.has(instance.instanceId) ? `Dejar de fijar ${card.name}` : `Fijar ${card.name} al principio de la mano`}
+                title="Fijar al principio de la mano"
+                onClick={(event) => { event.stopPropagation(); onToggleFavorite(instance.instanceId) }}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                {favoriteIds?.has(instance.instanceId) ? '★' : '☆'}
+              </button>
+            )}
           </div>
         )
       })}

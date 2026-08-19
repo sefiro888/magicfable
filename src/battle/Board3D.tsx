@@ -57,6 +57,11 @@ interface Board3DProps {
   onNexus: (playerId: PlayerId) => void
   /** Casilla bajo el puntero, para saber dónde se suelta una carta arrastrada. */
   onCellHover?: (position?: Position) => void
+  /** Ficha/Nexo bajo el cursor: alimenta la vista previa de daño. */
+  onHoverPiece?: (pieceId?: string) => void
+  onHoverNexus?: (playerId?: PlayerId) => void
+  /** Objetivo (ficha o Nexo) sobre el que mostrar la vista previa, con sus líneas de texto ya redactadas. */
+  attackPreview?: { readonly targetId: string; readonly lines: readonly string[] }
   /** Hay una carta en la mano siendo arrastrada: la cámara no debe orbitar. */
   dragging?: boolean
   reducedMotion: boolean
@@ -212,7 +217,7 @@ function Midline() {
  * viven en useFrame, así que el re-render solo hace falta cuando cambian
  * la pieza o sus marcas (selección, objetivo, disponibilidad).
  */
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; reducedMotion: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, onHover, previewLines, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -265,8 +270,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       ref={group}
       position={[target.x, 0.15, target.z]}
       onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
+      onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
+      onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
           Se eleva CARD_STAND_RISE para que, al girar desde su centro, el borde
@@ -354,6 +359,15 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           </div>
         )}
       </Html>
+      {/* Vista previa de daño: solo aparece con el cursor encima de un objetivo
+          válido mientras hay una ficha atacante seleccionada. Muestra el
+          resultado real (con reducciones y escudos ya aplicados), no el
+          Ataque impreso — para eso reutiliza `previewAttackPiece`. */}
+      {previewLines && previewLines.length > 0 && (
+        <Html center position={[0, CARD_STAND_RISE * 2 + 0.42, 0]} distanceFactor={8.6} zIndexRange={[15, 0]} className={styles.attackPreview}>
+          {previewLines.map((line, index) => <div key={index}>{line}</div>)}
+        </Html>
+      )}
     </group>
   )
 })
@@ -374,6 +388,8 @@ function Nexus({
   health,
   targetable,
   onClick,
+  onHover,
+  previewLines,
   commanderArt,
   activeEvent,
 }: {
@@ -383,6 +399,8 @@ function Nexus({
   health: number
   targetable: boolean
   onClick: () => void
+  onHover?: (playerId?: PlayerId) => void
+  previewLines?: readonly string[]
   commanderArt: string
   activeEvent?: AnimationEvent
 }) {
@@ -437,8 +455,8 @@ function Nexus({
         position={[0, 0.66, 0]}
         visible={false}
         onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
+        onPointerEnter={() => { setHovered(true); onHover?.(playerId) }}
+        onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
       >
         <boxGeometry args={[0.9, 0.5, 1.1]} />
       </mesh>
@@ -450,6 +468,11 @@ function Nexus({
       <Html center position={[0, 1.28, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
         <div data-targetable={targetable || undefined}>{mine ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
       </Html>
+      {previewLines && previewLines.length > 0 && (
+        <Html center position={[0, 1.7, 0]} distanceFactor={7} zIndexRange={[15, 0]} className={styles.attackPreview}>
+          {previewLines.map((line, index) => <div key={index}>{line}</div>)}
+        </Html>
+      )}
       <pointLight position={[0, 1.1, 0]} color={color} intensity={5} distance={4} decay={2} />
     </group>
   )
@@ -768,6 +791,8 @@ function Scene(props: Board3DProps) {
             active={piece.owner === props.state.activePlayer}
             mine={piece.owner === props.localPlayerId}
             onPiece={props.onPiece}
+            onHover={props.onHoverPiece}
+            previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.lines : undefined}
             reducedMotion={props.reducedMotion}
           />
         ))}
@@ -778,6 +803,8 @@ function Scene(props: Board3DProps) {
         health={props.state.players.player.nexusHealth}
         targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
+        onHover={props.onHoverNexus}
+        previewLines={props.attackPreview?.targetId === 'player-nexus' ? props.attackPreview.lines : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
         activeEvent={props.activeEvent}
       />
@@ -787,6 +814,8 @@ function Scene(props: Board3DProps) {
         health={props.state.players.ai.nexusHealth}
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
+        onHover={props.onHoverNexus}
+        previewLines={props.attackPreview?.targetId === 'ai-nexus' ? props.attackPreview.lines : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.art.webp ?? '/assets/cards/art/fuente-arcana.webp'}
         activeEvent={props.activeEvent}
       />

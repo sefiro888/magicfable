@@ -1273,6 +1273,31 @@ const applyOnAttackExtras = (
   return next;
 };
 
+/**
+ * Daño base que haría `attacker` golpeando (opcionalmente) a `defender`, con
+ * todos sus modificadores: Ataque impreso, `attackModifier`, el bonus de
+ * `buff-self-on-attack` y el resto de bonificadores contextuales de
+ * `attackBonus` (estructuras, aislamiento, alcance, debilitar...).
+ *
+ * Única fuente de este cálculo: antes vivía duplicado, idéntico, dentro de
+ * `attackPiece` y `attackNexus`. Ahora también lo usan `previewAttackPiece` y
+ * `previewAttackNexus` para la vista previa de daño — así la cifra que ve el
+ * jugador antes de confirmar un ataque es, por construcción, la misma que
+ * aplicará el motor al resolverlo, nunca una aproximación que pueda
+ * desincronizarse.
+ */
+const computeAttackAmount = (
+  state: MatchState,
+  attacker: BoardPiece,
+  card: CardDefinition,
+  defender?: BoardPiece,
+): number => {
+  const attackBuff = card.effects.find((effect) => effect.kind === 'buff-self-on-attack');
+  return Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
+    (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
+    attackBonus(state, attacker, card, defender));
+};
+
 export const attackPiece = (
   state: MatchState,
   playerId: PlayerId,
@@ -1288,10 +1313,7 @@ export const attackPiece = (
   if (!canAttackPiece(state, attacker, defender)) return fail(state, 'cannot-attack', 'El objetivo no está al alcance.');
   const card = pieceDefinition(attacker);
   if (!card || card.attack === undefined) return fail(state, 'cannot-attack', 'La carta no puede atacar.');
-  const attackBuff = card.effects.find((effect) => effect.kind === 'buff-self-on-attack');
-  const amount = Math.max(0, card.attack + attacker.attackModifier +
-    (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card, defender));
+  const amount = computeAttackAmount(state, attacker, card, defender);
   let next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: defenderId,
@@ -1362,10 +1384,7 @@ export const attackNexus = (
   if (!canAttackEnemyNexus(state, attacker)) return fail(state, 'out-of-range', 'El Nexo no está al alcance.');
   const card = pieceDefinition(attacker);
   if (!card || card.attack === undefined) return fail(state, 'cannot-attack', 'La carta no puede atacar.');
-  const attackBuff = card.effects.find((effect) => effect.kind === 'buff-self-on-attack');
-  const amount = Math.max(0, card.attack + attacker.attackModifier +
-    (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card));
+  const amount = computeAttackAmount(state, attacker, card);
   const enemyId = opponentOf(playerId);
   let next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
   next = enqueue(next, {
@@ -1388,6 +1407,88 @@ export const attackNexus = (
   }
   next = applyMalacharDrain(next, playerId);
   return success(next);
+};
+
+export interface AttackPiecePreview {
+  readonly damageToDefender: number;
+  readonly defenderHealthAfter: number;
+  readonly defenderDies: boolean;
+  /** Daño de vuelta que recibe la atacante, solo en combate cuerpo a cuerpo. */
+  readonly retaliationToAttacker: number;
+  readonly attackerHealthAfter: number;
+  readonly attackerDies: boolean;
+  /** Con Perforar, cuánto de ese golpe pasaría de largo hacia el Nexo enemigo. */
+  readonly pierceOverkill: number;
+}
+
+/**
+ * Cuánto dañaría (de verdad, tras escudos y reducciones) un ataque entre dos
+ * fichas concretas, sin aplicar nada. Pensado para la vista previa al pasar
+ * el cursor sobre un objetivo, antes de confirmar el ataque.
+ *
+ * Reutiliza `computeAttackAmount` y `damagePieceDetailed` — las mismas
+ * funciones que usa `attackPiece` para resolver el combate de verdad — así
+ * que la cifra que ve el jugador nunca puede desviarse de lo que ocurrirá
+ * al confirmar.
+ */
+export const previewAttackPiece = (
+  state: MatchState,
+  attackerId: string,
+  defenderId: string,
+): AttackPiecePreview | undefined => {
+  const attacker = state.board.find((piece) => piece.instanceId === attackerId);
+  const defender = state.board.find((piece) => piece.instanceId === defenderId);
+  if (!attacker || !defender) return undefined;
+  const card = pieceDefinition(attacker);
+  const defenderCard = pieceDefinition(defender);
+  if (!card || card.attack === undefined) return undefined;
+  const amount = computeAttackAmount(state, attacker, card, defender);
+  const hit = damagePieceDetailed(state, defenderId, amount, attacker.owner, card.vfx.impactEffect);
+  const defenderHealthAfter = Math.max(0, defender.currentHealth - hit.dealt);
+  const defenderDies = defenderHealthAfter <= 0;
+  const pierceOverkill = card.keywords.includes('pierce') && defenderDies
+    ? Math.max(0, hit.dealt - hit.healthBefore)
+    : 0;
+  let retaliationToAttacker = 0;
+  let attackerHealthAfter = attacker.currentHealth;
+  // Mismo criterio que el combate real: la defensora devuelve el golpe si es
+  // cuerpo a cuerpo, incluso si el ataque recibido la mata.
+  if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
+    const raw = Math.max(0, defenderCard.attack + defender.attackModifier);
+    const back = damagePieceDetailed(state, attackerId, raw, defender.owner, defenderCard.vfx.impactEffect);
+    retaliationToAttacker = back.dealt;
+    attackerHealthAfter = Math.max(0, attacker.currentHealth - back.dealt);
+  }
+  return {
+    damageToDefender: hit.dealt,
+    defenderHealthAfter,
+    defenderDies,
+    retaliationToAttacker,
+    attackerHealthAfter,
+    attackerDies: attackerHealthAfter <= 0,
+    pierceOverkill,
+  };
+};
+
+export interface AttackNexusPreview {
+  readonly damage: number;
+  readonly nexusHealthAfter: number;
+  readonly lethal: boolean;
+}
+
+/** Igual que `previewAttackPiece` pero para un ataque directo al Nexo enemigo. */
+export const previewAttackNexus = (
+  state: MatchState,
+  attackerId: string,
+): AttackNexusPreview | undefined => {
+  const attacker = state.board.find((piece) => piece.instanceId === attackerId);
+  if (!attacker) return undefined;
+  const card = pieceDefinition(attacker);
+  if (!card || card.attack === undefined) return undefined;
+  const amount = computeAttackAmount(state, attacker, card);
+  const enemy = state.players[opponentOf(attacker.owner)];
+  const nexusHealthAfter = Math.max(0, enemy.nexusHealth - amount);
+  return { damage: amount, nexusHealthAfter, lethal: nexusHealthAfter <= 0 };
 };
 
 export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => {

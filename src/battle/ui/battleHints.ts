@@ -1,4 +1,4 @@
-import { spellNeedsPiece, type BoardPiece, type CardDefinition } from '../../game'
+import { spellNeedsPiece, type AttackNexusPreview, type AttackPiecePreview, type BoardPiece, type CardDefinition } from '../../game'
 
 /**
  * Hechizos que exigen señalar una ficha concreta del tablero antes de
@@ -88,3 +88,18 @@ export const actionHintFor = (context: ActionHintContext): string | undefined =>
   }
   return 'Selecciona una carta de tu mano o una unidad aliada.'
 }
+
+/** Líneas de la vista previa de daño al pasar el cursor sobre una ficha objetivo. */
+export const attackPiecePreviewLines = (preview: AttackPiecePreview): readonly string[] => {
+  const lines: string[] = []
+  lines.push(preview.defenderDies ? `💀 Destruye (−${preview.damageToDefender})` : `−${preview.damageToDefender} → ${preview.defenderHealthAfter} Vida`)
+  if (preview.retaliationToAttacker > 0) {
+    lines.push(preview.attackerDies ? `Contragolpe: mueres (−${preview.retaliationToAttacker})` : `Contragolpe: −${preview.retaliationToAttacker}`)
+  }
+  if (preview.pierceOverkill > 0) lines.push(`Perfora +${preview.pierceOverkill} al Nexo`)
+  return lines
+}
+
+/** Líneas de la vista previa de daño al pasar el cursor sobre el Nexo rival. */
+export const attackNexusPreviewLines = (preview: AttackNexusPreview): readonly string[] =>
+  preview.lethal ? [`−${preview.damage} · ¡Golpe letal!`] : [`−${preview.damage} → ${preview.nexusHealthAfter} Vida`]

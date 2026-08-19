@@ -10,6 +10,8 @@ import {
   getValidMoves,
   mulliganOpeningHand,
   planManaPayment,
+  previewAttackNexus,
+  previewAttackPiece,
   reorderTopCards,
   STARTER_DECKS,
   summarizeMana,
@@ -30,7 +32,7 @@ import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../battle/ui/GlossaryPanel'
-import { actionHintFor, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
+import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { FactionSigil } from '../components'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useMatchStore } from '../store/match'
@@ -70,6 +72,16 @@ export function BattlePage() {
     return Number.isFinite(parsed) ? parsed >>> 0 : undefined
   }, [searchParams])
   const [mulliganIds, setMulliganIds] = useState<readonly string[]>([])
+  /** Cartas de la mano fijadas al principio del abanico: solo orden visual, no afecta a la partida. */
+  const [favoriteHandIds, setFavoriteHandIds] = useState<ReadonlySet<string>>(new Set())
+  const toggleFavoriteHand = useCallback((instanceId: string) => {
+    setFavoriteHandIds((current) => {
+      const next = new Set(current)
+      if (next.has(instanceId)) next.delete(instanceId)
+      else next.add(instanceId)
+      return next
+    })
+  }, [])
   const [devOpen, setDevOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(() => !hasSeenHowTo())
   /** Coach interactivo de la primera partida: arranca solo tras cerrar la guía la primerísima vez. */
@@ -260,6 +272,25 @@ export function BattlePage() {
     return attacks.canAttackNexus && !selectedCard ? [...base, `${RIVAL}-nexus`] : base
   }, [selectedCard, spellTargets, attacks, RIVAL])
 
+  // ── Vista previa de daño: qué pasaría si se confirma el ataque ────────────
+  // Solo tiene sentido con una ficha propia seleccionada (modo ataque, no
+  // despliegue) y el cursor sobre uno de sus objetivos válidos.
+  const [hoveredTargetId, setHoveredTargetId] = useState<string>()
+  const onHoverPiece = useCallback((pieceId?: string) => setHoveredTargetId(pieceId), [])
+  const onHoverNexus = useCallback((playerId?: PlayerId) => setHoveredTargetId(playerId ? `${playerId}-nexus` : undefined), [])
+  const attackPreview = useMemo(() => {
+    if (!match || !selectedPiece || selectedCard || !hoveredTargetId) return undefined
+    if (hoveredTargetId === `${RIVAL}-nexus` && attacks.canAttackNexus) {
+      const preview = previewAttackNexus(match, selectedPiece.instanceId)
+      return preview ? { targetId: hoveredTargetId, lines: attackNexusPreviewLines(preview) } : undefined
+    }
+    if (attacks.pieceIds.includes(hoveredTargetId)) {
+      const preview = previewAttackPiece(match, selectedPiece.instanceId, hoveredTargetId)
+      return preview ? { targetId: hoveredTargetId, lines: attackPiecePreviewLines(preview) } : undefined
+    }
+    return undefined
+  }, [match, selectedPiece, selectedCard, hoveredTargetId, attacks, RIVAL])
+
   // Unidades propias que aún pueden mover o atacar: reciben un anillo de
   // disponibilidad en el tablero. Se recalcula solo cuando cambia la partida.
   const readyPieceIds = useMemo(() => {
@@ -283,13 +314,30 @@ export function BattlePage() {
   // El invitado nunca es la autoridad de la partida: en vez de aplicar la
   // acción localmente, se la envía al anfitrión y confía en que la
   // retransmisión de estado (useNetworkSync) la refleje enseguida.
+  /**
+   * Deshacer: solo el último MOVIMIENTO, y solo mientras no se haya
+   * confirmado nada más después. No ataques ni cartas jugadas —esas cambian
+   * el estado del rival o consumen recursos de forma más difícil de
+   * explicar al deshacerla— y no en multijugador: el invitado no tiene
+   * autoridad sobre la partida, y para el anfitrión deshacer en local
+   * dejaría su estado desincronizado del que ya vio el rival.
+   */
+  const [undoState, setUndoState] = useState<{ snapshot: MatchState; pieceId: string }>()
   const doAction = useCallback((action: GameAction) => {
     if (role === 'guest') {
       sendIntent({ kind: 'action', action })
       return true
     }
-    return useMatchStore.getState().dispatch(action)
+    const before = useMatchStore.getState().match
+    const ok = useMatchStore.getState().dispatch(action)
+    setUndoState(ok && action.type === 'move' && before ? { snapshot: before, pieceId: action.pieceId } : undefined)
+    return ok
   }, [role, sendIntent])
+  const undoLastMove = useCallback(() => {
+    if (!undoState || room) return
+    useMatchStore.getState().replaceMatch(undoState.snapshot, 'Deshaces tu último movimiento.')
+    setUndoState(undefined)
+  }, [undoState, room])
   const finishSelection = useCallback(() => {
     const state = useMatchStore.getState()
     state.selectHand(undefined)
@@ -383,6 +431,26 @@ export function BattlePage() {
     if (doAction({ type: 'end-turn', playerId: ME })) finishSelection()
   }, [doAction, finishSelection, ME])
 
+  // Atajos de teclado adicionales a Esc/I (ver el otro efecto de teclado):
+  // van aparte porque necesitan `endTurn`, definido después de aquel.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return
+      const key = event.key.toLowerCase()
+      if (key === 'e' && match?.activePlayer === ME && !match.winner && !queueBusy) {
+        event.preventDefault()
+        endTurn()
+        return
+      }
+      if (key === 'h') {
+        event.preventDefault()
+        setHandTucked((current) => !current)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [match?.activePlayer, match?.winner, queueBusy, ME, endTurn])
+
   const closeHowTo = useCallback(() => {
     const firstTime = !hasSeenHowTo()
     markHowToSeen()
@@ -425,6 +493,8 @@ export function BattlePage() {
   const repeat = () => {
     store.reset()
     setMulliganIds([])
+    setFavoriteHandIds(new Set())
+    setUndoState(undefined)
     ai.reset()
     recorder.reset()
     director.resetBanners()
@@ -574,6 +644,9 @@ export function BattlePage() {
             onNexus={onNexus}
             onCellHover={onCellHover}
             dragging={Boolean(drag.draggingId)}
+            onHoverPiece={onHoverPiece}
+            onHoverNexus={onHoverNexus}
+            attackPreview={attackPreview}
             reducedMotion={preferences.reducedMotion}
             quality={preferences.graphicsQuality}
             scenario={preferences.scenario}
@@ -650,6 +723,15 @@ export function BattlePage() {
             <HistoryLog entries={store.history} />
           </div>
           <div className={styles.turnDock}>
+            {undoState && !room && turnState === 'ready' && (
+              <button
+                className={styles.undoMove}
+                onClick={undoLastMove}
+                title="Deshace tu último movimiento. Deja de estar disponible en cuanto haces cualquier otra cosa."
+              >
+                ↺ Deshacer movimiento
+              </button>
+            )}
             <button
               ref={endTurnRef}
               className={styles.endTurn}
@@ -661,7 +743,7 @@ export function BattlePage() {
                 turnState === 'enemy' ? 'Espera: la IA está jugando su turno.'
                   : turnState === 'busy' ? 'Espera a que terminen las animaciones en curso.'
                   : turnState === 'over' ? 'La partida ha terminado.'
-                  : 'Cede el turno al rival. Tus fuentes se recargan al empezar tu próximo turno.'
+                  : 'Cede el turno al rival (tecla E). Tus fuentes se recargan al empezar tu próximo turno.'
               }
             >
               {turnState === 'enemy' ? 'Turno rival…' : turnState === 'busy' ? 'Resolviendo…' : turnState === 'over' ? 'Crónica concluida' : 'Finalizar turno'}
@@ -677,7 +759,7 @@ export function BattlePage() {
           onClick={() => setHandTucked((current) => !current)}
           aria-pressed={handTucked}
           aria-label={handTucked ? 'Mostrar la mano' : 'Recoger la mano'}
-          title={handTucked ? 'Mostrar la mano' : 'Recoger la mano para despejar el tablero'}
+          title={handTucked ? 'Mostrar la mano (tecla H)' : 'Recoger la mano para despejar el tablero (tecla H)'}
         >
           {handTucked ? '▲ Mano' : '▼ Recoger'}
         </button>
@@ -689,9 +771,11 @@ export function BattlePage() {
           onInspect={inspectCard}
           onDragStart={drag.start}
           draggingId={drag.draggingId}
+          favoriteIds={favoriteHandIds}
+          onToggleFavorite={toggleFavoriteHand}
         />
         <div className={styles.hints} aria-hidden="true">
-          Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar
+          Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar · E — fin de turno · H — recoger mano
         </div>
       </footer>
 
@@ -831,6 +915,8 @@ export function BattlePage() {
           tally={tally}
           daily={daily}
           achievements={recorder.achievements}
+          healthHistory={store.healthHistory}
+          bestPlay={store.bestPlay}
           isPvp={Boolean(room)}
           rematchSelf={rematchSelf}
           rematchPeer={rematchPeer}

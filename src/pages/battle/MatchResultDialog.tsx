@@ -1,7 +1,9 @@
-import type { MatchState, PlayerId, PlayerStats } from '../../game'
+import { CARD_BY_ID, type MatchState, type PlayerId, type PlayerStats } from '../../game'
 import type { Achievement } from '../../store/achievements'
 import type { DailyChallenge } from '../../store/dailyChallenge'
+import type { BestPlay, HealthSnapshot } from '../../store/match'
 import type { RecordSummary } from '../../store/records'
+import { HealthChart } from './HealthChart'
 import styles from '../BattlePage.module.css'
 
 interface MatchResultDialogProps {
@@ -12,6 +14,8 @@ interface MatchResultDialogProps {
   tally: RecordSummary
   daily: DailyChallenge
   achievements: readonly Achievement[]
+  healthHistory: readonly HealthSnapshot[]
+  bestPlay?: BestPlay
   isPvp: boolean
   /** En PvP: si este lado ya pidió la revancha y si la pidió el rival. */
   rematchSelf: boolean
@@ -37,6 +41,13 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
           <div><strong>{props.stats.damageDealt}</strong><span>Daño</span></div>
           <div><strong>{props.stats.cardsPlayed}</strong><span>Jugadas</span></div>
         </div>
+        <HealthChart history={props.healthHistory} me={props.me} />
+        {props.bestPlay && (
+          <p className={styles.bestPlay}>
+            🏆 Mejor jugada: <strong>{CARD_BY_ID[props.bestPlay.cardId ?? '']?.name ?? 'Una unidad'}</strong>{' '}
+            {props.bestPlay.by === props.me ? 'tuya' : 'del rival'} hizo <strong>{props.bestPlay.amount}</strong> de daño en el turno {props.bestPlay.turn}.
+          </p>
+        )}
         {props.tally.played > 1 && (
           <p className={styles.resultTally}>
             Llevas <strong>{props.tally.won}</strong> {props.tally.won === 1 ? 'victoria' : 'victorias'} de{' '}
