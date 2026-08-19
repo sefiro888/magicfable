@@ -876,30 +876,52 @@ export const playResource = (
   return success(next);
 };
 
+/**
+ * Por qué un objetivo concreto no sirve para esta carta, en el mismo texto
+ * que se muestra si se intenta jugar de todos modos — antes el rechazo era
+ * siempre "El hechizo necesita un objetivo válido", sin decir cuál era la
+ * regla incumplida (¿enemigo? ¿poca Vida? ¿solo unidades?). `undefined` si el
+ * objetivo SÍ es válido.
+ */
+const cardTargetRejectionReason = (
+  state: MatchState,
+  playerId: PlayerId,
+  card: CardDefinition,
+  target: SpellTarget | undefined,
+): string | undefined => {
+  if (!spellNeedsPiece(card)) return undefined;
+  const piece = requireTargetPiece(state, target);
+  if (!piece) return 'Selecciona una ficha del tablero como objetivo.';
+  const damage = card.effects.find((effect) => effect.kind === 'damage');
+  if (damage?.kind === 'damage' && damage.target === 'enemy-piece' && piece.owner === playerId) {
+    return 'Solo puede apuntar a una ficha enemiga.';
+  }
+  if ((card.id === 'lluvia-ceniza' || card.effects.some((effect) => effect.kind === 'freeze')) && pieceDefinition(piece)?.type !== 'unit') {
+    return 'Solo puede apuntar a una unidad, no a una estructura.';
+  }
+  // Juicio Divino: solo puede destruir unidades enemigas con 2 Vida o menos.
+  if (card.id === 'juicio-divino' && piece.currentHealth > 2) {
+    return 'Solo puede destruir una unidad enemiga con 2 Vida o menos.';
+  }
+  const curseDrain = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'curse-drain-health');
+  if (curseDrain && piece.owner === playerId) return 'Solo puede apuntar a una ficha enemiga.';
+  const friendlyBuff = card.effects.some(
+    (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
+  );
+  if (friendlyBuff && piece.owner !== playerId) return 'Solo puede apuntar a una unidad aliada.';
+  const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move');
+  if (refreshMove && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) {
+    return 'Solo puede apuntar a una unidad aliada.';
+  }
+  return undefined;
+};
+
 const cardTargetIsValid = (
   state: MatchState,
   playerId: PlayerId,
   card: CardDefinition,
   target: SpellTarget | undefined,
-): boolean => {
-  if (!spellNeedsPiece(card)) return true;
-  const piece = requireTargetPiece(state, target);
-  if (!piece) return false;
-  const damage = card.effects.find((effect) => effect.kind === 'damage');
-  if (damage?.kind === 'damage' && damage.target === 'enemy-piece' && piece.owner === playerId) return false;
-  if ((card.id === 'lluvia-ceniza' || card.effects.some((effect) => effect.kind === 'freeze')) && pieceDefinition(piece)?.type !== 'unit') return false;
-  // Juicio Divino: solo puede destruir unidades enemigas con 2 Vida o menos.
-  if (card.id === 'juicio-divino' && piece.currentHealth > 2) return false;
-  const curseDrain = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'curse-drain-health');
-  if (curseDrain && piece.owner === playerId) return false;
-  const friendlyBuff = card.effects.some(
-    (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
-  );
-  if (friendlyBuff && piece.owner !== playerId) return false;
-  const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move');
-  if (refreshMove && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) return false;
-  return true;
-};
+): boolean => cardTargetRejectionReason(state, playerId, card, target) === undefined;
 
 /**
  * Todas las fichas del tablero que serían un objetivo válido para esta carta,
@@ -979,8 +1001,9 @@ export const playCard = (
     if (!isValidDeployment) {
       return fail(state, 'out-of-bounds', 'Solo puedes desplegar en tu fila inicial o junto a una unidad propia que ya haya actuado.');
     }
-  } else if (!cardTargetIsValid(state, playerId, card, target)) {
-    return fail(state, 'target-required', 'El hechizo necesita un objetivo válido.');
+  } else {
+    const rejection = cardTargetRejectionReason(state, playerId, card, target);
+    if (rejection) return fail(state, 'target-required', rejection);
   }
 
   const cost = effectiveCost(state, playerId, card);

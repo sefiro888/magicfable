@@ -89,7 +89,35 @@ describe('validSpellTargets', () => {
       target: { kind: 'piece', pieceId: 'fuerte' },
     });
     expect(result.ok).toBe(false);
-    expect(result.ok || result.error?.message).toBe('El hechizo necesita un objetivo válido.');
+    expect(result.ok || result.error?.message).toBe('Solo puede destruir una unidad enemiga con 2 Vida o menos.');
+  });
+
+  it('el mensaje de rechazo dice CUÁL es la regla incumplida, no solo que el objetivo no vale', () => {
+    const base = freshMatch();
+    const state: MatchState = {
+      ...base,
+      board: [makePiece('propia', 'sabueso-brasa', 'player', { x: 1, y: 1 })],
+      players: {
+        ...base.players,
+        player: {
+          ...base.players.player,
+          hand: [{ instanceId: 'hand-curse', cardId: 'maldicion-sombra' }],
+          resources: [
+            { instanceId: 'r1', cardId: 'fuente-furia', faction: 'shadow', exhausted: false },
+            { instanceId: 'r2', cardId: 'fuente-furia', faction: 'shadow', exhausted: false },
+            { instanceId: 'r3', cardId: 'fuente-furia', faction: 'shadow', exhausted: false },
+          ],
+        },
+      },
+    };
+    // Maldición Sombra sobre la propia ficha: el motor lo rechaza por ser
+    // propia, no por falta de objetivo — antes ambos casos decían lo mismo.
+    const result = applyAction(state, {
+      type: 'play-card', playerId: 'player', cardInstanceId: 'hand-curse',
+      target: { kind: 'piece', pieceId: 'propia' },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.ok || result.error?.message).toBe('Solo puede apuntar a una ficha enemiga.');
   });
 
   it('una carta sin objetivo no propone ninguna ficha', () => {
