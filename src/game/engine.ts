@@ -1077,12 +1077,12 @@ export const playCard = (
     if (nyxarisRush) {
       next = enqueue(next, {
         type: 'summon', actorId: playerId, targetId: piece.instanceId, to: position,
-        effectId: 'commander-void-aura', durationMs: 300,
+        effectId: 'commander-void-aura', faction: card.faction, durationMs: 300,
       });
     }
     next = enqueue(next, {
       type: 'summon', actorId: playerId, targetId: piece.instanceId, to: position,
-      effectId: card.vfx.summonEffect, durationMs: 440,
+      effectId: card.vfx.summonEffect, faction: card.faction, durationMs: 440,
     });
     if (verdaniaBonus > 0) {
       next = enqueue(next, {

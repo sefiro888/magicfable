@@ -72,6 +72,8 @@ export function BattlePage() {
     return Number.isFinite(parsed) ? parsed >>> 0 : undefined
   }, [searchParams])
   const [mulliganIds, setMulliganIds] = useState<readonly string[]>([])
+  /** Modo foto: cámara libre para admirar el tablero, sin clics de juego mientras está activo. */
+  const [photoMode, setPhotoMode] = useState(false)
   /** Cartas de la mano fijadas al principio del abanico: solo orden visual, no afecta a la partida. */
   const [favoriteHandIds, setFavoriteHandIds] = useState<ReadonlySet<string>>(new Set())
   const toggleFavoriteHand = useCallback((instanceId: string) => {
@@ -387,6 +389,7 @@ export function BattlePage() {
   const inspectCard = useCallback((cardId?: string) => useMatchStore.getState().inspect(cardId), [])
 
   const onCell = useCallback((position: Position) => {
+    if (photoMode) return
     if (selectedInstance && selectedCard && isBoardCard(selectedCard)) {
       if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' } })) finishSelection()
       return
@@ -394,10 +397,10 @@ export function BattlePage() {
     if (selectedPiece && moves.some((cell) => cell.x === position.x && cell.y === position.y)) {
       if (doAction({ type: 'move', playerId: ME, pieceId: selectedPiece.instanceId, to: position })) finishSelection()
     }
-  }, [selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME])
+  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME])
 
   const onPiece = useCallback((pieceId: string) => {
-    if (!match) return
+    if (photoMode || !match) return
     const piece = match.board.find((candidate) => candidate.instanceId === pieceId)
     if (!piece) return
     if (match.activePlayer === ME) {
@@ -419,13 +422,14 @@ export function BattlePage() {
     // turno, para poder planear mientras observas la jugada del rival.
     const state = useMatchStore.getState()
     state.viewPiece(state.viewedPieceId === pieceId ? undefined : pieceId)
-  }, [match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection, ME, store.selectedPieceId])
+  }, [photoMode, match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection, ME, store.selectedPieceId])
 
   const onNexus = useCallback((playerId: PlayerId) => {
+    if (photoMode) return
     if (playerId === RIVAL && selectedPiece && attacks.canAttackNexus) {
       if (doAction({ type: 'attack-nexus', playerId: ME, attackerId: selectedPiece.instanceId })) finishSelection()
     }
-  }, [selectedPiece, attacks, doAction, finishSelection, ME, RIVAL])
+  }, [photoMode, selectedPiece, attacks, doAction, finishSelection, ME, RIVAL])
 
   const endTurn = useCallback(() => {
     if (doAction({ type: 'end-turn', playerId: ME })) finishSelection()
@@ -495,6 +499,7 @@ export function BattlePage() {
     setMulliganIds([])
     setFavoriteHandIds(new Set())
     setUndoState(undefined)
+    setPhotoMode(false)
     ai.reset()
     recorder.reset()
     director.resetBanners()
@@ -647,6 +652,7 @@ export function BattlePage() {
             onHoverPiece={onHoverPiece}
             onHoverNexus={onHoverNexus}
             attackPreview={attackPreview}
+            photoMode={photoMode}
             reducedMotion={preferences.reducedMotion}
             quality={preferences.graphicsQuality}
             scenario={preferences.scenario}
@@ -818,6 +824,23 @@ export function BattlePage() {
       >
         ⛨
       </button>
+
+      <button
+        className={styles.photoModeButton}
+        type="button"
+        data-active={photoMode || undefined}
+        onClick={() => setPhotoMode((current) => !current)}
+        aria-pressed={photoMode}
+        aria-label={photoMode ? 'Salir del modo foto' : 'Modo foto: cámara libre para admirar el tablero'}
+        title={photoMode ? 'Salir del modo foto' : 'Modo foto: cámara libre para admirar el tablero, sin poder jugar mientras está activo'}
+      >
+        📷
+      </button>
+      {photoMode && (
+        <div className={styles.photoModeHint} role="status">
+          Modo foto: mueve la cámara libremente. Pulsa 📷 para volver a jugar.
+        </div>
+      )}
 
       <button
         className={styles.helpButton}

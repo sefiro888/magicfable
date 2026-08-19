@@ -252,6 +252,15 @@ export interface AnimationEvent {
   readonly to?: Position;
   readonly amount?: number;
   readonly effectId?: string;
+  /**
+   * Facción de la carta que origina el evento, cuando aplica (por ahora solo
+   * al invocar). Antes la presentación adivinaba el tono por palabras clave
+   * del `effectId` (p. ej. "azur" → arcano), un heurístico de 4 cubos que
+   * dejaba fuera facciones enteras (Naturaleza, Orden, Sombra, Vacío caían
+   * todas al dorado por defecto); con la facción real, el color del efecto
+   * es exacto para las seis.
+   */
+  readonly faction?: FactionId;
   readonly durationMs: number;
 }
 

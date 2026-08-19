@@ -2,16 +2,33 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, PointLight } from 'three'
-import type { AnimationEvent, Position } from '../game'
+import type { AnimationEvent, FactionId, Position } from '../game'
 import {
   gridToWorldX as boardX,
   gridToWorldZ as boardZ,
   NEXUS_WORLD as NEXUS_POSITION,
 } from './grid/gridCoordinates'
-import { glowTexture } from './textures'
+import { glowTexture, type GlowTint } from './textures'
 
-/** Deduce el tono cromático del efecto a partir de su identificador declarativo. */
-const toneOf = (effectId?: string): string => {
+/** Color y textura de brillo por facción — a juego con `accentColor` en `factions.ts`. */
+const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonly glow: GlowTint }>> = {
+  fury: { color: '#ff8a3d', glow: 'ember' },
+  arcane: { color: '#79c8ff', glow: 'arcane' },
+  nature: { color: '#a7db67', glow: 'nature' },
+  order: { color: '#f2cf68', glow: 'gold' },
+  shadow: { color: '#b98ee0', glow: 'shadow' },
+  void: { color: '#c775ff', glow: 'void' },
+}
+
+/**
+ * Deduce el tono cromático del efecto. Con la facción real del evento (solo
+ * disponible al invocar, ver `AnimationEvent.faction`) el color es exacto;
+ * para el resto de eventos (ataques, impactos...) se mantiene el heurístico
+ * por palabras clave del `effectId` de antes — un cubo de 4 tonos que, para
+ * lo que hace (aproximar sin datos mejores), sigue sirviendo.
+ */
+const toneOf = (effectId?: string, faction?: FactionId): string => {
+  if (faction) return FACTION_TONE[faction].color
   const id = effectId ?? ''
   if (/(frost|ice|glacial|freeze|escarcha)/.test(id)) return '#a8ecff'
   if (/(fire|ember|fury|magma|caldera|ash|forge|rage|cinder|slag|basalt|siege|eruption|volcanic|heat)/.test(id)) return '#ff8a3d'
@@ -19,7 +36,11 @@ const toneOf = (effectId?: string): string => {
   return '#e9c474'
 }
 
-const glowFor = (tone: string) => (tone === '#ff8a3d' ? glowTexture('ember') : tone === '#e9c474' ? glowTexture('gold') : glowTexture('arcane'))
+const glowFor = (tone: string): ReturnType<typeof glowTexture> => {
+  const byFaction = Object.values(FACTION_TONE).find((entry) => entry.color === tone)
+  if (byFaction) return glowTexture(byFaction.glow)
+  return tone === '#ff8a3d' ? glowTexture('ember') : tone === '#e9c474' ? glowTexture('gold') : glowTexture('arcane')
+}
 
 interface TimedProps {
   readonly durationMs: number
@@ -280,7 +301,7 @@ interface EventEffectsProps {
  */
 export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
-  const tone = toneOf(event.effectId)
+  const tone = toneOf(event.effectId, event.faction)
   switch (event.type) {
     case 'summon':
       return event.to ? <SummonColumn cell={event.to} tone={tone} timing={timing} /> : null

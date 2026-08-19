@@ -829,22 +829,33 @@ export const cloudTexture = (): CanvasTexture => {
 };
 
 /** Halo radial suave para llamas, brasas y auras. */
-export const glowTexture = (tint: 'ember' | 'arcane' | 'gold'): CanvasTexture => {
+/** Tonos disponibles para `glowTexture`: uno por facción (más el genérico "gold" de Orden). */
+export type GlowTint = 'ember' | 'arcane' | 'gold' | 'nature' | 'shadow' | 'void';
+
+/** Tres paradas de degradado radial (centro, medio, borde) por cada tinte, en `rgba()`. */
+const GLOW_COLORS: Readonly<Record<GlowTint, readonly [string, string, string]>> = {
+  ember: ['rgba(255, 236, 190, 0.95)', 'rgba(255, 138, 61, 0.55)', 'rgba(200, 50, 20, 0)'],
+  arcane: ['rgba(226, 250, 255, 0.95)', 'rgba(105, 205, 255, 0.5)', 'rgba(40, 90, 200, 0)'],
+  gold: ['rgba(255, 248, 218, 0.95)', 'rgba(233, 196, 116, 0.5)', 'rgba(160, 110, 40, 0)'],
+  // Naturaleza: verde hoja, a juego con el acento de la facción (#a7db67).
+  nature: ['rgba(232, 250, 210, 0.95)', 'rgba(167, 219, 103, 0.55)', 'rgba(57, 117, 58, 0)'],
+  // Sombra: violeta apagado y oscuro, a juego con su acento (#8d51aa).
+  shadow: ['rgba(232, 210, 245, 0.9)', 'rgba(141, 81, 170, 0.55)', 'rgba(38, 29, 45, 0)'],
+  // Vacío: magenta vivo, a juego con su acento (#c775ff) — más luminoso que Sombra para distinguirlas.
+  void: ['rgba(245, 220, 255, 0.95)', 'rgba(199, 117, 255, 0.6)', 'rgba(89, 50, 125, 0)'],
+};
+
+export const glowTexture = (tint: GlowTint): CanvasTexture => {
   const key = `glow-${tint}`;
   const cached = cache.get(key);
   if (cached) return cached;
   const size = 128;
   const [canvas, context] = makeCanvas(size);
-  const colors =
-    tint === 'ember'
-      ? ['rgba(255, 236, 190, 0.95)', 'rgba(255, 138, 61, 0.55)', 'rgba(200, 50, 20, 0)']
-      : tint === 'arcane'
-        ? ['rgba(226, 250, 255, 0.95)', 'rgba(105, 205, 255, 0.5)', 'rgba(40, 90, 200, 0)']
-        : ['rgba(255, 248, 218, 0.95)', 'rgba(233, 196, 116, 0.5)', 'rgba(160, 110, 40, 0)'];
+  const colors = GLOW_COLORS[tint];
   const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  gradient.addColorStop(0, colors[0]!);
-  gradient.addColorStop(0.4, colors[1]!);
-  gradient.addColorStop(1, colors[2]!);
+  gradient.addColorStop(0, colors[0]);
+  gradient.addColorStop(0.4, colors[1]);
+  gradient.addColorStop(1, colors[2]);
   context.fillStyle = gradient;
   context.fillRect(0, 0, size, size);
   return finishTexture(key, canvas);

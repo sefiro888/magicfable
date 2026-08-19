@@ -43,3 +43,31 @@ test('fijar una carta la mueve al principio del abanico', async ({ page }) => {
   await expect(cards.nth(0).locator('[class*="favoriteToggle"]')).toHaveAttribute('data-favorite', 'true')
   expect(await cardName(cards.nth(0))).toBe(lastName)
 })
+
+test('modo foto muestra el aviso y bloquea el despliegue en el tablero', async ({ page }) => {
+  test.setTimeout(60_000)
+  await enterBattle(page)
+  await page.keyboard.press('Control+Shift+KeyD')
+  const essence = page.getByRole('button', { name: '+1 Esencia' })
+  await essence.waitFor({ state: 'visible' })
+  for (let i = 0; i < 8; i += 1) await essence.click()
+
+  const toggle = page.getByRole('button', { name: /Modo foto/i })
+  await toggle.click()
+  await expect(page.getByRole('status').filter({ hasText: 'Modo foto' })).toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+
+  // Con el modo foto activo, un clic en el tablero no debe desplegar nada.
+  const unit = page.locator('[class*="fanCard"]').filter({ hasText: /Unidad/ }).first()
+  await unit.click()
+  const board = page.getByTestId('battle-board')
+  await board.click({ position: { x: 640, y: 380 } })
+  await page.waitForTimeout(400)
+  await expect(page.getByText(/entra en juego/i)).toHaveCount(0)
+
+  // Al salir, el mismo clic sí despliega la unidad seleccionada.
+  await page.getByRole('button', { name: /Salir del modo foto/i }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Modo foto' })).toBeHidden()
+  await board.click({ position: { x: 640, y: 380 } })
+  await expect(page.getByText(/entra en juego/i).first()).toBeVisible({ timeout: 10_000 })
+})

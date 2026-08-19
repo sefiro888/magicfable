@@ -65,6 +65,8 @@ interface Board3DProps {
   attackPreview?: { readonly targetId: string; readonly lines: readonly string[] }
   /** Hay una carta en la mano siendo arrastrada: la cámara no debe orbitar. */
   dragging?: boolean
+  /** Modo foto: cámara libre para admirar el tablero, sin límites de ángulo/distancia ni clics de juego. */
+  photoMode?: boolean
   reducedMotion: boolean
   quality: GraphicsQuality
   scenario: ScenarioId
@@ -895,7 +897,20 @@ function Scene(props: Board3DProps) {
       )}
       {/* Con una carta en la mano siendo arrastrada, orbitar convertiría el
           gesto de soltarla en un giro de cámara. */}
-      <OrbitControls makeDefault enabled={!props.dragging} enablePan={false} enableZoom minPolarAngle={0.72} maxPolarAngle={1.03} minDistance={CAMERA_MIN_DISTANCE} maxDistance={CAMERA_MAX_DISTANCE} target={[...CAMERA_TARGET]} />
+      {/* Modo foto: se sueltan los límites de ángulo/distancia (pensados para
+          mantener siempre el tablero legible durante la partida) y se
+          permite desplazar la cámara, no solo orbitar. */}
+      <OrbitControls
+        makeDefault
+        enabled={!props.dragging}
+        enablePan={Boolean(props.photoMode)}
+        enableZoom
+        minPolarAngle={props.photoMode ? 0.08 : 0.72}
+        maxPolarAngle={props.photoMode ? Math.PI - 0.08 : 1.03}
+        minDistance={props.photoMode ? 3 : CAMERA_MIN_DISTANCE}
+        maxDistance={props.photoMode ? 26 : CAMERA_MAX_DISTANCE}
+        target={[...CAMERA_TARGET]}
+      />
     </>
   )
 }
