@@ -133,12 +133,22 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
         const result = mulliganOpeningHand(match, 'ai', intent.ids)
         if (result.ok) {
           store.replaceMatch(result.state, intent.ids.length > 0 ? 'Se ajusta la mano inicial.' : 'Se conserva la mano inicial.')
+        } else {
+          // Sin este aviso, un mulligan rechazado (p. ej. por una petición
+          // duplicada tras un reintento) dejaba al invitado con el modal
+          // abierto para siempre y sin ninguna pista de qué había pasado —
+          // la única rama de las tres que no avisaba del rechazo.
+          room.send('error', result.error?.message ?? 'No se pudo completar el mulligan.')
         }
         return
       }
       if (intent.kind === 'scry') {
         const result = reorderTopCards(match, 'ai', intent.order)
-        if (result.ok) store.replaceMatch(result.state, 'Se resuelve el escrutinio del mazo.')
+        if (result.ok) {
+          store.replaceMatch(result.state, 'Se resuelve el escrutinio del mazo.')
+        } else {
+          room.send('error', result.error?.message ?? 'No se pudo reordenar el mazo.')
+        }
       }
     })
 

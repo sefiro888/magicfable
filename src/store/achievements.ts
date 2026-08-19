@@ -1,5 +1,5 @@
 import { STARTER_DECKS } from '../game'
-import { currentStreak, type MatchRecord } from './records'
+import { currentStreak, pvpRecords, type MatchRecord } from './records'
 
 export interface Achievement {
   readonly id: string
@@ -28,6 +28,9 @@ export const evaluateAchievements = (records: readonly MatchRecord[]): readonly 
     undefined,
   )
   const totalFactions = STARTER_DECKS.length
+  const longestWin = wins.reduce((best, record) => Math.max(best, record.turns), 0)
+  const hardestHit = records.reduce((best, record) => Math.max(best, record.damageDealt), 0)
+  const pvpWins = pvpRecords(records).filter((record) => record.won).length
 
   const define = (id: string, name: string, description: string, icon: string, value: number, goal: number): Achievement => ({
     id, name, description, icon, unlocked: value >= goal, progress: ratio(value, goal),
@@ -40,5 +43,11 @@ export const evaluateAchievements = (records: readonly MatchRecord[]): readonly 
     define('relampago', 'Victoria relámpago', 'Gana una partida en 8 turnos o menos.', '⚡', fastestWin !== undefined && fastestWin <= 8 ? 1 : 0, 1),
     define('explorador', 'Explorador de facciones', 'Juega con las seis facciones.', '🧭', factionsPlayed.size, totalFactions),
     define('maestro', 'Maestro del Nexo', 'Gana con las seis facciones.', '👑', factionsWon.size, totalFactions),
+    define('devastacion', 'Devastación total', 'Inflige 35 o más de daño en total durante una sola partida.', '💥', hardestHit, 35),
+    define('guerra-desgaste', 'Guerra de desgaste', 'Gana una partida de 20 turnos o más.', '⏳', longestWin, 20),
+    define('curtido', 'Veterano curtido', 'Juega 30 escaramuzas.', '🎖️', records.length, 30),
+    define('racha-legendaria', 'Racha legendaria', 'Encadena 5 victorias seguidas.', '🌟', bestStreak, 5),
+    define('duelista', 'Duelista', 'Gana tu primera partida contra otra persona.', '🤝', pvpWins, 1),
+    define('cronista', 'Cronista del Nexo', 'Acumula 25 victorias.', '📜', wins.length, 25),
   ]
 }

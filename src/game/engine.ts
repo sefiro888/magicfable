@@ -549,7 +549,7 @@ const requireTargetPiece = (
 const healNexus = (state: MatchState, playerId: PlayerId, amount: number): MatchState => {
   if (amount <= 0) return state;
   const player = state.players[playerId];
-  const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 25;
+  const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 35;
   return withPlayer(state, playerId, { ...player, nexusHealth: Math.min(maximum, player.nexusHealth + amount) });
 };
 
