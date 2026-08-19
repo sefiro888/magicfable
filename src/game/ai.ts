@@ -8,6 +8,7 @@ import {
   getValidDeploymentPositions,
   getValidMoves,
   spellNeedsPiece,
+  validSpellTargets,
 } from './engine';
 import { planManaPayment } from './mana';
 import type {
@@ -101,12 +102,13 @@ const stableTieBreaker = (value: string, seed: number): number => {
 };
 
 const chooseEnemyTarget = (state: MatchState, card: CardDefinition, me: PlayerId): BoardPiece | undefined => {
-  const enemies = state.board.filter((piece) => piece.owner === rivalOf(me));
-  // El motor rechaza estos hechizos sobre estructuras; filtrar aquí evita gastar el turno en una acción inválida.
-  const unitsOnly = card.id === 'lluvia-ceniza' || card.effects.some((effect) => effect.kind === 'freeze');
-  const allowed = unitsOnly
-    ? enemies.filter((piece) => CARD_BY_ID[piece.cardId]?.type === 'unit')
-    : enemies;
+  // `validSpellTargets` es la misma comprobación que usa el motor para
+  // aceptar la jugada, así que ya filtra estructuras cuando el hechizo las
+  // rechaza, y también casos por carta (Juicio Divino solo contra 2 Vida o
+  // menos) que antes esta función no conocía — la IA podía elegir un
+  // objetivo que el motor iba a rechazar siempre, con el mismo riesgo de
+  // bucle que tuvo Maldición Sombra.
+  const allowed = validSpellTargets(state, me, card).filter((piece) => piece.owner !== me);
   return [...allowed].sort((left, right) => {
     const leftCard = CARD_BY_ID[left.cardId];
     const rightCard = CARD_BY_ID[right.cardId];

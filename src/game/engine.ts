@@ -902,6 +902,32 @@ const cardTargetIsValid = (
 };
 
 /**
+ * Todas las fichas del tablero que serían un objetivo válido para esta carta,
+ * jugada por `playerId`. Fuente única de verdad para "qué se resalta como
+ * objetivo": antes `BattlePage.tsx` mantenía su propio filtro a mano
+ * (enemyOnly/friendlyOnly/unitsOnly) que no conocía dos reglas reales del
+ * motor — Maldición Sombra solo vale contra enemigos (resaltaba también las
+ * propias) y Juicio Divino solo contra enemigos con 2 Vida o menos (resaltaba
+ * cualquier enemigo). Clicar una ficha resaltada así fallaba igual que
+ * clicar una que no lo estuviera, sin que nada lo explicara.
+ *
+ * Reutiliza `cardTargetIsValid` ficha por ficha en vez de reimplementar sus
+ * reglas: cualquier caso especial que se añada ahí (como el de Juicio Divino)
+ * queda cubierto aquí automáticamente, sin necesidad de acordarse de tocar
+ * un segundo sitio.
+ */
+export const validSpellTargets = (
+  state: MatchState,
+  playerId: PlayerId,
+  card: CardDefinition,
+): readonly BoardPiece[] => {
+  if (!spellNeedsPiece(card)) return [];
+  return state.board.filter((piece) =>
+    cardTargetIsValid(state, playerId, card, { kind: 'piece', pieceId: piece.instanceId }),
+  );
+};
+
+/**
  * Coste efectivo de una carta tras aplicar descuentos activos:
  * Archivo Viviente (hechizos) y la pasiva de Kaela (unidades).
  */

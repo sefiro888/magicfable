@@ -13,6 +13,7 @@ import {
   reorderTopCards,
   STARTER_DECKS,
   summarizeMana,
+  validSpellTargets,
   type GameAction,
   type MatchState,
   type PlayerId,
@@ -241,21 +242,18 @@ export function BattlePage() {
   const storedRecords = useRecords((state) => state.records)
   const tally = useMemo(() => summarizeRecords(storedRecords), [storedRecords])
   const daily = useMemo(() => evaluateDailyChallenge(storedRecords), [storedRecords])
+  // Antes esto reimplementaba a mano las reglas de objetivo (enemigo, propio,
+  // solo unidades...) y se desincronizó del motor en dos cartas reales:
+  // Maldición Sombra resaltaba también las fichas propias, y Juicio Divino
+  // resaltaba cualquier enemigo en vez de solo los de 2 Vida o menos —
+  // clicar una ficha "válida" así fallaba igual que una que no lo fuera, sin
+  // explicación. `validSpellTargets` es la misma comprobación que usa el
+  // motor para aceptar o rechazar la jugada, así que nunca puede
+  // desincronizarse de ella.
   const spellTargets = useMemo(() => {
-    if (!match || !selectedCard || !requiresPieceTarget(selectedCard)) return []
-    const friendlyOnly = selectedCard.effects.some((effect) =>
-      effect.kind === 'refresh-move' ||
-      (effect.kind === 'passive' && effect.id === 'target-attack-until-end'))
-    const enemyOnly = selectedCard.effects.some((effect) => effect.kind === 'damage' && effect.target === 'enemy-piece')
-    const unitsOnly = selectedCard.effects.some((effect) => effect.kind === 'freeze' || effect.kind === 'refresh-move') || selectedCard.id === 'lluvia-ceniza'
-    return match.board.filter((piece) => {
-      const definition = CARD_BY_ID[piece.cardId]
-      if (unitsOnly && definition?.type !== 'unit') return false
-      if (friendlyOnly) return piece.owner === ME
-      if (enemyOnly) return piece.owner === RIVAL
-      return true
-    }).map((piece) => piece.instanceId)
-  }, [match, selectedCard, ME, RIVAL])
+    if (!match || !selectedCard) return []
+    return validSpellTargets(match, ME, selectedCard).map((piece) => piece.instanceId)
+  }, [match, selectedCard, ME])
 
   const boardTargets = useMemo(() => {
     const base = selectedCard ? spellTargets : attacks.pieceIds
