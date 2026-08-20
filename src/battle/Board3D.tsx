@@ -1,7 +1,7 @@
 import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
+import { DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
@@ -378,6 +378,18 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             Caldera las unidades salían casi negras — ilegibles en la captura
             real. Así la ilustración se lee igual en los tres escenarios sin
             tocar la iluminación de ninguno. */}
+        {/* `side={DoubleSide}`: un <planeGeometry> solo pinta su cara
+            "delantera" — sin esto, orbitando la cámara hacia el otro lado del
+            tablero (algo que OrbitControls siempre ha permitido, no hace
+            falta el modo foto) la carta se veía completamente en blanco
+            desde atrás. Verificado numéricamente antes de tocarlo (misma
+            disciplina que la vez que el giro condicional dejó el arte al
+            revés): ninguna rotación puede mostrar la imagen sin invertir ni
+            "arriba" ni "derecha" a la vez desde el lado opuesto — es
+            geometría, no un descuido — así que la única forma de que se vea
+            bien desde los dos lados sin duplicar la malla es pintar las dos
+            caras del mismo plano. Se ve en espejo desde atrás (como
+            cualquier banderola de doble cara), pero nunca en blanco. */}
         <mesh position={[0, 0.038, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.73, 0.9]} />
           <meshStandardMaterial
@@ -387,12 +399,13 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             emissiveIntensity={spent ? 0.3 : 0.6}
             roughness={0.62}
             color={frozen ? '#9fd4ef' : spent ? '#8f8f96' : '#ffffff'}
+            side={DoubleSide}
           />
         </mesh>
         {frozen && (
           <mesh position={[0, 0.075, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[0.83, 1.02]} />
-            <meshStandardMaterial color="#bdeaff" transparent opacity={0.32} roughness={0.2} metalness={0.4} emissive="#9fd8ff" emissiveIntensity={0.5} />
+            <meshStandardMaterial color="#bdeaff" transparent opacity={0.32} roughness={0.2} metalness={0.4} emissive="#9fd8ff" emissiveIntensity={0.5} side={DoubleSide} />
           </mesh>
         )}
       </group>
