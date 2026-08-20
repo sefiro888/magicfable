@@ -24,6 +24,7 @@ import {
 import { Board3D } from '../battle/Board3D'
 import { useAiTurn } from '../battle/hooks/useAiTurn'
 import { useCardDrag } from '../battle/hooks/useCardDrag'
+import { useBoardCursor } from '../battle/hooks/useBoardCursor'
 import { useEventDirector } from '../battle/hooks/useEventDirector'
 import { useMatchRecorder } from '../battle/hooks/useMatchRecorder'
 import { downloadMatchLog } from '../battle/matchLog'
@@ -35,6 +36,7 @@ import { GlossaryPanel } from '../battle/ui/GlossaryPanel'
 import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { FactionSigil } from '../components'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
+import { useSoundtrack } from '../services/useAudioMix'
 import { useMatchStore } from '../store/match'
 import { useNetworkStore } from '../store/network'
 import { usePreferences } from '../store/preferences'
@@ -132,6 +134,9 @@ export function BattlePage() {
   // (escrutinio, revelaciones): todo eso vive en su propio hook.
   const director = useEventDirector(ME, preferences)
   const scryOpen = director.scryAmount > 0
+
+  // Capa ambiental generativa del escenario activo (se apaga sola al salir).
+  useSoundtrack(preferences.scenario, Boolean(match))
 
   const recorder = useMatchRecorder({
     me: ME,
@@ -431,6 +436,25 @@ export function BattlePage() {
     }
   }, [photoMode, selectedPiece, attacks, doAction, finishSelection, ME, RIVAL])
 
+  // ── Cursor de teclado sobre el tablero ────────────────────────────────────
+  // Se apaga solo mientras haya un modal por encima (mulligan, escrutinio,
+  // guía) o en modo foto: ahí las flechas pertenecen a esa otra interfaz.
+  const cursorEnabled = Boolean(match) && !match?.winner && !photoMode && !scryOpen && !howToOpen
+    && !(match && canTakeMulligan(match, ME))
+  const cursorHome = useMemo(() => {
+    const own = match?.board.filter((piece) => piece.owner === ME) ?? []
+    return own[0]?.position
+  }, [match?.board, ME])
+  const boardCursor = useBoardCursor({
+    enabled: cursorEnabled,
+    me: ME,
+    board: match?.board ?? [],
+    home: cursorHome,
+    onCell,
+    onPiece,
+    onNexus,
+  })
+
   const endTurn = useCallback(() => {
     if (doAction({ type: 'end-turn', playerId: ME })) finishSelection()
   }, [doAction, finishSelection, ME])
@@ -659,7 +683,11 @@ export function BattlePage() {
             quality={preferences.graphicsQuality}
             scenario={preferences.scenario}
             activeEvent={currentEvent}
+            cursorCell={boardCursor.cell}
           />
+          {/* Voz del cursor de teclado para lectores de pantalla: el tablero 3D
+              es un lienzo WebGL, así que su contenido no existe como texto. */}
+          <p className={styles.srOnly} role="status" aria-live="polite">{boardCursor.announcement}</p>
           {director.banner && <div className={styles.turnBanner} role="status">{director.banner}</div>}
           {director.eventBanner && <div key={director.eventBanner} className={styles.eventBanner} role="status">{director.eventBanner}</div>}
           {queueBusy && pendingCount >= 2 && (

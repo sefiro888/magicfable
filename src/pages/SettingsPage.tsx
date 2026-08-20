@@ -1,3 +1,4 @@
+import { playSynthCue, resumeAudio } from '../services/audio'
 import { usePreferences, type AiDifficulty, type GraphicsQuality, type ScenarioId } from '../store/preferences'
 import styles from './SettingsPage.module.css'
 
@@ -44,7 +45,7 @@ export function SettingsPage() {
       <header className={styles.header}><small>Preferencias locales</small><h1>Ajustes</h1><p>Los cambios se guardan automáticamente en este dispositivo.</p></header>
       <div className={styles.panel}>
         <section className={styles.section}>
-          <h2>Sonido</h2><p>Mezcla los avisos sintetizados del prototipo.</p>
+          <h2>Sonido</h2><p>Todo el audio se sintetiza en el momento: los efectos de combate y una capa ambiental generativa distinta para cada escenario. «Música» a cero apaga solo el fondo.</p>
           {volumes.map(([key, label]) => (
             <div className={styles.control} key={key}>
               <label htmlFor={key}>{label}</label>
@@ -52,6 +53,13 @@ export function SettingsPage() {
               <output>{Math.round(settings[key] * 100)}%</output>
             </div>
           ))}
+          <div className={styles.control}>
+            <label htmlFor="sound-test">Probar la mezcla</label>
+            <button id="sound-test" type="button" className={styles.select} onClick={() => { resumeAudio(); playSynthCue('impact') }}>
+              Reproducir un golpe
+            </button>
+            <output>Comprueba el nivel sin entrar en una partida.</output>
+          </div>
           <div className={styles.toggleRow}><span><strong>Silenciar todo</strong><small>Conserva tus niveles de mezcla.</small></span><button className={styles.toggle} data-on={settings.muted} onClick={() => settings.setMuted(!settings.muted)} aria-label="Silenciar todo" aria-pressed={settings.muted} /></div>
         </section>
         <section className={styles.section}>

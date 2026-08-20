@@ -88,7 +88,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     const state = useMatchStore.getState()
     const cue = cueForEvent(currentEvent, me)
     if (cue && !preferences.muted) {
-      playSynthCue(cue, preferences.masterVolume * preferences.effectsVolume)
+      playSynthCue(cue)
     }
     // Los canales laterales actualizan estado de React fuera del cuerpo del
     // efecto para no encadenar renders síncronos.

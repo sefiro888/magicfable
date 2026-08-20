@@ -34,7 +34,7 @@ export function PlayPage() {
   const deck = useMemo(() => STARTER_DECKS.find((candidate) => candidate.id === preferences.selectedDeckId) ?? STARTER_DECKS[0], [preferences.selectedDeckId])
 
   const start = () => {
-    if (!preferences.muted) playSynthCue('ui', preferences.masterVolume * preferences.effectsVolume)
+    if (!preferences.muted) playSynthCue('ui')
     navigate('/battle')
   }
 

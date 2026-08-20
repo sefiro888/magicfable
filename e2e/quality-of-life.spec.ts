@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 /** Enters a fresh battle past the welcome guide and mulligan. */
-const enterBattle = async (page: Page) => {
-  await page.goto('/battle')
+const enterBattle = async (page: Page, seed?: number) => {
+  await page.goto(seed === undefined ? '/battle' : `/battle?seed=${seed}`)
   await page.getByRole('button', { name: /Entendido, a jugar/i }).click()
   const keep = page.getByRole('button', { name: /Conservar las cinco/i })
   await keep.click()
@@ -69,5 +69,46 @@ test('modo foto muestra el aviso y bloquea el despliegue en el tablero', async (
   await page.getByRole('button', { name: /Salir del modo foto/i }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Modo foto' })).toBeHidden()
   await board.click({ position: { x: 640, y: 380 } })
+  await expect(page.getByText(/entra en juego/i).first()).toBeVisible({ timeout: 10_000 })
+})
+
+test('el cursor de teclado recorre el tablero y lo anuncia por casillas', async ({ page }) => {
+  await enterBattle(page)
+  const cursor = page.locator('[role="status"][aria-live="polite"]')
+  // Apagado hasta la primera flecha: jugando con ratón no molesta.
+  await expect(cursor).toHaveText('')
+  await page.keyboard.press('ArrowUp')
+  await expect(cursor).toHaveText(/^D8,/)
+  await page.keyboard.press('ArrowUp')
+  await expect(cursor).toHaveText(/^D7,/)
+  await page.keyboard.press('ArrowRight')
+  await expect(cursor).toHaveText(/^E7,/)
+  await page.keyboard.press('ArrowLeft')
+  await page.keyboard.press('ArrowLeft')
+  await expect(cursor).toHaveText(/^C7,/)
+  await page.keyboard.press('Escape')
+  await expect(cursor).toHaveText('')
+})
+
+test('con el teclado se despliega una carta de la mano en su casilla', async ({ page }) => {
+  test.setTimeout(120_000)
+  // Semilla fija: la mano inicial debe traer sí o sí una unidad desplegable.
+  await enterBattle(page, 1311657807)
+  // Esencia suficiente para desplegar ya en el primer turno (panel de desarrollo).
+  await page.keyboard.press('Control+Shift+KeyD')
+  const essence = page.getByRole('button', { name: '+1 Esencia' })
+  await essence.waitFor({ state: 'visible' })
+  for (let i = 0; i < 8; i += 1) await essence.click()
+  await page.keyboard.press('Control+Shift+KeyD')
+
+  const unit = page.locator('[class*="fanCard"]').filter({ hasText: /Unidad/ }).first()
+  await expect(unit).toBeVisible()
+  await unit.click()
+
+  // El cursor arranca en la fila propia: ahí es donde se despliega.
+  const cursor = page.locator('[role="status"][aria-live="polite"]')
+  await page.keyboard.press('ArrowUp')
+  await expect(cursor).toHaveText(/casilla vacía/)
+  await page.keyboard.press('Enter')
   await expect(page.getByText(/entra en juego/i).first()).toBeVisible({ timeout: 10_000 })
 })

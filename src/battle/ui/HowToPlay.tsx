@@ -84,6 +84,15 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
             </li>
           ))}
         </ol>
+        <section className={styles.shortcuts}>
+          <h3>También se juega con el teclado</h3>
+          <ul>
+            <li><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> mueven el cursor por el tablero</li>
+            <li><kbd>Enter</kbd> actúa en la casilla enfocada (elegir, mover, atacar o desplegar)</li>
+            <li><kbd>N</kbd> ataca al Nexo rival con la unidad elegida</li>
+            <li><kbd>E</kbd> cede el turno · <kbd>I</kbd> ficha de la carta · <kbd>H</kbd> esconde la mano · <kbd>Esc</kbd> cancela</li>
+          </ul>
+        </section>
         <button ref={closeRef} className={styles.confirm} type="button" onClick={onClose}>
           Entendido, a jugar
         </button>

@@ -76,6 +76,8 @@ interface Board3DProps {
   scenario: ScenarioId
   /** Evento visual en reproducción, entregado por el director de animaciones. */
   activeEvent?: AnimationEvent
+  /** Casilla enfocada con el teclado (flechas). Undefined = se está jugando con ratón. */
+  cursorCell?: Position
 }
 
 const boardX = gridToWorldX
@@ -133,6 +135,32 @@ const ZONE_TINTS = {
  * estable solo se re-renderiza cuando cambia su propio estado (válida,
  * ocupada, abrasada), no en cada evento visual de la partida.
  */
+/**
+ * Marco de foco del cursor de teclado. Late despacio para que se distinga de
+ * los realces de "casilla válida" (que son fijos) sin llamar más la atención
+ * que la propia jugada; con movimiento reducido se queda quieto.
+ */
+const CursorMarker = memo(function CursorMarker({ position, reducedMotion }: { position: Position; reducedMotion: boolean }) {
+  const ring = useRef<Mesh>(null)
+  useFrame(({ clock }) => {
+    if (!ring.current || reducedMotion) return
+    const pulse = 1 + Math.sin(clock.elapsedTime * 3.4) * 0.06
+    ring.current.scale.setScalar(pulse)
+  })
+  return (
+    <group position={[boardX(position.x), 0.16, boardZ(position.y)]}>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[TILE_SIZE * 0.46, TILE_SIZE * 0.56, 4, 1, Math.PI / 4]} />
+        <meshBasicMaterial color="#ffe27a" transparent opacity={0.95} depthWrite={false} depthTest={false} side={DoubleSide} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+        <ringGeometry args={[0, TILE_SIZE * 0.5, 24]} />
+        <meshBasicMaterial color="#ffd25a" transparent opacity={0.16} depthWrite={false} depthTest={false} side={DoubleSide} />
+      </mesh>
+    </group>
+  )
+})
+
 const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
@@ -868,6 +896,7 @@ function Scene(props: Board3DProps) {
           />
         )
       })}
+      {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} />}
       <Midline />
       <Suspense fallback={null}>
         {props.state.board.map((piece) => (

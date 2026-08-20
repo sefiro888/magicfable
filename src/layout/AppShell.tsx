@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { usePreferences } from '../store/preferences'
 import { playSynthCue } from '../services/audio'
+import { useAudioMix } from '../services/useAudioMix'
 import { AchievementToast } from '../components/AchievementToast'
 import styles from './AppShell.module.css'
 
@@ -14,11 +15,12 @@ const links = [
 
 export function AppShell() {
   const location = useLocation()
-  const { muted, effectsVolume, masterVolume, setMuted } = usePreferences()
+  const { muted, setMuted } = usePreferences()
+  useAudioMix()
   const isBattle = location.pathname === '/battle'
 
   const toggleSound = () => {
-    if (muted) playSynthCue('ui', effectsVolume * masterVolume)
+    if (muted) playSynthCue('ui')
     setMuted(!muted)
   }
 
