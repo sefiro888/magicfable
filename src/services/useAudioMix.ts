@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { resumeAudio, setAudioMix, startAmbientMusic, stopAmbientMusic, type MusicTheme } from './audio'
+import { currentMusicTheme, resumeAudio, setAudioMix, startAmbientMusic, stopAmbientMusic, type MusicTheme } from './audio'
 import { usePreferences } from '../store/preferences'
 
 /**
@@ -46,19 +46,26 @@ export const useSoundtrack = (theme: MusicTheme, enabled: boolean): void => {
   const audible = enabled && !muted && musicVolume > 0 && masterVolume > 0
 
   useEffect(() => {
+    // Solo se apaga la música PROPIA: al entrar en batalla conviven un instante
+    // dos usos de este hook (el de menús apagándose y el del escenario
+    // arrancando), y los efectos de los hijos corren antes que los del padre,
+    // así que un `stop` incondicional del padre mataría la música recién puesta.
+    const stopMine = () => {
+      if (currentMusicTheme() === theme) stopAmbientMusic()
+    }
     if (!audible) {
-      stopAmbientMusic()
+      stopMine()
       return undefined
     }
     startAmbientMusic(theme)
     const onVisibility = () => {
-      if (document.hidden) stopAmbientMusic()
+      if (document.hidden) stopMine()
       else startAmbientMusic(theme)
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
-      stopAmbientMusic()
+      stopMine()
     }
   }, [theme, audible])
 }

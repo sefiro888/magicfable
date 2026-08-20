@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { usePreferences } from '../store/preferences'
 import { playSynthCue } from '../services/audio'
-import { useAudioMix } from '../services/useAudioMix'
+import { useAudioMix, useSoundtrack } from '../services/useAudioMix'
 import { AchievementToast } from '../components/AchievementToast'
 import styles from './AppShell.module.css'
 
@@ -16,8 +16,11 @@ const links = [
 export function AppShell() {
   const location = useLocation()
   const { muted, setMuted } = usePreferences()
-  useAudioMix()
   const isBattle = location.pathname === '/battle'
+  useAudioMix()
+  // Tema de menús: la batalla monta el suyo (el del escenario), así que fuera
+  // de /battle suena este y dentro no se pisan.
+  useSoundtrack('menu', !isBattle)
 
   const toggleSound = () => {
     if (muted) playSynthCue('ui')
