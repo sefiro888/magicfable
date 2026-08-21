@@ -14,6 +14,13 @@ const enterBattle = async (page: Page, seed?: number) => {
 }
 
 test('la tecla E finaliza el turno como el botón', async ({ page }) => {
+  // Con el aviso de acciones pendientes apagado (el ajuste existe justo para
+  // quien juega rápido), la tecla cede el turno a la primera.
+  await page.addInitScript(() => {
+    localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
+      state: { confirmEndTurn: false }, version: 6,
+    }))
+  })
   await enterBattle(page)
   const banner = page.locator('header > div:nth-child(2) > strong')
   await expect(banner).toHaveText('Tu turno')
@@ -126,4 +133,18 @@ test('el rival elegido en «Jugar» es contra quien se acaba peleando', async ({
   await page.getByRole('button', { name: /Entendido, a jugar/i }).click().catch(() => {})
   // El encabezado de la batalla nombra al comandante rival.
   await expect(page.locator('header')).toContainText('Malachar', { timeout: 25_000 })
+})
+
+test('ceder el turno con acciones sin usar avisa antes de cederlo', async ({ page }) => {
+  test.setTimeout(90_000)
+  await enterBattle(page, 1311657807)
+  const banner = page.locator('header > div:nth-child(2) > strong')
+  await expect(banner).toHaveText('Tu turno')
+  // En el turno 1 siempre queda al menos la fuente de Esencia por jugar.
+  await page.keyboard.press('e')
+  await expect(page.getByText(/Antes de ceder el turno/i)).toBeVisible()
+  await expect(banner).toHaveText('Tu turno')
+  // La segunda pulsación sí cede.
+  await page.keyboard.press('e')
+  await expect(banner).toHaveText('Turno rival', { timeout: 15_000 })
 })

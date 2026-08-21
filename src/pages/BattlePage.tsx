@@ -34,6 +34,7 @@ import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../battle/ui/GlossaryPanel'
 import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
+import { describePendingActions, pendingTurnActions } from '../battle/ui/pendingTurnActions'
 import { FactionSigil } from '../components'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useSoundtrack } from '../services/useAudioMix'
@@ -464,9 +465,29 @@ export function BattlePage() {
     onNexus,
   })
 
+  /**
+   * Aviso de acciones sin usar. Ceder el turno con una unidad parada, con
+   * Esencia de sobra o sin haber jugado la fuente del turno es el despiste más
+   * caro del juego (la fuente no se recupera: solo se puede jugar una por
+   * turno). La primera pulsación avisa y la segunda cede igualmente; el aviso
+   * se arma de nuevo en cuanto cambia la partida, para que no arrastre un
+   * permiso concedido hace tres jugadas.
+   */
+  // El permiso se ata al ESTADO exacto de la partida en el que se avisó, en
+  // vez de a un booleano que haya que reiniciar por efecto: cualquier jugada
+  // posterior crea un estado nuevo y el aviso vuelve a armarse solo.
+  const [warnedFor, setWarnedFor] = useState<MatchState>()
   const endTurn = useCallback(() => {
+    if (preferences.confirmEndTurn && match && warnedFor !== match) {
+      const pending = pendingTurnActions(match, ME)
+      if (pending.anything) {
+        setWarnedFor(match)
+        useMatchStore.getState().setMessage(describePendingActions(pending))
+        return
+      }
+    }
     if (doAction({ type: 'end-turn', playerId: ME })) finishSelection()
-  }, [doAction, finishSelection, ME])
+  }, [doAction, finishSelection, ME, match, preferences.confirmEndTurn, warnedFor])
 
   // Atajos de teclado adicionales a Esc/I (ver el otro efecto de teclado):
   // van aparte porque necesitan `endTurn`, definido después de aquel.

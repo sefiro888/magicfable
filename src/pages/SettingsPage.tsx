@@ -111,6 +111,7 @@ export function SettingsPage() {
           <h2>Accesibilidad y ritmo</h2><p>Ajusta la presentación sin alterar las reglas.</p>
           <div className={styles.toggleRow}><span><strong>Reducir movimiento</strong><small>Acorta transiciones, golpes de cámara y partículas.</small></span><button className={styles.toggle} data-on={settings.reducedMotion} onClick={() => settings.setReducedMotion(!settings.reducedMotion)} aria-label="Reducir movimiento" aria-pressed={settings.reducedMotion} /></div>
           <div className={styles.toggleRow}><span><strong>Modo daltonismo</strong><small>Cambia el verde de "casilla de despliegue" por ámbar, para no confundirlo con el rojo de "casilla amenazada".</small></span><button className={styles.toggle} data-on={settings.colorblindMode} onClick={() => settings.setColorblindMode(!settings.colorblindMode)} aria-label="Modo daltonismo" aria-pressed={settings.colorblindMode} /></div>
+          <div className={styles.toggleRow}><span><strong>Avisar al ceder el turno</strong><small>Si te quedan unidades sin actuar, cartas jugables o la fuente de Esencia del turno sin jugar, la primera pulsación avisa y la segunda cede igualmente.</small></span><button className={styles.toggle} data-on={settings.confirmEndTurn} onClick={() => settings.setConfirmEndTurn(!settings.confirmEndTurn)} aria-label="Avisar al ceder el turno" aria-pressed={settings.confirmEndTurn} /></div>
           <div className={styles.control}>
             <label htmlFor="boardTextScale">Tamaño del texto en el tablero</label>
             <select

@@ -37,6 +37,12 @@ export interface PreferencesState {
   colorblindMode: boolean
   /** Escala del texto sobre las cartas del tablero (nombre, ATQ/VID, estados). 1 = tamaño original. */
   boardTextScale: 1 | 1.2 | 1.4
+  /**
+   * Avisar al ceder el turno si quedan acciones sin usar (unidades sin mover,
+   * cartas jugables, la fuente de Esencia del turno sin jugar). Pide una
+   * segunda pulsación; quien juega rápido y sabe lo que hace puede apagarlo.
+   */
+  confirmEndTurn: boolean
   setVolume: (channel: 'masterVolume' | 'musicVolume' | 'effectsVolume', value: number) => void
   setMuted: (muted: boolean) => void
   setReducedMotion: (reduced: boolean) => void
@@ -49,6 +55,7 @@ export interface PreferencesState {
   setAnimationSpeed: (speed: 1 | 1.5 | 2) => void
   setColorblindMode: (enabled: boolean) => void
   setBoardTextScale: (scale: 1 | 1.2 | 1.4) => void
+  setConfirmEndTurn: (enabled: boolean) => void
   reset: () => void
 }
 
@@ -67,6 +74,7 @@ const defaults = {
   animationSpeed: 1 as const,
   colorblindMode: false,
   boardTextScale: 1 as const,
+  confirmEndTurn: true,
 }
 
 export const usePreferences = create<PreferencesState>()(
@@ -85,11 +93,12 @@ export const usePreferences = create<PreferencesState>()(
       setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
       setColorblindMode: (colorblindMode) => set({ colorblindMode }),
       setBoardTextScale: (boardTextScale) => set({ boardTextScale }),
+      setConfirmEndTurn: (confirmEndTurn) => set({ confirmEndTurn }),
       reset: () => set(defaults),
     }),
     {
       name: 'cronicas-nexo-preferences',
-      version: 5,
+      version: 6,
       migrate: (persisted) => ({ ...defaults, ...(persisted as Partial<PreferencesState>) }),
     },
   ),
