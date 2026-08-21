@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent } from 'react';
 
-import type { CardDefinition, Keyword } from '../game/types';
+import type { CardDefinition } from '../game/types';
 import { Card, CARD_TYPE_LABELS, formatManaCost } from './Card';
 import type { CardStatus } from './Card';
 import { FactionSigil, FACTION_LABELS } from './FactionSigil';
 import { GlossaryText } from './GlossaryText';
 import { RarityGem, RARITY_LABELS } from './RarityGem';
+import { KEYWORD_LABELS } from '../utils/cardLabels';
 import { withBase } from '../utils/assets';
 import styles from './CardInspector.module.css';
 
@@ -20,15 +21,6 @@ export interface CardInspectorProps {
   readonly onClose: () => void;
 }
 
-const KEYWORD_LABELS: Readonly<Record<Keyword, string>> = {
-  impulse: 'Impulso',
-  'swift-strike': 'Golpe veloz',
-  guard: 'Guardia',
-  flying: 'Volador',
-  pierce: 'Perforar',
-  lifelink: 'Vínculo vital',
-  stun: 'Aturdir',
-};
 
 const focusableSelector = [
   'button:not([disabled])',

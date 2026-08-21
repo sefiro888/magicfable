@@ -2,10 +2,28 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card, CardInspector } from '../components'
 import { CARDS, CARD_TYPES, FACTION_IDS, RARITIES, type CardDefinition, type CardType, type FactionId, type Rarity } from '../game'
 import { RarityGem } from '../components/RarityGem'
-import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS, totalCost } from '../utils/cardLabels'
+import { FACTION_LABELS, KEYWORD_LABELS, RARITY_LABELS, TYPE_LABELS, totalCost } from '../utils/cardLabels'
 import styles from './GalleryPage.module.css'
 
 type FilterValue<T extends string> = 'all' | T
+
+/**
+ * Órdenes de la galería. Con 90 diseños, el orden de colección está bien para
+ * hojear el archivo entero, pero para comparar cartas entre sí (¿qué hay
+ * barato de Sombra? ¿cuáles son las míticas?) hace falta reordenar.
+ */
+type SortId = 'collection' | 'cost-asc' | 'cost-desc' | 'name' | 'rarity'
+
+const SORTS: readonly { value: SortId; label: string }[] = [
+  { value: 'collection', label: 'Orden de colección' },
+  { value: 'cost-asc', label: 'Coste: de menor a mayor' },
+  { value: 'cost-desc', label: 'Coste: de mayor a menor' },
+  { value: 'name', label: 'Nombre (A–Z)' },
+  { value: 'rarity', label: 'Rareza' },
+]
+
+/** De más común a más rara, para el orden por rareza. */
+const RARITY_ORDER: Readonly<Record<Rarity, number>> = { common: 0, uncommon: 1, rare: 2, mythic: 3 }
 
 const FACTION_TABS: readonly FilterValue<FactionId>[] = ['all', ...FACTION_IDS]
 
@@ -16,8 +34,15 @@ export function GalleryPage() {
   const [rarity, setRarity] = useState<FilterValue<Rarity>>('all')
   const [cost, setCost] = useState('all')
   const [keyword, setKeyword] = useState('all')
+  const [sort, setSort] = useState<SortId>('collection')
   const [inspected, setInspected] = useState<CardDefinition>()
-  const keywords = useMemo(() => [...new Set(CARDS.flatMap((card) => card.keywords))].sort(), [])
+  // Ordenadas por su nombre en español, que es lo que se lee en el desplegable
+  // (ordenarlas por el id interno dejaba un orden aparentemente arbitrario).
+  const keywords = useMemo(
+    () => [...new Set(CARDS.flatMap((card) => card.keywords))]
+      .sort((a, b) => KEYWORD_LABELS[a].localeCompare(KEYWORD_LABELS[b], 'es')),
+    [],
+  )
 
   useEffect(() => {
     if (!inspected) return
@@ -42,6 +67,18 @@ export function GalleryPage() {
     })
   }, [cost, faction, keyword, query, rarity, type])
 
+  const ordered = useMemo(() => {
+    const list = [...filtered]
+    const byCost = (card: CardDefinition) => totalCost(card.cost.generic, card.cost.colored)
+    switch (sort) {
+      case 'cost-asc': return list.sort((a, b) => byCost(a) - byCost(b) || a.name.localeCompare(b.name, 'es'))
+      case 'cost-desc': return list.sort((a, b) => byCost(b) - byCost(a) || a.name.localeCompare(b.name, 'es'))
+      case 'name': return list.sort((a, b) => a.name.localeCompare(b.name, 'es'))
+      case 'rarity': return list.sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity] || a.name.localeCompare(b.name, 'es'))
+      default: return list
+    }
+  }, [filtered, sort])
+
   // Recuento por rareza sobre las cartas visibles: da a la galería aire de álbum.
   const rarityCounts = useMemo(() => {
     const counts = Object.fromEntries(RARITIES.map((value) => [value, 0])) as Record<Rarity, number>
@@ -57,7 +94,8 @@ export function GalleryPage() {
         <select className={styles.select} value={type} onChange={(event) => setType(event.target.value as FilterValue<CardType>)} aria-label="Filtrar por tipo"><option value="all">Todos los tipos</option>{CARD_TYPES.map((value) => <option key={value} value={value}>{TYPE_LABELS[value]}</option>)}</select>
         <select className={styles.select} value={rarity} onChange={(event) => setRarity(event.target.value as FilterValue<Rarity>)} aria-label="Filtrar por rareza"><option value="all">Toda rareza</option>{RARITIES.map((value) => <option key={value} value={value}>{RARITY_LABELS[value]}</option>)}</select>
         <select className={styles.select} value={cost} onChange={(event) => setCost(event.target.value)} aria-label="Filtrar por coste"><option value="all">Cualquier coste</option><option value="0-2">Coste 0–2</option><option value="3-4">Coste 3–4</option><option value="5+">Coste 5+</option></select>
-        <select className={styles.select} value={keyword} onChange={(event) => setKeyword(event.target.value)} aria-label="Filtrar por palabra clave"><option value="all">Toda palabra clave</option>{keywords.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+        <select className={styles.select} value={keyword} onChange={(event) => setKeyword(event.target.value)} aria-label="Filtrar por palabra clave"><option value="all">Toda palabra clave</option>{keywords.map((value) => <option key={value} value={value}>{KEYWORD_LABELS[value]}</option>)}</select>
+        <select className={styles.select} value={sort} onChange={(event) => setSort(event.target.value as SortId)} aria-label="Ordenar las cartas">{SORTS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
       </div>
       <div className={styles.factionTabs}>{FACTION_TABS.map((value) => <button key={value} className={styles.factionTab} data-active={faction === value} onClick={() => setFaction(value)}>{value === 'all' ? 'Todas las facciones' : FACTION_LABELS[value]}</button>)}</div>
       <div className={styles.collectionBar} aria-label="Recuento por rareza">
@@ -69,7 +107,7 @@ export function GalleryPage() {
           </span>
         ))}
       </div>
-      <section className={styles.grid} aria-live="polite">{filtered.map((card) => <Card key={card.id} card={card} size="gallery" onSelect={setInspected} onInspect={setInspected} />)}{filtered.length === 0 && <div className={styles.empty}>Ninguna carta coincide con estos filtros.</div>}</section>
+      <section className={styles.grid} aria-live="polite">{ordered.map((card) => <Card key={card.id} card={card} size="gallery" onSelect={setInspected} onInspect={setInspected} />)}{filtered.length === 0 && <div className={styles.empty}>Ninguna carta coincide con estos filtros.</div>}</section>
       <CardInspector card={inspected ?? null} onClose={() => setInspected(undefined)} />
     </div>
   )
