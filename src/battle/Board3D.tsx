@@ -295,6 +295,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       sin tocarla — el amortiguado de `group` la persigue cada fotograma y
       sumarle el desplazamiento ahí lo haría converger de vuelta a medias. */
   const strike = useRef<Group>(null)
+  /** Grupo que encara la ficha hacia la cámara girando solo sobre su eje vertical. */
+  const facing = useRef<Group>(null)
   const impulseRun = useRef<{ start: number; dx: number; dz: number; kind: 'lunge' | 'recoil' } | null>(null)
   useEffect(() => {
     if (!impulse || reducedMotion) return
@@ -329,7 +331,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const cursed = piece.statuses.some((status) => status.kind === 'cursed')
   const shielded = piece.statuses.reduce((total, status) => total + (status.kind === 'shielded' ? status.amount : 0), 0)
   const spent = active && piece.attackedThisTurn
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock, camera }, delta) => {
     const node = group.current
     if (!node) return
     const speed = reducedMotion ? 100 : 8
@@ -356,6 +358,21 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       node.position.y = MathUtils.damp(node.position.y, lift, speed, delta)
     }
     node.rotation.y = MathUtils.damp(node.rotation.y, selected ? (piece.owner === 'player' ? -0.08 : 0.08) : 0, speed, delta)
+    // La ficha encara a la cámara girando SOLO sobre su eje vertical, como un
+    // standee de mesa al que se le da la vuelta para mirarlo: desde un lateral
+    // exacto, una lámina plana se vería de canto y la ilustración desaparecía.
+    // Va en un grupo propio, por dentro del que hace la embestida: si girase el
+    // grupo exterior, el desplazamiento del golpe giraría con él y saldría
+    // disparado en la dirección equivocada.
+    const face = facing.current
+    if (face && face.parent) {
+      const local = face.parent.worldToLocal(camera.position.clone())
+      const wanted = Math.atan2(local.x, local.z)
+      // Camino más corto: sin esto, cruzar ±PI da una vuelta entera de más.
+      const current = face.rotation.y
+      const shortest = current + Math.atan2(Math.sin(wanted - current), Math.cos(wanted - current))
+      face.rotation.y = reducedMotion ? wanted : MathUtils.damp(current, shortest, 6, delta)
+    }
     // Agotada: la carta descansa ligeramente girada, como una carta «tapeada».
     node.rotation.z = MathUtils.damp(node.rotation.z, spent ? 0.16 : 0, speed, delta)
     if (frame.current && !reducedMotion) {
@@ -408,6 +425,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
       <group ref={strike}>
+      <group ref={facing}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
           Se eleva CARD_STAND_RISE para que, al girar desde su centro, el borde
           inferior quede a ras de la casilla en vez de hundirse en ella. */}
@@ -438,36 +456,46 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             Caldera las unidades salían casi negras — ilegibles en la captura
             real. Así la ilustración se lee igual en los tres escenarios sin
             tocar la iluminación de ninguno. */}
-        {/* `side={DoubleSide}`: un <planeGeometry> solo pinta su cara
-            "delantera" — sin esto, orbitando la cámara hacia el otro lado del
-            tablero (algo que OrbitControls siempre ha permitido, no hace
-            falta el modo foto) la carta se veía completamente en blanco
-            desde atrás. Verificado numéricamente antes de tocarlo (misma
-            disciplina que la vez que el giro condicional dejó el arte al
-            revés): ninguna rotación puede mostrar la imagen sin invertir ni
-            "arriba" ni "derecha" a la vez desde el lado opuesto — es
-            geometría, no un descuido — así que la única forma de que se vea
-            bien desde los dos lados sin duplicar la malla es pintar las dos
-            caras del mismo plano. Se ve en espejo desde atrás (como
-            cualquier banderola de doble cara), pero nunca en blanco. */}
-        <mesh position={[0, 0.038, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.73, 0.9]} />
-          <meshStandardMaterial
-            map={texture}
-            emissiveMap={texture}
-            emissive="#ffffff"
-            emissiveIntensity={spent ? 0.3 : 0.6}
-            roughness={0.62}
-            color={frozen ? '#9fd4ef' : spent ? '#8f8f96' : '#ffffff'}
-            side={DoubleSide}
-          />
-        </mesh>
-        {frozen && (
-          <mesh position={[0, 0.075, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[0.83, 1.02]} />
-            <meshStandardMaterial color="#bdeaff" transparent opacity={0.32} roughness={0.2} metalness={0.4} emissive="#9fd8ff" emissiveIntensity={0.5} side={DoubleSide} />
+        {/*
+            DOS caras con arte, una a cada lado de la losa del marco.
+
+            Antes había un solo plano apoyado sobre la cara superior, con
+            `side={DoubleSide}`. Eso no bastaba: la losa del marco es SÓLIDA y
+            tapa el plano desde el otro lado, así que al orbitar la cámara (o
+            simplemente siendo el invitado de una partida en línea, que ve la
+            escena girada 180°) la ficha se veía como un rectángulo dorado liso
+            sin ilustración — reportado con capturas por el usuario.
+
+            La cara de atrás va rotada [-PI/2, PI, 0], verificado con Three.js
+            real: dejar la normal opuesta a la del frente manteniendo el mismo
+            vector "arriba" solo lo consigue esa rotación (y su equivalente
+            [PI/2, 0, PI]). Al ser una rotación pura, no hay reflexión: la
+            ilustración se ve DERECHA desde los dos lados, no en espejo, que es
+            lo que pasaba antes con la cara doble del plano único.
+        */}
+        {[
+          { key: 'front', y: 0.038, spin: 0 },
+          { key: 'back', y: -0.038, spin: Math.PI },
+        ].map(({ key, y, spin }) => (
+          <mesh key={key} position={[0, y, 0]} rotation={[-Math.PI / 2, spin, 0]}>
+            <planeGeometry args={[0.73, 0.9]} />
+            <meshStandardMaterial
+              map={texture}
+              emissiveMap={texture}
+              emissive="#ffffff"
+              emissiveIntensity={spent ? 0.3 : 0.6}
+              roughness={0.62}
+              color={frozen ? '#9fd4ef' : spent ? '#8f8f96' : '#ffffff'}
+            />
           </mesh>
-        )}
+        ))}
+        {frozen && [0.075, -0.075].map((y) => (
+          <mesh key={y} position={[0, y, 0]} rotation={[-Math.PI / 2, y > 0 ? 0 : Math.PI, 0]}>
+            <planeGeometry args={[0.83, 1.02]} />
+            <meshStandardMaterial color="#bdeaff" transparent opacity={0.32} roughness={0.2} metalness={0.4} emissive="#9fd8ff" emissiveIntensity={0.5} />
+          </mesh>
+        ))}
+      </group>
       </group>
       </group>
       {/* Anillos de selección/disponibilidad: se quedan tumbados en la casilla
