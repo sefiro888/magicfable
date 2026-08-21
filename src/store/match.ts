@@ -108,7 +108,11 @@ interface MatchStore {
   pendingAnimations: readonly AnimationEvent[]
   /** Evento visual en reproducción en este instante. */
   currentEvent?: AnimationEvent
-  startMatch: (playerDeckId: string, seed?: number) => void
+  /**
+   * Arranca una escaramuza contra la IA. `opponentDeckId` fija el rival; sin
+   * él lo elige la semilla, como siempre.
+   */
+  startMatch: (playerDeckId: string, seed?: number, opponentDeckId?: string) => void
   /** Arranca la partida a partir de un MatchState ya construido (multijugador: lo crea el anfitrión y lo recibe el invitado). */
   startFromMatch: (match: MatchState) => void
   dispatch: (action: GameAction) => boolean
@@ -229,7 +233,7 @@ export const useMatchStore = create<MatchStore>()(
   persist(
     (set, get) => ({
   ...initialState,
-  startMatch: (playerDeckId, seed) => {
+  startMatch: (playerDeckId, seed, opponentDeckId) => {
     const playerIndex = Math.max(0, STARTER_DECKS.findIndex((deck) => deck.id === playerDeckId))
     const playerDeck = STARTER_DECKS[playerIndex]
     const matchSeed = seed ?? (Date.now() >>> 0)
@@ -243,7 +247,13 @@ export const useMatchStore = create<MatchStore>()(
     // el mazo) para romper esa correlación antes de elegir el índice.
     const opponents = STARTER_DECKS.filter((_, index) => index !== playerIndex)
     const opponentIndex = Math.floor(nextRandom(matchSeed).value * opponents.length)
-    const aiDeck = opponents[opponentIndex] ?? opponents[0]
+    // Rival elegido a mano: manda sobre el sorteo. Si coincide con el mazo del
+    // jugador (o no existe) se ignora y se vuelve al sorteo de siempre, para
+    // que nunca se pueda acabar peleando contra el propio mazo.
+    const chosen = opponentDeckId
+      ? opponents.find((deck) => deck.id === opponentDeckId)
+      : undefined
+    const aiDeck = chosen ?? opponents[opponentIndex] ?? opponents[0]
     if (!playerDeck || !aiDeck) throw new Error('Faltan mazos iniciales para crear la partida.')
     const match = createMatch(playerDeck, aiDeck, matchSeed)
     const cleaned = clearAnimationQueue(match)

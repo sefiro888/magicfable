@@ -145,9 +145,29 @@ export function MultiplayerPage() {
               )}
             </div>
           </div>
-          <div className={styles.status} data-connected={status === 'connected'}>
-            {status === 'connected' ? '● Rival conectado' : '○ Esperando al rival…'}
+          <div className={styles.status} data-connected={status === 'connected'} data-failed={status === 'error'}>
+            {status === 'connected'
+              ? '● Rival conectado'
+              : status === 'error'
+                ? '⚠ Sin conexión con el servidor de partidas'
+                : '○ Esperando al rival…'}
           </div>
+          {/* Un fallo del servidor se parecía exactamente a «el otro aún no ha
+              entrado»: los dos jugadores esperaban indefinidamente sin saber
+              que el problema no era el rival. */}
+          {status === 'error' && (
+            <div className={styles.connectionError} role="alert">
+              <strong>No se ha podido conectar con el servidor de partidas.</strong>
+              <span>{room.getError()}</span>
+              <span>
+                El multijugador usa un proyecto de Supabase en la nube. Si está pausado o
+                borrado —los proyectos gratuitos se pausan solos por inactividad— hay que crear
+                otro y apuntar el juego a él con <code>VITE_SUPABASE_URL</code> y{' '}
+                <code>VITE_SUPABASE_ANON_KEY</code>. Mientras tanto, las escaramuzas contra la IA
+                funcionan con normalidad.
+              </span>
+            </div>
+          )}
           {status === 'connected' && (
             <>
               <p className={styles.note}>Jugarás con el mazo elegido arriba. Confirma con tu rival que no hayáis elegido la misma facción.</p>

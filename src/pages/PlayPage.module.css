@@ -55,6 +55,28 @@
 .dailyBody strong { font-family: var(--display); font-size: 17px; font-weight: 500; color: var(--ivory); }
 .dailyBody span { color: #918e86; font-size: 12px; }
 
+
+/* ── Preparativos de la escaramuza: rival, dificultad y escenario ── */
+.setup {
+  margin-top: 16px; padding: 16px 20px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;
+  border: 1px solid var(--line); background: rgba(255,255,255,.018);
+}
+.setupField { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.setupField label { color: var(--gold); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; }
+.setupField select {
+  padding: 9px 10px; width: 100%;
+  border: 1px solid var(--line-bright); background: #12131a; color: var(--ivory);
+  font-family: inherit; font-size: 13px; cursor: pointer;
+}
+.setupField select:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+.setupField small { color: #918e86; font-size: 11px; line-height: 1.45; min-height: 2.9em; }
+
+@media (max-width: 720px) {
+  .setup { grid-template-columns: 1fr; gap: 14px; }
+  .setupField small { min-height: 0; }
+}
+
 /* ── Móvil ── */
 @media (max-width: 720px) {
   .page { padding: 26px 14px 70px; }

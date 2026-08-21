@@ -51,6 +51,12 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
         setPeerLeft(false)
       } else if (status === 'waiting' && wasConnected.current && graceTimer === undefined) {
         graceTimer = window.setTimeout(() => setPeerLeft(true), 5000)
+      } else if (status === 'error') {
+        // El canal se ha caído del todo: no hay parpadeo que esperar, la
+        // partida ya no puede continuar y conviene decirlo en el acto.
+        if (graceTimer !== undefined) window.clearTimeout(graceTimer)
+        graceTimer = undefined
+        setPeerLeft(true)
       }
     })
     return () => {

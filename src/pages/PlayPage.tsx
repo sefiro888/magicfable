@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, STARTER_DECKS } from '../game'
-import { usePreferences } from '../store/preferences'
+import { usePreferences, type AiDifficulty, type ScenarioId } from '../store/preferences'
 import { useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { playSynthCue } from '../services/audio'
@@ -26,12 +26,33 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   void:   'Distorsiona el espacio, aniquila estructuras y golpea antes de que te vean venir.',
 }
 
+/** Opciones del rival: el sorteo de siempre, o cualquiera de las otras cinco facciones. */
+const DIFFICULTIES: readonly { value: AiDifficulty; label: string; hint: string }[] = [
+  { value: 'easy', label: 'Fácil', hint: 'Pelea en el tablero pero no remata tu Nexo.' },
+  { value: 'normal', label: 'Normal', hint: 'Ataca en cuanto tiene algo a tiro.' },
+  { value: 'hard', label: 'Difícil', hint: 'Estudia el tablero entero antes de mover.' },
+]
+
+const SCENARIOS: readonly { value: ScenarioId; label: string; hint: string }[] = [
+  { value: 'aether-citadel', label: 'Aether Citadel', hint: 'Plaza de mármol al amanecer, sobre un mar de nubes.' },
+  { value: 'sanctuary', label: 'Santuario de las Runas', hint: 'Círculo de monolitos en una isla, de noche.' },
+  { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Plataforma de hierro sobre un lago de lava.' },
+]
+
 export function PlayPage() {
   const navigate = useNavigate()
   const preferences = usePreferences()
   const records = useRecords((state) => state.records)
   const daily = useMemo(() => evaluateDailyChallenge(records), [records])
   const deck = useMemo(() => STARTER_DECKS.find((candidate) => candidate.id === preferences.selectedDeckId) ?? STARTER_DECKS[0], [preferences.selectedDeckId])
+
+  const rival = useMemo(
+    () => STARTER_DECKS.find((candidate) => candidate.id === preferences.opponentDeckId),
+    [preferences.opponentDeckId],
+  )
+  const rivalHint = rival
+    ? DECK_DESCRIPTIONS[rival.faction] ?? ''
+    : 'Se sortea entre las otras cinco facciones al empezar.'
 
   const start = () => {
     if (!preferences.muted) playSynthCue('ui')
@@ -42,7 +63,7 @@ export function PlayPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div><small>Escaramuza contra la IA</small><h1>Selecciona tu mazo</h1></div>
-        <p>Cada mazo contiene 50 cartas y un comandante. Tu rival utilizará la facción opuesta.<br /><span className={styles.note}>Nexo a 35 · tablero 8 × 8</span></p>
+        <p>Cada mazo contiene 50 cartas y un comandante.<br /><span className={styles.note}>Nexo a 35 · tablero 8 × 8</span></p>
       </header>
       <div className={styles.daily} data-done={daily.done}>
         <span className={styles.dailyBadge}>{daily.done ? '✓' : '◆'}</span>
@@ -52,6 +73,54 @@ export function PlayPage() {
           <span>{daily.description}</span>
         </div>
       </div>
+      {/* Preparativos de la escaramuza: hasta ahora el rival lo sorteaba la
+          semilla sin que se pudiera elegir, y la dificultad y el escenario
+          estaban escondidos en Ajustes — tres decisiones de partida que se
+          toman justo aquí, antes de entrar. */}
+      <section className={styles.setup} aria-label="Preparativos de la escaramuza">
+        <div className={styles.setupField}>
+          <label htmlFor="rival">Rival</label>
+          <select
+            id="rival"
+            value={preferences.opponentDeckId}
+            onChange={(event) => preferences.setOpponentDeck(event.target.value)}
+          >
+            <option value="random">Al azar</option>
+            {STARTER_DECKS.filter((candidate) => candidate.id !== deck?.id).map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {COMMANDER_BY_ID[candidate.commanderId]?.name} · {candidate.name}
+              </option>
+            ))}
+          </select>
+          <small>{rivalHint}</small>
+        </div>
+        <div className={styles.setupField}>
+          <label htmlFor="difficulty">Dificultad</label>
+          <select
+            id="difficulty"
+            value={preferences.aiDifficulty}
+            onChange={(event) => preferences.setAiDifficulty(event.target.value as AiDifficulty)}
+          >
+            {DIFFICULTIES.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          <small>{DIFFICULTIES.find((option) => option.value === preferences.aiDifficulty)?.hint}</small>
+        </div>
+        <div className={styles.setupField}>
+          <label htmlFor="stage">Escenario</label>
+          <select
+            id="stage"
+            value={preferences.scenario}
+            onChange={(event) => preferences.setScenario(event.target.value as ScenarioId)}
+          >
+            {SCENARIOS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          <small>{SCENARIOS.find((option) => option.value === preferences.scenario)?.hint}</small>
+        </div>
+      </section>
       <div className={styles.decks}>
         {STARTER_DECKS.map((candidate) => {
           const commander = COMMANDER_BY_ID[candidate.commanderId]

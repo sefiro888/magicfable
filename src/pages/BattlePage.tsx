@@ -164,13 +164,22 @@ export function BattlePage() {
     // corresponde al mazo elegido. Sin la segunda condición, la primera facción
     // con la que se juega quedaba fija al volver a entrar con otra distinta.
     const selectedDeck = STARTER_DECKS.find((deck) => deck.id === preferences.selectedDeckId)
+    // Además del mazo propio, cuenta el rival elegido: si se cambia de rival
+    // en «Jugar» y la partida guardada era contra otro, hay que empezar una
+    // nueva o el ajuste no tendría ningún efecto hasta terminar la anterior.
+    const chosenOpponent = preferences.opponentDeckId === 'random'
+      ? undefined
+      : STARTER_DECKS.find((deck) => deck.id === preferences.opponentDeckId)
     const matchesSelection = Boolean(
-      store.match && selectedDeck && store.match.players.player.commanderId === selectedDeck.commanderId,
+      store.match
+      && selectedDeck
+      && store.match.players.player.commanderId === selectedDeck.commanderId
+      && (!chosenOpponent || store.match.players.ai.commanderId === chosenOpponent.commanderId),
     )
     if (!matchesSelection) {
-      useMatchStore.getState().startMatch(preferences.selectedDeckId, forcedSeed)
+      useMatchStore.getState().startMatch(preferences.selectedDeckId, forcedSeed, chosenOpponent?.id)
     }
-  }, [preferences.selectedDeckId, store.match, forcedSeed, room])
+  }, [preferences.selectedDeckId, preferences.opponentDeckId, store.match, forcedSeed, room])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {
@@ -527,7 +536,12 @@ export function BattlePage() {
     ai.reset()
     recorder.reset()
     director.resetBanners()
-    store.startMatch(preferences.selectedDeckId, forcedSeed)
+    // La revancha respeta el rival elegido igual que la primera partida.
+    store.startMatch(
+      preferences.selectedDeckId,
+      forcedSeed,
+      preferences.opponentDeckId === 'random' ? undefined : preferences.opponentDeckId,
+    )
   }
 
   const confirmMulligan = () => {

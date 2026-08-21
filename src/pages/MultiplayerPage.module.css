@@ -73,3 +73,16 @@ button.choice:hover { transform: translateY(-2px); border-color: rgba(229,194,11
   .page { padding: 26px 14px 70px; }
   .codeRow strong { font-size: 30px; }
 }
+
+/* Aviso de servidor caído: se distingue del «esperando al rival» normal. */
+.status[data-failed='true'] { color: #ff9a86; }
+.connectionError {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 16px; border: 1px solid rgba(255,120,90,.35); border-left: 3px solid #ff7a5c;
+  background: rgba(255,90,60,.07); color: #d8cfc7; font-size: 12px; line-height: 1.55;
+}
+.connectionError strong { color: #ffb9a5; font-size: 13px; }
+.connectionError code {
+  padding: 1px 5px; border-radius: 3px;
+  background: rgba(255,255,255,.07); font-family: ui-monospace, monospace; font-size: 11px;
+}

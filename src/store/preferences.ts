@@ -14,6 +14,12 @@ export interface PreferencesState {
   aiDelayMs: number
   aiDifficulty: AiDifficulty
   selectedDeckId: string
+  /**
+   * Mazo del rival en las escaramuzas contra la IA. 'random' conserva el
+   * comportamiento de siempre (lo elige la semilla entre las otras cinco
+   * facciones); cualquier otro valor fija contra quién quieres pelear.
+   */
+  opponentDeckId: string
   graphicsQuality: GraphicsQuality
   /** Escenario 3D de la batalla. */
   scenario: ScenarioId
@@ -37,6 +43,7 @@ export interface PreferencesState {
   setAiDelay: (delay: number) => void
   setAiDifficulty: (difficulty: AiDifficulty) => void
   setSelectedDeck: (deckId: string) => void
+  setOpponentDeck: (deckId: string) => void
   setGraphicsQuality: (quality: GraphicsQuality) => void
   setScenario: (scenario: ScenarioId) => void
   setAnimationSpeed: (speed: 1 | 1.5 | 2) => void
@@ -54,6 +61,7 @@ const defaults = {
   aiDelayMs: 520,
   aiDifficulty: 'normal' as AiDifficulty,
   selectedDeckId: 'furia-caldera',
+  opponentDeckId: 'random',
   graphicsQuality: 'medium' as GraphicsQuality,
   scenario: 'aether-citadel' as ScenarioId,
   animationSpeed: 1 as const,
@@ -71,6 +79,7 @@ export const usePreferences = create<PreferencesState>()(
       setAiDelay: (aiDelayMs) => set({ aiDelayMs }),
       setAiDifficulty: (aiDifficulty) => set({ aiDifficulty }),
       setSelectedDeck: (selectedDeckId) => set({ selectedDeckId }),
+      setOpponentDeck: (opponentDeckId) => set({ opponentDeckId }),
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
       setScenario: (scenario) => set({ scenario }),
       setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
@@ -80,7 +89,7 @@ export const usePreferences = create<PreferencesState>()(
     }),
     {
       name: 'cronicas-nexo-preferences',
-      version: 4,
+      version: 5,
       migrate: (persisted) => ({ ...defaults, ...(persisted as Partial<PreferencesState>) }),
     },
   ),

@@ -212,3 +212,28 @@ describe('store de partida: descripciones del historial', () => {
     expect(useMatchStore.getState().history).toHaveLength(10)
   })
 })
+
+describe('rival elegido a mano', () => {
+  it('respeta el mazo de rival pedido en vez de sortearlo', () => {
+    useMatchStore.getState().reset()
+    useMatchStore.getState().startMatch('furia-caldera', 12345, 'secretos-arcano')
+    const arcane = STARTER_DECKS.find((deck) => deck.id === 'secretos-arcano')!
+    expect(useMatchStore.getState().match?.players.ai.commanderId).toBe(arcane.commanderId)
+  })
+
+  it('un rival inexistente cae en el sorteo de siempre, no rompe la partida', () => {
+    useMatchStore.getState().reset()
+    useMatchStore.getState().startMatch('furia-caldera', 12345, 'no-existe')
+    const match = useMatchStore.getState().match
+    expect(match).toBeDefined()
+    const furia = STARTER_DECKS.find((deck) => deck.id === 'furia-caldera')!
+    expect(match?.players.ai.commanderId).not.toBe(furia.commanderId)
+  })
+
+  it('pedir el propio mazo como rival tampoco te enfrenta a ti mismo', () => {
+    useMatchStore.getState().reset()
+    useMatchStore.getState().startMatch('furia-caldera', 999, 'furia-caldera')
+    const furia = STARTER_DECKS.find((deck) => deck.id === 'furia-caldera')!
+    expect(useMatchStore.getState().match?.players.ai.commanderId).not.toBe(furia.commanderId)
+  })
+})
