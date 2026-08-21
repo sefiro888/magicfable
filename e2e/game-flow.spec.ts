@@ -44,7 +44,9 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
 
   // Semilla fija: la mano inicial debe contener una fuente para el paso siguiente.
   await page.goto('/battle?seed=1311657807')
-  await expect(page.getByTestId('battle-board')).toBeVisible()
+  // El tablero es un chunk aparte + una escena 3D: con varias pruebas
+  // compitiendo por la CPU, los 5 s por defecto se quedan cortos.
+  await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
   await expect(page.getByRole('heading', { name: 'Tu mano inicial' })).toBeVisible()
   await page.getByRole('button', { name: 'Conservar las cinco' }).click()
   await expect(page.getByText('Turno 1 · Principal')).toBeVisible()
