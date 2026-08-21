@@ -117,3 +117,13 @@ test('con el teclado se despliega una carta de la mano en su casilla', async ({ 
   await page.keyboard.press('Enter')
   await expect(page.getByText(/entra en juego/i).first()).toBeVisible({ timeout: 10_000 })
 })
+
+test('el rival elegido en «Jugar» es contra quien se acaba peleando', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.goto('/play')
+  await page.selectOption('#rival', 'reidores-sombra')
+  await page.getByRole('button', { name: /Entrar al tablero/i }).click()
+  await page.getByRole('button', { name: /Entendido, a jugar/i }).click().catch(() => {})
+  // El encabezado de la batalla nombra al comandante rival.
+  await expect(page.locator('header')).toContainText('Malachar', { timeout: 25_000 })
+})
