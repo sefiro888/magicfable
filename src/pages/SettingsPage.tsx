@@ -45,7 +45,7 @@ export function SettingsPage() {
       <header className={styles.header}><small>Preferencias locales</small><h1>Ajustes</h1><p>Los cambios se guardan automáticamente en este dispositivo.</p></header>
       <div className={styles.panel}>
         <section className={styles.section}>
-          <h2>Sonido</h2><p>Todo el audio se sintetiza en el momento: los efectos de combate y una capa ambiental generativa distinta para cada escenario. «Música» a cero apaga solo el fondo.</p>
+          <h2>Sonido</h2><p>Todo el audio se sintetiza en el momento: los efectos de combate y el ambiente del lugar donde peleas —viento y campanillas en la Ciudadela, goteo en el Santuario, brasas en la Caldera—. «Música» controla solo ese fondo; a cero, silencio.</p>
           {volumes.map(([key, label]) => (
             <div className={styles.control} key={key}>
               <label htmlFor={key}>{label}</label>

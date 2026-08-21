@@ -51,13 +51,6 @@ export const NEXUS_WORLD: Readonly<Record<string, readonly [number, number]>> = 
   'ai-nexus': [0, nexusWorldZ('ai')],
 }
 
-/**
- * Factor de escala para escenografía diseñada originalmente para la huella
- * del tablero 5×5 (5 × 1.18 = 5.9 unidades). Permite reutilizar Sanctuary
- * sin remodelarlo.
- */
-export const LEGACY_FOOTPRINT = 5.9
-export const SCENERY_SCALE = BOARD_WORLD_SIZE / LEGACY_FOOTPRINT
 
 /**
  * Encuadre de cámara recomendado para la huella actual.

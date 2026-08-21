@@ -9,7 +9,9 @@ import { expect, test } from '@playwright/test'
  */
 test('arrastrar una unidad de la mano al tablero la despliega', async ({ page }) => {
   test.setTimeout(120_000)
-  await page.goto('/battle')
+  // Semilla fija: la prueba necesita una unidad desplegable en la mano inicial;
+  // con mano aleatoria fallaba de vez en cuando sin que hubiera nada roto.
+  await page.goto('/battle?seed=1311657807')
   await page.getByRole('button', { name: /Entendido, a jugar/i }).click()
   const keep = page.getByRole('button', { name: /Conservar las cinco/i })
   await keep.click()

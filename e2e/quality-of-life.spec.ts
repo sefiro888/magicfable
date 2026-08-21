@@ -7,7 +7,10 @@ const enterBattle = async (page: Page, seed?: number) => {
   const keep = page.getByRole('button', { name: /Conservar las cinco/i })
   await keep.click()
   await expect(keep).toBeHidden()
-  await page.getByRole('button', { name: /Saltar guía/i }).click().catch(() => {})
+  // El coach interactivo solo sale la primera vez: si no está, no hay que
+  // esperarle los 30 s del test entero — con varios workers en paralelo, esa
+  // espera bastaba para agotar el tiempo antes de empezar la prueba.
+  await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 3000 }).catch(() => {})
 }
 
 test('la tecla E finaliza el turno como el botón', async ({ page }) => {
@@ -46,7 +49,9 @@ test('fijar una carta la mueve al principio del abanico', async ({ page }) => {
 
 test('modo foto muestra el aviso y bloquea el despliegue en el tablero', async ({ page }) => {
   test.setTimeout(60_000)
-  await enterBattle(page)
+  // Semilla fija: la prueba necesita una unidad desplegable en la mano inicial
+  // y con mano aleatoria fallaba de vez en cuando sin que hubiera nada roto.
+  await enterBattle(page, 1311657807)
   await page.keyboard.press('Control+Shift+KeyD')
   const essence = page.getByRole('button', { name: '+1 Esencia' })
   await essence.waitFor({ state: 'visible' })

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { installFakeAudio } from '../test/fakeAudioContext'
 import {
+  AMBIENCE,
   __resetAudioForTests,
   cueDuration,
   currentMusicTheme,
@@ -15,72 +17,6 @@ const CUES: readonly SoundCue[] = [
   'draw', 'resource', 'summon', 'spell', 'move', 'attack', 'impact',
   'destroy', 'freeze', 'shield', 'reveal', 'turn', 'victory', 'defeat', 'ui',
 ]
-
-/** Contadores de lo que el motor le pide a WebAudio, para poder afirmar sobre ello. */
-interface Spy {
-  contexts: number
-  oscillators: number
-  bufferSources: number
-  gains: number
-  resumed: number
-}
-
-/**
- * AudioContext de mentira: jsdom no trae WebAudio, así que el motor no se
- * puede probar de otra forma. Solo necesita responder a lo que el motor usa.
- */
-const installFakeAudio = (): Spy => {
-  const spy: Spy = { contexts: 0, oscillators: 0, bufferSources: 0, gains: 0, resumed: 0 }
-  const param = () => ({
-    value: 0,
-    setValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-  })
-  const node = () => {
-    const self = {
-      connect: vi.fn(() => self),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      addEventListener: vi.fn(),
-      frequency: param(),
-      gain: param(),
-      Q: param(),
-      type: 'sine',
-      buffer: null as AudioBuffer | null,
-      threshold: param(),
-      ratio: param(),
-      attack: param(),
-      release: param(),
-      knee: param(),
-    }
-    return self
-  }
-
-  class FakeContext {
-    state = 'running'
-    currentTime = 0
-    sampleRate = 48000
-    destination = node()
-    constructor() { spy.contexts += 1 }
-    createGain() { spy.gains += 1; return node() }
-    createOscillator() { spy.oscillators += 1; return node() }
-    createBufferSource() { spy.bufferSources += 1; return node() }
-    createBiquadFilter() { return node() }
-    createConvolver() { return node() }
-    createDynamicsCompressor() { return node() }
-    createBuffer(channels: number, length: number) {
-      const data = new Float32Array(length)
-      return { getChannelData: () => data, length, numberOfChannels: channels }
-    }
-    resume() { spy.resumed += 1; this.state = 'running'; return Promise.resolve() }
-    close() { return Promise.resolve() }
-  }
-
-  ;(window as unknown as { AudioContext: unknown }).AudioContext = FakeContext
-  return spy
-}
 
 afterEach(() => {
   __resetAudioForTests()
@@ -159,24 +95,35 @@ describe('motor', () => {
   })
 })
 
-describe('música ambiental', () => {
-  it('arranca, encadena acordes y se detiene por completo', () => {
+describe('ambiente del escenario', () => {
+  it('monta las tres capas y suelta sucesos sueltos con el tiempo', () => {
     vi.useFakeTimers()
     const spy = installFakeAudio()
     startAmbientMusic('caldera')
     expect(currentMusicTheme()).toBe('caldera')
-    const afterFirstChord = spy.oscillators
-    expect(afterFirstChord).toBeGreaterThan(0)
-    vi.advanceTimersByTime(9000)
-    expect(spy.oscillators).toBeGreaterThan(afterFirstChord)
-    stopAmbientMusic()
-    expect(currentMusicTheme()).toBeNull()
-    const afterStop = spy.oscillators
-    vi.advanceTimersByTime(9000)
-    expect(spy.oscillators).toBe(afterStop)
+    // Lecho de ruido en bucle + tono grave de varias voces + su modulador.
+    expect(spy.bufferSources).toBeGreaterThanOrEqual(1)
+    const droneVoices = spy.oscillators
+    expect(droneVoices).toBeGreaterThanOrEqual(3)
+    // La caldera chisporrotea cada pocos segundos: en medio minuto hay más nodos.
+    vi.advanceTimersByTime(30_000)
+    expect(spy.bufferSources + spy.oscillators).toBeGreaterThan(droneVoices + 1)
   })
 
-  it('pedir el tema que ya suena no lo reinicia', () => {
+  it('parar deja de programar sucesos nuevos', () => {
+    vi.useFakeTimers()
+    const spy = installFakeAudio()
+    startAmbientMusic('sanctuary')
+    vi.advanceTimersByTime(30_000)
+    stopAmbientMusic()
+    expect(currentMusicTheme()).toBeNull()
+    vi.advanceTimersByTime(1000)
+    const after = spy.oscillators
+    vi.advanceTimersByTime(60_000)
+    expect(spy.oscillators).toBe(after)
+  })
+
+  it('pedir el ambiente que ya suena no lo reinicia', () => {
     vi.useFakeTimers()
     const spy = installFakeAudio()
     startAmbientMusic('sanctuary')
@@ -185,11 +132,27 @@ describe('música ambiental', () => {
     expect(spy.oscillators).toBe(afterFirst)
   })
 
-  it('cambiar de escenario cambia el tema', () => {
+  it('cambiar de escenario cambia el ambiente', () => {
     vi.useFakeTimers()
     installFakeAudio()
     startAmbientMusic('sanctuary')
     startAmbientMusic('aether-citadel')
     expect(currentMusicTheme()).toBe('aether-citadel')
+  })
+
+  it('cada sitio tiene un perfil distinto: aire, tono y sucesos propios', () => {
+    const cave = AMBIENCE.caldera
+    const sky = AMBIENCE['aether-citadel']
+    const ruins = AMBIENCE.sanctuary
+    // La caldera retumba (corte grave), la ciudadela silba (corte alto).
+    expect(cave.air.cutoff).toBeLessThan(sky.air.cutoff)
+    // Y sus sucesos son de otra naturaleza y otro ritmo.
+    expect(new Set([cave.detail.kind, sky.detail.kind, ruins.detail.kind]).size).toBe(3)
+    expect(cave.detail.everyMax).toBeLessThan(ruins.detail.everyMax)
+    for (const profile of Object.values(AMBIENCE)) {
+      expect(profile.air.breath).toBeLessThan(0.2)
+      expect(profile.drone.gain).toBeLessThan(0.15)
+      expect(profile.detail.everyMin).toBeLessThan(profile.detail.everyMax)
+    }
   })
 })

@@ -1,40 +1,9 @@
 import { renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { __resetAudioForTests, currentMusicTheme, startAmbientMusic } from './audio'
 import { useSoundtrack } from './useAudioMix'
+import { installFakeAudio } from '../test/fakeAudioContext'
 import { usePreferences } from '../store/preferences'
-
-/** AudioContext mínimo: aquí solo importa qué tema queda sonando, no el sonido. */
-const installFakeAudio = () => {
-  const param = () => ({ value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() })
-  const node = () => {
-    const self = {
-      connect: vi.fn(() => self), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn(),
-      addEventListener: vi.fn(), frequency: param(), gain: param(), Q: param(),
-      type: 'sine', buffer: null, threshold: param(), ratio: param(), attack: param(), release: param(),
-    }
-    return self
-  }
-  class FakeContext {
-    state = 'running'
-    currentTime = 0
-    sampleRate = 48000
-    destination = node()
-    createGain() { return node() }
-    createOscillator() { return node() }
-    createBufferSource() { return node() }
-    createBiquadFilter() { return node() }
-    createConvolver() { return node() }
-    createDynamicsCompressor() { return node() }
-    createBuffer(channels: number, length: number) {
-      const data = new Float32Array(length)
-      return { getChannelData: () => data, length, numberOfChannels: channels }
-    }
-    resume() { return Promise.resolve() }
-    close() { return Promise.resolve() }
-  }
-  ;(window as unknown as { AudioContext: unknown }).AudioContext = FakeContext
-}
 
 afterEach(() => {
   __resetAudioForTests()

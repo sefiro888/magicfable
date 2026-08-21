@@ -319,104 +319,308 @@ export function playSynthCue(cue: SoundCue): void {
   for (const voice of voicesForCue(cue)) renderVoice(active, voice, startAt, 1)
 }
 
-// ── Música ambiental ─────────────────────────────────────────────────────────
+// ── Ambiente ─────────────────────────────────────────────────────────────────
 
 export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'menu'
 
 /**
- * Cada escenario tiene su propia escala y registro, así que suena distinto sin
- * necesidad de ninguna pista grabada: la ciudadela es luminosa (lidio), el
- * santuario contemplativo (eólico) y la caldera tensa (frigio).
+ * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
+ * capas que suenan a la vez.
+ *
+ * - `air`: lecho de ruido en bucle, filtrado y con el corte respirando muy
+ *   despacio — el viento de la ciudadela, el aire quieto del santuario, el
+ *   rugido sordo de la caldera.
+ * - `drone`: dos o tres notas larguísimas, muy graves y ligeramente
+ *   desafinadas entre sí, que dan tono y profundidad sin melodía que se pegue.
+ * - `detail`: sucesos sueltos y espaciados (una gota, una chispa, una
+ *   campanilla) que llegan a intervalos irregulares para que el sitio parezca
+ *   vivo y no un bucle.
+ *
+ * La versión anterior encadenaba acordes de pad y sonaba a órgano de juguete:
+ * en un juego de tablero la capa de fondo tiene que poder ignorarse mientras
+ * se piensa la jugada.
  */
-const THEMES: Record<MusicTheme, { root: number; scale: readonly number[]; wave: OscillatorType; beat: number }> = {
-  'aether-citadel': { root: 196, scale: [0, 2, 4, 7, 9, 11], wave: 'triangle', beat: 3.1 },
-  sanctuary: { root: 174.6, scale: [0, 2, 3, 5, 7, 10], wave: 'sine', beat: 3.6 },
-  caldera: { root: 155.6, scale: [0, 1, 3, 5, 7, 8], wave: 'sawtooth', beat: 2.7 },
-  menu: { root: 220, scale: [0, 3, 5, 7, 10], wave: 'sine', beat: 4 },
-}
-
-interface MusicHandle {
-  theme: MusicTheme
-  timer: number
-  nodes: Set<{ stop: (when?: number) => void }>
-}
-
-let music: MusicHandle | null = null
-
-/** Un acorde de pad: fundamental, quinta y una nota de color de la escala. */
-const scheduleChord = (active: Engine, theme: MusicTheme, seed: number): void => {
-  const { context } = active
-  const config = THEMES[theme]
-  const degrees = [0, 2, 4].map((offset) => config.scale[(seed + offset) % config.scale.length] ?? 0)
-  const octave = seed % 3 === 0 ? 2 : 1
-  const begin = context.currentTime + 0.05
-  const length = config.beat * 1.35
-
-  for (const [index, semitones] of degrees.entries()) {
-    const oscillator = context.createOscillator()
-    const gain = context.createGain()
-    oscillator.type = config.wave
-    oscillator.frequency.value = step(config.root * octave, semitones) / 2
-    // Ataque y caída muy largos: el pad respira, no marca ritmo.
-    gain.gain.setValueAtTime(0.0001, begin)
-    gain.gain.exponentialRampToValueAtTime(0.16 - index * 0.035, begin + length * 0.4)
-    gain.gain.exponentialRampToValueAtTime(0.0001, begin + length)
-    const filter = context.createBiquadFilter()
-    filter.type = 'lowpass'
-    filter.frequency.value = 900 + index * 260
-    oscillator.connect(filter).connect(gain)
-    gain.connect(active.music)
-    gain.connect(active.reverb)
-    oscillator.start(begin)
-    oscillator.stop(begin + length + 0.1)
-    music?.nodes.add(oscillator)
-    oscillator.addEventListener('ended', () => music?.nodes.delete(oscillator))
+interface AmbienceProfile {
+  air: {
+    /** Espectro del lecho: 'brown' pesa hacia los graves, 'pink' es más neutro. */
+    color: 'brown' | 'pink'
+    /** Corte del pasa-bajos, en Hz, y cuánto respira arriba y abajo. */
+    cutoff: number
+    sweep: number
+    /** Ciclos por segundo de esa respiración: siempre muy por debajo de 1. */
+    breath: number
+    gain: number
+  }
+  drone: {
+    /** Fundamental en Hz y los intervalos (en semitonos) que se apilan encima. */
+    root: number
+    intervals: readonly number[]
+    wave: OscillatorType
+    gain: number
+    /** Desafinado entre las voces, en cents: da el batido lento característico. */
+    detune: number
+  }
+  detail: {
+    kind: 'chime' | 'drip' | 'ember'
+    /** Separación mínima y máxima entre sucesos, en segundos. */
+    everyMin: number
+    everyMax: number
+    gain: number
   }
 }
 
+export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
+  // Altura y aire libre: viento fino, tono luminoso, campanillas de cristal.
+  'aether-citadel': {
+    air: { color: 'pink', cutoff: 820, sweep: 420, breath: 0.055, gain: 0.14 },
+    drone: { root: 98, intervals: [0, 7, 19], wave: 'triangle', gain: 0.05, detune: 6 },
+    detail: { kind: 'chime', everyMin: 7, everyMax: 16, gain: 0.16 },
+  },
+  // Piedra, noche y agua: casi sin viento, tono menor, goteo en la lejanía.
+  sanctuary: {
+    air: { color: 'brown', cutoff: 340, sweep: 140, breath: 0.03, gain: 0.16 },
+    drone: { root: 87.3, intervals: [0, 3, 12], wave: 'sine', gain: 0.06, detune: 4 },
+    detail: { kind: 'drip', everyMin: 4, everyMax: 11, gain: 0.13 },
+  },
+  // Interior volcánico: rumor grave constante y brasas que estallan a menudo.
+  caldera: {
+    air: { color: 'brown', cutoff: 190, sweep: 110, breath: 0.09, gain: 0.22 },
+    drone: { root: 65.4, intervals: [0, 1, 12], wave: 'sawtooth', gain: 0.045, detune: 9 },
+    detail: { kind: 'ember', everyMin: 1.6, everyMax: 5, gain: 0.1 },
+  },
+  // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
+  menu: {
+    air: { color: 'pink', cutoff: 500, sweep: 200, breath: 0.04, gain: 0.09 },
+    drone: { root: 110, intervals: [0, 7, 16], wave: 'sine', gain: 0.055, detune: 5 },
+    detail: { kind: 'chime', everyMin: 11, everyMax: 24, gain: 0.12 },
+  },
+}
+
 /**
- * Arranca (o cambia) la capa ambiental de fondo. Es generativa: encadena
- * acordes de pad con una progresión que no se repite exacta, así que no hay
- * bucle audible ni archivo que descargar. Llamarla con el tema que ya suena no
- * hace nada, para poder invocarla en cada render sin cortar la música.
+ * Ruido en bucle de varios segundos. 'brown' se integra (cada muestra parte de
+ * la anterior), lo que carga el espectro en los graves y da un rumor de fondo;
+ * 'pink' aproxima el rosa sumando dos polos, más parecido al siseo del aire.
+ */
+const buildNoiseLoop = (context: AudioContext, color: 'brown' | 'pink', seconds = 6): AudioBuffer => {
+  const length = Math.max(1, Math.floor(context.sampleRate * seconds))
+  const buffer = context.createBuffer(1, length, context.sampleRate)
+  const data = buffer.getChannelData(0)
+  let brown = 0
+  let slow = 0
+  let mid = 0
+  for (let i = 0; i < length; i += 1) {
+    const white = Math.random() * 2 - 1
+    if (color === 'brown') {
+      brown = (brown + white * 0.02) / 1.02
+      data[i] = brown * 3.2
+    } else {
+      slow = 0.99 * slow + white * 0.05
+      mid = 0.86 * mid + white * 0.25
+      data[i] = (slow + mid + white * 0.12) * 0.6
+    }
+  }
+  // Fundido cruzado en los extremos: sin esto el punto de bucle chasquea.
+  const fade = Math.min(2000, Math.floor(length / 8))
+  for (let i = 0; i < fade; i += 1) {
+    const k = i / fade
+    data[i] = (data[i] ?? 0) * k + (data[length - fade + i] ?? 0) * (1 - k)
+  }
+  return buffer
+}
+
+interface AmbienceHandle {
+  theme: MusicTheme
+  timer: number
+  /** Todo lo que hay que parar al cambiar de sitio. */
+  sources: Set<AudioScheduledSourceNode>
+  /** Ganancia común de la capa: permite fundirla en vez de cortarla en seco. */
+  bus: GainNode
+}
+
+let ambience: AmbienceHandle | null = null
+
+/** Un suceso suelto del ambiente: gota, chispa o campanilla. */
+const playDetail = (active: Engine, handle: AmbienceHandle, profile: AmbienceProfile): void => {
+  const { context } = active
+  const at = context.currentTime + 0.02
+  const gain = context.createGain()
+  gain.connect(handle.bus)
+  gain.connect(active.reverb)
+
+  if (profile.detail.kind === 'ember') {
+    // Brasa: chasquido corto de ruido, con la altura variando en cada disparo.
+    const duration = 0.09 + Math.random() * 0.1
+    const buffer = context.createBuffer(1, Math.max(1, Math.floor(context.sampleRate * duration)), context.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < data.length; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length)
+    const source = context.createBufferSource()
+    source.buffer = buffer
+    const filter = context.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.Q.value = 1.2
+    filter.frequency.value = 900 + Math.random() * 2200
+    gain.gain.setValueAtTime(profile.detail.gain * (0.5 + Math.random() * 0.5), at)
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + duration)
+    source.connect(filter).connect(gain)
+    source.start(at)
+    source.stop(at + duration)
+    handle.sources.add(source)
+    source.addEventListener('ended', () => handle.sources.delete(source))
+    return
+  }
+
+  const drip = profile.detail.kind === 'drip'
+  const duration = drip ? 0.3 : 2.6
+  const base = drip ? 640 + Math.random() * 520 : 880 * Math.pow(2, Math.floor(Math.random() * 3) / 3)
+  const oscillator = context.createOscillator()
+  oscillator.type = 'sine'
+  oscillator.frequency.setValueAtTime(base, at)
+  // La gota baja de tono al caer; la campanilla se queda quieta y se apaga.
+  if (drip) oscillator.frequency.exponentialRampToValueAtTime(base * 0.45, at + duration)
+  gain.gain.setValueAtTime(0.0001, at)
+  gain.gain.exponentialRampToValueAtTime(profile.detail.gain, at + (drip ? 0.008 : 0.06))
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + duration)
+  oscillator.connect(gain)
+  oscillator.start(at)
+  oscillator.stop(at + duration + 0.05)
+  handle.sources.add(oscillator)
+  oscillator.addEventListener('ended', () => handle.sources.delete(oscillator))
+
+  if (!drip) {
+    // La campanilla lleva su quinta encima, muy floja: suena a cristal golpeado
+    // y no a un pitido de test.
+    const partial = context.createOscillator()
+    const partialGain = context.createGain()
+    partial.type = 'sine'
+    partial.frequency.value = base * 1.5
+    partialGain.gain.setValueAtTime(0.0001, at)
+    partialGain.gain.exponentialRampToValueAtTime(profile.detail.gain * 0.35, at + 0.08)
+    partialGain.gain.exponentialRampToValueAtTime(0.0001, at + duration * 0.7)
+    partial.connect(partialGain)
+    partialGain.connect(handle.bus)
+    partialGain.connect(active.reverb)
+    partial.start(at)
+    partial.stop(at + duration)
+    handle.sources.add(partial)
+    partial.addEventListener('ended', () => handle.sources.delete(partial))
+  }
+}
+
+/** Programa el siguiente suceso a un intervalo irregular (nunca en rejilla). */
+const scheduleDetail = (active: Engine, handle: AmbienceHandle, profile: AmbienceProfile): void => {
+  const { everyMin, everyMax } = profile.detail
+  const wait = (everyMin + Math.random() * (everyMax - everyMin)) * 1000
+  handle.timer = window.setTimeout(() => {
+    if (ambience !== handle) return
+    playDetail(active, handle, profile)
+    scheduleDetail(active, handle, profile)
+  }, wait)
+}
+
+/**
+ * Arranca (o cambia) el ambiente del sitio. Entra con un fundido de dos
+ * segundos para que no aparezca de golpe al abrir la partida. Pedir el mismo
+ * ambiente que ya suena no hace nada, así se puede llamar en cada render.
  */
 export const startAmbientMusic = (theme: MusicTheme): void => {
-  if (music?.theme === theme) return
+  if (ambience?.theme === theme) return
   stopAmbientMusic()
   const active = getEngine()
   if (!active) return
   if (active.context.state === 'suspended') void active.context.resume()
-  let seed = 0
-  const config = THEMES[theme]
-  const handle: MusicHandle = { theme, timer: 0, nodes: new Set() }
-  music = handle
-  scheduleChord(active, theme, seed)
-  handle.timer = window.setInterval(() => {
-    seed = (seed + (seed % 2 === 0 ? 1 : 2)) % 12
-    if (music === handle) scheduleChord(active, theme, seed)
-  }, config.beat * 1000)
-}
+  const { context } = active
+  const profile = AMBIENCE[theme]
+  const bus = context.createGain()
+  bus.connect(active.music)
+  const now = context.currentTime
+  bus.gain.setValueAtTime(0.0001, now)
+  bus.gain.exponentialRampToValueAtTime(1, now + 2)
 
-/** Detiene la capa ambiental y libera sus osciladores. */
-export const stopAmbientMusic = (): void => {
-  if (!music) return
-  window.clearInterval(music.timer)
-  for (const node of music.nodes) {
-    try {
-      node.stop()
-    } catch {
-      // Un oscilador ya terminado lanza al pararlo otra vez: es inocuo.
-    }
+  const handle: AmbienceHandle = { theme, timer: 0, sources: new Set(), bus }
+  ambience = handle
+
+  // Capa 1: el aire del sitio.
+  const air = context.createBufferSource()
+  air.buffer = buildNoiseLoop(context, profile.air.color)
+  air.loop = true
+  const airFilter = context.createBiquadFilter()
+  airFilter.type = 'lowpass'
+  airFilter.frequency.value = profile.air.cutoff
+  airFilter.Q.value = 0.4
+  const airGain = context.createGain()
+  airGain.gain.value = profile.air.gain
+  air.connect(airFilter).connect(airGain).connect(bus)
+  // Respiración del corte: un oscilador lentísimo modula el filtro, así el
+  // lecho sube y baja de brillo en vez de quedarse plano y delatar el bucle.
+  const breath = context.createOscillator()
+  const breathDepth = context.createGain()
+  breath.type = 'sine'
+  breath.frequency.value = profile.air.breath
+  breathDepth.gain.value = profile.air.sweep
+  breath.connect(breathDepth).connect(airFilter.frequency)
+  air.start(now)
+  breath.start(now)
+  handle.sources.add(air)
+  handle.sources.add(breath)
+
+  // Capa 2: el tono grave del lugar.
+  for (const [index, semitones] of profile.drone.intervals.entries()) {
+    const voice = context.createOscillator()
+    const voiceGain = context.createGain()
+    const filter = context.createBiquadFilter()
+    voice.type = profile.drone.wave
+    voice.frequency.value = step(profile.drone.root, semitones)
+    voice.detune.value = (index - 1) * profile.drone.detune
+    filter.type = 'lowpass'
+    filter.frequency.value = 420 + index * 180
+    voiceGain.gain.value = profile.drone.gain / (index + 1)
+    voice.connect(filter).connect(voiceGain).connect(bus)
+    voiceGain.connect(active.reverb)
+    voice.start(now)
+    handle.sources.add(voice)
   }
-  music = null
+
+  // Capa 3: los sucesos sueltos.
+  scheduleDetail(active, handle, profile)
 }
 
-/** ¿Hay música sonando ahora mismo? (para tests y para la interfaz). */
-export const currentMusicTheme = (): MusicTheme | null => music?.theme ?? null
+/** Apaga el ambiente con un fundido corto y libera sus nodos. */
+export const stopAmbientMusic = (): void => {
+  const handle = ambience
+  if (!handle) return
+  ambience = null
+  window.clearTimeout(handle.timer)
+  const stopAll = () => {
+    for (const source of handle.sources) {
+      try {
+        source.stop()
+      } catch {
+        // Una fuente ya terminada lanza al pararla otra vez: es inocuo.
+      }
+    }
+    handle.sources.clear()
+  }
+  try {
+    const context = handle.bus.context
+    const now = context.currentTime
+    handle.bus.gain.cancelScheduledValues(now)
+    handle.bus.gain.setValueAtTime(Math.max(0.0001, handle.bus.gain.value), now)
+    handle.bus.gain.exponentialRampToValueAtTime(0.0001, now + 0.4)
+    window.setTimeout(stopAll, 450)
+  } catch {
+    stopAll()
+  }
+}
+
+/** ¿Qué ambiente suena ahora mismo? (para la interfaz y para los tests). */
+export const currentMusicTheme = (): MusicTheme | null => ambience?.theme ?? null
 
 /** Solo para tests: descarta el motor para poder construir otro limpio. */
 export const __resetAudioForTests = (): void => {
-  stopAmbientMusic()
+  if (ambience) {
+    window.clearTimeout(ambience.timer)
+    ambience = null
+  }
   engine = null
   mix = { master: 0.75, effects: 0.7, music: 0.35, muted: false }
 }

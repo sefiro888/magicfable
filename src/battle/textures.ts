@@ -63,94 +63,6 @@ const drawGlyph = (
   context.restore();
 };
 
-/** Piedra del suelo del Santuario con grietas de energía y un anillo rúnico grabado. */
-export const sanctuaryFloorTexture = (): CanvasTexture => {
-  const cached = cache.get('floor');
-  if (cached) return cached;
-  const size = 1024;
-  const [canvas, context] = makeCanvas(size);
-  const random = seededRandom(0x52554e41);
-  const center = size / 2;
-
-  // Base de piedra oscura con vetas.
-  const base = context.createRadialGradient(center, center, size * 0.08, center, center, size * 0.55);
-  base.addColorStop(0, '#232838');
-  base.addColorStop(0.55, '#161a28');
-  base.addColorStop(1, '#0b0e18');
-  context.fillStyle = base;
-  context.fillRect(0, 0, size, size);
-
-  // Moteado mineral sutil.
-  for (let index = 0; index < 2200; index += 1) {
-    const x = random() * size;
-    const y = random() * size;
-    const luminance = 24 + random() * 26;
-    context.fillStyle = `rgba(${luminance + 8}, ${luminance + 10}, ${luminance + 22}, ${0.16 + random() * 0.2})`;
-    context.fillRect(x, y, 1 + random() * 2.2, 1 + random() * 2.2);
-  }
-
-  // Juntas de losas: rejilla suave con desgaste.
-  context.strokeStyle = 'rgba(6, 8, 14, 0.55)';
-  context.lineWidth = 3;
-  const step = size / 8;
-  for (let index = 1; index < 8; index += 1) {
-    context.beginPath();
-    context.moveTo(index * step + (random() - 0.5) * 6, 0);
-    context.lineTo(index * step + (random() - 0.5) * 6, size);
-    context.stroke();
-    context.beginPath();
-    context.moveTo(0, index * step + (random() - 0.5) * 6);
-    context.lineTo(size, index * step + (random() - 0.5) * 6);
-    context.stroke();
-  }
-
-  // Grietas de energía arcana (se leerán con el emissiveMap).
-  context.strokeStyle = 'rgba(126, 214, 255, 0.5)';
-  context.lineWidth = 2.4;
-  context.shadowColor = 'rgba(126, 214, 255, 0.8)';
-  context.shadowBlur = 10;
-  for (let crack = 0; crack < 9; crack += 1) {
-    let x = center + (random() - 0.5) * size * 0.7;
-    let y = center + (random() - 0.5) * size * 0.7;
-    context.beginPath();
-    context.moveTo(x, y);
-    const segments = 5 + Math.floor(random() * 6);
-    for (let segment = 0; segment < segments; segment += 1) {
-      x += (random() - 0.5) * 120;
-      y += (random() - 0.5) * 120;
-      context.lineTo(x, y);
-    }
-    context.stroke();
-  }
-  context.shadowBlur = 0;
-
-  // Anillo rúnico grabado alrededor del tablero.
-  const ringRadius = size * 0.442;
-  context.strokeStyle = 'rgba(214, 178, 110, 0.5)';
-  context.lineWidth = 4;
-  context.beginPath();
-  context.arc(center, center, ringRadius, 0, Math.PI * 2);
-  context.stroke();
-  context.beginPath();
-  context.arc(center, center, ringRadius - 26, 0, Math.PI * 2);
-  context.stroke();
-  context.lineWidth = 3;
-  const glyphs = 26;
-  for (let index = 0; index < glyphs; index += 1) {
-    const angle = (index / glyphs) * Math.PI * 2;
-    // Tres runas «quebradas»: huecos apagados en el anillo.
-    if (index % 9 === 4) continue;
-    drawGlyph(
-      context,
-      center + Math.cos(angle) * (ringRadius - 13),
-      center + Math.sin(angle) * (ringRadius - 13),
-      22,
-      random,
-    );
-  }
-
-  return finishTexture('floor', canvas);
-};
 
 /** Cara de un monolito con una columna de runas talladas. */
 export const monolithTexture = (seed: number): CanvasTexture => {
@@ -183,187 +95,9 @@ export const monolithTexture = (seed: number): CanvasTexture => {
   return finishTexture(key, canvas);
 };
 
-/** Losas de piedra cálida con incrustaciones doradas, para la plataforma celeste. */
-export const stoneFloorTexture = (): CanvasTexture => {
-  const cached = cache.get('stone-floor');
-  if (cached) return cached;
-  const size = 1024;
-  const [canvas, context] = makeCanvas(size);
-  const random = seededRandom(0x50494544);
-  const center = size / 2;
 
-  const base = context.createRadialGradient(center, center, size * 0.06, center, center, size * 0.62);
-  base.addColorStop(0, '#665c55');
-  base.addColorStop(0.55, '#4c443f');
-  base.addColorStop(1, '#332c29');
-  context.fillStyle = base;
-  context.fillRect(0, 0, size, size);
 
-  // Moteado mineral.
-  for (let index = 0; index < 2600; index += 1) {
-    const luminance = 40 + random() * 34;
-    context.fillStyle = `rgba(${luminance + 12}, ${luminance + 6}, ${luminance}, ${0.12 + random() * 0.18})`;
-    context.fillRect(random() * size, random() * size, 1 + random() * 2.4, 1 + random() * 2.4);
-  }
 
-  // Juntas de losas en anillos concéntricos + radios, como en la referencia.
-  context.strokeStyle = 'rgba(12, 10, 9, 0.6)';
-  context.lineWidth = 3;
-  for (let ring = 1; ring <= 5; ring += 1) {
-    context.beginPath();
-    context.arc(center, center, ring * size * 0.095, 0, Math.PI * 2);
-    context.stroke();
-  }
-  const spokes = 26;
-  for (let index = 0; index < spokes; index += 1) {
-    const angle = (index / spokes) * Math.PI * 2;
-    context.beginPath();
-    context.moveTo(center + Math.cos(angle) * size * 0.11, center + Math.sin(angle) * size * 0.11);
-    context.lineTo(center + Math.cos(angle) * size * 0.5, center + Math.sin(angle) * size * 0.5);
-    context.stroke();
-  }
-
-  // Incrustaciones doradas (se leen también en el emissiveMap).
-  context.strokeStyle = 'rgba(212, 168, 92, 0.55)';
-  context.shadowColor = 'rgba(232, 190, 110, 0.55)';
-  context.shadowBlur = 6;
-  context.lineWidth = 3.4;
-  for (const radius of [0.155, 0.345, 0.475]) {
-    context.beginPath();
-    context.arc(center, center, size * radius, 0, Math.PI * 2);
-    context.stroke();
-  }
-  context.lineWidth = 2;
-  for (let index = 0; index < 8; index += 1) {
-    const angle = (index / 8) * Math.PI * 2 + Math.PI / 8;
-    context.beginPath();
-    context.moveTo(center + Math.cos(angle) * size * 0.16, center + Math.sin(angle) * size * 0.16);
-    context.lineTo(center + Math.cos(angle) * size * 0.47, center + Math.sin(angle) * size * 0.47);
-    context.stroke();
-  }
-  context.shadowBlur = 0;
-  return finishTexture('stone-floor', canvas);
-};
-
-/** Círculo rúnico azul incandescente (fondo transparente) para incrustar en el suelo. */
-export const runicCircleTexture = (): CanvasTexture => {
-  const cached = cache.get('runic-circle');
-  if (cached) return cached;
-  const size = 512;
-  const [canvas, context] = makeCanvas(size);
-  const random = seededRandom(0x43495243);
-  const center = size / 2;
-  context.clearRect(0, 0, size, size);
-
-  context.strokeStyle = 'rgba(120, 200, 255, 0.95)';
-  context.shadowColor = 'rgba(120, 200, 255, 0.9)';
-  context.shadowBlur = 14;
-  context.lineWidth = 5;
-  context.beginPath();
-  context.arc(center, center, size * 0.42, 0, Math.PI * 2);
-  context.stroke();
-  context.lineWidth = 2.6;
-  context.beginPath();
-  context.arc(center, center, size * 0.34, 0, Math.PI * 2);
-  context.stroke();
-  context.beginPath();
-  context.arc(center, center, size * 0.12, 0, Math.PI * 2);
-  context.stroke();
-
-  // Glifos entre los anillos y triángulos internos.
-  const glyphs = 12;
-  for (let index = 0; index < glyphs; index += 1) {
-    const angle = (index / glyphs) * Math.PI * 2;
-    drawGlyph(context, center + Math.cos(angle) * size * 0.38, center + Math.sin(angle) * size * 0.38, 20, random);
-  }
-  context.beginPath();
-  for (let index = 0; index <= 3; index += 1) {
-    const angle = (index / 3) * Math.PI * 2 - Math.PI / 2;
-    const x = center + Math.cos(angle) * size * 0.3;
-    const y = center + Math.sin(angle) * size * 0.3;
-    if (index === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  }
-  context.stroke();
-  context.shadowBlur = 0;
-  return finishTexture('runic-circle', canvas);
-};
-
-/** Espiral del portal arcano (se anima rotando el plano que la usa). */
-export const portalSwirlTexture = (): CanvasTexture => {
-  const cached = cache.get('portal-swirl');
-  if (cached) return cached;
-  const size = 512;
-  const [canvas, context] = makeCanvas(size);
-  const center = size / 2;
-  context.clearRect(0, 0, size, size);
-  const glowBase = context.createRadialGradient(center, center, 0, center, center, center);
-  glowBase.addColorStop(0, 'rgba(220, 245, 255, 0.9)');
-  glowBase.addColorStop(0.35, 'rgba(90, 170, 255, 0.55)');
-  glowBase.addColorStop(0.8, 'rgba(30, 70, 180, 0.25)');
-  glowBase.addColorStop(1, 'rgba(10, 25, 90, 0)');
-  context.fillStyle = glowBase;
-  context.fillRect(0, 0, size, size);
-  context.strokeStyle = 'rgba(190, 230, 255, 0.8)';
-  context.shadowColor = 'rgba(150, 210, 255, 0.9)';
-  context.shadowBlur = 10;
-  for (let arm = 0; arm < 4; arm += 1) {
-    context.lineWidth = 6 - arm;
-    context.beginPath();
-    const offset = (arm / 4) * Math.PI * 2;
-    for (let step = 0; step <= 90; step += 1) {
-      const progress = step / 90;
-      const angle = offset + progress * Math.PI * 3.4;
-      const radius = progress * center * 0.92;
-      const x = center + Math.cos(angle) * radius;
-      const y = center + Math.sin(angle) * radius;
-      if (step === 0) context.moveTo(x, y);
-      else context.lineTo(x, y);
-    }
-    context.stroke();
-  }
-  context.shadowBlur = 0;
-  return finishTexture('portal-swirl', canvas);
-};
-
-/** Cielo cósmico: nebulosas y polvo estelar para la esfera de fondo. */
-export const nebulaTexture = (): CanvasTexture => {
-  const cached = cache.get('nebula');
-  if (cached) return cached;
-  const size = 1024;
-  const [canvas, context] = makeCanvas(size);
-  const random = seededRandom(0x4e454255);
-  context.fillStyle = '#070b1c';
-  context.fillRect(0, 0, size, size);
-  const blobs: readonly (readonly [string, number])[] = [
-    ['rgba(64, 66, 148, 0.34)', 220],
-    ['rgba(108, 62, 158, 0.27)', 190],
-    ['rgba(40, 90, 190, 0.3)', 240],
-    ['rgba(150, 90, 190, 0.18)', 150],
-    ['rgba(70, 130, 220, 0.24)', 200],
-  ];
-  for (const [color, radius] of blobs) {
-    for (let index = 0; index < 5; index += 1) {
-      const x = random() * size;
-      const y = random() * size;
-      const r = radius * (0.6 + random() * 0.8);
-      const gradient = context.createRadialGradient(x, y, 0, x, y, r);
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(1, 'rgba(7, 11, 28, 0)');
-      context.fillStyle = gradient;
-      context.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-  }
-  for (let index = 0; index < 900; index += 1) {
-    const brightness = 0.25 + random() * 0.75;
-    context.fillStyle = `rgba(255, 255, 255, ${brightness * 0.8})`;
-    const radius = random() < 0.06 ? 1.6 : 0.9;
-    context.beginPath();
-    context.arc(random() * size, random() * size, radius, 0, Math.PI * 2);
-    context.fill();
-  }
-  return finishTexture('nebula', canvas);
-};
 
 /** Traza una grieta ramificada con sombra y brillo desplazado (relieve). */
 const carveCrack = (
@@ -936,4 +670,182 @@ export const lavaFloorTexture = (): CanvasTexture => {
   }
 
   return finishTexture('lava-floor', canvas);
+};
+
+/**
+ * Agua oscura del lago que rodea el Santuario: azul de noche con ondulaciones
+ * claras. Se usa en un plano grande y repetido, y el material la desplaza
+ * lentamente para que el lago parezca moverse sin coste de simulación.
+ */
+export const nightWaterTexture = (): CanvasTexture => {
+  const cached = cache.get('night-water');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x57415445);
+
+  context.fillStyle = '#060d1c';
+  context.fillRect(0, 0, size, size);
+  // Manchas de profundidad: el agua no es un color plano.
+  for (let index = 0; index < 120; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = 30 + random() * 90;
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, `rgba(20, 44, 78, ${0.1 + random() * 0.18})`);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+  // Crestas: arcos finos y tendidos, más densos cuanto más claros.
+  for (let index = 0; index < 260; index += 1) {
+    const y = random() * size;
+    const x = random() * size;
+    const width = 20 + random() * 90;
+    const alpha = 0.05 + random() * 0.22;
+    context.strokeStyle = `rgba(150, 200, 255, ${alpha})`;
+    context.lineWidth = 0.6 + random() * 1.4;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.quadraticCurveTo(x + width / 2, y - 3 - random() * 5, x + width, y);
+    context.stroke();
+  }
+  return finishTexture('night-water', canvas);
+};
+
+/**
+ * Basalto de la Caldera: roca volcánica casi negra con juntas de columna
+ * hexagonal y algún rescoldo atrapado. Tileable, para paredes y columnas.
+ */
+export const basaltTexture = (): CanvasTexture => {
+  const cached = cache.get('basalt');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x42415341);
+
+  context.fillStyle = '#120a09';
+  context.fillRect(0, 0, size, size);
+  for (let index = 0; index < 700; index += 1) {
+    const shade = 14 + Math.floor(random() * 26);
+    context.fillStyle = `rgba(${shade + 10}, ${shade}, ${shade - 2}, ${0.25 + random() * 0.4})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 3, 1 + random() * 3);
+  }
+  // Juntas verticales: el basalto se rompe en prismas alargados.
+  for (let index = 0; index < 22; index += 1) {
+    const x = random() * size;
+    context.strokeStyle = `rgba(0, 0, 0, ${0.35 + random() * 0.35})`;
+    context.lineWidth = 1 + random() * 3;
+    context.beginPath();
+    context.moveTo(x, 0);
+    for (let y = 0; y <= size; y += 32) context.lineTo(x + (random() - 0.5) * 10, y);
+    context.stroke();
+  }
+  // Rescoldos: pocas vetas naranjas, para que el negro no quede muerto.
+  for (let index = 0; index < 14; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    context.strokeStyle = `rgba(255, ${90 + Math.floor(random() * 90)}, 30, ${0.25 + random() * 0.35})`;
+    context.lineWidth = 1 + random() * 2;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + (random() - 0.5) * 60, y + (random() - 0.5) * 60);
+    context.stroke();
+  }
+  return finishTexture('basalt', canvas);
+};
+
+/**
+ * Hierro de fragua: metal oscuro martilleado con remaches, para el armazón que
+ * sostiene el tablero sobre la lava.
+ */
+export const forgeIronTexture = (): CanvasTexture => {
+  const cached = cache.get('forge-iron');
+  if (cached) return cached;
+  const size = 256;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4952454e);
+
+  const base = context.createLinearGradient(0, 0, 0, size);
+  base.addColorStop(0, '#2e2723');
+  base.addColorStop(1, '#171310');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+  // Marcas de martillo: óvalos claros muy tenues.
+  for (let index = 0; index < 90; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    const r = 4 + random() * 9;
+    const gradient = context.createRadialGradient(x, y, 0, x, y, r);
+    gradient.addColorStop(0, `rgba(120, 104, 92, ${0.12 + random() * 0.16})`);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // Remaches en los bordes.
+  for (const y of [14, size - 14]) {
+    for (let x = 14; x < size; x += 34) {
+      context.fillStyle = 'rgba(150, 130, 112, 0.55)';
+      context.beginPath();
+      context.arc(x, y, 3.4, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      context.beginPath();
+      context.arc(x + 1, y + 1.4, 2.2, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  return finishTexture('forge-iron', canvas);
+};
+
+/**
+ * Piedra musgosa del Santuario: granito gris azulado con líquenes verdes.
+ * Es el suelo de la isla y la carne de los monolitos rotos.
+ */
+export const mossStoneTexture = (): CanvasTexture => {
+  const cached = cache.get('moss-stone');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4d4f5353);
+
+  // Granito CLARO: en 3D esta textura multiplica al color del material, así
+  // que si la base es oscura las piedras salen como siluetas negras de noche.
+  context.fillStyle = '#8b95a3';
+  context.fillRect(0, 0, size, size);
+  for (let index = 0; index < 600; index += 1) {
+    const shade = 130 + Math.floor(random() * 60);
+    context.fillStyle = `rgba(${shade}, ${shade + 6}, ${shade + 14}, ${0.2 + random() * 0.35})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 3, 1 + random() * 3);
+  }
+  // Líquenes: manchas verdes irregulares agrupadas.
+  for (let index = 0; index < 55; index += 1) {
+    const cx = random() * size;
+    const cy = random() * size;
+    for (let blob = 0; blob < 12; blob += 1) {
+      const x = cx + (random() - 0.5) * 60;
+      const y = cy + (random() - 0.5) * 60;
+      const r = 3 + random() * 12;
+      context.fillStyle = `rgba(${86 + Math.floor(random() * 40)}, ${126 + Math.floor(random() * 50)}, ${82 + Math.floor(random() * 30)}, ${0.12 + random() * 0.24})`;
+      context.beginPath();
+      context.arc(x, y, r, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  // Grietas.
+  for (let index = 0; index < 30; index += 1) {
+    let x = random() * size;
+    let y = random() * size;
+    context.strokeStyle = `rgba(28, 32, 40, ${0.3 + random() * 0.4})`;
+    context.lineWidth = 0.8 + random() * 1.8;
+    context.beginPath();
+    context.moveTo(x, y);
+    for (let step = 0; step < 5; step += 1) {
+      x += (random() - 0.5) * 70;
+      y += (random() - 0.5) * 70;
+      context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+  return finishTexture('moss-stone', canvas);
 };
