@@ -24,6 +24,7 @@ import {
   TILE_SIZE,
   worldToGrid,
 } from './grid/gridCoordinates'
+import { impulsesForEvent, type Impulse } from './combatImpulse'
 import { slabTexture } from './textures'
 import styles from './Board3D.module.css'
 
@@ -261,6 +262,9 @@ const HOP_STEP_MS = 190
 /** Altura del arco de cada salto: sutil, solo para separar visualmente cada casilla cruzada. */
 const HOP_HEIGHT = 0.16
 
+/** Duración de la embestida y del retroceso, en milisegundos. */
+const IMPULSE_MS = 300
+
 interface HopPath {
   /** Casillas cruzadas, incluida la de salida y la de llegada. Siempre en línea recta: el motor nunca permite mover en diagonal. */
   readonly cells: readonly Position[]
@@ -268,7 +272,7 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, onHover, previewLines, reducedMotion }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, onHover, previewLines, reducedMotion, impulse }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -287,6 +291,15 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
    */
   const prevGridPos = useRef(piece.position)
   const hop = useRef<HopPath | null>(null)
+  /** Grupo intermedio del golpe: se desplaza sobre la posición de la casilla,
+      sin tocarla — el amortiguado de `group` la persigue cada fotograma y
+      sumarle el desplazamiento ahí lo haría converger de vuelta a medias. */
+  const strike = useRef<Group>(null)
+  const impulseRun = useRef<{ start: number; dx: number; dz: number; kind: 'lunge' | 'recoil' } | null>(null)
+  useEffect(() => {
+    if (!impulse || reducedMotion) return
+    impulseRun.current = { start: performance.now(), dx: impulse.dx, dz: impulse.dz, kind: impulse.kind }
+  }, [impulse, reducedMotion])
   useEffect(() => {
     const prev = prevGridPos.current
     prevGridPos.current = piece.position
@@ -353,6 +366,24 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       const material = readyRing.current.material as MeshBasicMaterial
       material.opacity = reducedMotion ? 0.32 : 0.24 + (Math.sin(clock.elapsedTime * 2.1) + 1) * 0.09
     }
+    // Embestida / retroceso: ida y vuelta con seno, para que salga y regrese
+    // en el mismo gesto sin dejar la ficha descolocada si se corta a medias.
+    const strikeNode = strike.current
+    if (strikeNode) {
+      const run = impulseRun.current
+      if (run) {
+        const progress = Math.min(1, (performance.now() - run.start) / IMPULSE_MS)
+        // La embestida sale disparada y vuelve; el retroceso es más corto.
+        const reach = run.kind === 'lunge' ? 0.5 : -0.26
+        const wave = Math.sin(progress * Math.PI)
+        strikeNode.position.x = run.dx * reach * wave
+        strikeNode.position.z = run.dz * reach * wave
+        strikeNode.position.y = (run.kind === 'lunge' ? 0.1 : 0.04) * wave
+        if (progress >= 1) impulseRun.current = null
+      } else if (strikeNode.position.lengthSq() > 0.00001) {
+        strikeNode.position.set(0, 0, 0)
+      }
+    }
   })
   if (!card) return null
   const onClick = () => onPiece(piece.instanceId)
@@ -376,6 +407,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
+      <group ref={strike}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
           Se eleva CARD_STAND_RISE para que, al girar desde su centro, el borde
           inferior quede a ras de la casilla en vez de hundirse en ella. */}
@@ -437,7 +469,10 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           </mesh>
         )}
       </group>
-      {/* Anillos de selección/disponibilidad: se quedan tumbados en la casilla aunque la carta se incline. */}
+      </group>
+      {/* Anillos de selección/disponibilidad: se quedan tumbados en la casilla
+          aunque la carta se incline — y tampoco acompañan a la embestida: son
+          marcas del tablero, no parte de la ficha. */}
       <group scale={CARD_SCALE}>
         {selected && (
           <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -860,6 +895,17 @@ function Scene(props: Board3DProps) {
   }, [props.state.board, props.localPlayerId])
   const ownDeployRow = props.localPlayerId === 'player' ? BOARD_SIZE - 1 : 0
   const subtleCells = props.scenario === 'aether-citadel'
+
+  /**
+   * Quién se mueve en el golpe que está sonando ahora: el atacante embiste
+   * hacia su objetivo y el que lo recibe retrocede. Solo las dos fichas
+   * implicadas reciben una prop distinta, así que el resto no se
+   * re-renderiza (`BoardCard` está memoizada).
+   */
+  const impulses = useMemo(
+    () => impulsesForEvent(props.activeEvent, props.state.board),
+    [props.activeEvent, props.state.board],
+  )
   return (
     <>
       {/* Todo el contenido jugable gira 180° cuando el invitado ('ai') mira la
@@ -912,6 +958,7 @@ function Scene(props: Board3DProps) {
             onHover={props.onHoverPiece}
             previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.lines : undefined}
             reducedMotion={props.reducedMotion}
+            impulse={impulses.get(piece.instanceId)}
           />
         ))}
       </Suspense>

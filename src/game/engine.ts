@@ -364,6 +364,12 @@ const damagePieceDetailed = (
   amount: number,
   sourceOwner?: PlayerId,
   effectId = 'impact',
+  /**
+   * Casilla de la que vino el golpe, cuando la hay (combate cuerpo a cuerpo o
+   * a distancia). Solo la usa la presentación: la ficha golpeada retrocede en
+   * la dirección correcta en vez de hacia fuera del tablero.
+   */
+  origin?: Position,
 ): DamageOutcome => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
   if (!target || amount <= 0) return { state, dealt: 0, healthBefore: target?.currentHealth ?? 0 };
@@ -414,7 +420,7 @@ const damagePieceDetailed = (
     });
   }
   next = enqueue(next, {
-    type: 'damage', targetId: pieceId, to: target.position, amount: finalAmount, effectId, durationMs: 300,
+    type: 'damage', targetId: pieceId, from: origin, to: target.position, amount: finalAmount, effectId, durationMs: 300,
   });
   if (target.currentHealth - finalAmount <= 0) {
     const owner = next.players[target.owner];
@@ -467,7 +473,9 @@ const damagePiece = (
   amount: number,
   sourceOwner?: PlayerId,
   effectId = 'impact',
-): MatchState => damagePieceDetailed(state, pieceId, amount, sourceOwner, effectId).state;
+  /** Casilla de origen del golpe, si la hay: solo la usa la presentación. */
+  origin?: Position,
+): MatchState => damagePieceDetailed(state, pieceId, amount, sourceOwner, effectId, origin).state;
 
 /**
  * Daño al Nexo de un bando, con su contabilidad completa: estadística de daño
@@ -1344,7 +1352,7 @@ export const attackPiece = (
   });
   const defenderPosition = defender.position;
   const defenderCard = pieceDefinition(defender);
-  const hit = damagePieceDetailed(next, defenderId, amount, playerId, card.vfx.impactEffect);
+  const hit = damagePieceDetailed(next, defenderId, amount, playerId, card.vfx.impactEffect, attacker.position);
   next = hit.state;
   // Vínculo vital: el Nexo propio se cura por el daño que llegó de verdad, no
   // por el anunciado — escudos y reducciones lo recortan antes.
@@ -1387,7 +1395,7 @@ export const attackPiece = (
   // estructuras (no tienen Ataque).
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
     const retaliation = Math.max(0, defenderCard.attack + defender.attackModifier);
-    next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect);
+    next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition);
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount, defenderId, defenderPosition);
   next = applyMalacharDrain(next, playerId);
@@ -1466,7 +1474,7 @@ export const previewAttackPiece = (
   const defenderCard = pieceDefinition(defender);
   if (!card || card.attack === undefined) return undefined;
   const amount = computeAttackAmount(state, attacker, card, defender);
-  const hit = damagePieceDetailed(state, defenderId, amount, attacker.owner, card.vfx.impactEffect);
+  const hit = damagePieceDetailed(state, defenderId, amount, attacker.owner, card.vfx.impactEffect, attacker.position);
   const defenderHealthAfter = Math.max(0, defender.currentHealth - hit.dealt);
   const defenderDies = defenderHealthAfter <= 0;
   const pierceOverkill = card.keywords.includes('pierce') && defenderDies
@@ -1478,7 +1486,7 @@ export const previewAttackPiece = (
   // cuerpo a cuerpo, incluso si el ataque recibido la mata.
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
     const raw = Math.max(0, defenderCard.attack + defender.attackModifier);
-    const back = damagePieceDetailed(state, attackerId, raw, defender.owner, defenderCard.vfx.impactEffect);
+    const back = damagePieceDetailed(state, attackerId, raw, defender.owner, defenderCard.vfx.impactEffect, defender.position);
     retaliationToAttacker = back.dealt;
     attackerHealthAfter = Math.max(0, attacker.currentHealth - back.dealt);
   }
