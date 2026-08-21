@@ -849,3 +849,53 @@ export const mossStoneTexture = (): CanvasTexture => {
   }
   return finishTexture('moss-stone', canvas);
 };
+
+/**
+ * Mármol claro de la Ciudadela: piedra pulida con vetas doradas finas. Es lo
+ * contrario del granito del Santuario y del basalto de la Caldera — cada sitio
+ * tiene su material, y por eso no comparten textura.
+ */
+export const marbleTexture = (): CanvasTexture => {
+  const cached = cache.get('marble');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4d415242);
+
+  const base = context.createLinearGradient(0, 0, size, size);
+  base.addColorStop(0, '#efe6d6');
+  base.addColorStop(0.5, '#e2d6c2');
+  base.addColorStop(1, '#d6c8b2');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+  // Nubes de tono: el mármol nunca es liso.
+  for (let index = 0; index < 90; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = 30 + random() * 110;
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, `rgba(255, 250, 240, ${0.1 + random() * 0.2})`);
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+  // Vetas: grises frías y algún hilo dorado.
+  for (let index = 0; index < 26; index += 1) {
+    let x = random() * size;
+    let y = random() * size;
+    const golden = index % 5 === 0;
+    context.strokeStyle = golden
+      ? `rgba(198, 158, 84, ${0.25 + random() * 0.3})`
+      : `rgba(150, 142, 130, ${0.12 + random() * 0.2})`;
+    context.lineWidth = golden ? 0.8 + random() : 0.6 + random() * 1.6;
+    context.beginPath();
+    context.moveTo(x, y);
+    for (let step = 0; step < 7; step += 1) {
+      x += (random() - 0.5) * 120;
+      y += (random() - 0.5) * 120;
+      context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+  return finishTexture('marble', canvas);
+};
