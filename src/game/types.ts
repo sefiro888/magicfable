@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -114,6 +114,14 @@ export type CardEffect =
   | { readonly kind: 'slow-all-enemies'; readonly amount: number }
   /** Destruye la unidad enemiga con más Ataque. */
   | { readonly kind: 'destroy-strongest-enemy' }
+  /** Danzante de la Destrucción: destruye TODAS las unidades (de los dos bandos) con poca Vida. */
+  | { readonly kind: 'destroy-low-health-all'; readonly threshold: number }
+  /** Ofrenda de Fuego: más daño si ya ha muerto una unidad propia este turno (Samsara). */
+  | { readonly kind: 'conditional-damage-all-enemies'; readonly baseAmount: number; readonly deathAmount: number }
+  /** Karma: devuelve a la mano todas las unidades propias destruidas este turno, con bono. */
+  | { readonly kind: 'return-fallen-allies'; readonly bonus: number }
+  /** Poder de Indrayani: devuelve del cementerio toda unidad con Renacer que aún no lo gastó. */
+  | { readonly kind: 'return-graveyard-renacer' }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 export interface CardDefinition {
@@ -204,6 +212,17 @@ export interface ResourceState {
 export interface CardInstance {
   readonly instanceId: string;
   readonly cardId: string;
+  /**
+   * Samsara — Renacer/Karma: bonos permanentes que trae de vuelta una unidad
+   * que ha muerto y regresado a la mano, para aplicarlos cuando se despliegue
+   * de nuevo (una copia de mazo normal nunca los lleva).
+   */
+  readonly bonusAttack?: number;
+  readonly bonusHealth?: number;
+  /** Samsara — Renacer: ya se gastó su única revivificación, no puede volver a activarse. */
+  readonly renacerSpent?: boolean;
+  /** Samsara — Pira del Ghat: coste genérico reducido para su próximo despliegue. */
+  readonly costDiscount?: number;
 }
 
 export type PieceStatus =
@@ -277,6 +296,8 @@ export interface BoardPiece {
    * esta marca un +1 «permanente» duraría exactamente un turno.
    */
   readonly permanentAttackBonus?: number;
+  /** Samsara — Renacer: si esta unidad ya gastó su única revivificación. */
+  readonly renacerSpent?: boolean;
   readonly statuses: readonly PieceStatus[];
 }
 
@@ -315,6 +336,12 @@ export interface PlayerState {
   readonly challengedThisTurn?: boolean;
   /** Fimbul: si alguna unidad propia murió este turno (lo mira el Salón de los Caídos). */
   readonly unitDiedThisTurn?: boolean;
+  /** Samsara: cuántas unidades propias han muerto este turno (Asceta de la Ceniza, Avatar). */
+  readonly unitsDiedThisTurn?: number;
+  /** Samsara — Karma: ids de las cartas propias destruidas este turno, para devolverlas a la mano. */
+  readonly unitsDiedThisTurnLog?: readonly string[];
+  /** Pasiva de Indrayani: ya se robó por la primera muerte propia de este turno. */
+  readonly firstUnitDeathDrawUsedThisTurn?: boolean;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;

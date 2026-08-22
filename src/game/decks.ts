@@ -320,6 +320,29 @@ export const COMMANDERS = [
       effectId: 'commander-fimbul-power',
     },
   }) as CommanderDefinition,
+  // --- Samsara (NEX-05 «La Rueda que no se Detiene») ---
+  CommanderDefinitionSchema.parse({
+    id: 'indrayani-la-rueda',
+    name: 'Indrayani',
+    title: 'La que Hace Girar la Rueda',
+    faction: 'samsara',
+    nexusHealth: 35,
+    rules: 'La primera unidad aliada que muere cada turno te hace robar 1 carta.',
+    flavor: 'No castiga ni perdona. Solo se asegura de que la rueda siga girando.',
+    art: {
+      webp: '/assets/cards/art/indrayani-la-rueda.webp',
+      fallback: '/assets/cards/art/indrayani-la-rueda.svg',
+      alt: 'Indrayani, figura de cuatro brazos con corona de oro y aureola de fuego',
+    },
+    vfx: { persistentEffect: 'commander-samsara-aura', impactEffect: 'commander-samsara-hit' },
+    power: {
+      name: 'Vuelta Completa',
+      description: 'Devuelve a tu mano todas tus unidades destruidas esta partida que tuvieran Renacer.',
+      cost: { generic: 2, colored: { samsara: 1 } },
+      effects: [{ kind: 'return-graveyard-renacer' }],
+      effectId: 'commander-samsara-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -590,7 +613,49 @@ const fimbulDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
-export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck, fimbulDeck]) as readonly DeckDefinition[];
+/**
+ * Samsara: gira sobre Renacer y Avatar tal como pide el dosier — Peregrino y
+ * Mono Saltarín entran, mueren, vuelven mayores; Garuda, Rakshasa y Avatar del
+ * Jabalí premian que ya haya muerto algo tuyo ese turno.
+ */
+const samsaraDeck = DeckDefinitionSchema.parse({
+  id: 'rueda-samsara',
+  name: 'La Rueda que no se Detiene',
+  faction: 'samsara',
+  commanderId: 'indrayani-la-rueda',
+  cards: [
+    { cardId: 'fuente-samsara', count: 20 },
+    { cardId: 'peregrino-del-ganges', count: 2 },
+    { cardId: 'guardian-de-la-puerta', count: 1 },
+    { cardId: 'tigresa-de-la-diosa', count: 1 },
+    { cardId: 'mono-saltarin', count: 2 },
+    { cardId: 'bailarina-de-los-cien-brazos', count: 2 },
+    { cardId: 'naga-del-pozo', count: 2 },
+    { cardId: 'asceta-de-la-ceniza', count: 1 },
+    { cardId: 'arquero-del-arco-de-cuerno', count: 2 },
+    { cardId: 'vaca-de-la-abundancia', count: 1 },
+    { cardId: 'elefante-de-guerra', count: 1 },
+    { cardId: 'garuda-de-alas-de-sol', count: 1 },
+    { cardId: 'rakshasa-de-la-noche', count: 1 },
+    { cardId: 'nino-de-la-flauta', count: 1 },
+    { cardId: 'avatar-del-jabali', count: 1 },
+    { cardId: 'danzante-de-la-destruccion', count: 1 },
+    { cardId: 'flecha-de-brahma', count: 1 },
+    { cardId: 'rueda-que-gira', count: 1 },
+    { cardId: 'bendicion-del-rio', count: 1 },
+    { cardId: 'ofrenda-de-fuego', count: 1 },
+    { cardId: 'monzon', count: 1 },
+    { cardId: 'karma', count: 1 },
+    { cardId: 'templo-de-la-rueda', count: 1 },
+    { cardId: 'pira-del-ghat', count: 1 },
+    { cardId: 'estanque-de-loto', count: 1 },
+    { cardId: 'montana-batida', count: 1 },
+  ],
+}) as DeckDefinition;
+
+export const STARTER_DECKS = Object.freeze([
+  furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck, fimbulDeck, samsaraDeck,
+]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(
   Object.fromEntries(STARTER_DECKS.map((deck) => [deck.id, deck])),

@@ -81,6 +81,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['desafío', 'furor', 'invierno'],
   },
+  {
+    id: 'samsara',
+    name: 'Samsara',
+    description: 'La rueda que no se detiene: sus unidades mueren y vuelven mayores.',
+    color: '#e08a2c',
+    accentColor: '#ffd27a',
+    icon: 'lotus',
+    unlocked: true,
+    themes: ['renacer', 'avatar', 'ciclo'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -92,6 +102,7 @@ export const FACTION_BY_ID = Object.freeze({
   void: FACTIONS[5],
   duna: FACTIONS[6],
   fimbul: FACTIONS[7],
+  samsara: FACTIONS[8],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

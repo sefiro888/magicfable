@@ -532,7 +532,13 @@ const damagePieceDetailed = (
     next = withPlayer(
       { ...next, board: next.board.filter((piece) => piece.instanceId !== pieceId) },
       target.owner,
-      { ...owner, discard: [...owner.discard, { instanceId: target.instanceId, cardId: target.cardId }] },
+      {
+        ...owner,
+        discard: [
+          ...owner.discard,
+          { instanceId: target.instanceId, cardId: target.cardId, ...(target.renacerSpent ? { renacerSpent: true } : {}) },
+        ],
+      },
     );
     next = enqueue(next, {
       type: 'destroy', targetId: pieceId, to: target.position, effectId: dyingDefinition?.vfx.deathEffect ?? 'card-destroy', durationMs: 420,
@@ -550,6 +556,48 @@ const damagePieceDetailed = (
     // un barrido — cualquier otro punto de enganche dejaría fuera algún caso.
     if (dyingDefinition?.type === 'unit') {
       next = withPlayer(next, target.owner, { ...next.players[target.owner], unitDiedThisTurn: true });
+    }
+    // Samsara: cuenta de muertes propias del turno (Asceta, Avatar, Karma) +
+    // pasiva de Indrayani (la primera muerte propia de cada turno roba 1) +
+    // Renacer (la copia vuelve a la mano con +N/+N, solo una vez cada una).
+    if (dyingDefinition?.type === 'unit') {
+      const owner = target.owner;
+      next = withPlayer(next, owner, {
+        ...next.players[owner],
+        unitsDiedThisTurn: (next.players[owner].unitsDiedThisTurn ?? 0) + 1,
+        unitsDiedThisTurnLog: [...(next.players[owner].unitsDiedThisTurnLog ?? []), target.cardId],
+      });
+      if (!next.players[owner].firstUnitDeathDrawUsedThisTurn && next.players[owner].commanderId === 'indrayani-la-rueda') {
+        next = withPlayer(next, owner, { ...next.players[owner], firstUnitDeathDrawUsedThisTurn: true });
+        next = resolveDrawAndDiscard(next, owner, 1, 0);
+      }
+      const revive = dyingDefinition.effects.find((effect) => effect.kind === 'passive' && effect.id === 'revive-on-death');
+      if (revive?.kind === 'passive' && !target.renacerSpent) {
+        // Niño de la Flauta: +1/+1 adicional a toda revivificación de Renacer.
+        const auraBonus = next.board.some(
+          (ally) => ally.owner === owner && pieceDefinition(ally)?.effects.some(
+            (effect) => effect.kind === 'passive' && effect.id === 'renacer-extra-buff',
+          ),
+        ) ? 1 : 0;
+        // Pira del Ghat: la copia vuelve con el coste genérico 1 más barato.
+        const costDiscount = next.board.some(
+          (ally) => ally.owner === owner && pieceDefinition(ally)?.effects.some(
+            (effect) => effect.kind === 'passive' && effect.id === 'renacer-cost-discount',
+          ),
+        ) ? 1 : 0;
+        const bonus = (revive.value ?? 1) + auraBonus;
+        next = withPlayer(next, owner, {
+          ...next.players[owner],
+          hand: [...next.players[owner].hand, {
+            instanceId: `${target.instanceId}-renacer`,
+            cardId: target.cardId,
+            bonusAttack: bonus,
+            bonusHealth: bonus,
+            renacerSpent: true,
+            ...(costDiscount > 0 ? { costDiscount } : {}),
+          }],
+        });
+      }
     }
     // Nigromante Oscuro: roba una carta por cada unidad aliada propia que muere.
     if (dyingDefinition?.type === 'unit') {
@@ -743,7 +791,8 @@ export const spellNeedsPiece = (card: CardDefinition): boolean =>
       effect.kind === 'grant-keyword' ||
       (effect.kind === 'passive' && effect.id === 'curse-drain-health') ||
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end') ||
-      (effect.kind === 'passive' && effect.id === 'target-permanent-buff'),
+      (effect.kind === 'passive' && effect.id === 'target-permanent-buff') ||
+      (effect.kind === 'passive' && effect.id === 'sacrifice-return-buffed'),
   );
 
 const resolveDrawAndDiscard = (
@@ -908,6 +957,50 @@ const resolveSpell = (
       if (victim) {
         next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, caster, card.vfx.impactEffect);
       }
+    } else if (effect.kind === 'conditional-damage-all-enemies') {
+      // Ofrenda de Fuego (Samsara): más daño si ya murió una unidad propia este turno.
+      const amount = (next.players[caster].unitsDiedThisTurn ?? 0) > 0 ? effect.deathAmount : effect.baseAmount;
+      for (const piece of next.board.filter(
+        (candidate) => candidate.owner !== caster && pieceDefinition(candidate)?.type === 'unit',
+      )) {
+        next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect);
+      }
+    } else if (effect.kind === 'return-fallen-allies') {
+      // Karma (Samsara): recupera TODAS las unidades propias muertas este turno, con bono.
+      const fallen = next.players[caster].unitsDiedThisTurnLog ?? [];
+      if (fallen.length > 0) {
+        const revived = fallen.map((cardId, index) => ({
+          instanceId: `karma-${next.turn}-${index}-${cardId}`,
+          cardId,
+          bonusAttack: effect.bonus,
+          bonusHealth: effect.bonus,
+        }));
+        next = withPlayer(next, caster, {
+          ...next.players[caster],
+          hand: [...next.players[caster].hand, ...revived],
+          unitsDiedThisTurnLog: [],
+        });
+      }
+    } else if (effect.kind === 'return-graveyard-renacer') {
+      // Poder de Indrayani: recupera del cementerio TODA carta con Renacer,
+      // haya gastado ya su revivificación o no — le da a la rueda una vuelta
+      // más, sin bono de estadísticas (eso ya lo dio Renacer al morir la
+      // primera vez).
+      const eligible = next.players[caster].discard.filter((entry) => {
+        const definition = CARD_BY_ID[entry.cardId];
+        return definition?.effects.some((e) => e.kind === 'passive' && e.id === 'revive-on-death');
+      });
+      if (eligible.length > 0) {
+        const eligibleIds = new Set(eligible.map((entry) => entry.instanceId));
+        const revivedCards = eligible.map((entry, index) => ({
+          instanceId: `indrayani-${next.turn}-${index}-${entry.cardId}`, cardId: entry.cardId,
+        }));
+        next = withPlayer(next, caster, {
+          ...next.players[caster],
+          discard: next.players[caster].discard.filter((entry) => !eligibleIds.has(entry.instanceId)),
+          hand: [...next.players[caster].hand, ...revivedCards],
+        });
+      }
     } else if (effect.kind === 'scry') {
       next = enqueue(next, {
         type: 'spell', actorId: caster, amount: effect.amount, effectId: 'scry-top-cards', durationMs: 300,
@@ -972,6 +1065,23 @@ const resolveSpell = (
         currentHealth: piece.currentHealth + value,
         permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + value,
       }));
+    } else if (effect.kind === 'passive' && effect.id === 'sacrifice-return-buffed' && targetPiece?.owner === caster) {
+      // Rueda que Gira (Samsara): destruye a la propia y la trae de vuelta a
+      // la mano ya mejorada. Pasa por `damagePiece` (no un simple `filter`)
+      // para que dispare los mismos enganches que cualquier otra muerte
+      // (cuenta de Samsara, pasiva de Indrayani, Renacer si la carta también
+      // lo trae de casa).
+      const bonus = effect.value ?? 1;
+      const sacrificedCardId = targetPiece.cardId;
+      const sacrificedInstanceId = targetPiece.instanceId;
+      next = damagePiece(next, sacrificedInstanceId, targetPiece.currentHealth + 99, caster, card.vfx.impactEffect);
+      next = withPlayer(next, caster, {
+        ...next.players[caster],
+        hand: [...next.players[caster].hand, {
+          instanceId: `${sacrificedInstanceId}-rueda-${next.turn}`,
+          cardId: sacrificedCardId, bonusAttack: bonus, bonusHealth: bonus,
+        }],
+      });
     } else if (effect.kind === 'shield-all-allies') {
       // Juramento del Anillo: un escudo para cada unidad propia a la vez.
       for (const piece of next.board.filter(
@@ -1138,6 +1248,36 @@ const resolveEntryEffects = (
           ...candidate, attackModifier: candidate.attackModifier + allyAttack,
         }));
       }
+    } else if (effect.kind === 'passive' && effect.id === 'avatar-attack-buff') {
+      // Samsara — Avatar: bono de +Ataque solo si ya murió una unidad propia este turno.
+      if ((next.players[piece.owner].unitsDiedThisTurn ?? 0) > 0) {
+        const value = effect.value ?? 1;
+        next = updatePiece(next, piece.instanceId, (candidate) => ({ ...candidate, attackModifier: candidate.attackModifier + value }));
+      }
+    } else if (effect.kind === 'passive' && effect.id === 'avatar-stat-buff') {
+      if ((next.players[piece.owner].unitsDiedThisTurn ?? 0) > 0) {
+        const value = effect.value ?? 1;
+        next = updatePiece(next, piece.instanceId, (candidate) => ({
+          ...candidate, attackModifier: candidate.attackModifier + value, currentHealth: candidate.currentHealth + value,
+        }));
+      }
+    } else if (effect.kind === 'passive' && effect.id === 'avatar-grant-swift-strike') {
+      if ((next.players[piece.owner].unitsDiedThisTurn ?? 0) > 0) {
+        next = updatePiece(next, piece.instanceId, (candidate) => ({
+          ...candidate, grantedKeywords: [...(candidate.grantedKeywords ?? []), 'swift-strike'],
+        }));
+      }
+    } else if (effect.kind === 'passive' && effect.id === 'avatar-discard-enemy') {
+      if ((next.players[piece.owner].unitsDiedThisTurn ?? 0) > 0) {
+        next = resolveDrawAndDiscard(next, opponentOf(piece.owner), 0, effect.value ?? 1);
+      }
+    } else if (effect.kind === 'destroy-low-health-all') {
+      // Danzante de la Destrucción: barrido de Vida baja, sin distinguir bando.
+      for (const target of next.board.filter(
+        (candidate) => pieceDefinition(candidate)?.type === 'unit' && candidate.currentHealth <= effect.threshold,
+      )) {
+        next = damagePiece(next, target.instanceId, target.currentHealth + 99, piece.owner, card.vfx.impactEffect);
+      }
     } else if (effect.kind === 'passive' && effect.id === 'scorch-adjacents') {
       const expiresOnTurn = state.turn + 2;
       const scorched = orthogonalNeighbors(piece.position).map((position) => ({
@@ -1280,9 +1420,13 @@ const cardTargetRejectionReason = (
     return 'Solo puede apuntar a una unidad aliada.';
   }
   const friendlyBuff = card.effects.some(
-    (effect) => effect.kind === 'passive' && (effect.id === 'target-attack-until-end' || effect.id === 'target-permanent-buff'),
+    (effect) => effect.kind === 'passive' && (
+      effect.id === 'target-attack-until-end' || effect.id === 'target-permanent-buff' || effect.id === 'sacrifice-return-buffed'
+    ),
   );
   if (friendlyBuff && piece.owner !== playerId) return 'Solo puede apuntar a una unidad aliada.';
+  const sacrificeReturn = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'sacrifice-return-buffed');
+  if (sacrificeReturn && pieceDefinition(piece)?.type !== 'unit') return 'Solo puede apuntar a una unidad, no a una estructura.';
   const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move' || effect.kind === 'refresh-attack');
   if (refreshMove && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) {
     return 'Solo puede apuntar a una unidad aliada.';
@@ -1381,7 +1525,11 @@ export const playCard = (
     if (rejection) return fail(state, 'target-required', rejection);
   }
 
-  const cost = effectiveCost(state, playerId, card);
+  // Samsara — Pira del Ghat: una copia que ha vuelto por Renacer puede traer
+  // consigo un descuento de coste genérico para este despliegue.
+  const baseCost = effectiveCost(state, playerId, card);
+  const renacerDiscount = Math.min(baseCost.generic, instance.costDiscount ?? 0);
+  const cost = renacerDiscount > 0 ? { ...baseCost, generic: baseCost.generic - renacerDiscount } : baseCost;
   const payment = payMana(player.resources, cost);
   if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay Esencia disponible suficiente.');
   const receivesForgeBuff =
@@ -1465,17 +1613,22 @@ export const playCard = (
     const nyxarisRush =
       (commanderId === 'nyxaris-heraldo-vacio' || commanderId === 'zeph-sin-orilla')
       && card.type === 'unit' && !player.firstUnitDeployedThisTurn;
+    // Samsara — Renacer/Karma: bonos permanentes que la copia trae de vuelta de la mano.
+    const renacerBonusAttack = instance.bonusAttack ?? 0;
+    const renacerBonusHealth = instance.bonusHealth ?? 0;
     const piece: BoardPiece = {
       instanceId: instance.instanceId,
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus + borranReinforcement,
-      attackModifier: receivesForgeBuff ? 1 : 0,
+      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth,
+      attackModifier: (receivesForgeBuff ? 1 : 0) + renacerBonusAttack,
       movedThisTurn: false,
       attackedThisTurn: false,
       enteredOnTurn: nyxarisRush ? state.turn - 1 : state.turn,
       statuses: asterinShield ? [{ kind: 'shielded', amount: shieldAmount }] : [],
+      ...(renacerBonusAttack > 0 ? { permanentAttackBonus: renacerBonusAttack } : {}),
+      ...(instance.renacerSpent ? { renacerSpent: true } : {}),
     };
     next = { ...next, board: [...next.board, piece] };
     if (card.type === 'unit') {
@@ -2223,6 +2376,13 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
       } else if (effect.id === 'upkeep-draw-and-heal-if-died' && next.players[playerId].unitDiedThisTurn) {
         next = resolveDrawAndDiscard(next, playerId, 1, 0);
         next = healNexus(next, playerId, value);
+      } else if (effect.id === 'upkeep-draw-if-own-death' && (next.players[playerId].unitsDiedThisTurn ?? 0) > 0) {
+        // Templo de la Rueda (Samsara).
+        next = resolveDrawAndDiscard(next, playerId, 1, 0);
+      } else if (effect.id === 'upkeep-heal-per-own-death') {
+        // Asceta de la Ceniza (Samsara): cura por CADA unidad propia muerta este turno.
+        const deaths = next.players[playerId].unitsDiedThisTurn ?? 0;
+        if (deaths > 0) next = healNexus(next, playerId, value * deaths);
       }
     }
   }
@@ -2265,6 +2425,9 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         offeringsPaidThisTurn: 0,
         challengedThisTurn: false,
         unitDiedThisTurn: false,
+        unitsDiedThisTurn: 0,
+        unitsDiedThisTurnLog: [],
+        firstUnitDeathDrawUsedThisTurn: false,
       },
       [nextPlayerId]: {
         ...incoming,
@@ -2278,6 +2441,9 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         offeringsPaidThisTurn: 0,
         challengedThisTurn: false,
         unitDiedThisTurn: false,
+        unitsDiedThisTurn: 0,
+        unitsDiedThisTurnLog: [],
+        firstUnitDeathDrawUsedThisTurn: false,
       },
     },
     board: state.board.map((piece) => ({

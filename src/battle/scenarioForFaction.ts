@@ -21,6 +21,7 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   // Fría, de piedra, de noche: el Santuario ya tiene ese carácter, no hace
   // falta un escenario propio para que encaje.
   fimbul: 'sanctuary',
+  samsara: 'duna',
 }
 
 /**

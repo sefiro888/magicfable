@@ -14,6 +14,7 @@ export const ManaCostSchema = z
         void: z.number().int().nonnegative().optional(),
         duna: z.number().int().nonnegative().optional(),
         fimbul: z.number().int().nonnegative().optional(),
+        samsara: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -75,6 +76,13 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('always') }),
   z.object({ kind: z.literal('slow-all-enemies'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('destroy-strongest-enemy') }),
+  z.object({ kind: z.literal('destroy-low-health-all'), threshold: z.number().int().positive() }),
+  z.object({
+    kind: z.literal('conditional-damage-all-enemies'),
+    baseAmount: z.number().int().positive(), deathAmount: z.number().int().positive(),
+  }),
+  z.object({ kind: z.literal('return-fallen-allies'), bonus: z.number().int().positive() }),
+  z.object({ kind: z.literal('return-graveyard-renacer') }),
   z.object({ kind: z.literal('passive'), id: z.string().min(1), value: z.number().optional() }),
 ]);
 
