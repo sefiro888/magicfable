@@ -41,6 +41,7 @@ import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useSoundtrack } from '../services/useAudioMix'
 import { useMatchStore } from '../store/match'
 import { canPayOffering, offeringCost, offeringOf } from '../game/duna'
+import { resolveScenario } from '../battle/scenarioForFaction'
 import { useNetworkStore } from '../store/network'
 import { rejoinRoom } from '../multiplayer/room'
 import { clearTicket, readTicket } from '../multiplayer/ticket'
@@ -169,8 +170,15 @@ export function BattlePage() {
   const director = useEventDirector(ME, preferences)
   const scryOpen = director.scryAmount > 0
 
+  // Escenario efectivo: con «Según tu facción» lo decide el mazo con el que
+  // juegas, y si no, manda la elección manual. Se lee del propio MatchState y
+  // no del jugador, que se deriva más abajo.
+  const scenario = resolveScenario(
+    preferences.scenario,
+    match ? COMMANDER_BY_ID[match.players[ME].commanderId]?.faction : undefined,
+  )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).
-  useSoundtrack(preferences.scenario, Boolean(match))
+  useSoundtrack(scenario, Boolean(match))
 
   /**
    * Resultado del piso de Torre. Se apunta una sola vez por partida: el
@@ -838,7 +846,7 @@ export function BattlePage() {
             photoMode={photoMode}
             reducedMotion={preferences.reducedMotion}
             quality={preferences.graphicsQuality}
-            scenario={preferences.scenario}
+            scenario={scenario}
             activeEvent={currentEvent}
             pendingEvents={store.pendingAnimations}
             cursorCell={boardCursor.cell}

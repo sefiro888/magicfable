@@ -34,6 +34,7 @@ const DIFFICULTIES: readonly { value: AiDifficulty; label: string; hint: string 
 ]
 
 const SCENARIOS: readonly { value: ScenarioId; label: string; hint: string }[] = [
+  { value: 'auto', label: 'Según tu facción', hint: 'Cada facción pelea en su casa: la Caldera arde, Duna abrasa, el Santuario es de noche.' },
   { value: 'aether-citadel', label: 'Aether Citadel', hint: 'Plaza de mármol al amanecer, sobre un mar de nubes.' },
   { value: 'sanctuary', label: 'Santuario de las Runas', hint: 'Círculo de monolitos en una isla, de noche.' },
   { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Plataforma de hierro sobre un lago de lava.' },

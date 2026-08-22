@@ -2,7 +2,12 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high'
-export type ScenarioId = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna'
+/**
+ * 'auto' no es un escenario: es «el que le pegue a mi facción», y lo resuelve
+ * `resolveScenario`. Vive aquí y no como un ajuste aparte para que el selector
+ * siga siendo una sola lista.
+ */
+export type ScenarioId = 'auto' | 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna'
 export type AiDifficulty = 'easy' | 'normal' | 'hard'
 
 export interface PreferencesState {
@@ -79,7 +84,7 @@ const defaults = {
   opponentDeckId: 'random',
   commanderByDeck: {} as Readonly<Record<string, string>>,
   graphicsQuality: 'medium' as GraphicsQuality,
-  scenario: 'aether-citadel' as ScenarioId,
+  scenario: 'auto' as ScenarioId,
   animationSpeed: 1 as const,
   colorblindMode: false,
   boardTextScale: 1 as const,
