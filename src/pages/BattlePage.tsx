@@ -14,6 +14,7 @@ import {
   previewAttackPiece,
   reorderTopCards,
   STARTER_DECKS,
+  commanderForDeck,
   summarizeMana,
   validSpellTargets,
   type GameAction,
@@ -216,26 +217,33 @@ export function BattlePage() {
       : preferences.opponentDeckId === 'random'
         ? undefined
         : STARTER_DECKS.find((deck) => deck.id === preferences.opponentDeckId)
+    // Cada facción tiene dos comandantes: hay que comparar con el elegido, no
+    // con el de la baraja, o cambiar de líder no empezaría partida nueva.
+    const deckIdEnJuego = towerRun?.deckId ?? preferences.selectedDeckId
+    const commanderElegido = selectedDeck
+      ? commanderForDeck(selectedDeck, preferences.commanderByDeck[deckIdEnJuego]).id
+      : undefined
     const matchesSelection = Boolean(
       store.match
       && selectedDeck
-      && store.match.players.player.commanderId === selectedDeck.commanderId
+      && store.match.players.player.commanderId === commanderElegido
       && (!chosenOpponent || store.match.players.ai.commanderId === chosenOpponent.commanderId),
     )
     if (!matchesSelection) {
       useMatchStore.getState().startMatch(
-        towerRun?.deckId ?? preferences.selectedDeckId,
+        deckIdEnJuego,
         forcedSeed,
         chosenOpponent?.id,
         towerRun
           ? {
               playerNexusHealth: towerRun.health,
               aiNexusHealth: Math.max(1, towerMaxHealth(towerRun.deckId) - towerRun.enemyPenalty),
+              playerCommanderId: preferences.commanderByDeck[deckIdEnJuego],
             }
-          : undefined,
+          : { playerCommanderId: preferences.commanderByDeck[deckIdEnJuego] },
       )
     }
-  }, [preferences.selectedDeckId, preferences.opponentDeckId, store.match, forcedSeed, room, rejoining, isTowerMatch])
+  }, [preferences.selectedDeckId, preferences.opponentDeckId, preferences.commanderByDeck, store.match, forcedSeed, room, rejoining, isTowerMatch])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {

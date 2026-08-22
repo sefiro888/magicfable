@@ -268,8 +268,14 @@ export interface PlayerState {
   readonly nexusDamagedThisTurn: boolean;
   /** Pasiva de Kaela armada: la siguiente unidad cuesta 1 genérico menos. */
   readonly unitDiscountPending: boolean;
-  /** Pasiva de Nyxaris: la primera unidad del turno ya entró en juego. */
+  /** Pasiva de Nyxaris y de Zeph: la primera unidad del turno ya entró en juego. */
   readonly firstUnitDeployedThisTurn: boolean;
+  /** Pasiva de Borrán: la primera unidad destruida este turno ya curó al Nexo. */
+  readonly commanderKillHealUsedThisTurn?: boolean;
+  /** Pasiva de Síalu: ya se robó por el primer congelar/aturdir del turno. */
+  readonly commanderControlDrawUsedThisTurn?: boolean;
+  /** Pasiva de Orén: cuántas veces ha drenado ya este turno (tope de 2). */
+  readonly commanderDrainCountThisTurn?: number;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;

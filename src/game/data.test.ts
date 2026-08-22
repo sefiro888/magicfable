@@ -67,20 +67,19 @@ describe('catálogo del Nexo', () => {
     });
   });
 
-  it('define un comandante de 35 de vida por facción con datos válidos', () => {
-    expect(COMMANDERS).toHaveLength(6);
-    expect(COMMANDERS.map((commander) => commander.faction)).toEqual(PLAYABLE_FACTIONS.map((faction) => faction.id));
+  it('define comandantes de 35 de vida con datos válidos: dos por facción', () => {
+    expect(COMMANDERS).toHaveLength(12);
     expect(COMMANDERS.every((commander) => commander.nexusHealth === 35)).toBe(true);
     for (const commander of COMMANDERS) {
       expect(CommanderDefinitionSchema.safeParse(commander).success).toBe(true);
     }
   });
 
-  it('da a cada facción un comandante único que no colisiona con ninguna carta', () => {
-    // Exactamente un comandante por facción jugable.
+  it('da a cada facción dos comandantes únicos que no colisionan con ninguna carta', () => {
+    // Cada facción jugable tiene su líder original y su alternativo de NEX-02.
     for (const faction of PLAYABLE_FACTIONS) {
       const owners = COMMANDERS.filter((commander) => commander.faction === faction.id);
-      expect(owners, faction.id).toHaveLength(1);
+      expect(owners, faction.id).toHaveLength(2);
     }
     // Ids de comandante únicos entre sí.
     expect(new Set(COMMANDERS.map((commander) => commander.id)).size).toBe(COMMANDERS.length);

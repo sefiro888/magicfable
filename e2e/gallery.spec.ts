@@ -8,6 +8,10 @@ import { expect, test } from '@playwright/test'
 test('el filtro de palabras clave está en español', async ({ page }) => {
   await page.goto('/gallery')
   const keywords = page.getByLabel('Filtrar por palabra clave')
+  // Margen explícito de arranque: la galería monta 114 cartas con su arte y
+  // en la suite completa (con el resto de specs compitiendo por la máquina)
+  // los 5 s por defecto se quedaban cortos de forma intermitente.
+  await expect(keywords).toBeVisible({ timeout: 20_000 })
   await expect(keywords).toContainText('Golpe veloz')
   await expect(keywords).toContainText('Vínculo vital')
   await expect(keywords).not.toContainText('swift-strike')

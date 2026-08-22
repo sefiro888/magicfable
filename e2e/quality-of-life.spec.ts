@@ -18,7 +18,7 @@ test('la tecla E finaliza el turno como el botón', async ({ page }) => {
   // quien juega rápido), la tecla cede el turno a la primera.
   await page.addInitScript(() => {
     localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
-      state: { confirmEndTurn: false }, version: 6,
+      state: { confirmEndTurn: false }, version: 7,
     }))
   })
   await enterBattle(page)

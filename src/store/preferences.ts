@@ -20,6 +20,13 @@ export interface PreferencesState {
    * facciones); cualquier otro valor fija contra quién quieres pelear.
    */
   opponentDeckId: string
+  /**
+   * Comandante elegido para cada mazo, por id de mazo. Cada facción tiene dos
+   * líderes y la pasiva cambia cómo se juega la misma lista de cartas; sin
+   * esto no habría forma de usar los alternativos. Los mazos que no aparezcan
+   * usan el comandante de siempre.
+   */
+  commanderByDeck: Readonly<Record<string, string>>
   graphicsQuality: GraphicsQuality
   /** Escenario 3D de la batalla. */
   scenario: ScenarioId
@@ -50,6 +57,7 @@ export interface PreferencesState {
   setAiDifficulty: (difficulty: AiDifficulty) => void
   setSelectedDeck: (deckId: string) => void
   setOpponentDeck: (deckId: string) => void
+  setCommander: (deckId: string, commanderId: string) => void
   setGraphicsQuality: (quality: GraphicsQuality) => void
   setScenario: (scenario: ScenarioId) => void
   setAnimationSpeed: (speed: 1 | 1.5 | 2) => void
@@ -69,6 +77,7 @@ const defaults = {
   aiDifficulty: 'normal' as AiDifficulty,
   selectedDeckId: 'furia-caldera',
   opponentDeckId: 'random',
+  commanderByDeck: {} as Readonly<Record<string, string>>,
   graphicsQuality: 'medium' as GraphicsQuality,
   scenario: 'aether-citadel' as ScenarioId,
   animationSpeed: 1 as const,
@@ -88,6 +97,8 @@ export const usePreferences = create<PreferencesState>()(
       setAiDifficulty: (aiDifficulty) => set({ aiDifficulty }),
       setSelectedDeck: (selectedDeckId) => set({ selectedDeckId }),
       setOpponentDeck: (opponentDeckId) => set({ opponentDeckId }),
+      setCommander: (deckId, commanderId) =>
+        set((state) => ({ commanderByDeck: { ...state.commanderByDeck, [deckId]: commanderId } })),
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
       setScenario: (scenario) => set({ scenario }),
       setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
@@ -98,7 +109,7 @@ export const usePreferences = create<PreferencesState>()(
     }),
     {
       name: 'cronicas-nexo-preferences',
-      version: 6,
+      version: 7,
       migrate: (persisted) => ({ ...defaults, ...(persisted as Partial<PreferencesState>) }),
     },
   ),

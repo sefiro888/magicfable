@@ -42,7 +42,7 @@
 .editorHeader h3 { margin: 0; font-family: var(--display); font-weight: 500; font-size: 21px; }
 .editorHeader span { color: #817e77; font-size: 11px; }
 .list { display: grid; }
-.entry { min-height: 76px; display: grid; grid-template-columns: 52px 1fr auto auto; align-items: center; gap: 15px; padding: 10px 18px; border-bottom: 1px solid rgba(255,255,255,.065); }
+.entry { min-height: 76px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 15px; padding: 10px 18px; border-bottom: 1px solid rgba(255,255,255,.065); }
 .entry:last-child { border-bottom: 0; }
 .entry:hover { background: rgba(255,255,255,.02); }
 .art { width: 52px; height: 56px; object-fit: cover; border: 1px solid rgba(255,255,255,.14); background: #11131a; }
@@ -56,13 +56,34 @@
 
 /* Catálogo de la facción: cartas disponibles para añadir al mazo. */
 .pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; padding: 14px 18px; }
-.poolCard { display: grid; grid-template-columns: 44px 1fr auto auto; align-items: center; gap: 12px; padding: 8px 12px; cursor: pointer; text-align: left; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); transition: border-color .15s ease, background .15s ease; }
+/* La tarjeta ya no es un botón: dentro conviven «ver ficha» (toda la fila) y
+   «añadir» (el +), y un botón no puede contener a otro. */
+.poolCard { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); transition: border-color .15s ease, background .15s ease; }
 .poolCard:hover { border-color: var(--line-bright); background: rgba(215,180,103,.06); }
+.poolInfo {
+  display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px;
+  min-width: 0; min-height: 44px; padding: 0; text-align: left; cursor: pointer;
+  border: 0; background: none; color: inherit; font: inherit;
+}
+.poolInfo:focus-visible, .entryInfo:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 3px; }
 .poolCard .art { width: 44px; height: 48px; }
 .poolCard h4 { margin: 0 0 3px; font-family: var(--display); font-size: 14px; font-weight: 500; }
 .poolCard p { margin: 0; color: #7e7b74; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
-.addMark { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--line-bright); border-radius: 50%; color: var(--gold-bright); font-family: var(--display); font-size: 16px; }
+.addMark {
+  display: grid; place-items: center; width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--line-bright); border-radius: 50%; background: none;
+  color: var(--gold-bright); font-family: var(--display); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.addMark:hover { background: rgba(215,180,103,.2); border-color: var(--gold-bright); }
+.addMark:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
 .poolCard:hover .addMark { background: rgba(215,180,103,.14); }
+
+/* Ficha de una carta ya incluida: el arte y el nombre abren su información. */
+.entryInfo {
+  display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 15px;
+  min-width: 0; min-height: 44px; padding: 0; text-align: left; cursor: pointer;
+  border: 0; background: none; color: inherit; font: inherit;
+}
 
 /* ── Historial de escaramuzas ─────────────────────────────────────────────── */
 .history { margin-top: 26px; border: 1px solid var(--line); background: rgba(255,255,255,.014); }
@@ -125,11 +146,16 @@
   .summary h2 { font-size: 24px; overflow-wrap: anywhere; }
 }
 @media (max-width: 560px) {
-  .entry { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+  /* Dos columnas: la ficha (arte + nombre) y el contador. El arte y el nombre
+     ya viven dentro de .entryInfo, así que la fila no necesita una columna
+     propia para el arte. */
+  .entry { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+  .entryInfo { grid-template-columns: 44px minmax(0, 1fr); gap: 10px; }
   .entry .art { width: 44px; height: 48px; }
   .cost { display: none; }
   .pool { grid-template-columns: 1fr; padding: 12px; }
-  .poolCard > div { min-width: 0; }
+  .poolInfo { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .poolInfo > div { min-width: 0; }
 }
 
 /* ── Objetivos táctiles en móvil ──

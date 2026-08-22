@@ -12,6 +12,7 @@ import type {
   BoardPiece,
   CardDefinition,
   CardInstance,
+  CommanderDefinition,
   DeckDefinition,
   GameAction,
   GameErrorCode,
@@ -64,13 +65,29 @@ const instantiateDeck = (
     instanceId: `${playerId}-card-${index + 1}`,
   }));
 
+/**
+ * Comandante con el que se juega un mazo: el suyo de siempre, o el alternativo
+ * de la misma facción si la partida lo pide.
+ *
+ * Se exige que coincida la facción: un comandante presta su pasiva al mazo
+ * entero, y cruzarlos convertiría cualquier lista en la mejor de dos mundos.
+ * Si el id no vale, se cae al de la baraja en lugar de reventar la partida.
+ */
+export const commanderForDeck = (deck: DeckDefinition, override?: string): CommanderDefinition => {
+  const chosen = override ? COMMANDER_BY_ID[override] : undefined;
+  if (chosen && chosen.faction === deck.faction) return chosen;
+  const own = COMMANDER_BY_ID[deck.commanderId];
+  if (!own) throw new Error(`Comandante desconocido: ${deck.commanderId}`);
+  return own;
+};
+
 const createPlayer = (
   id: PlayerId,
   deck: DeckDefinition,
   seed: number,
+  commanderOverride?: string,
 ): PlayerState => {
-  const commander = COMMANDER_BY_ID[deck.commanderId];
-  if (!commander) throw new Error(`Comandante desconocido: ${deck.commanderId}`);
+  const commander = commanderForDeck(deck, commanderOverride);
   const shuffled = shuffleSeeded(instantiateDeck(deck, id), seed);
   return {
     id,
@@ -103,6 +120,9 @@ export interface MatchSetup {
    */
   readonly playerNexusHealth?: number;
   readonly aiNexusHealth?: number;
+  /** Comandante alternativo de la misma facción para cada bando, si se ha elegido uno. */
+  readonly playerCommanderId?: string;
+  readonly aiCommanderId?: string;
 }
 
 /** Sustituye la Vida inicial del Nexo cuando la partida la fija por fuera. */
@@ -128,8 +148,14 @@ export const createMatch = (
     turn: 1,
     phase: 'main',
     players: {
-      player: withNexusHealth(createPlayer('player', playerDeck, deriveSeed(seed, 1)), setup.playerNexusHealth),
-      ai: withNexusHealth(createPlayer('ai', aiDeck, deriveSeed(seed, 2)), setup.aiNexusHealth),
+      player: withNexusHealth(
+        createPlayer('player', playerDeck, deriveSeed(seed, 1), setup.playerCommanderId),
+        setup.playerNexusHealth,
+      ),
+      ai: withNexusHealth(
+        createPlayer('ai', aiDeck, deriveSeed(seed, 2), setup.aiCommanderId),
+        setup.aiNexusHealth,
+      ),
     },
     board: [],
     tileEffects: [],
@@ -230,6 +256,15 @@ const pathIsClear = (
  */
 const hasKeyword = (piece: BoardPiece, keyword: Keyword): boolean =>
   Boolean(pieceDefinition(piece)?.keywords.includes(keyword)) || Boolean(piece.grantedKeywords?.includes(keyword));
+
+/**
+ * Vínculo vital, contando la pasiva de Veyra: bajo su mando TODAS las
+ * unidades voladoras lo tienen, aunque su carta no lo diga. Va aparte de
+ * `hasKeyword` porque depende del comandante, no de la pieza.
+ */
+const hasLifelink = (state: MatchState, piece: BoardPiece, ownerId: PlayerId): boolean =>
+  hasKeyword(piece, 'lifelink')
+  || (state.players[ownerId].commanderId === 'veyra-espada-consagrada' && hasKeyword(piece, 'flying'));
 
 /**
  * Guardia: mientras una unidad enemiga esté adyacente a un Guardia, solo puede
@@ -585,12 +620,68 @@ const requireTargetPiece = (
     ? state.board.find((piece) => piece.instanceId === target.pieceId)
     : undefined;
 
+/** Cuántas veces por turno puede cobrarse el peaje de Orén. */
+const OREN_TOLL_CAP = 2;
+
+/**
+ * Pasiva de Orén, el Tercer Luto: cada cura de tu Nexo le cuesta 1 de Vida al
+ * enemigo, hasta dos veces por turno.
+ *
+ * Resta directamente en lugar de pasar por `applyNexusDrain` a propósito: ese
+ * helper CURA al atacante por lo drenado, y curar dentro de la propia cura
+ * sería una recursión infinita.
+ */
+const applyOrenToll = (state: MatchState, playerId: PlayerId): MatchState => {
+  const player = state.players[playerId];
+  if (player.commanderId !== 'oren-el-tercer-luto') return state;
+  if ((player.commanderDrainCountThisTurn ?? 0) >= OREN_TOLL_CAP) return state;
+  const enemyId = opponentOf(playerId);
+  const enemy = state.players[enemyId];
+  if (enemy.nexusHealth <= 0) return state;
+  let next = withPlayer(state, playerId, {
+    ...player,
+    commanderDrainCountThisTurn: (player.commanderDrainCountThisTurn ?? 0) + 1,
+  });
+  next = withPlayer(next, enemyId, { ...enemy, nexusHealth: enemy.nexusHealth - 1, nexusDamagedThisTurn: true });
+  next = enqueue(next, {
+    type: 'nexus-damage', actorId: playerId, targetId: `${enemyId}-nexus`,
+    amount: 1, effectId: 'commander-shadow-drain', durationMs: 320,
+  });
+  if (next.players[enemyId].nexusHealth <= 0) {
+    next = { ...next, winner: playerId, phase: 'finished' };
+    next = enqueue(next, {
+      type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`, effectId: 'shadow-victory', durationMs: 900,
+    });
+  }
+  return next;
+};
+
 /** Cura el Nexo propio sin superar el máximo del comandante. */
 const healNexus = (state: MatchState, playerId: PlayerId, amount: number): MatchState => {
   if (amount <= 0) return state;
   const player = state.players[playerId];
   const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 35;
-  return withPlayer(state, playerId, { ...player, nexusHealth: Math.min(maximum, player.nexusHealth + amount) });
+  const healed = Math.min(maximum, player.nexusHealth + amount);
+  const next = withPlayer(state, playerId, { ...player, nexusHealth: healed });
+  // Con el Nexo ya al máximo no hay cura de verdad, así que Orén no cobra.
+  return healed > player.nexusHealth ? applyOrenToll(next, playerId) : next;
+};
+
+/**
+ * Pasiva de Síalu, Lengua de Hielo: la primera vez que su bando congela o
+ * aturde a una unidad cada turno, roba 1 carta.
+ *
+ * Se comprueba sobre el estado YA modificado: un congelar que no llegó a
+ * prender (el Paladín Glorioso protege a sus aliados) no cuenta como tal.
+ */
+const applySialuDraw = (state: MatchState, playerId: PlayerId, pieceId: string): MatchState => {
+  const player = state.players[playerId];
+  if (player.commanderId !== 'sialu-lengua-de-hielo' || player.commanderControlDrawUsedThisTurn) return state;
+  const piece = state.board.find((candidate) => candidate.instanceId === pieceId);
+  const landed = piece?.statuses.some((status) => status.kind === 'frozen' || status.kind === 'stunned');
+  if (!landed) return state;
+  const next = withPlayer(state, playerId, { ...player, commanderControlDrawUsedThisTurn: true });
+  return drawInternal(next, playerId);
 };
 
 /**
@@ -696,6 +787,7 @@ const resolveSpell = (
       }
     } else if (effect.kind === 'freeze' && targetPiece) {
       next = addStatus(next, targetPiece.instanceId, effect.duration);
+      next = applySialuDraw(next, caster, targetPiece.instanceId);
     } else if (effect.kind === 'stun' && targetPiece) {
       // Mismo cálculo que el aturdir de combate: turno + 2 cubre exactamente
       // el siguiente turno de su dueño, ni más ni menos.
@@ -710,6 +802,7 @@ const resolveSpell = (
         type: 'freeze', targetId: targetPiece.instanceId, to: targetPiece.position,
         effectId: 'stun-daze', durationMs: 300,
       });
+      next = applySialuDraw(next, caster, targetPiece.instanceId);
     } else if (effect.kind === 'grant-keyword' && targetPiece?.owner === caster) {
       const keyword = effect.keyword;
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
@@ -732,7 +825,15 @@ const resolveSpell = (
     } else if (effect.kind === 'draw') {
       draws += effect.amount;
     } else if (effect.kind === 'discard') {
-      discards += effect.amount;
+      // El descarte de un hechizo puede ser un coste propio o un castigo al
+      // rival. Antes se acumulaba todo como coste propio y `target` se
+      // ignoraba: un Diezmo de Sangre te vaciaba a ti la mano en vez de a tu
+      // rival. Las unidades ya distinguían los dos casos; los hechizos no.
+      if (effect.target === 'enemy-hand') {
+        next = resolveDrawAndDiscard(next, opponentOf(caster), 0, effect.amount);
+      } else {
+        discards += effect.amount;
+      }
     } else if (effect.kind === 'scry') {
       next = enqueue(next, {
         type: 'spell', actorId: caster, amount: effect.amount, effectId: 'scry-top-cards', durationMs: 300,
@@ -830,6 +931,7 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
         })[0];
       if (victim && effect.kind === 'freeze') {
         next = addStatus(next, victim.instanceId, effect.duration);
+        next = applySialuDraw(next, piece.owner, victim.instanceId);
       } else if (victim) {
         next = updatePiece(next, victim.instanceId, (target) => ({
           ...target,
@@ -841,6 +943,7 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
         next = enqueue(next, {
           type: 'freeze', targetId: victim.instanceId, to: victim.position, effectId: 'stun-daze', durationMs: 300,
         });
+        next = applySialuDraw(next, piece.owner, victim.instanceId);
       }
     } else if (effect.kind === 'draw') {
       next = resolveDrawAndDiscard(next, piece.owner, effect.amount, 0);
@@ -1174,18 +1277,30 @@ export const playCard = (
     const ownShieldEffect = card.type === 'unit'
       ? card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'entry-shield-gain')
       : undefined;
-    const shieldAmount = commanderId === 'asterin-protector-luz' && card.type === 'unit'
-      ? 1
-      : ownShieldEffect?.kind === 'passive' ? ownShieldEffect.value ?? 1 : 0;
+    // Márnak, Raíz Profunda: sus Guardias entran ya escudadas. Se queda con el
+    // mayor de los escudos disponibles en vez de sumarlos, para que dos
+    // fuentes de escudo no se acumulen sin querer.
+    const marnakShield =
+      commanderId === 'marnak-raiz-profunda' && card.type === 'unit' && card.keywords.includes('guard') ? 2 : 0;
+    const shieldAmount = Math.max(
+      commanderId === 'asterin-protector-luz' && card.type === 'unit' ? 1 : 0,
+      ownShieldEffect?.kind === 'passive' ? ownShieldEffect.value ?? 1 : 0,
+      marnakShield,
+    );
     const asterinShield = shieldAmount > 0;
+    // Borrán, Yunque Vivo: sus estructuras entran más duras de lo que dice la carta.
+    const borranReinforcement = commanderId === 'borran-yunque-vivo' && card.type === 'structure' ? 2 : 0;
+    // Nyxaris y Zeph comparten la misma pasiva de tempo: la primera unidad
+    // del turno entra ya en movimiento.
     const nyxarisRush =
-      commanderId === 'nyxaris-heraldo-vacio' && card.type === 'unit' && !player.firstUnitDeployedThisTurn;
+      (commanderId === 'nyxaris-heraldo-vacio' || commanderId === 'zeph-sin-orilla')
+      && card.type === 'unit' && !player.firstUnitDeployedThisTurn;
     const piece: BoardPiece = {
       instanceId: instance.instanceId,
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus,
+      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus + borranReinforcement,
       attackModifier: receivesForgeBuff ? 1 : 0,
       movedThisTurn: false,
       attackedThisTurn: false,
@@ -1484,7 +1599,7 @@ export const attackPiece = (
   next = hit.state;
   // Vínculo vital: el Nexo propio se cura por el daño que llegó de verdad, no
   // por el anunciado — escudos y reducciones lo recortan antes.
-  if (hit.dealt > 0 && card.keywords.includes('lifelink')) {
+  if (hit.dealt > 0 && hasLifelink(next, attacker, playerId)) {
     next = healNexus(next, playerId, hit.dealt);
   }
   // Perforar: si el golpe destruye a la defensora, lo que sobra pasa al Nexo
@@ -1505,9 +1620,20 @@ export const attackPiece = (
   // Carroñero del Osario: cobrar una pieza le devuelve algo al Nexo. Es el
   // primer disparador de «cuando destruye» del juego, así que se comprueba
   // aquí, donde ya se sabe si la defensora sigue en el tablero.
+  const defensoraCayo = !next.board.some((piece) => piece.instanceId === defenderId);
   const killReward = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'on-kill-heal-nexus');
-  if (killReward?.kind === 'passive' && !next.board.some((piece) => piece.instanceId === defenderId)) {
+  if (killReward?.kind === 'passive' && defensoraCayo) {
     next = healNexus(next, playerId, killReward.value ?? 1);
+  }
+  // Pasiva de Borrán: la primera pieza que cobra su bando cada turno cura 1.
+  const borran = next.players[playerId];
+  if (
+    defensoraCayo
+    && borran.commanderId === 'borran-yunque-vivo'
+    && !borran.commanderKillHealUsedThisTurn
+  ) {
+    next = withPlayer(next, playerId, { ...borran, commanderKillHealUsedThisTurn: true });
+    next = healNexus(next, playerId, 1);
   }
   // Aturdir: la superviviente no podrá atacar en su próximo turno (sí moverse).
   if (hit.dealt > 0 && card.keywords.includes('stun') && next.board.some((piece) => piece.instanceId === defenderId)) {
@@ -1521,6 +1647,7 @@ export const attackPiece = (
     next = enqueue(next, {
       type: 'freeze', targetId: defenderId, to: defenderPosition, effectId: 'stun-daze', durationMs: 300,
     });
+    next = applySialuDraw(next, playerId, defenderId);
   }
   // Combate cuerpo a cuerpo: si el atacante golpea con Alcance 1, la
   // defensora devuelve daño igual a su propio Ataque — simultáneo, así
@@ -1635,7 +1762,7 @@ export const attackNexus = (
   const struck = damageNexus(next, enemyId, amount, playerId, attackerId, card);
   next = struck.state;
   // Vínculo vital: golpear el Nexo enemigo también cura el propio.
-  if (amount > 0 && card.keywords.includes('lifelink')) {
+  if (amount > 0 && hasLifelink(next, attacker, playerId)) {
     next = healNexus(next, playerId, amount);
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount);
@@ -1848,6 +1975,9 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         forgeBuffUsedThisTurn: false,
         nexusDamagedThisTurn: false,
         firstUnitDeployedThisTurn: false,
+        commanderKillHealUsedThisTurn: false,
+        commanderControlDrawUsedThisTurn: false,
+        commanderDrainCountThisTurn: 0,
       },
       [nextPlayerId]: {
         ...incoming,
@@ -1855,6 +1985,9 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         resourcePlayedThisTurn: false,
         nexusDamagedThisTurn: false,
         firstUnitDeployedThisTurn: false,
+        commanderKillHealUsedThisTurn: false,
+        commanderControlDrawUsedThisTurn: false,
+        commanderDrainCountThisTurn: 0,
       },
     },
     board: state.board.map((piece) => ({

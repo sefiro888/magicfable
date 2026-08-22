@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, cardsForFaction, validateDeck } from '../game'
 import type { DeckDefinition, DeckEntry } from '../game'
+import { CardInspector } from '../components'
 import { FactionSigil } from '../components/FactionSigil'
 import { usePreferences } from '../store/preferences'
 import { aiRecords, currentStreak, pvpRecords, summarizeByDeck, summarizeByOpponent, summarizeRecords, useRecords } from '../store/records'
@@ -57,6 +58,14 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
         .filter((entry) => entry.count > 0),
     )
   }
+  /**
+   * Carta abierta en el inspector. Antes, pulsar una carta del catálogo la
+   * metía directamente en el mazo y no había forma de leerla: para eso está
+   * el «+». Ahora el clic sobre la carta —dentro o fuera del mazo— muestra su
+   * información, que es lo que uno espera al pulsar sobre una carta.
+   */
+  const [inspected, setInspected] = useState<string>()
+
   const addCard = (cardId: string) => {
     setSaved(false)
     setEntries((current) => (current.some((entry) => entry.cardId === cardId) ? current : [...current, { cardId, count: 1 }]))
@@ -155,8 +164,15 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
             if (!card) return null
             const colorCost = Object.values(card.cost.colored).reduce((total, amount) => total + (amount ?? 0), 0)
             return <article className={styles.entry} key={entry.cardId}>
-              <img className={styles.art} src={withBase(card.art.webp)} alt="" />
-              <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}{card.unique ? ' · única' : ''}</p></div>
+              <button
+                type="button"
+                className={styles.entryInfo}
+                onClick={() => setInspected(card.id)}
+                aria-label={`Ver la ficha de ${card.name}`}
+              >
+                <img className={styles.art} src={withBase(card.art.webp)} alt="" />
+                <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}{card.unique ? ' · única' : ''}</p></div>
+              </button>
               <span className={styles.cost}>{card.type === 'mana' ? 'Fuente' : `Coste ${card.cost.generic + colorCost}`}</span>
               <div className={styles.counter}><button onClick={() => changeCount(entry.cardId, -1)} aria-label={`Quitar ${card.name}`}>−</button><span>{entry.count}</span><button onClick={() => changeCount(entry.cardId, 1)} aria-label={`Añadir ${card.name}`}>+</button></div>
             </article>
@@ -167,18 +183,37 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
               <div className={styles.pool}>{availablePool.map((card) => {
                 const colorCost = Object.values(card.cost.colored).reduce((total, amount) => total + (amount ?? 0), 0)
                 return (
-                  <button className={styles.poolCard} key={card.id} onClick={() => addCard(card.id)} title={`Añadir ${card.name} al mazo`}>
-                    <img className={styles.art} src={withBase(card.art.webp)} alt="" />
-                    <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}</p></div>
-                    <span className={styles.cost}>{card.type === 'mana' ? 'Fuente' : `Coste ${card.cost.generic + colorCost}`}</span>
-                    <span className={styles.addMark} aria-hidden="true">+</span>
-                  </button>
+                  <div className={styles.poolCard} key={card.id}>
+                    <button
+                      type="button"
+                      className={styles.poolInfo}
+                      onClick={() => setInspected(card.id)}
+                      aria-label={`Ver la ficha de ${card.name}`}
+                    >
+                      <img className={styles.art} src={withBase(card.art.webp)} alt="" />
+                      <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}</p></div>
+                      <span className={styles.cost}>{card.type === 'mana' ? 'Fuente' : `Coste ${card.cost.generic + colorCost}`}</span>
+                    </button>
+                    {/* Añadir es una acción aparte, con su propio botón: pulsar
+                        la carta entera para meterla en el mazo hacía imposible
+                        leerla antes de decidir. */}
+                    <button
+                      type="button"
+                      className={styles.addMark}
+                      onClick={() => addCard(card.id)}
+                      aria-label={`Añadir ${card.name} al mazo`}
+                      title={`Añadir ${card.name} al mazo`}
+                    >
+                      +
+                    </button>
+                  </div>
                 )
               })}</div>
             </>
           )}
         </section>
       </div>
+      <CardInspector card={(inspected && CARD_BY_ID[inspected]) || null} onClose={() => setInspected(undefined)} />
       <AchievementsPanel />
       <MatchHistory />
     </div>

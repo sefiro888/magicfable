@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, STARTER_DECKS } from '../game'
+import { CARD_BY_ID, COMMANDER_BY_ID, COMMANDERS, FACTION_BY_ID, STARTER_DECKS, commanderForDeck } from '../game'
 import { usePreferences, type AiDifficulty, type ScenarioId } from '../store/preferences'
 import { useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
@@ -123,7 +123,8 @@ export function PlayPage() {
       </section>
       <div className={styles.decks}>
         {STARTER_DECKS.map((candidate) => {
-          const commander = COMMANDER_BY_ID[candidate.commanderId]
+          const commander = commanderForDeck(candidate, preferences.commanderByDeck[candidate.id])
+          const leaders = COMMANDERS.filter((option) => option.faction === candidate.faction)
           const selected = candidate.id === deck?.id
           return (
             <div key={candidate.id} className={`${styles.deck} ${styles[candidate.faction]}`} data-selected={selected}>
@@ -148,6 +149,30 @@ export function PlayPage() {
               {/* Solo en la tarjeta ya elegida: así el botón para empezar
                   aparece justo donde el jugador acaba de hacer clic, en vez
                   de obligarle a bajar hasta el final de la página. */}
+              {/* El líder se elige FUERA del botón de seleccionar mazo: un botón
+                  dentro de otro no es HTML válido y el lector de pantalla no
+                  sabría cuál está anunciando. */}
+              {selected && leaders.length > 1 && (
+                <div className={styles.leaderPicker} role="group" aria-label={`Comandante de ${candidate.name}`}>
+                  <span className={styles.leaderLabel}>Al mando</span>
+                  <div className={styles.leaderOptions}>
+                    {leaders.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={styles.leaderOption}
+                        aria-pressed={option.id === commander.id}
+                        data-selected={option.id === commander.id}
+                        onClick={() => preferences.setCommander(candidate.id, option.id)}
+                        title={option.rules}
+                      >
+                        {option.name}
+                      </button>
+                    ))}
+                  </div>
+                  <small className={styles.leaderRules}>{commander.rules}</small>
+                </div>
+              )}
               {selected && (
                 <button className={styles.enterBoard} onClick={start}>Entrar al tablero →</button>
               )}

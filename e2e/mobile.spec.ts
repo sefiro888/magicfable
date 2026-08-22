@@ -114,7 +114,7 @@ test('las chapas de las unidades no se pisan en móvil', async ({ page }) => {
     }))
     localStorage.setItem('cronicas-nexo-howto-visto', '1')
     localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
-      state: { muted: true, confirmEndTurn: false }, version: 6,
+      state: { muted: true, confirmEndTurn: false }, version: 7,
     }))
   }, partidaPoblada())
   await page.setViewportSize({ width: 390, height: 844 })

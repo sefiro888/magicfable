@@ -9,7 +9,7 @@ test('el poder del comandante se lanza una vez y se agota', async ({ page }) => 
   await page.addInitScript(() => {
     localStorage.setItem('cronicas-nexo-howto-visto', '1')
     localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
-      state: { muted: true, selectedDeckId: 'furia-caldera', confirmEndTurn: false }, version: 6,
+      state: { muted: true, selectedDeckId: 'furia-caldera', confirmEndTurn: false }, version: 7,
     }))
   })
   await page.goto('/battle?seed=1311657807')

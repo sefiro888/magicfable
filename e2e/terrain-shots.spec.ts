@@ -39,7 +39,7 @@ test('capturas del terreno', async ({ page }) => {
     localStorage.setItem('cronicas-nexo-howto-visto', '1')
     localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
       state: { muted: true, scenario: 'aether-citadel', graphicsQuality: 'high', confirmEndTurn: false },
-      version: 6,
+      version: 7,
     }))
   }, [campo(), 2] as const)
 
