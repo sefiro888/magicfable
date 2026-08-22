@@ -37,3 +37,25 @@ test('en Jugar se puede cambiar de comandante sin cambiar de mazo', async ({ pag
   await expect(lideres.nth(1)).toHaveAttribute('aria-pressed', 'true')
   await expect(lideres.nth(0)).toHaveAttribute('aria-pressed', 'false')
 })
+
+/**
+ * En multijugador se juega con el comandante elegido, así que hay que poder
+ * verlo y cambiarlo sin salir a «Jugar». Y el botón «Unirse» se salía de su
+ * tarjeta en pantallas estrechas: un input flexible no se encoge por debajo de
+ * su ancho intrínseco sin `min-width: 0`.
+ */
+test('en Multijugador se elige comandante y el botón Unirse cabe en móvil', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/multiplayer')
+
+  const alMando = page.getByRole('region', { name: /Comandante de/ })
+  await expect(alMando).toBeVisible({ timeout: 15_000 })
+  const lideres = alMando.getByRole('button')
+  await expect(lideres).toHaveCount(2)
+  await lideres.nth(1).click()
+  await expect(lideres.nth(1)).toHaveAttribute('aria-pressed', 'true')
+
+  const boton = page.getByRole('button', { name: 'Unirse' })
+  const caja = (await boton.boundingBox())!
+  expect(caja.x + caja.width).toBeLessThanOrEqual(375)
+})

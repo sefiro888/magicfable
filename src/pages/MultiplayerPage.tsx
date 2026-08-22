@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { COMMANDER_BY_ID, STARTER_DECKS } from '../game'
+import { COMMANDERS, STARTER_DECKS, commanderForDeck } from '../game'
 import { createRoom, joinRoom, type Room, type RoomStatus } from '../multiplayer/room'
 import { saveTicket } from '../multiplayer/ticket'
 import { useMatchStore } from '../store/match'
@@ -96,7 +96,9 @@ export function MultiplayerPage() {
         <span className={styles.deckPickerLabel}>Tu mazo para esta partida</span>
         <div className={styles.deckOptions}>
           {STARTER_DECKS.map((deck) => {
-            const commander = COMMANDER_BY_ID[deck.commanderId]
+            // El líder ELEGIDO, no el de la baraja: cada facción tiene dos y
+            // es con el elegido con quien se juega también aquí.
+            const commander = commanderForDeck(deck, preferences.commanderByDeck[deck.id])
             const selected = deck.id === preferences.selectedDeckId
             return (
               <button
@@ -113,6 +115,37 @@ export function MultiplayerPage() {
           })}
         </div>
       </section>
+
+      {/* Elegir líder también aquí: en multijugador se juega con el comandante
+          elegido, y sin este control habría que salir a «Jugar» para cambiarlo. */}
+      {mode === 'idle' && (() => {
+        const deck = STARTER_DECKS.find((candidate) => candidate.id === preferences.selectedDeckId)
+        if (!deck) return null
+        const leaders = COMMANDERS.filter((option) => option.faction === deck.faction)
+        const chosen = commanderForDeck(deck, preferences.commanderByDeck[deck.id])
+        if (leaders.length < 2) return null
+        return (
+          <section className={styles.leaderPicker} aria-label={`Comandante de ${deck.name}`}>
+            <span className={styles.deckPickerLabel}>Al mando</span>
+            <div className={styles.deckOptions}>
+              {leaders.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={styles.deckOption}
+                  data-selected={option.id === chosen.id}
+                  aria-pressed={option.id === chosen.id}
+                  onClick={() => preferences.setCommander(deck.id, option.id)}
+                  title={option.rules}
+                >
+                  {option.name}
+                </button>
+              ))}
+            </div>
+            <small className={styles.leaderRules}>{chosen.rules}</small>
+          </section>
+        )
+      })()}
 
       {mode === 'idle' && (
         <div className={styles.choices}>

@@ -30,8 +30,36 @@ export type LinkStatus = 'ok' | 'reconnecting' | 'lost'
  */
 const RECONNECT_WINDOW_MS = 60_000
 
-export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefined, localDeckId: string) => {
-  const peerDeckId = useRef<string>(undefined)
+/**
+ * Presentación de un jugador: con qué mazo juega y a quién pone al mando.
+ *
+ * Se acepta también el formato antiguo (solo el id del mazo, como cadena)
+ * porque los dos lados pueden estar en versiones distintas del juego: quien
+ * aún no conozca a los comandantes alternativos manda una cadena a secas.
+ */
+interface PeerDeck {
+  readonly deckId: string
+  readonly commanderId?: string
+}
+
+const readPeerDeck = (payload: unknown): PeerDeck | undefined => {
+  if (typeof payload === 'string') return { deckId: payload }
+  if (payload && typeof payload === 'object' && 'deckId' in payload) {
+    const { deckId, commanderId } = payload as PeerDeck
+    if (typeof deckId === 'string') {
+      return { deckId, commanderId: typeof commanderId === 'string' ? commanderId : undefined }
+    }
+  }
+  return undefined
+}
+
+export const useNetworkSync = (
+  room: Room | undefined,
+  role: RoomRole | undefined,
+  localDeckId: string,
+  localCommanderId?: string,
+) => {
+  const peerDeck = useRef<PeerDeck>(undefined)
   const [link, setLink] = useState<LinkStatus>('ok')
   /** Acuerdo de revancha: cada lado marca que la quiere; solo cuando ambos
       lo han pedido el anfitrión siembra una partida nueva. */
@@ -100,7 +128,8 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     // escuchando), ese mensaje se pierde sin más — el canal no guarda
     // mensajes pasados. Este segundo aviso, más el reenvío del mazo al
     // recibirlo, cierra esa carrera sin importar quién llegue primero.
-    room.send('deck', localDeckId)
+    const presentacion: PeerDeck = { deckId: localDeckId, commanderId: localCommanderId }
+    room.send('deck', presentacion)
     room.send('ready', {})
     // Un invitado que acaba de entrar puede estar reenganchándose a una
     // partida ya empezada: pedir el estado no cuesta nada y evita quedarse
@@ -108,18 +137,22 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     if (role === 'guest') room.send('resync', {})
 
     const offDeck = room.onMessage('deck', (payload) => {
-      const deckId = payload as string
-      peerDeckId.current = deckId
+      const recibido = readPeerDeck(payload)
+      if (!recibido) return
+      peerDeck.current = recibido
       if (role !== 'host') return
       if (useMatchStore.getState().match) return
       const hostDeck = STARTER_DECKS.find((deck) => deck.id === localDeckId)
-      const guestDeck = STARTER_DECKS.find((deck) => deck.id === deckId)
+      const guestDeck = STARTER_DECKS.find((deck) => deck.id === recibido.deckId)
       if (!hostDeck || !guestDeck) return
-      const match = createMatch(hostDeck, guestDeck, Date.now() >>> 0)
+      const match = createMatch(hostDeck, guestDeck, Date.now() >>> 0, {
+        playerCommanderId: localCommanderId,
+        aiCommanderId: recibido.commanderId,
+      })
       useMatchStore.getState().startFromMatch(match)
     })
 
-    const offReady = room.onMessage('ready', () => room.send('deck', localDeckId))
+    const offReady = room.onMessage('ready', () => room.send('deck', presentacion))
 
     const offState = room.onMessage('state', (payload) => {
       if (role !== 'guest') return
@@ -138,7 +171,7 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     const offResync = room.onMessage('resync', () => {
       if (role !== 'host') return
       const store = useMatchStore.getState()
-      room.send('deck', localDeckId)
+      room.send('deck', presentacion)
       if (store.match) room.send('state', { match: store.match })
     })
 
@@ -206,7 +239,7 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       offIntent()
       offBroadcast?.()
     }
-  }, [room, role, localDeckId])
+  }, [room, role, localDeckId, localCommanderId])
 
   // Solo el anfitrión tiene autoridad para sembrar la partida: en cuanto
   // los dos lados han pedido revancha, crea un MatchState nuevo con los
@@ -214,11 +247,16 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
   useEffect(() => {
     if (!rematchSelf || !rematchPeer || role !== 'host') return
     const hostDeck = STARTER_DECKS.find((deck) => deck.id === localDeckId)
-    const guestDeck = STARTER_DECKS.find((deck) => deck.id === peerDeckId.current)
+    const guestDeck = STARTER_DECKS.find((deck) => deck.id === peerDeck.current?.deckId)
     if (!hostDeck || !guestDeck) return
-    const match = createMatch(hostDeck, guestDeck, Date.now() >>> 0)
+    // La revancha conserva los comandantes: cambiarlos a mitad de sesión sin
+    // avisar sería otra partida distinta de la que se acaba de aceptar.
+    const match = createMatch(hostDeck, guestDeck, Date.now() >>> 0, {
+      playerCommanderId: localCommanderId,
+      aiCommanderId: peerDeck.current?.commanderId,
+    })
     useMatchStore.getState().startFromMatch(match)
-  }, [rematchSelf, rematchPeer, role, localDeckId])
+  }, [rematchSelf, rematchPeer, role, localDeckId, localCommanderId])
 
   const sendIntent = (intent: NetworkIntent) => room?.send('intent', intent)
   const requestRematch = () => {

@@ -31,14 +31,22 @@ button.choice:hover { transform: translateY(-2px); border-color: rgba(229,194,11
 .choice strong { font-family: var(--display); font-size: 20px; font-weight: 500; }
 .choice span { color: #aaa69c; font-size: 13px; }
 
+/* Elegir comandante: mismo aspecto que el selector de mazo de arriba. */
+.leaderPicker { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 24px; }
+.leaderRules { max-width: 46ch; color: #918e86; font-size: 12px; line-height: 1.5; text-align: center; }
+
 .joinRow { display: flex; gap: 10px; margin-top: 6px; width: 100%; }
 .codeInput {
-  flex: 1; padding: 12px 14px; border: 1px solid var(--line-bright); background: rgba(7,8,12,.5);
+  /* `min-width: 0` es imprescindible: un input flexible no se encoge por
+     debajo de su ancho intrínseco sin él, y con el placeholder «CÓDIGO» a 18px
+     y letter-spacing amplio empujaba el botón «Unirse» fuera de la tarjeta en
+     pantallas estrechas. */
+  flex: 1 1 auto; min-width: 0; padding: 12px 14px; border: 1px solid var(--line-bright); background: rgba(7,8,12,.5);
   color: var(--ivory); font-family: var(--display); font-size: 18px; letter-spacing: .2em; text-transform: uppercase;
 }
 .codeInput:focus { outline: none; border-color: var(--gold); }
 .joinButton {
-  padding: 0 22px; border: 1px solid #f0cf80; color: #160f06; background: linear-gradient(#efd28d, #bc8837);
+  flex: 0 0 auto; padding: 0 22px; border: 1px solid #f0cf80; color: #160f06; background: linear-gradient(#efd28d, #bc8837);
   font-weight: 900; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
 }
 .joinButton:hover { filter: brightness(1.1); }
@@ -91,4 +99,6 @@ button.choice:hover { transform: translateY(-2px); border-color: rgba(229,194,11
 @media (max-width: 760px) {
   .deckOption { min-height: 44px; }
   .codeInput, .joinButton, .copyButton, .leaveButton, .choice { min-height: 44px; }
+  .codeInput { font-size: 16px; letter-spacing: .12em; }
+  .joinButton { padding: 0 16px; }
 }

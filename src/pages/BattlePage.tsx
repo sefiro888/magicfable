@@ -91,7 +91,12 @@ export function BattlePage() {
     useNetworkStore.getState().setRoom(back, back.role)
   }, [ticket])
 
-  const { sendIntent, link, peerLeft, requestRematch, rematchSelf, rematchPeer } = useNetworkSync(room, role, preferences.selectedDeckId)
+  const { sendIntent, link, peerLeft, requestRematch, rematchSelf, rematchPeer } = useNetworkSync(
+    room,
+    role,
+    preferences.selectedDeckId,
+    preferences.commanderByDeck[preferences.selectedDeckId],
+  )
   // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
   /** «?tower=1»: esta partida es un piso de la Torre del Nexo. */
   const isTowerMatch = searchParams.get('tower') === '1'
