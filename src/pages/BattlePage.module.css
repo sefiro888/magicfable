@@ -609,6 +609,13 @@
 
   /* El botón de turno vive fuera del panel lateral: siempre visible sobre
      la mano, no depende de que el panel de contexto esté a la vista. */
+  /* El z-index del dock (46) se compara DENTRO del contexto de apilamiento de
+     su padre, `.rightPanel`, que vale 20 — por debajo del carril de la mano
+     (25). El resultado: en cuanto se elegía una carta y el abanico la
+     levantaba, las cartas pasaban por encima y el botón de finalizar turno
+     desaparecía debajo. Subir el panel por encima del carril lo arregla de
+     raíz, en vez de pelear con el z-index del hijo. */
+  .rightPanel { z-index: 30; }
   .turnDock { position: fixed; z-index: 46; left: 6px; right: 6px; bottom: 150px; padding: 6px; border-top: 0; background: rgba(9,12,20,.94); border: 1px solid var(--line-bright); }
   .endTurn { height: 40px; font-size: 10px; }
 

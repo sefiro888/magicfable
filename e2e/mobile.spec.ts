@@ -176,6 +176,41 @@ test('en móvil, la sección activa de la barra se ve sin desplazarla a mano', a
 test.describe('en la batalla', () => {
   test.use({ hasTouch: true, isMobile: true })
 
+  /**
+   * Elegir una carta no puede esconder el botón de terminar el turno.
+   *
+   * Pasaba: el abanico levanta la carta seleccionada, y esas cartas se
+   * pintaban por encima del botón. El z-index del dock (46) se compara dentro
+   * del contexto de apilamiento de su padre `.rightPanel`, que valía 20, por
+   * debajo del carril de la mano (25) — así que el 46 no servía de nada.
+   */
+  test('el botón de finalizar turno no queda debajo de la mano', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.addInitScript(() => {
+      localStorage.setItem('cronicas-nexo-howto-visto', '1')
+      localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
+        state: { muted: true, confirmEndTurn: false }, version: 7,
+      }))
+    })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/battle?seed=1311657807')
+    await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+    await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
+    await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
+    await page.waitForTimeout(2500)
+    await page.locator('[class*="fanCard"]').nth(3).click()
+    await page.waitForTimeout(1200)
+
+    const estado = await page.evaluate(() => {
+      const boton = document.querySelector('[class*="endTurn"]') as HTMLElement | null
+      if (!boton) return 'no existe'
+      const caja = boton.getBoundingClientRect()
+      const encima = document.elementFromPoint(caja.x + caja.width / 2, caja.y + caja.height / 2)
+      return encima === boton || boton.contains(encima) ? 'libre' : `tapado por ${encima?.className}`
+    })
+    expect(estado).toBe('libre')
+  })
+
   test('nada de lo que se pulsa en el tablero baja de la medida del pulgar', async ({ page }) => {
     test.setTimeout(90_000)
     await page.addInitScript(() => {
