@@ -526,6 +526,10 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           carta tumbada de antes: si no, el nombre y las estadísticas quedan
           flotando muy por encima de la carta en vez de justo sobre ella. */}
       <Html center position={[0, CARD_STAND_RISE * 2 + 0.05, 0]} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
+        {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
+            propaga los data-* al div que crea, así que el atributo tiene que
+            vivir aquí dentro para que el CSS pueda usarlo. */}
+        <div className={styles.labelInner} data-selected={selected || targetable || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats}>
           {card.attack !== undefined && <span className={styles.attackStat}>⚔ {Math.max(0, card.attack + piece.attackModifier)}</span>}
@@ -543,6 +547,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             {spent && <span className={styles.spentStat} title="Ya ha actuado este turno">◒</span>}
           </div>
         )}
+        </div>
       </Html>
       {/* Vista previa de daño: solo aparece con el cursor encima de un objetivo
           válido mientras hay una ficha atacante seleccionada. Muestra el

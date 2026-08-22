@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test'
+import { CARD_BY_ID, STARTER_DECKS, createMatch } from '../src/game'
+import type { BoardPiece, MatchState, PlayerId, Position } from '../src/game'
 
 /**
  * Ninguna pantalla puede desbordar a lo ancho en un móvil pequeño.
@@ -70,3 +72,79 @@ for (const ruta of RUTAS_TACTILES) {
     expect(pequenos, `objetivos demasiado pequeños en ${ruta}`).toEqual([])
   })
 }
+
+/**
+ * Las chapas de las unidades no pueden pisarse en un móvil.
+ *
+ * Con media docena de unidades en juego a 390 px, los nombres se superponían
+ * en la misma franja y no se leía ninguno. En pantalla estrecha la chapa
+ * enseña solo Ataque y Vida, y el nombre aparece únicamente en la unidad
+ * elegida — que es cuando de verdad hace falta.
+ */
+const piezaDePrueba = (instanceId: string, cardId: string, owner: PlayerId, position: Position): BoardPiece => {
+  const card = CARD_BY_ID[cardId]!
+  return {
+    instanceId, cardId, owner, position,
+    currentHealth: card.health ?? card.resistance ?? 1,
+    attackModifier: 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [],
+  }
+}
+
+const partidaPoblada = (): MatchState => {
+  const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 1311657807)
+  return {
+    ...base, turn: 8, phase: 'main', activePlayer: 'player',
+    board: [
+      piezaDePrueba('a1', 'ariete-volcanico', 'player', { x: 2, y: 5 }),
+      piezaDePrueba('a2', 'sabueso-brasa', 'player', { x: 4, y: 4 }),
+      piezaDePrueba('a3', 'lancera-magma', 'player', { x: 5, y: 6 }),
+      piezaDePrueba('e1', 'centinela-cristal', 'ai', { x: 3, y: 3 }),
+      piezaDePrueba('e2', 'golem-azur', 'ai', { x: 4, y: 2 }),
+      piezaDePrueba('e3', 'tejedora-escarcha', 'ai', { x: 1, y: 2 }),
+    ],
+  }
+}
+
+test('las chapas de las unidades no se pisan en móvil', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.addInitScript((match) => {
+    localStorage.setItem('cronicas-nexo-match', JSON.stringify({
+      state: { match, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0 },
+      version: 2,
+    }))
+    localStorage.setItem('cronicas-nexo-howto-visto', '1')
+    localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
+      state: { muted: true, confirmEndTurn: false }, version: 6,
+    }))
+  }, partidaPoblada())
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/battle')
+  await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
+  await page.waitForTimeout(3000)
+
+  const solapes = await page.evaluate(() => {
+    const chapas = Array.from(document.querySelectorAll('[class*="cardLabel"]')).map((el) => el.getBoundingClientRect())
+    const cruces: string[] = []
+    for (let i = 0; i < chapas.length; i += 1) {
+      for (let j = i + 1; j < chapas.length; j += 1) {
+        const a = chapas[i]!
+        const b = chapas[j]!
+        const ancho = Math.min(a.right, b.right) - Math.max(a.left, b.left)
+        const alto = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
+        if (ancho > 6 && alto > 6) cruces.push(`${Math.round(ancho)}x${Math.round(alto)}`)
+      }
+    }
+    return cruces
+  })
+  expect(solapes, 'chapas de unidad superpuestas en móvil').toEqual([])
+
+  // En reposo no se enseña ningún nombre; al elegir una unidad, sí el suyo.
+  const nombresVisibles = () => page.evaluate(() => Array.from(document.querySelectorAll('[class*="cardName"]'))
+    .filter((el) => (el as HTMLElement).offsetParent !== null).length)
+  expect(await nombresVisibles()).toBe(0)
+  await page.keyboard.press('ArrowUp')
+  await page.waitForTimeout(300)
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(600)
+  expect(await nombresVisibles()).toBeGreaterThan(0)
+})

@@ -93,3 +93,37 @@
 .nexusCard img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
 .nexusCard [data-targetable] { border-color: #ffd257; box-shadow: 0 0 16px rgba(255, 210, 87, 0.55); }
 .nexusCard [data-hit] { border-color: #ff6b58; box-shadow: 0 0 22px rgba(255, 107, 88, 0.85); }
+
+/* ── Chapas de unidad en pantalla estrecha ──
+   La chapa mide 116 px de ancho y en un móvil cada casilla del tablero ronda
+   los 45: con media docena de unidades en juego, los nombres se pisaban unos a
+   otros y no se leía ninguno («Tejedora de Escar… / inela de C… / Gólem Azur»
+   superpuestos en la misma franja).
+
+   En móvil se deja lo que hace falta para decidir —Ataque y Vida— y el nombre
+   aparece solo en la unidad elegida o señalada como objetivo. El nombre
+   completo sigue estando a un toque: el panel de selección lo muestra, y el
+   cursor de teclado lo lee en voz alta. */
+@media (max-width: 760px) {
+  .cardLabel {
+    /* Ancho automático: sin el nombre, la chapa es solo las dos píldoras y
+       ocupa una casilla; con él (unidad elegida) se ensancha lo que haga
+       falta, y como el contenedor va centrado, crece hacia los dos lados. */
+    width: auto;
+    min-width: calc(58px * var(--label-scale, 1));
+    transform: translateY(-42px);
+  }
+  .cardName { display: none; }
+  .labelInner[data-selected] { position: relative; z-index: 2; }
+  .labelInner[data-selected] .cardName {
+    display: block;
+    max-width: calc(130px * var(--label-scale, 1));
+    margin: 0 auto;
+  }
+  .cardStats { gap: 3px; margin-top: 2px; }
+  .cardStats span {
+    min-width: 21px;
+    padding: 1px 4px;
+    font-size: calc(12px * var(--label-scale, 1));
+  }
+}
