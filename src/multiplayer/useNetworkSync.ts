@@ -20,9 +20,19 @@ interface StatePayload {
  * muta su copia local: solo la reemplaza con lo que llega del anfitrión, y
  * envía sus jugadas como "intenciones" para que el anfitrión las aplique.
  */
+export type LinkStatus = 'ok' | 'reconnecting' | 'lost'
+
+/**
+ * Cuánto se aguanta con el rival ausente antes de dar la partida por perdida.
+ * Un F5, un túnel o un móvil que bloquea la pantalla tardan segundos en
+ * volver; con el corte anterior (5 s y a la calle) cualquiera de esas cosas
+ * mataba la partida de los dos.
+ */
+const RECONNECT_WINDOW_MS = 60_000
+
 export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefined, localDeckId: string) => {
   const peerDeckId = useRef<string>(undefined)
-  const [peerLeft, setPeerLeft] = useState(false)
+  const [link, setLink] = useState<LinkStatus>('ok')
   /** Acuerdo de revancha: cada lado marca que la quiere; solo cuando ambos
       lo han pedido el anfitrión siembra una partida nueva. */
   const [rematchSelf, setRematchSelf] = useState(false)
@@ -35,28 +45,31 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     if (!room) return undefined
     // Diferido: evita anidar el setState de reinicio dentro del cuerpo
     // síncrono del efecto (mismo patrón que el resto de canales laterales).
-    const reset = window.setTimeout(() => setPeerLeft(false), 0)
+    const reset = window.setTimeout(() => setLink('ok'), 0)
     const wasConnected = { current: room.getStatus() === 'connected' }
-    // Margen antes de dar al rival por desconectado de verdad: la presencia
-    // del canal puede parpadear un instante (la pestaña pasa a segundo
-    // plano, un corte de red breve, el propio servidor de Supabase
-    // resincronizando) sin que el rival se haya ido realmente. Declararlo
-    // en el acto convertía cualquier parpadeo en un falso aviso permanente.
+    // El rival ausente no se anuncia como perdido de golpe: primero se pasa a
+    // 'reconnecting' (la pantalla avisa de que se está reintentando) y solo
+    // al agotarse la ventana se da la partida por rota. La presencia del
+    // canal parpadea con normalidad —pestaña en segundo plano, red que salta
+    // de wifi a datos, el propio servidor resincronizando— y antes cualquiera
+    // de esos parpadeos se convertía en un final irreversible.
     let graceTimer: number | undefined
     const off = room.onStatusChange((status) => {
       if (status === 'connected') {
         wasConnected.current = true
         if (graceTimer !== undefined) window.clearTimeout(graceTimer)
         graceTimer = undefined
-        setPeerLeft(false)
-      } else if (status === 'waiting' && wasConnected.current && graceTimer === undefined) {
-        graceTimer = window.setTimeout(() => setPeerLeft(true), 5000)
-      } else if (status === 'error') {
-        // El canal se ha caído del todo: no hay parpadeo que esperar, la
-        // partida ya no puede continuar y conviene decirlo en el acto.
-        if (graceTimer !== undefined) window.clearTimeout(graceTimer)
-        graceTimer = undefined
-        setPeerLeft(true)
+        setLink('ok')
+        // Al reengancharse hay que ponerse al día: mientras no había canal,
+        // las retransmisiones del anfitrión se perdieron sin dejar rastro
+        // (el broadcast no guarda historial), así que la copia local puede
+        // llevar varios turnos de retraso.
+        if (role === 'guest') room.send('resync', {})
+      } else if ((status === 'waiting' || status === 'error') && wasConnected.current) {
+        setLink('reconnecting')
+        if (graceTimer === undefined) {
+          graceTimer = window.setTimeout(() => setLink('lost'), RECONNECT_WINDOW_MS)
+        }
       }
     })
     return () => {
@@ -64,7 +77,7 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       if (graceTimer !== undefined) window.clearTimeout(graceTimer)
       off()
     }
-  }, [room])
+  }, [room, role])
 
   // En cuanto llega una partida nueva sin ganador tras una ya terminada
   // (justo lo que produce una revancha aceptada), el acuerdo local se
@@ -89,6 +102,10 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     // recibirlo, cierra esa carrera sin importar quién llegue primero.
     room.send('deck', localDeckId)
     room.send('ready', {})
+    // Un invitado que acaba de entrar puede estar reenganchándose a una
+    // partida ya empezada: pedir el estado no cuesta nada y evita quedarse
+    // mirando un tablero de hace tres turnos.
+    if (role === 'guest') room.send('resync', {})
 
     const offDeck = room.onMessage('deck', (payload) => {
       const deckId = payload as string
@@ -113,6 +130,17 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     })
 
     const offRematch = room.onMessage('rematch', () => setRematchPeer(true))
+
+    // El anfitrión es la autoridad: cuando el invitado vuelve de un corte (o
+    // de recargar la página) pide el estado y aquí se le manda el actual, sin
+    // reconstruir nada. También reenvía el mazo, por si el que vuelve es un
+    // invitado recién arrancado que aún no sabe contra quién juega.
+    const offResync = room.onMessage('resync', () => {
+      if (role !== 'host') return
+      const store = useMatchStore.getState()
+      room.send('deck', localDeckId)
+      if (store.match) room.send('state', { match: store.match })
+    })
 
     // Si el anfitrión rechaza la jugada del invitado (turno equivocado, ya
     // jugó su Esencia este turno…), la retransmisión normal de `state` no se
@@ -173,6 +201,7 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
       offReady()
       offState()
       offRematch()
+      offResync()
       offError()
       offIntent()
       offBroadcast?.()
@@ -196,5 +225,5 @@ export const useNetworkSync = (room: Room | undefined, role: RoomRole | undefine
     room?.send('rematch', {})
     setRematchSelf(true)
   }
-  return { sendIntent, peerLeft, requestRematch, rematchSelf, rematchPeer }
+  return { sendIntent, link, peerLeft: link === 'lost', requestRematch, rematchSelf, rematchPeer }
 }

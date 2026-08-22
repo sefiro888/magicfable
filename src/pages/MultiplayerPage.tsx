@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { COMMANDER_BY_ID, STARTER_DECKS } from '../game'
 import { createRoom, joinRoom, type Room, type RoomStatus } from '../multiplayer/room'
+import { saveTicket } from '../multiplayer/ticket'
 import { useMatchStore } from '../store/match'
 import { useNetworkStore } from '../store/network'
 import { usePreferences } from '../store/preferences'
@@ -62,6 +63,9 @@ export function MultiplayerPage() {
     // sesión anterior parecería ya en marcha (con su propio mulligan resuelto)
     // en vez de esperar a la partida en red recién sembrada por el anfitrión.
     useMatchStore.getState().reset()
+    // Billete de vuelta: si la pestaña se recarga en mitad de la batalla,
+    // BattlePage sabrá a qué sala y con qué papel tiene que reengancharse.
+    saveTicket({ code: room.code, role: room.role })
     useNetworkStore.getState().setRoom(room, room.role)
     // La sala ya no es responsabilidad de esta pantalla: BattlePage se encarga
     // de salir de ella cuando la partida termine o se abandone.

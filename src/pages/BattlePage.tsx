@@ -40,6 +40,8 @@ import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useSoundtrack } from '../services/useAudioMix'
 import { useMatchStore } from '../store/match'
 import { useNetworkStore } from '../store/network'
+import { rejoinRoom } from '../multiplayer/room'
+import { clearTicket, readTicket } from '../multiplayer/ticket'
 import { usePreferences } from '../store/preferences'
 import { opponentForFloor, towerMaxHealth, useTower } from '../store/tower'
 import { summarizeRecords, useRecords } from '../store/records'
@@ -67,7 +69,28 @@ export function BattlePage() {
   // el invitado ocupa siempre el bando 'ai' (así el motor no cambia nada).
   const ME: PlayerId = role === 'guest' ? 'ai' : 'player'
   const RIVAL: PlayerId = ME === 'player' ? 'ai' : 'player'
-  const { sendIntent, peerLeft, requestRematch, rematchSelf, rematchPeer } = useNetworkSync(room, role, preferences.selectedDeckId)
+  /**
+   * Billete de vuelta leído UNA sola vez, antes del primer render.
+   *
+   * Tiene que ser síncrono: si esperásemos a un efecto, durante ese primer
+   * render `room` valdría `undefined` y esta pantalla trataría la partida como
+   * individual — arrancaría una partida nueva encima de la de red y pondría a
+   * la IA a jugar el bando del rival humano.
+   */
+  const [ticket] = useState(() => (room ? undefined : readTicket()))
+  /** Hay billete pero aún no hay sala: la partida es de red, solo que a medio volver. */
+  const rejoining = Boolean(ticket) && !room
+
+  useEffect(() => {
+    // La sala se consulta al store, no a la variable del render: así el
+    // segundo pase de StrictMode (y cualquier re-ejecución del efecto) no
+    // abre un canal duplicado.
+    if (!ticket || useNetworkStore.getState().room) return
+    const back = rejoinRoom(ticket.code, ticket.role)
+    useNetworkStore.getState().setRoom(back, back.role)
+  }, [ticket])
+
+  const { sendIntent, link, peerLeft, requestRematch, rematchSelf, rematchPeer } = useNetworkSync(room, role, preferences.selectedDeckId)
   // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
   /** «?tower=1»: esta partida es un piso de la Torre del Nexo. */
   const isTowerMatch = searchParams.get('tower') === '1'
@@ -167,7 +190,7 @@ export function BattlePage() {
   const ai = useAiTurn({
     // En multijugador el bando 'ai' del motor es un humano de verdad (el
     // invitado): este bot nunca debe jugar por él.
-    enabled: !room,
+    enabled: !room && !rejoining,
     difficulty: preferences.aiDifficulty,
     delayMs: preferences.aiDelayMs,
     blocked: queueBusy || scryOpen,
@@ -176,7 +199,7 @@ export function BattlePage() {
   useEffect(() => {
     // En multijugador la partida la siembra el anfitrión vía useNetworkSync,
     // no este efecto: aquí no hay mazo de IA que elegir ni semilla que forzar.
-    if (room) return
+    if (room || rejoining) return
     // Crea partida nueva si no hay ninguna o si la que persiste en el store no
     // corresponde al mazo elegido. Sin la segunda condición, la primera facción
     // con la que se juega quedaba fija al volver a entrar con otra distinta.
@@ -212,7 +235,7 @@ export function BattlePage() {
           : undefined,
       )
     }
-  }, [preferences.selectedDeckId, preferences.opponentDeckId, store.match, forcedSeed, room, isTowerMatch])
+  }, [preferences.selectedDeckId, preferences.opponentDeckId, store.match, forcedSeed, room, rejoining, isTowerMatch])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {
@@ -581,6 +604,7 @@ export function BattlePage() {
 
   const leaveToHome = useCallback((to: string) => {
     room?.leave()
+    clearTicket()
     useNetworkStore.getState().clear()
     useMatchStore.getState().reset()
     navigate(to)
@@ -589,9 +613,12 @@ export function BattlePage() {
   if (!match || !player || !rival) {
     return (
       <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
-        {room && (
+        {(room || rejoining) && (
           <div className={styles.resultBackdrop}>
-            <section className={styles.result}><small>Multijugador</small><h2>Preparando la partida…</h2></section>
+            <section className={styles.result}>
+              <small>Multijugador</small>
+              <h2>{rejoining ? 'Volviendo a la sala…' : 'Preparando la partida…'}</h2>
+            </section>
           </div>
         )}
       </div>
@@ -714,6 +741,7 @@ export function BattlePage() {
           onClick={() => {
             if (!match.winner) { setConfirmAbandon(true); return }
             room?.leave()
+            clearTicket()
             useNetworkStore.getState().clear()
             navigate('/play')
           }}
@@ -1056,12 +1084,28 @@ export function BattlePage() {
         </div>
       )}
 
+      {/* Dos avisos, no uno: antes cualquier parpadeo de la conexión daba la
+          partida por muerta sin margen para volver. Ahora primero se reintenta
+          durante un minuto y solo después se ofrece la salida. */}
+      {link === 'reconnecting' && (
+        <div className={styles.resultBackdrop}>
+          <section className={styles.result} role="status">
+            <small>Multijugador</small>
+            <h2>Reconectando…</h2>
+            <p>Se ha perdido el contacto con tu rival. La partida sigue guardada: si vuelve en menos de un minuto, continuaréis donde lo dejasteis.</p>
+            <div className={styles.resultActions}>
+              <button onClick={() => leaveToHome('/')}>Volver al inicio</button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {peerLeft && (
         <div className={styles.resultBackdrop}>
           <section className={styles.result}>
             <small>Multijugador</small>
             <h2>Tu rival se ha desconectado</h2>
-            <p>La partida no se puede continuar ni reanudar sin él. Puedes volver al inicio.</p>
+            <p>Ha pasado más de un minuto sin señal suya. La partida no se puede continuar sin él.</p>
             <div className={styles.resultActions}>
               <button onClick={() => leaveToHome('/')}>Volver al inicio</button>
             </div>

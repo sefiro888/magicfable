@@ -28,7 +28,7 @@ vi.mock('./supabaseClient', () => ({
   },
 }))
 
-const { createRoom } = await import('./room')
+const { createRoom, rejoinRoom } = await import('./room')
 
 afterEach(() => {
   channelState.onSubscribe = undefined
@@ -83,6 +83,16 @@ describe('sala de multijugador', () => {
     channelState.presence = { otro: [{ role: 'guest' }] }
     channelState.handlers['presence:sync']?.(undefined)
     expect(room.getStatus()).toBe('connected')
+  })
+
+  it('al reenganchar se conserva el papel: el anfitrión no se convierte en invitado', () => {
+    const room = rejoinRoom('  abc9k ', 'host')
+    expect(room.role).toBe('host')
+    // El código se normaliza igual que al unirse a mano, para que un billete
+    // guardado con espacios o en minúsculas apunte al mismo canal.
+    expect(room.code).toBe('ABC9K')
+    channelState.onSubscribe?.('SUBSCRIBED')
+    expect(channelState.tracked).toEqual([{ role: 'host' }])
   })
 
   it('salir de la sala no deja el aviso de tiempo agotado pendiente', () => {

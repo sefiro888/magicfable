@@ -141,3 +141,10 @@ const connect = (code: string, role: RoomRole): Room => {
 export const createRoom = (): Room => connect(randomCode(), 'host')
 
 export const joinRoom = (code: string): Room => connect(code.trim().toUpperCase(), 'guest')
+
+/**
+ * Vuelve a entrar en una sala conservando el papel que ya se tenía. Se usa al
+ * recargar la página en mitad de una partida: el anfitrión debe seguir siendo
+ * el anfitrión (es la autoridad del motor), no convertirse en invitado.
+ */
+export const rejoinRoom = (code: string, role: RoomRole): Room => connect(code.trim().toUpperCase(), role)

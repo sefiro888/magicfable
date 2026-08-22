@@ -42,6 +42,9 @@ FACTION_COLORS = {
 }
 
 # Facción de cada id conocido que aún no vive en una carta del catálogo.
+# Sin esta tabla, el SVG de respaldo se decide adivinando por palabras del id, y
+# nombres como «mausoleo-hambriento» o «faro-de-la-fractura» no se parecen a
+# ninguna de ellas: acababan todos con el rojo de Furia por defecto.
 COMMANDER_FACTIONS = {
     "kaela-corazon-caldera": "fury",
     "oriel-custodio-septima-runa": "arcane",
@@ -49,6 +52,42 @@ COMMANDER_FACTIONS = {
     "asterin-protector-luz": "order",
     "malachar-reidor-sombra": "shadow",
     "nyxaris-heraldo-vacio": "void",
+    # --- Segunda oleada (NEX-02 «Fractura»): comandantes alternativos ---
+    "borran-yunque-vivo": "fury",
+    "sialu-lengua-de-hielo": "arcane",
+    "marnak-raiz-profunda": "nature",
+    "veyra-espada-consagrada": "order",
+    "oren-el-tercer-luto": "shadow",
+    "zeph-sin-orilla": "void",
+    # --- Segunda oleada: las 24 cartas ---
+    "coloso-de-escoria": "fury",
+    "lanza-de-obsidiana": "fury",
+    "pira-de-los-caidos": "fury",
+    "heraldo-de-la-ruina": "fury",
+    "custodio-del-solsticio": "arcane",
+    "silencio-prismatico": "arcane",
+    "garza-de-escarcha": "arcane",
+    "biblioteca-sumergida": "arcane",
+    "ancestro-del-bosque": "nature",
+    "manada-en-celo": "nature",
+    "corazon-del-manantial": "nature",
+    "guardabosques-tenaz": "nature",
+    "arcangel-del-veredicto": "order",
+    "muro-de-plegarias": "order",
+    "sentencia-solar": "order",
+    "escudera-del-alba": "order",
+    "senora-de-la-mortaja": "shadow",
+    "diezmo-de-sangre": "shadow",
+    # La ñ del documento se acepta tal cual y también sin ella: según la
+    # herramienta que genere el archivo, el nombre puede llegar de las dos
+    # formas y no vale la pena que eso decida el color del respaldo.
+    "carroñero-del-osario": "shadow",
+    "carronero-del-osario": "shadow",
+    "mausoleo-hambriento": "shadow",
+    "arquitecta-del-vacio": "void",
+    "salto-de-umbral": "void",
+    "faro-de-la-fractura": "void",
+    "devorador-de-ecos": "void",
 }
 
 
