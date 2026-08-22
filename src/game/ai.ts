@@ -385,6 +385,80 @@ const actWithPiece = (state: MatchState, pieceId: string, me: PlayerId): MatchSt
  * Devuelve siempre una acción legal según las validaciones locales; si no queda
  * nada útil por hacer, devuelve el fin de turno.
  */
+/**
+ * Turno a partir del cual la IA se plantea gastar el poder del comandante aun
+ * sin una jugada redonda. Antes de eso prefiere guardarlo: es una sola vez por
+ * partida y quemarlo en el turno 2 contra una unidad de 2 de Vida es tirarlo.
+ */
+const POWER_PATIENCE_TURN = 8;
+
+/**
+ * El poder del comandante, una vez por partida.
+ *
+ * La IA no lo usaba NUNCA, así que el jugador tenía una jugada grande que su
+ * rival jamás respondía. Aquí se decide cuándo merece la pena, mirando qué
+ * hace el poder en concreto y no solo si se puede pagar.
+ */
+const choosePowerAction = (state: MatchState, me: PlayerId): GameAction | undefined => {
+  const player = state.players[me];
+  if (player.commanderPowerUsed) return undefined;
+  const power = COMMANDER_BY_ID[player.commanderId]?.power;
+  if (!power) return undefined;
+  if (!planManaPayment(player.resources, power.cost).payable) return undefined;
+
+  const enemyId: PlayerId = me === 'player' ? 'ai' : 'player';
+  const enemyUnits = state.board.filter(
+    (piece) => piece.owner === enemyId && CARD_BY_ID[piece.cardId]?.type === 'unit',
+  );
+  const maxHealth = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 35;
+  const herido = player.nexusHealth <= maxHealth * 0.6;
+  const tarde = state.turn >= POWER_PATIENCE_TURN;
+
+  const efecto = (kind: string) => power.effects.find((candidate) => candidate.kind === kind);
+  const barrido = efecto('damage-all-enemies');
+  const cura = efecto('heal-nexus');
+  const golpe = efecto('damage');
+
+  // Barrido: se guarda para cuando haya al menos dos unidades a las que pillar,
+  // o una sola que muera con él.
+  if (barrido?.kind === 'damage-all-enemies') {
+    const mata = enemyUnits.filter((piece) => piece.currentHealth <= barrido.amount).length;
+    if (enemyUnits.length >= 2 || mata >= 1) {
+      return { type: 'commander-power', playerId: me };
+    }
+  }
+
+  // Golpe dirigido: contra la unidad más peligrosa, y mejor si la mata.
+  if (golpe?.kind === 'damage' && power.needsEnemyTarget) {
+    const objetivo = [...enemyUnits].sort((left, right) => {
+      const muereL = left.currentHealth <= golpe.amount ? 1 : 0;
+      const muereR = right.currentHealth <= golpe.amount ? 1 : 0;
+      if (muereL !== muereR) return muereR - muereL;
+      const atkL = (CARD_BY_ID[left.cardId]?.attack ?? 0) + left.attackModifier;
+      const atkR = (CARD_BY_ID[right.cardId]?.attack ?? 0) + right.attackModifier;
+      return atkR - atkL;
+    })[0];
+    if (objetivo && (objetivo.currentHealth <= golpe.amount || tarde)) {
+      return { type: 'commander-power', playerId: me, target: { kind: 'piece', pieceId: objetivo.instanceId } };
+    }
+  }
+
+  // Curación: solo cuando de verdad hace falta, y sin desperdiciarla estando
+  // casi a tope.
+  if (cura?.kind === 'heal-nexus' && herido && !power.needsEnemyTarget) {
+    return { type: 'commander-power', playerId: me };
+  }
+
+  // Último recurso: partida larga, poder sin gastar y algo a lo que apuntar.
+  if (tarde && !power.needsEnemyTarget && power.effects.length > 0) {
+    return { type: 'commander-power', playerId: me };
+  }
+  if (tarde && power.needsEnemyTarget && enemyUnits[0]) {
+    return { type: 'commander-power', playerId: me, target: { kind: 'piece', pieceId: enemyUnits[0].instanceId } };
+  }
+  return undefined;
+};
+
 export const chooseNextAiAction = (
   state: MatchState,
   skippedCardIds: ReadonlySet<string> = new Set(),
@@ -398,6 +472,11 @@ export const chooseNextAiAction = (
   if (resource && !state.players[me].resourcePlayedThisTurn && !skippedCardIds.has(resource.instanceId)) {
     return { type: 'play-resource', playerId: me, cardInstanceId: resource.instanceId };
   }
+
+  // El poder va ANTES de jugar cartas: un barrido que despeja el tablero
+  // cambia qué despliegue tiene sentido después.
+  const powerAction = choosePowerAction(state, me);
+  if (powerAction) return powerAction;
 
   const cardAction = chooseCardAction(state, skippedCardIds, me);
   if (cardAction) return cardAction;
