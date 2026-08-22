@@ -30,6 +30,18 @@ interface MatchResultDialogProps {
 }
 
 /** Pantalla final: resultado, estadísticas de la partida y qué hacer después. */
+/**
+ * Duración en un formato que se lee de un vistazo. Una partida normal dura
+ * varios minutos y «487s» obliga a echar la cuenta mental.
+ */
+const formatDuration = (seconds: number): string => {
+  const total = Math.max(0, Math.round(seconds))
+  if (total < 60) return `${total}s`
+  const minutos = Math.floor(total / 60)
+  const resto = total % 60
+  return resto === 0 ? `${minutos} min` : `${minutos}m ${resto}s`
+}
+
 export function MatchResultDialog(props: MatchResultDialogProps) {
   const won = props.match.winner === props.me
   return (
@@ -40,7 +52,7 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
         <p>{won ? 'El Nexo rival se quiebra bajo tu voluntad.' : 'Tu Nexo se desvanece. La siguiente crónica aún puede cambiar.'}</p>
         <div className={styles.resultStats}>
           <div><strong>{props.match.turn}</strong><span>Turnos</span></div>
-          <div><strong>{props.elapsedSeconds}s</strong><span>Duración</span></div>
+          <div><strong>{formatDuration(props.elapsedSeconds)}</strong><span>Duración</span></div>
           <div><strong>{props.stats.damageDealt}</strong><span>Daño</span></div>
           <div><strong>{props.stats.cardsPlayed}</strong><span>Jugadas</span></div>
         </div>

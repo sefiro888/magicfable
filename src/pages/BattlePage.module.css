@@ -607,6 +607,20 @@
   .actionHint { padding: 6px 8px; font-size: 9px; }
   .cast { margin-top: 8px; padding: 7px; font-size: 9px; }
 
+  /* Mulligan: cinco cartas de 132 px no caben en una fila de 390, así que
+     flex las encogía a 62 y el nombre se partía en tres líneas que se salían
+     de la tarjeta y se pisaban con la etiqueta de estado. En dos filas (3+2)
+     cada una recupera ancho y el nombre cabe en dos líneas. */
+  .mulliganCards { flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+  .mulliganCard { width: calc(33.333% - 6px); }
+  .mulliganCard img { height: 84px; }
+  .mulliganCard strong {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    height: auto; min-height: 2.5em; padding: 6px 5px 0; overflow: hidden;
+    font-size: 11px; line-height: 1.2;
+  }
+  .mulliganCard span { padding: 0 4px; }
+
   /* El botón de turno vive fuera del panel lateral: siempre visible sobre
      la mano, no depende de que el panel de contexto esté a la vista. */
   /* El z-index del dock (46) se compara DENTRO del contexto de apilamiento de

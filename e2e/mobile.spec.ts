@@ -292,3 +292,47 @@ test('en móvil, el constructor de mazos sigue enseñando el coste de cada carta
   expect(caja.width).toBeGreaterThan(18)
   expect(caja.height).toBeGreaterThan(18)
 })
+
+/**
+ * El mulligan es la primera pantalla de cada partida y en el móvil salía rota.
+ *
+ * Cinco tarjetas de 132 px no caben en una fila de 375, así que flex las
+ * encogía a 62 y el nombre se partía en tres líneas que se salían de la
+ * tarjeta y se pisaban con la etiqueta de estado. En dos filas (3+2) cada una
+ * recupera ancho.
+ */
+for (const ancho of [375, 390]) {
+  test(`el mulligan cabe y se lee en un móvil de ${ancho}`, async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.addInitScript(() => {
+      localStorage.setItem('cronicas-nexo-howto-visto', '1')
+      localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
+        state: { muted: true, confirmEndTurn: false }, version: 7,
+      }))
+    })
+    await page.setViewportSize({ width: ancho, height: ancho === 375 ? 812 : 844 })
+    await page.goto('/battle?seed=1311657807')
+    await expect(page.getByRole('button', { name: /Conservar las cinco/i })).toBeVisible({ timeout: 25_000 })
+    await page.waitForTimeout(1200)
+
+    const cartas = await page.evaluate(() => {
+      // Ojo: `[class*="mulliganCard"]` casa también con el contenedor
+      // `mulliganCards`. Las tarjetas son los <button>.
+      const nodos = Array.from(document.querySelectorAll('button[class*="mulliganCard"]')) as HTMLElement[]
+      return nodos
+        .filter((nodo) => nodo.querySelector('strong'))
+        .map((nodo) => {
+          const nombre = nodo.querySelector('strong') as HTMLElement
+          return {
+            ancho: Math.round(nodo.getBoundingClientRect().width),
+            desborda: nombre.scrollWidth > nombre.clientWidth + 1,
+          }
+        })
+    })
+    expect(cartas).toHaveLength(5)
+    for (const carta of cartas) {
+      expect(carta.ancho, 'tarjeta demasiado estrecha').toBeGreaterThan(70)
+      expect(carta.desborda, 'el nombre se sale de la tarjeta').toBe(false)
+    }
+  })
+}
