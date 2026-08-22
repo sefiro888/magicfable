@@ -92,10 +92,26 @@ const createPlayer = (
 };
 
 /** Creates a deterministic match. Same decks + seed always produce the same opening hands. */
+/** Ajustes opcionales de partida: hoy solo los usa la Torre del Nexo. */
+export interface MatchSetup {
+  /**
+   * Vida con la que empieza cada Nexo, en vez de la del comandante. La Torre
+   * encadena combates conservando la Vida que te queda, así que el segundo
+   * piso no puede empezar con el marcador a tope.
+   */
+  readonly playerNexusHealth?: number;
+  readonly aiNexusHealth?: number;
+}
+
+/** Sustituye la Vida inicial del Nexo cuando la partida la fija por fuera. */
+const withNexusHealth = (player: PlayerState, health?: number): PlayerState =>
+  health === undefined ? player : { ...player, nexusHealth: Math.max(1, Math.trunc(health)) };
+
 export const createMatch = (
   playerDeck: DeckDefinition,
   aiDeck: DeckDefinition,
   seed: number,
+  setup: MatchSetup = {},
 ): MatchState => {
   const playerValidation = validateDeck(playerDeck);
   const aiValidation = validateDeck(aiDeck);
@@ -110,8 +126,8 @@ export const createMatch = (
     turn: 1,
     phase: 'main',
     players: {
-      player: createPlayer('player', playerDeck, deriveSeed(seed, 1)),
-      ai: createPlayer('ai', aiDeck, deriveSeed(seed, 2)),
+      player: withNexusHealth(createPlayer('player', playerDeck, deriveSeed(seed, 1)), setup.playerNexusHealth),
+      ai: withNexusHealth(createPlayer('ai', aiDeck, deriveSeed(seed, 2)), setup.aiNexusHealth),
     },
     board: [],
     tileEffects: [],

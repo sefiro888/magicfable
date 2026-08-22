@@ -9,6 +9,7 @@ import {
   STARTER_DECKS,
   type AnimationEvent,
   type GameAction,
+  type MatchSetup,
   type MatchState,
   type Position,
   type SpellTarget,
@@ -110,9 +111,10 @@ interface MatchStore {
   currentEvent?: AnimationEvent
   /**
    * Arranca una escaramuza contra la IA. `opponentDeckId` fija el rival; sin
-   * él lo elige la semilla, como siempre.
+   * él lo elige la semilla, como siempre. `setup` permite entrar con la Vida
+   * ya mermada, que es como encadena combates la Torre del Nexo.
    */
-  startMatch: (playerDeckId: string, seed?: number, opponentDeckId?: string) => void
+  startMatch: (playerDeckId: string, seed?: number, opponentDeckId?: string, setup?: MatchSetup) => void
   /** Arranca la partida a partir de un MatchState ya construido (multijugador: lo crea el anfitrión y lo recibe el invitado). */
   startFromMatch: (match: MatchState) => void
   dispatch: (action: GameAction) => boolean
@@ -233,7 +235,7 @@ export const useMatchStore = create<MatchStore>()(
   persist(
     (set, get) => ({
   ...initialState,
-  startMatch: (playerDeckId, seed, opponentDeckId) => {
+  startMatch: (playerDeckId, seed, opponentDeckId, setup) => {
     const playerIndex = Math.max(0, STARTER_DECKS.findIndex((deck) => deck.id === playerDeckId))
     const playerDeck = STARTER_DECKS[playerIndex]
     const matchSeed = seed ?? (Date.now() >>> 0)
@@ -255,7 +257,7 @@ export const useMatchStore = create<MatchStore>()(
       : undefined
     const aiDeck = chosen ?? opponents[opponentIndex] ?? opponents[0]
     if (!playerDeck || !aiDeck) throw new Error('Faltan mazos iniciales para crear la partida.')
-    const match = createMatch(playerDeck, aiDeck, matchSeed)
+    const match = createMatch(playerDeck, aiDeck, matchSeed, setup)
     const cleaned = clearAnimationQueue(match)
     set({
       ...initialState,

@@ -41,6 +41,7 @@ import { useSoundtrack } from '../services/useAudioMix'
 import { useMatchStore } from '../store/match'
 import { useNetworkStore } from '../store/network'
 import { usePreferences } from '../store/preferences'
+import { opponentForFloor, towerMaxHealth, useTower } from '../store/tower'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
@@ -68,6 +69,8 @@ export function BattlePage() {
   const RIVAL: PlayerId = ME === 'player' ? 'ai' : 'player'
   const { sendIntent, peerLeft, requestRematch, rematchSelf, rematchPeer } = useNetworkSync(room, role, preferences.selectedDeckId)
   // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
+  /** «?tower=1»: esta partida es un piso de la Torre del Nexo. */
+  const isTowerMatch = searchParams.get('tower') === '1'
   const forcedSeed = useMemo(() => {
     const raw = searchParams.get('seed')
     if (raw === null) return undefined
@@ -139,6 +142,19 @@ export function BattlePage() {
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).
   useSoundtrack(preferences.scenario, Boolean(match))
 
+  /**
+   * Resultado del piso de Torre. Se apunta una sola vez por partida: el
+   * `matchKey` es el estado en el que se detectó el ganador, así que una
+   * revancha o una partida nueva vuelven a permitirlo.
+   */
+  const towerReported = useRef<MatchState | undefined>(undefined)
+  useEffect(() => {
+    if (!isTowerMatch || !match?.winner) return
+    if (towerReported.current === match) return
+    towerReported.current = match
+    useTower.getState().finishFloor(match.winner === ME, match.players[ME].nexusHealth)
+  }, [isTowerMatch, match, ME])
+
   const recorder = useMatchRecorder({
     me: ME,
     rival: RIVAL,
@@ -165,12 +181,18 @@ export function BattlePage() {
     // corresponde al mazo elegido. Sin la segunda condición, la primera facción
     // con la que se juega quedaba fija al volver a entrar con otra distinta.
     const selectedDeck = STARTER_DECKS.find((deck) => deck.id === preferences.selectedDeckId)
+    // La Torre manda sobre los ajustes normales: fija rival, Vida de entrada y
+    // castigo del rival según la bendición elegida en el piso anterior.
+    const towerRun = isTowerMatch ? useTower.getState().run : undefined
+    const towerOpponentId = towerRun ? opponentForFloor(towerRun, towerRun.floor) : undefined
     // Además del mazo propio, cuenta el rival elegido: si se cambia de rival
     // en «Jugar» y la partida guardada era contra otro, hay que empezar una
     // nueva o el ajuste no tendría ningún efecto hasta terminar la anterior.
-    const chosenOpponent = preferences.opponentDeckId === 'random'
-      ? undefined
-      : STARTER_DECKS.find((deck) => deck.id === preferences.opponentDeckId)
+    const chosenOpponent = towerOpponentId
+      ? STARTER_DECKS.find((deck) => deck.id === towerOpponentId)
+      : preferences.opponentDeckId === 'random'
+        ? undefined
+        : STARTER_DECKS.find((deck) => deck.id === preferences.opponentDeckId)
     const matchesSelection = Boolean(
       store.match
       && selectedDeck
@@ -178,9 +200,19 @@ export function BattlePage() {
       && (!chosenOpponent || store.match.players.ai.commanderId === chosenOpponent.commanderId),
     )
     if (!matchesSelection) {
-      useMatchStore.getState().startMatch(preferences.selectedDeckId, forcedSeed, chosenOpponent?.id)
+      useMatchStore.getState().startMatch(
+        towerRun?.deckId ?? preferences.selectedDeckId,
+        forcedSeed,
+        chosenOpponent?.id,
+        towerRun
+          ? {
+              playerNexusHealth: towerRun.health,
+              aiNexusHealth: Math.max(1, towerMaxHealth(towerRun.deckId) - towerRun.enemyPenalty),
+            }
+          : undefined,
+      )
     }
-  }, [preferences.selectedDeckId, preferences.opponentDeckId, store.match, forcedSeed, room])
+  }, [preferences.selectedDeckId, preferences.opponentDeckId, store.match, forcedSeed, room, isTowerMatch])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {
@@ -1007,6 +1039,8 @@ export function BattlePage() {
           healthHistory={store.healthHistory}
           bestPlay={store.bestPlay}
           isPvp={Boolean(room)}
+          isTower={isTowerMatch}
+          onTower={() => { store.reset(); navigate('/tower') }}
           rematchSelf={rematchSelf}
           rematchPeer={rematchPeer}
           onRematch={requestRematch}

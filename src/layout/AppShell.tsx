@@ -8,6 +8,7 @@ import styles from './AppShell.module.css'
 const links = [
   { to: '/', label: 'Inicio' },
   { to: '/play', label: 'Jugar' },
+  { to: '/tower', label: 'Torre' },
   { to: '/multiplayer', label: 'Multijugador' },
   { to: '/gallery', label: 'Galería' },
   { to: '/decks', label: 'Mazos' },

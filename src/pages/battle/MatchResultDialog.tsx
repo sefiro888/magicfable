@@ -19,6 +19,9 @@ interface MatchResultDialogProps {
   isPvp: boolean
   /** En PvP: si este lado ya pidió la revancha y si la pidió el rival. */
   rematchSelf: boolean
+  /** La partida es un piso de la Torre del Nexo. */
+  isTower?: boolean
+  onTower: () => void
   rematchPeer: boolean
   onRematch: () => void
   onRepeat: () => void
@@ -73,9 +76,14 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
           <p className={styles.rematchWaiting}>Esperando a que tu rival acepte la revancha…</p>
         )}
         <div className={styles.resultActions}>
-          {props.isPvp
-            ? <button onClick={props.onRematch} disabled={props.rematchSelf}>{props.rematchPeer ? 'Aceptar revancha' : 'Jugar otra vez'}</button>
-            : <button onClick={props.onRepeat}>Repetir</button>}
+          {/* En la Torre no hay revancha ni repetición: el piso ya está
+              resuelto y lo que toca es volver a la escalera, donde se elige
+              bendición o se ve hasta dónde se llegó. */}
+          {props.isTower
+            ? <button onClick={props.onTower}>Volver a la Torre</button>
+            : props.isPvp
+              ? <button onClick={props.onRematch} disabled={props.rematchSelf}>{props.rematchPeer ? 'Aceptar revancha' : 'Jugar otra vez'}</button>
+              : <button onClick={props.onRepeat}>Repetir</button>}
           {/* Sin el reset, la partida terminada quedaba persistida: si luego se
               elegía la misma facción, se reanudaba esta misma (mismo rival, ya
               con ganador) en vez de empezar una nueva. */}
