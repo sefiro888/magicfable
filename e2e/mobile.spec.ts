@@ -270,3 +270,25 @@ test('en móvil la galería va a dos columnas, no a una tira infinita', async ({
   const alto = await page.evaluate(() => document.documentElement.scrollHeight)
   expect(alto, 'la galería se ha vuelto a estirar').toBeLessThan(26_000)
 })
+
+/**
+ * El coste tiene que verse al montar un mazo, también en el móvil.
+ *
+ * «Coste 3» no cabía a la derecha de cada fila en una pantalla estrecha, así
+ * que estaba oculto — justo el dato que se mira para decidir qué entra y qué
+ * sale. Ahora se muestra como una chapa con el número.
+ */
+test('en móvil, el constructor de mazos sigue enseñando el coste de cada carta', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/decks')
+  const filas = page.locator('article[class*="entry"]')
+  await expect(filas.first()).toBeVisible({ timeout: 20_000 })
+
+  // Toda fila del mazo enseña su coste, y la chapa se ve de verdad.
+  const chapas = page.locator('article[class*="entry"] [class*="costShort"]')
+  expect(await chapas.count()).toBe(await filas.count())
+  const caja = (await chapas.first().boundingBox())!
+  expect(caja.width).toBeGreaterThan(18)
+  expect(caja.height).toBeGreaterThan(18)
+})

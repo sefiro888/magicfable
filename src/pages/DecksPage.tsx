@@ -173,7 +173,12 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
                 <img className={styles.art} src={withBase(card.art.webp)} alt="" />
                 <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}{card.unique ? ' · única' : ''}</p></div>
               </button>
+              {/* Dos rótulos del mismo dato: en móvil no cabe «Coste 3» a la
+                  derecha de cada fila, pero el coste es justo lo que hay que
+                  mirar para montar un mazo. El corto es una chapa con el
+                  número. */}
               <span className={styles.cost}>{card.type === 'mana' ? 'Fuente' : `Coste ${card.cost.generic + colorCost}`}</span>
+              <span className={styles.costShort} aria-hidden="true">{card.type === 'mana' ? '◆' : card.cost.generic + colorCost}</span>
               <div className={styles.counter}><button onClick={() => changeCount(entry.cardId, -1)} aria-label={`Quitar ${card.name}`}>−</button><span>{entry.count}</span><button onClick={() => changeCount(entry.cardId, 1)} aria-label={`Añadir ${card.name}`}>+</button></div>
             </article>
           })}</div>
@@ -193,6 +198,7 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
                       <img className={styles.art} src={withBase(card.art.webp)} alt="" />
                       <div><h4>{card.name}</h4><p>{card.type} · {card.rarity}</p></div>
                       <span className={styles.cost}>{card.type === 'mana' ? 'Fuente' : `Coste ${card.cost.generic + colorCost}`}</span>
+                      <span className={styles.costShort} aria-hidden="true">{card.type === 'mana' ? '◆' : card.cost.generic + colorCost}</span>
                     </button>
                     {/* Añadir es una acción aparte, con su propio botón: pulsar
                         la carta entera para meterla en el mazo hacía imposible

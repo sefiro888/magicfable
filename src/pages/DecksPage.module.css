@@ -49,6 +49,8 @@
 .entry h4 { margin: 0 0 4px; font-family: var(--display); font-size: 16px; font-weight: 500; }
 .entry p { margin: 0; color: #7e7b74; font-size: 10px; text-transform: uppercase; letter-spacing: .09em; }
 .cost { color: #aaa69f; font-size: 11px; min-width: 85px; text-align: right; }
+/* Versión corta del coste, solo para móvil (ver .entry en el bloque de 560px). */
+.costShort { display: none; }
 .counter { display: grid; grid-template-columns: 28px 30px 28px; align-items: center; border: 1px solid rgba(255,255,255,.12); }
 .counter button { height: 28px; border: 0; background: rgba(255,255,255,.035); cursor: pointer; }
 .counter button:hover { background: rgba(215,180,103,.12); }
@@ -149,10 +151,17 @@
   /* Dos columnas: la ficha (arte + nombre) y el contador. El arte y el nombre
      ya viven dentro de .entryInfo, así que la fila no necesita una columna
      propia para el arte. */
-  .entry { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+  .entry { grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 10px 12px; }
   .entryInfo { grid-template-columns: 44px minmax(0, 1fr); gap: 10px; }
   .entry .art { width: 44px; height: 48px; }
+  /* «Coste 3» no cabe a la derecha de cada fila, pero el coste es justo lo que
+     se mira para montar un mazo: se cambia por una chapa con el número. */
   .cost { display: none; }
+  .costShort {
+    display: grid; place-items: center; width: 26px; height: 26px; align-self: center;
+    border: 1px solid var(--line-bright); border-radius: 50%;
+    color: var(--gold-bright); font-family: var(--display); font-size: 13px; font-weight: 700;
+  }
   .pool { grid-template-columns: 1fr; padding: 12px; }
   .poolInfo { grid-template-columns: 44px minmax(0, 1fr) auto; }
   .poolInfo > div { min-width: 0; }
