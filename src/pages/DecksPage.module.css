@@ -131,3 +131,16 @@
   .pool { grid-template-columns: 1fr; padding: 12px; }
   .poolCard > div { min-width: 0; }
 }
+
+/* ── Objetivos táctiles en móvil ──
+   Medido en un móvil de 390 px: los botones −/+ de ajustar copias salían a
+   28×28 px, muy por debajo de lo que un pulgar acierta con comodidad, y son
+   justo los que más se pulsan de toda la pantalla (cincuenta cartas por
+   mazo). Aquí crecen a 40 px sin cambiar nada en escritorio. */
+@media (max-width: 760px) {
+  .counter { grid-template-columns: 40px 38px 40px; }
+  .counter button { height: 40px; font-size: 16px; }
+  .shareButton, .historyRepeat, .historyClear, .save, .reset, .tab { min-height: 44px; }
+  .importInput { min-height: 44px; }
+  .poolCard, .addMark { min-height: 40px; }
+}

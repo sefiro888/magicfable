@@ -51,3 +51,9 @@
   .filters { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr; }
 }
+
+/* Pestañas y filtros a tamaño de pulgar: en móvil salían a 32 px de alto. */
+@media (max-width: 760px) {
+  .factionTab { min-height: 42px; padding-top: 0; padding-bottom: 0; }
+  .select, .search { min-height: 44px; }
+}

@@ -105,6 +105,8 @@
   .navLink { flex: 0 0 auto; padding: 0 11px; font-size: 11px; letter-spacing: .08em; }
   .navLink::after { left: 11px; right: 11px; }
   .brandText small { display: none; }
+  /* Sonido y ajustes: 38 px es poco para un pulgar; 44 es la medida cómoda. */
+  .iconButton { width: 44px; height: 44px; }
   .main { min-height: calc(100vh - 128px); }
   .footer { flex-direction: column; gap: 6px; padding: 14px; text-align: center; }
 }

@@ -74,6 +74,7 @@
 
 @media (max-width: 720px) {
   .setup { grid-template-columns: 1fr; gap: 14px; }
+  .setupField select { min-height: 44px; }
   .setupField small { min-height: 0; }
 }
 

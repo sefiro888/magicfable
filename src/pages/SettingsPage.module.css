@@ -15,7 +15,7 @@
 .toggleRow { display: flex; justify-content: space-between; align-items: center; margin-top: 17px; }
 .toggleRow span strong { display: block; font-size: 13px; }
 .toggleRow span small { display: block; color: #85827b; margin-top: 4px; }
-.toggle { width: 50px; height: 26px; position: relative; border: 1px solid var(--line); border-radius: 99px; background: #252630; cursor: pointer; }
+.toggle { width: 50px; height: 26px; flex: 0 0 auto; position: relative; border: 1px solid var(--line); border-radius: 99px; background: #252630; cursor: pointer; }
 .toggle::after { content: ""; position: absolute; width: 18px; height: 18px; top: 3px; left: 4px; border-radius: 50%; background: #77756e; transition: .2s; }
 .toggle[data-on="true"] { background: rgba(197,149,61,.24); border-color: var(--line-bright); }
 .toggle[data-on="true"]::after { left: 26px; background: var(--gold-bright); box-shadow: 0 0 10px var(--gold); }
@@ -36,4 +36,29 @@
   .control, .control:has(.select) { grid-template-columns: 1fr; gap: 6px; }
   .control output { text-align: left; }
   .select { width: 100%; }
+}
+
+/* ── Ajustes con el pulgar ──
+   Medido en un móvil de 390 px: los deslizadores de volumen tenían 4 px de
+   alto de zona pulsable (el grosor del carril) y los interruptores 26. Aquí
+   el carril se sigue viendo fino, pero el área que responde al dedo crece:
+   el input mide 44 px de alto y pinta el carril con un degradado centrado.
+   Los interruptores conservan su aspecto y amplían su zona con ::before. */
+@media (max-width: 760px) {
+  .control input[type="range"] {
+    height: 44px;
+    background: linear-gradient(#363641, #363641) center / 100% 4px no-repeat;
+    border-radius: 0;
+  }
+  .control input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; }
+  .control input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
+
+  .toggle { width: 56px; height: 32px; }
+  .toggle::after { width: 22px; height: 22px; top: 4px; }
+  .toggle[data-on="true"]::after { left: 29px; }
+  /* Zona táctil ampliada sin engordar el dibujo del interruptor. */
+  .toggle::before { content: ""; position: absolute; inset: -8px; border-radius: 99px; }
+
+  .select, .control button { min-height: 44px; }
+  .toggleRow { padding-top: 6px; padding-bottom: 6px; }
 }

@@ -86,3 +86,9 @@ button.choice:hover { transform: translateY(-2px); border-color: rgba(229,194,11
   padding: 1px 5px; border-radius: 3px;
   background: rgba(255,255,255,.07); font-family: ui-monospace, monospace; font-size: 11px;
 }
+
+/* Elegir mazo, introducir código y unirse, a tamaño de pulgar. */
+@media (max-width: 760px) {
+  .deckOption { min-height: 44px; }
+  .codeInput, .joinButton, .copyButton, .leaveButton, .choice { min-height: 44px; }
+}
