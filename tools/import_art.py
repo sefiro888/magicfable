@@ -40,6 +40,15 @@ FACTION_COLORS = {
     "shadow": "#261d2d",
     "void": "#59327d",
     "duna": "#c9a86a",
+    "samsara": "#e08a2c",
+    "jade": "#b8322c",
+    "sol": "#2fbfae",
+    "anunna": "#b5714a",
+    "fimbul": "#5a5f66",
+    "olimpo": "#cf9b3f",
+    "marea": "#2f8fb5",
+    "forja": "#b0763a",
+    "enjambre": "#7ba33c",
 }
 
 # Facción de cada id conocido que aún no vive en una carta del catálogo.
@@ -125,8 +134,32 @@ COMMANDER_FACTIONS = {
 }
 
 
-def faction_for(card_id: str) -> str:
-    """Deduce la facción a partir del id, para elegir el color del respaldo."""
+# Facción de cada subcarpeta de art-inbox. Es la vía preferente y la que se
+# usa con las facciones nuevas: mantener a mano una tabla de 250 ids no se
+# sostiene, y el nombre de la carpeta ya lo dice sin ambigüedad.
+FOLDER_FACTIONS = {
+    "faccion-samsara": "samsara",
+    "faccion-jade": "jade",
+    "faccion-quinto-sol": "sol",
+    "faccion-annuan": "anunna",
+    "faccion-anunna": "anunna",
+    "faccion-fimbul": "fimbul",
+    "faccion-olimpo": "olimpo",
+    "faccion-marea": "marea",
+    "faccion-forja": "forja",
+    "faccion-enjambre": "enjambre",
+    "faccion-duna": "duna",
+}
+
+
+def faction_for(card_id: str, folder: str = "") -> str:
+    """Deduce la facción, para elegir el color del respaldo.
+
+    Manda la subcarpeta si la imagen viene dentro de una; si no, se recurre a
+    la tabla de ids conocidos y, en último término, a adivinar por palabras.
+    """
+    if folder in FOLDER_FACTIONS:
+        return FOLDER_FACTIONS[folder]
     if card_id in COMMANDER_FACTIONS:
         return COMMANDER_FACTIONS[card_id]
     for faction, keywords in (
@@ -153,8 +186,8 @@ def square_crop(image: Image.Image) -> Image.Image:
     return image.crop((left, top, left + side, top + side))
 
 
-def write_svg_fallback(card_id: str) -> None:
-    color = FACTION_COLORS.get(faction_for(card_id), "#3a3a3a")
+def write_svg_fallback(card_id: str, folder: str = "") -> None:
+    color = FACTION_COLORS.get(faction_for(card_id, folder), "#3a3a3a")
     svg = (
         '<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">\n'
         f'  <rect width="400" height="500" fill="{color}"/>\n'
@@ -167,14 +200,15 @@ def write_svg_fallback(card_id: str) -> None:
         handle.write(svg)
 
 
-def import_one(filename: str) -> int:
+def import_one(relative: str) -> int:
+    folder, filename = os.path.split(relative)
     card_id, _ = os.path.splitext(filename)
-    with Image.open(os.path.join(INBOX, filename)) as source:
+    with Image.open(os.path.join(INBOX, relative)) as source:
         image = square_crop(source.convert("RGB"))
         image = image.resize((TARGET, TARGET), Image.Resampling.LANCZOS)
         webp_path = os.path.join(ART_DIR, f"{card_id}.webp")
         image.save(webp_path, "WebP", quality=QUALITY)
-    write_svg_fallback(card_id)
+    write_svg_fallback(card_id, folder)
     return os.path.getsize(webp_path)
 
 
@@ -185,10 +219,21 @@ def main() -> None:
         print("Deja ahí las imágenes con el id de la carta como nombre y vuelve a ejecutar.")
         return
 
+    # Raíz y subcarpetas: el arte llega organizado por facción, y meter 250
+    # imágenes sueltas en un mismo directorio no hay quien lo revise.
     sources = sorted(
         name for name in os.listdir(INBOX)
         if name.lower().endswith(SOURCE_EXTENSIONS)
     )
+    for folder in sorted(os.listdir(INBOX)):
+        ruta = os.path.join(INBOX, folder)
+        if not os.path.isdir(ruta) or folder not in FOLDER_FACTIONS:
+            continue
+        sources += [
+            os.path.join(folder, name)
+            for name in sorted(os.listdir(ruta))
+            if name.lower().endswith(SOURCE_EXTENSIONS)
+        ]
     if not sources:
         print(f"No hay imágenes en {INBOX}")
         print("Formatos admitidos: " + ", ".join(SOURCE_EXTENSIONS))
@@ -202,7 +247,7 @@ def main() -> None:
             print(f"ART_ERROR {filename}: {error}")
             sys.exit(1)
         total += size
-        print(f"ART_OK {os.path.splitext(filename)[0]} {size // 1024}KB")
+        print(f"ART_OK {os.path.splitext(os.path.basename(filename))[0]} {size // 1024}KB")
 
     print(f"ART_DONE files={len(sources)} total_kb={total // 1024}")
     print("Revisa el resultado con:  npm test")
