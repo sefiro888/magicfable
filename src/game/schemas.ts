@@ -48,6 +48,8 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('damage'), amount: z.number().int().positive(), target: z.enum(['enemy-piece', 'any-piece']) }),
   z.object({ kind: z.literal('damage-all-enemies'), amount: z.number().int().positive(), scorch: z.boolean().optional() }),
   z.object({ kind: z.literal('freeze'), duration: z.number().int().positive() }),
+  z.object({ kind: z.literal('stun') }),
+  z.object({ kind: z.literal('grant-keyword'), keyword: z.enum(KEYWORDS) }),
   z.object({ kind: z.literal('draw'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('discard'), amount: z.number().int().positive(), target: z.enum(['own-hand', 'enemy-hand']).optional() }),
   z.object({ kind: z.literal('heal-nexus'), amount: z.number().int().positive() }),

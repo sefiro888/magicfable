@@ -222,8 +222,14 @@ const pathIsClear = (
   return true;
 };
 
+/**
+ * Palabras clave efectivas de una pieza: las suyas de siempre más las que le
+ * haya prestado un hechizo este turno. Todo lo que dependa de una palabra
+ * clave en combate debe pasar por aquí, no por `card.keywords`, o los
+ * préstamos temporales no se notarían.
+ */
 const hasKeyword = (piece: BoardPiece, keyword: Keyword): boolean =>
-  Boolean(pieceDefinition(piece)?.keywords.includes(keyword));
+  Boolean(pieceDefinition(piece)?.keywords.includes(keyword)) || Boolean(piece.grantedKeywords?.includes(keyword));
 
 /**
  * Guardia: mientras una unidad enemiga esté adyacente a un Guardia, solo puede
@@ -607,6 +613,8 @@ export const spellNeedsPiece = (card: CardDefinition): boolean =>
       effect.kind === 'freeze' ||
       effect.kind === 'scorch' ||
       effect.kind === 'refresh-move' ||
+      effect.kind === 'stun' ||
+      effect.kind === 'grant-keyword' ||
       (effect.kind === 'passive' && effect.id === 'curse-drain-health') ||
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
   );
@@ -688,6 +696,28 @@ const resolveSpell = (
       }
     } else if (effect.kind === 'freeze' && targetPiece) {
       next = addStatus(next, targetPiece.instanceId, effect.duration);
+    } else if (effect.kind === 'stun' && targetPiece) {
+      // Mismo cálculo que el aturdir de combate: turno + 2 cubre exactamente
+      // el siguiente turno de su dueño, ni más ni menos.
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({
+        ...piece,
+        statuses: [
+          ...piece.statuses.filter((status) => status.kind !== 'stunned'),
+          { kind: 'stunned', expiresOnTurn: state.turn + 2 },
+        ],
+      }));
+      next = enqueue(next, {
+        type: 'freeze', targetId: targetPiece.instanceId, to: targetPiece.position,
+        effectId: 'stun-daze', durationMs: 300,
+      });
+    } else if (effect.kind === 'grant-keyword' && targetPiece?.owner === caster) {
+      const keyword = effect.keyword;
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({
+        ...piece,
+        grantedKeywords: piece.grantedKeywords?.includes(keyword)
+          ? piece.grantedKeywords
+          : [...(piece.grantedKeywords ?? []), keyword],
+      }));
     } else if (effect.kind === 'scorch' && initialTarget) {
       const expiresOnTurn = state.turn + Math.max(1, effect.duration) * 2;
       next = {
@@ -781,8 +811,56 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
       for (const target of targets) {
         next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect);
       }
+    } else if (effect.kind === 'damage-all-enemies') {
+      for (const target of next.board.filter(
+        (candidate) => candidate.owner !== piece.owner && pieceDefinition(candidate)?.type === 'unit',
+      )) {
+        next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect);
+      }
+    } else if (effect.kind === 'freeze' || effect.kind === 'stun') {
+      // Al entrar en juego no hay objetivo señalado por el jugador: se elige
+      // la unidad enemiga más peligrosa (la de más Ataque), que es lo que
+      // haría cualquiera si pudiera apuntar.
+      const victim = next.board
+        .filter((candidate) => candidate.owner !== piece.owner && pieceDefinition(candidate)?.type === 'unit')
+        .sort((left, right) => {
+          const leftAttack = (pieceDefinition(left)?.attack ?? 0) + left.attackModifier;
+          const rightAttack = (pieceDefinition(right)?.attack ?? 0) + right.attackModifier;
+          return rightAttack - leftAttack || left.instanceId.localeCompare(right.instanceId);
+        })[0];
+      if (victim && effect.kind === 'freeze') {
+        next = addStatus(next, victim.instanceId, effect.duration);
+      } else if (victim) {
+        next = updatePiece(next, victim.instanceId, (target) => ({
+          ...target,
+          statuses: [
+            ...target.statuses.filter((status) => status.kind !== 'stunned'),
+            { kind: 'stunned', expiresOnTurn: next.turn + 2 },
+          ],
+        }));
+        next = enqueue(next, {
+          type: 'freeze', targetId: victim.instanceId, to: victim.position, effectId: 'stun-daze', durationMs: 300,
+        });
+      }
     } else if (effect.kind === 'draw') {
       next = resolveDrawAndDiscard(next, piece.owner, effect.amount, 0);
+    } else if (effect.kind === 'refresh-move') {
+      // Devuelve el movimiento a una aliada que ya lo hubiera gastado; si
+      // ninguna se ha movido, el efecto no tiene a quién beneficiar.
+      const ally = next.board.find(
+        (candidate) =>
+          candidate.owner === piece.owner &&
+          candidate.instanceId !== piece.instanceId &&
+          candidate.movedThisTurn &&
+          pieceDefinition(candidate)?.type === 'unit',
+      );
+      if (ally) {
+        next = updatePiece(next, ally.instanceId, (target) => ({ ...target, movedThisTurn: false }));
+        next = enqueue(next, {
+          type: 'spell', actorId: piece.owner, targetId: ally.instanceId,
+          effectId: 'astral-refresh', durationMs: 320,
+        });
+      }
     } else if (effect.kind === 'heal-nexus') {
       next = healNexus(next, piece.owner, effect.amount);
     } else if (effect.kind === 'scry') {
@@ -939,6 +1017,16 @@ const cardTargetRejectionReason = (
   }
   const curseDrain = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'curse-drain-health');
   if (curseDrain && piece.owner === playerId) return 'Solo puede apuntar a una ficha enemiga.';
+  // Aturdir es un castigo, no una bendición: solo vale contra unidades
+  // enemigas. Una estructura no ataca, así que aturdirla no significaría nada.
+  const stuns = card.effects.some((effect) => effect.kind === 'stun');
+  if (stuns && (piece.owner === playerId || pieceDefinition(piece)?.type !== 'unit')) {
+    return 'Solo puede apuntar a una unidad enemiga.';
+  }
+  const grantsKeyword = card.effects.some((effect) => effect.kind === 'grant-keyword');
+  if (grantsKeyword && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) {
+    return 'Solo puede apuntar a una unidad aliada.';
+  }
   const friendlyBuff = card.effects.some(
     (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
   );
@@ -1268,6 +1356,13 @@ const applyOnAttackExtras = (
       next = damagePiece(next, splashed.instanceId, attackAdjacent.amount, playerId, card.vfx.impactEffect);
     }
   }
+  // Devorador de Ecos: cada golpe le arranca al rival una carta de la mano.
+  const attackDiscard = card.effects.find(
+    (effect) => effect.kind === 'passive' && effect.id === 'attack-enemy-discard',
+  );
+  if (attackDiscard?.kind === 'passive') {
+    next = resolveDrawAndDiscard(next, opponentOf(playerId), 0, attackDiscard.value ?? 1);
+  }
   const drainLife = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'drain-life-on-attack');
   if (drainLife?.kind === 'passive') {
     next = applyNexusDrain(next, playerId, drainLife.value ?? 1, `${card.faction}-lifedrain`);
@@ -1395,7 +1490,7 @@ export const attackPiece = (
   // Perforar: si el golpe destruye a la defensora, lo que sobra pasa al Nexo
   // enemigo. Solo cuenta el exceso real sobre la Vida que le quedaba.
   const overkill = hit.dealt - hit.healthBefore;
-  if (overkill > 0 && card.keywords.includes('pierce')) {
+  if (overkill > 0 && hasKeyword(attacker, 'pierce')) {
     const enemyId = opponentOf(playerId);
     const pierced = damageNexus(next, enemyId, overkill, playerId, attackerId, card);
     next = pierced.state;
@@ -1406,6 +1501,13 @@ export const attackPiece = (
       });
       return success(next);
     }
+  }
+  // Carroñero del Osario: cobrar una pieza le devuelve algo al Nexo. Es el
+  // primer disparador de «cuando destruye» del juego, así que se comprueba
+  // aquí, donde ya se sabe si la defensora sigue en el tablero.
+  const killReward = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'on-kill-heal-nexus');
+  if (killReward?.kind === 'passive' && !next.board.some((piece) => piece.instanceId === defenderId)) {
+    next = healNexus(next, playerId, killReward.value ?? 1);
   }
   // Aturdir: la superviviente no podrá atacar en su próximo turno (sí moverse).
   if (hit.dealt > 0 && card.keywords.includes('stun') && next.board.some((piece) => piece.instanceId === defenderId)) {
@@ -1585,7 +1687,7 @@ export const previewAttackPiece = (
   const hit = damagePieceDetailed(state, defenderId, amount, attacker.owner, card.vfx.impactEffect, attacker.position);
   const defenderHealthAfter = Math.max(0, defender.currentHealth - hit.dealt);
   const defenderDies = defenderHealthAfter <= 0;
-  const pierceOverkill = card.keywords.includes('pierce') && defenderDies
+  const pierceOverkill = hasKeyword(attacker, 'pierce') && defenderDies
     ? Math.max(0, hit.dealt - hit.healthBefore)
     : 0;
   let retaliationToAttacker = 0;
@@ -1630,9 +1732,103 @@ export const previewAttackNexus = (
   return { damage: amount, nexusHealthAfter, lethal: nexusHealthAfter <= 0 };
 };
 
+/**
+ * Mantenimiento de las estructuras: lo que hacen «al final de tu turno».
+ *
+ * Hasta la segunda oleada las estructuras solo tenían pasivas continuas
+ * (descuentos, bloqueos, bonificaciones al atacar). Estas se disparan una vez
+ * por turno de su dueño, que es lo que las convierte en motores lentos en
+ * lugar de en estatuas.
+ *
+ * Se resuelven en el orden en que están sobre el tablero, y solo las del
+ * jugador que termina el turno: una estructura no trabaja en el turno del
+ * rival.
+ */
+const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchState => {
+  let next = state;
+  const enemyId = opponentOf(playerId);
+  // Se recorre la foto inicial del tablero: si una estructura muere a mitad
+  // del mantenimiento (no puede hoy, pero podría), no queremos que el bucle
+  // dependa de un array que cambia debajo.
+  const structures = state.board.filter(
+    (piece) => piece.owner === playerId && pieceDefinition(piece)?.type === 'structure',
+  );
+  for (const structure of structures) {
+    const card = pieceDefinition(structure);
+    if (!card) continue;
+    // Solo si sigue en pie: entre una estructura y otra puede haber muerto.
+    if (!next.board.some((piece) => piece.instanceId === structure.instanceId)) continue;
+    for (const effect of card.effects) {
+      if (effect.kind !== 'passive') continue;
+      const value = effect.value ?? 1;
+      if (effect.id === 'upkeep-heal-nexus') {
+        next = healNexus(next, playerId, value);
+      } else if (effect.id === 'upkeep-drain-nexus') {
+        // Drena y cura en el mismo gesto, como la pasiva de Malachar.
+        const result = damageNexus(next, enemyId, value, playerId, structure.instanceId, card);
+        next = healNexus(result.state, playerId, value);
+        if (result.lethal) {
+          next = { ...next, winner: playerId, phase: 'finished' };
+          next = enqueue(next, {
+            type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`,
+            effectId: `${card.faction}-victory`, durationMs: 900,
+          });
+          return next;
+        }
+      } else if (effect.id === 'upkeep-splash-weakest-enemy') {
+        const weakest = next.board
+          .filter((piece) => piece.owner === enemyId && pieceDefinition(piece)?.type === 'unit')
+          .sort((left, right) =>
+            left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId),
+          )[0];
+        if (weakest) {
+          next = damagePiece(next, weakest.instanceId, value, playerId, card.vfx.impactEffect);
+        }
+      } else if (effect.id === 'upkeep-shield-ally') {
+        // La unidad aliada más expuesta: la que menos Vida le queda. Escudar a
+        // la que ya está sana desperdiciaría la estructura casi siempre.
+        const ally = next.board
+          .filter(
+            (piece) =>
+              piece.owner === playerId &&
+              pieceDefinition(piece)?.type === 'unit' &&
+              !piece.statuses.some((status) => status.kind === 'shielded'),
+          )
+          .sort((left, right) =>
+            left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId),
+          )[0];
+        if (ally) {
+          next = updatePiece(next, ally.instanceId, (piece) => ({
+            ...piece,
+            statuses: [...piece.statuses, { kind: 'shielded', amount: value }],
+          }));
+        }
+      } else if (effect.id === 'upkeep-loot') {
+        next = resolveDrawAndDiscard(next, playerId, value, value);
+      } else if (effect.id === 'upkeep-draw-if-low') {
+        // Con la mano llena no roba: sin este tope, la Biblioteca convertía
+        // cada turno en una carta gratis y ninguna partida larga se decidía
+        // por otra cosa.
+        if (next.players[playerId].hand.length <= UPKEEP_HAND_LIMIT) {
+          next = resolveDrawAndDiscard(next, playerId, value, 0);
+        }
+      }
+    }
+  }
+  return next;
+};
+
+/** Tope de mano por encima del cual el mantenimiento deja de robar. */
+const UPKEEP_HAND_LIMIT = 5;
+
 export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => {
   const turnError = validateTurn(state, playerId);
   if (turnError) return turnError;
+  // Las estructuras cobran ANTES de que el turno pase: su texto dice «al final
+  // de tu turno», no «al principio del turno del rival».
+  const afterUpkeep = resolveStructureUpkeep(state, playerId);
+  if (afterUpkeep.phase === 'finished') return success(afterUpkeep);
+  state = afterUpkeep;
   const nextPlayerId = opponentOf(playerId);
   const nextTurn = state.turn + 1;
   const incoming = state.players[nextPlayerId];
@@ -1666,6 +1862,8 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
       movedThisTurn: piece.owner === nextPlayerId ? false : piece.movedThisTurn,
       attackedThisTurn: piece.owner === nextPlayerId ? false : piece.attackedThisTurn,
       attackModifier: piece.owner === playerId ? 0 : piece.attackModifier,
+      // Las palabras clave prestadas caducan con el turno de quien las recibió.
+      grantedKeywords: piece.owner === playerId ? undefined : piece.grantedKeywords,
       // Horror Abisal: la ralentización dura exactamente el siguiente turno del enemigo.
       movementModifier: piece.owner === playerId ? 0 : piece.movementModifier,
       statuses: piece.statuses.filter((status) =>

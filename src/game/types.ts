@@ -67,6 +67,10 @@ export type CardEffect =
   | { readonly kind: 'damage'; readonly amount: number; readonly target: 'enemy-piece' | 'any-piece' }
   | { readonly kind: 'damage-all-enemies'; readonly amount: number; readonly scorch?: boolean }
   | { readonly kind: 'freeze'; readonly duration: number }
+  /** Aturde a la unidad señalada: no podrá atacar en su próximo turno, pero sí moverse. */
+  | { readonly kind: 'stun' }
+  /** Presta una palabra clave a una unidad aliada hasta el final del turno. */
+  | { readonly kind: 'grant-keyword'; readonly keyword: Keyword }
   | { readonly kind: 'draw'; readonly amount: number }
   | { readonly kind: 'discard'; readonly amount: number; readonly target?: 'own-hand' | 'enemy-hand' }
   | { readonly kind: 'heal-nexus'; readonly amount: number }
@@ -234,6 +238,12 @@ export interface BoardPiece {
   readonly reductionUsedOnTurn?: number;
   /** Pégaso Celestial: si ya curó en su primer ataque (solo ocurre una vez por pieza). */
   readonly firstAttackHealUsed?: boolean;
+  /**
+   * Palabras clave prestadas hasta que su dueño termine el turno (Salto de
+   * Umbral). Van aparte de las de la carta porque son temporales: la
+   * definición de la carta es inmutable y compartida por todas sus copias.
+   */
+  readonly grantedKeywords?: readonly Keyword[];
   readonly statuses: readonly PieceStatus[];
 }
 

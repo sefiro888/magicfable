@@ -5,7 +5,10 @@ import type { CardDefinition, CardSfx, FactionId, ManaCost } from './types';
 type CardSeed = Omit<
   CardDefinition,
   'color' | 'art' | 'set' | 'artist' | 'unlocked' | 'sfx'
-> & { readonly sfx?: CardSfx };
+> & { readonly sfx?: CardSfx; readonly set?: string };
+
+/** Nombre del conjunto de la segunda oleada, para no repetirlo 24 veces. */
+const SECOND_WAVE_SET = 'NEX-02 · Fractura';
 
 const factionCost = (faction: FactionId, colored: number, generic = 0): ManaCost => ({
   generic,
@@ -58,7 +61,7 @@ const defineCard = (seed: CardSeed): CardDefinition => {
       fallback: `/assets/cards/art/${seed.id}.svg`,
       alt: `Ilustración de ${seed.name}`,
     },
-    set: 'NEX-01 · Despertar',
+    set: seed.set ?? 'NEX-01 · Despertar',
     artist: ARTIST_CREDITS[seed.id] ?? 'Atelier del Nexo',
     unlocked: true,
     sfx: seed.sfx ?? { play: `${seed.faction}-play`, impact: `${seed.faction}-impact` },
@@ -892,10 +895,278 @@ const voidCards: readonly CardDefinition[] = [
   }),
 ];
 
-export const CARDS = Object.freeze([...furyCards, ...arcaneCards, ...natureCards, ...orderCards, ...shadowCards, ...voidCards]) as readonly CardDefinition[];
+/**
+ * NEX-02 «Fractura»: la segunda oleada.
+ *
+ * Cuatro cartas por facción, elegidas para tapar el agujero de cada una: Furia
+ * no tenía cierre tardío, Arcano no negaba turnos, Naturaleza no recuperaba
+ * Vida, Orden no castigaba en masa, Sombra no tocaba la mano del rival y Vacío
+ * no movía el tablero. Estrena tres mecánicas: mantenimiento de estructuras
+ * («al final de tu turno»), disparador de muerte y palabras clave prestadas.
+ */
+const secondWaveCards: readonly CardDefinition[] = [
+  // --- Furia ---
+  defineCard({
+    id: 'coloso-de-escoria', name: 'Coloso de Escoria', faction: 'fury', type: 'unit', subtype: 'Gigante',
+    rarity: 'mythic', cost: factionCost('fury', 2, 4), attack: 8, health: 8, range: 1, movement: 1,
+    rules: 'Perforar. Al entrar en juego, inflige 2 de daño a todas las unidades enemigas.',
+    flavor: 'La Caldera no forja soldados: forja consecuencias.',
+    keywords: ['pierce'], collectorNumber: 91, aiTags: ['finisher', 'area-damage'], unique: true,
+    effects: [{ kind: 'damage-all-enemies', amount: 2 }],
+    vfx: { summonEffect: 'caldera-eruption', attackEffect: 'siege-charge', impactEffect: 'stone-shockwave' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'lanza-de-obsidiana', name: 'Lanza de Obsidiana', faction: 'fury', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('fury', 1, 1),
+    rules: 'Inflige 5 de daño a una unidad enemiga. Tu Nexo se cura 2.',
+    flavor: 'Se lanza una vez. No hace falta más.',
+    keywords: [], collectorNumber: 92, aiTags: ['removal', 'damage'], unique: false,
+    effects: [{ kind: 'damage', amount: 5, target: 'enemy-piece' }, { kind: 'heal-nexus', amount: 2 }],
+    vfx: { impactEffect: 'obsidian-lance' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'pira-de-los-caidos', name: 'Pira de los Caídos', faction: 'fury', type: 'structure', subtype: 'Pira',
+    rarity: 'rare', cost: factionCost('fury', 1, 2), resistance: 5,
+    rules: 'Al final de tu turno, inflige 1 de daño a la unidad enemiga más débil.',
+    flavor: 'Arde por los que ya no pueden arder.',
+    keywords: [], collectorNumber: 93, aiTags: ['structure', 'damage'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-splash-weakest-enemy', value: 1 }],
+    vfx: { summonEffect: 'forge-rise', persistentEffect: 'forge-glow', impactEffect: 'ember-oath' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'heraldo-de-la-ruina', name: 'Heraldo de la Ruina', faction: 'fury', type: 'unit', subtype: 'Guerrero',
+    rarity: 'rare', cost: factionCost('fury', 1, 2), attack: 4, health: 3, range: 1, movement: 2,
+    rules: 'Golpe veloz. Cuando ataca, gana +1 de Ataque hasta el final del turno.',
+    flavor: 'Cada golpe le enseña dónde duele el siguiente.',
+    keywords: ['swift-strike'], collectorNumber: 94, aiTags: ['aggressive', 'combat'], unique: false,
+    effects: [{ kind: 'buff-self-on-attack', attack: 1 }],
+    vfx: { summonEffect: 'slag-sparks', attackEffect: 'cinder-dash', impactEffect: 'heavy-impact' },
+    set: SECOND_WAVE_SET,
+  }),
 
-if (CARDS.length !== 90 || new Set(CARDS.map((card) => card.id)).size !== 90) {
-  throw new Error('El conjunto NEX-01 debe contener exactamente 90 cartas con identificadores únicos.');
+  // --- Arcano ---
+  defineCard({
+    id: 'custodio-del-solsticio', name: 'Custodio del Solsticio', faction: 'arcane', type: 'unit', subtype: 'Constructo',
+    rarity: 'mythic', cost: factionCost('arcane', 2, 3), attack: 5, health: 7, range: 2, movement: 1,
+    rules: 'Guardia. Al entrar en juego, congela 2 turnos a la unidad enemiga con más Ataque.',
+    flavor: 'Cuenta los días que faltan para que vuelva la luz. Nunca se equivoca.',
+    keywords: ['guard'], collectorNumber: 95, aiTags: ['defense', 'freeze'], unique: true,
+    effects: [{ kind: 'freeze', duration: 2 }],
+    vfx: { summonEffect: 'prism-rise', impactEffect: 'frost-lock', persistentEffect: 'solstice-halo' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'silencio-prismatico', name: 'Silencio Prismático', faction: 'arcane', type: 'instant', subtype: 'Encantamiento',
+    rarity: 'rare', cost: factionCost('arcane', 1, 1),
+    rules: 'Aturde a una unidad enemiga y robas 1 carta.',
+    flavor: 'No apaga el sonido: lo guarda para más tarde.',
+    keywords: [], collectorNumber: 96, aiTags: ['control', 'draw'], unique: false,
+    effects: [{ kind: 'stun' }, { kind: 'draw', amount: 1 }],
+    vfx: { impactEffect: 'stun-daze' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'garza-de-escarcha', name: 'Garza de Escarcha', faction: 'arcane', type: 'unit', subtype: 'Ave',
+    rarity: 'uncommon', cost: factionCost('arcane', 1, 1), attack: 2, health: 3, range: 1, movement: 3,
+    rules: 'Volador. Al entrar en juego, escruta 1.',
+    flavor: 'Pesca en el reflejo, no en el agua.',
+    keywords: ['flying'], collectorNumber: 97, aiTags: ['fast', 'utility'], unique: false,
+    effects: [{ kind: 'scry', amount: 1 }],
+    vfx: { summonEffect: 'frost-feathers', attackEffect: 'ice-dart' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'biblioteca-sumergida', name: 'Biblioteca Sumergida', faction: 'arcane', type: 'structure', subtype: 'Archivo',
+    rarity: 'rare', cost: factionCost('arcane', 1, 2), resistance: 6,
+    rules: 'Tus hechizos cuestan 1 genérico menos. Al final de tu turno, si tienes 5 cartas o menos en la mano, robas 1.',
+    flavor: 'Los libros siguen ahí. Solo hay que aprender a leer bajo el agua.',
+    keywords: [], collectorNumber: 98, aiTags: ['structure', 'ramp', 'draw'], unique: false,
+    effects: [
+      { kind: 'passive', id: 'spell-generic-discount', value: 1 },
+      { kind: 'passive', id: 'upkeep-draw-if-low', value: 1 },
+    ],
+    vfx: { summonEffect: 'tower-raise', persistentEffect: 'submerged-glow' },
+    set: SECOND_WAVE_SET,
+  }),
+
+  // --- Naturaleza ---
+  defineCard({
+    id: 'ancestro-del-bosque', name: 'Ancestro del Bosque', faction: 'nature', type: 'unit', subtype: 'Treant',
+    rarity: 'mythic', cost: factionCost('nature', 2, 4), attack: 6, health: 9, range: 1, movement: 1,
+    rules: 'Guardia. Al entrar en juego, cura 4 a tu Nexo.',
+    flavor: 'Lleva tanto tiempo de pie que el bosque creció a su alrededor por respeto.',
+    keywords: ['guard'], collectorNumber: 99, aiTags: ['defense', 'heal'], unique: true,
+    effects: [{ kind: 'heal-nexus', amount: 4 }],
+    vfx: { summonEffect: 'root-surge', persistentEffect: 'ancient-bark' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'manada-en-celo', name: 'Manada en Celo', faction: 'nature', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('nature', 1, 1),
+    rules: 'Una unidad aliada gana +2 de Ataque hasta el final del turno y puede volver a moverse.',
+    flavor: 'La estación no pregunta si es buen momento.',
+    keywords: [], collectorNumber: 100, aiTags: ['buff', 'combat'], unique: false,
+    effects: [{ kind: 'passive', id: 'target-attack-until-end', value: 2 }, { kind: 'refresh-move' }],
+    vfx: { impactEffect: 'wild-rush' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'corazon-del-manantial', name: 'Corazón del Manantial', faction: 'nature', type: 'structure', subtype: 'Manantial',
+    rarity: 'rare', cost: factionCost('nature', 1, 1), resistance: 6,
+    rules: 'Al final de tu turno, cura 2 a tu Nexo.',
+    flavor: 'Mana desde antes de que hubiera nadie con sed.',
+    keywords: [], collectorNumber: 101, aiTags: ['structure', 'heal'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-heal-nexus', value: 2 }],
+    vfx: { summonEffect: 'spring-bloom', persistentEffect: 'living-water' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'guardabosques-tenaz', name: 'Guardabosques Tenaz', faction: 'nature', type: 'unit', subtype: 'Humanoide',
+    rarity: 'common', cost: factionCost('nature', 1, 1), attack: 3, health: 4, range: 2, movement: 1,
+    rules: 'Vínculo vital: el daño que reparte cura otro tanto a tu Nexo.',
+    flavor: 'Conoce cada sendero porque los ha cerrado todos alguna vez.',
+    keywords: ['lifelink'], collectorNumber: 102, aiTags: ['ranged', 'heal'], unique: false, effects: [],
+    vfx: { summonEffect: 'leaf-step', attackEffect: 'thorn-shot' },
+    set: SECOND_WAVE_SET,
+  }),
+
+  // --- Orden ---
+  defineCard({
+    id: 'arcangel-del-veredicto', name: 'Arcángel del Veredicto', faction: 'order', type: 'unit', subtype: 'Celestial',
+    rarity: 'mythic', cost: factionCost('order', 2, 4), attack: 6, health: 6, range: 1, movement: 2,
+    rules: 'Volador, Vínculo vital. Al entrar en juego, aturde a la unidad enemiga con más Ataque.',
+    flavor: 'No dicta sentencia. La recuerda.',
+    keywords: ['flying', 'lifelink'], collectorNumber: 103, aiTags: ['finisher', 'control'], unique: true,
+    effects: [{ kind: 'stun' }],
+    vfx: { summonEffect: 'holy-descent', attackEffect: 'verdict-strike', impactEffect: 'stun-daze' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'muro-de-plegarias', name: 'Muro de Plegarias', faction: 'order', type: 'structure', subtype: 'Fortaleza',
+    rarity: 'rare', cost: factionCost('order', 1, 2), resistance: 8,
+    rules: 'Guardia. Al final de tu turno, la unidad aliada más herida gana un escudo de 2.',
+    flavor: 'Cada piedra lleva grabado un nombre que todavía reza.',
+    keywords: ['guard'], collectorNumber: 104, aiTags: ['structure', 'defense'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-shield-ally', value: 2 }],
+    vfx: { summonEffect: 'bastion-raise', persistentEffect: 'prayer-light' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'sentencia-solar', name: 'Sentencia Solar', faction: 'order', type: 'instant', subtype: 'Conjuro',
+    rarity: 'rare', cost: factionCost('order', 1, 2),
+    rules: 'Inflige 3 de daño a todas las unidades enemigas. Cura 3 a tu Nexo.',
+    flavor: 'El sol no juzga por bando, solo por sombra.',
+    keywords: [], collectorNumber: 105, aiTags: ['area-damage', 'heal'], unique: false,
+    effects: [{ kind: 'damage-all-enemies', amount: 3 }, { kind: 'heal-nexus', amount: 3 }],
+    vfx: { impactEffect: 'solar-verdict' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'escudera-del-alba', name: 'Escudera del Alba', faction: 'order', type: 'unit', subtype: 'Soldado',
+    rarity: 'common', cost: factionCost('order', 1), attack: 1, health: 4, range: 1, movement: 1,
+    rules: 'Guardia. Al entrar en juego, gana un escudo de 2.',
+    flavor: 'Aún no tiene título. Ya tiene turno de guardia.',
+    keywords: ['guard'], collectorNumber: 106, aiTags: ['defense', 'cheap'], unique: false,
+    effects: [{ kind: 'passive', id: 'entry-shield-gain', value: 2 }],
+    vfx: { summonEffect: 'dawn-shield', persistentEffect: 'shield-sheen' },
+    set: SECOND_WAVE_SET,
+  }),
+
+  // --- Sombra ---
+  defineCard({
+    id: 'senora-de-la-mortaja', name: 'Señora de la Mortaja', faction: 'shadow', type: 'unit', subtype: 'Humanoide',
+    rarity: 'mythic', cost: factionCost('shadow', 2, 3), attack: 5, health: 5, range: 1, movement: 2,
+    rules: 'Vínculo vital. Al entrar en juego, el rival descarta 1 carta.',
+    flavor: 'Teje la mortaja antes de saber quién la va a llevar.',
+    keywords: ['lifelink'], collectorNumber: 107, aiTags: ['disruption', 'heal'], unique: true,
+    effects: [{ kind: 'discard', amount: 1, target: 'enemy-hand' }],
+    vfx: { summonEffect: 'shroud-weave', attackEffect: 'shadow-cut' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'diezmo-de-sangre', name: 'Diezmo de Sangre', faction: 'shadow', type: 'instant', subtype: 'Ritual',
+    rarity: 'uncommon', cost: factionCost('shadow', 1, 1),
+    rules: 'El rival descarta 1 carta. Tu Nexo se cura 3.',
+    flavor: 'El precio se cobra siempre. La discusión es de quién.',
+    keywords: [], collectorNumber: 108, aiTags: ['disruption', 'heal'], unique: false,
+    effects: [{ kind: 'discard', amount: 1, target: 'enemy-hand' }, { kind: 'heal-nexus', amount: 3 }],
+    vfx: { impactEffect: 'blood-tithe' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'carronero-del-osario', name: 'Carroñero del Osario', faction: 'shadow', type: 'unit', subtype: 'No muerto',
+    rarity: 'common', cost: factionCost('shadow', 1), attack: 2, health: 2, range: 1, movement: 2,
+    rules: 'Impulso. Cuando destruye una unidad, tu Nexo se cura 1.',
+    flavor: 'Llega el último y se va el primero.',
+    keywords: ['impulse'], collectorNumber: 109, aiTags: ['aggressive', 'heal'], unique: false,
+    effects: [{ kind: 'passive', id: 'on-kill-heal-nexus', value: 1 }],
+    vfx: { summonEffect: 'bone-stir', attackEffect: 'carrion-bite' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'mausoleo-hambriento', name: 'Mausoleo Hambriento', faction: 'shadow', type: 'structure', subtype: 'Mausoleo',
+    rarity: 'rare', cost: factionCost('shadow', 1, 2), resistance: 6,
+    rules: 'Al final de tu turno, inflige 1 de daño al Nexo enemigo y cura 1 al tuyo.',
+    flavor: 'Nunca está lleno. Ese es el problema de los mausoleos buenos.',
+    keywords: [], collectorNumber: 110, aiTags: ['structure', 'drain'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-drain-nexus', value: 1 }],
+    vfx: { summonEffect: 'crypt-rise', persistentEffect: 'hungry-dark' },
+    set: SECOND_WAVE_SET,
+  }),
+
+  // --- Vacío ---
+  defineCard({
+    id: 'arquitecta-del-vacio', name: 'Arquitecta del Vacío', faction: 'void', type: 'unit', subtype: 'Humanoide',
+    rarity: 'mythic', cost: factionCost('void', 2, 3), attack: 4, health: 6, range: 2, movement: 2,
+    rules: 'Golpe veloz. Al entrar en juego, una unidad aliada que ya se haya movido puede volver a moverse.',
+    flavor: 'Dibuja la puerta y después la pared que la sostiene.',
+    keywords: ['swift-strike'], collectorNumber: 111, aiTags: ['tempo', 'ranged'], unique: true,
+    effects: [{ kind: 'refresh-move' }],
+    vfx: { summonEffect: 'rift-open', attackEffect: 'void-lash', impactEffect: 'astral-refresh' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'salto-de-umbral', name: 'Salto de Umbral', faction: 'void', type: 'instant', subtype: 'Portal',
+    rarity: 'rare', cost: factionCost('void', 1, 1),
+    rules: 'Una unidad aliada puede volver a moverse y gana Perforar hasta el final del turno.',
+    flavor: 'El camino corto siempre existió. Solo hacía falta abrirlo.',
+    keywords: [], collectorNumber: 112, aiTags: ['tempo', 'combat'], unique: false,
+    effects: [{ kind: 'refresh-move' }, { kind: 'grant-keyword', keyword: 'pierce' }],
+    vfx: { impactEffect: 'threshold-leap' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'faro-de-la-fractura', name: 'Faro de la Fractura', faction: 'void', type: 'structure', subtype: 'Portal',
+    rarity: 'rare', cost: factionCost('void', 1, 2), resistance: 5,
+    rules: 'Al final de tu turno, robas 1 carta y descartas 1.',
+    flavor: 'No señala la costa. Señala la grieta.',
+    keywords: [], collectorNumber: 113, aiTags: ['structure', 'draw'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-loot', value: 1 }],
+    vfx: { summonEffect: 'beacon-ignite', persistentEffect: 'fracture-beam' },
+    set: SECOND_WAVE_SET,
+  }),
+  defineCard({
+    id: 'devorador-de-ecos', name: 'Devorador de Ecos', faction: 'void', type: 'unit', subtype: 'Horror',
+    rarity: 'uncommon', cost: factionCost('void', 1, 1), attack: 3, health: 3, range: 1, movement: 2,
+    rules: 'Cuando ataca, el rival descarta 1 carta.',
+    flavor: 'Se alimenta de lo que ibas a decir.',
+    keywords: [], collectorNumber: 114, aiTags: ['aggressive', 'disruption'], unique: false,
+    effects: [{ kind: 'passive', id: 'attack-enemy-discard', value: 1 }],
+    vfx: { summonEffect: 'echo-swallow', attackEffect: 'echo-bite' },
+    set: SECOND_WAVE_SET,
+  }),
+];
+
+export const CARDS = Object.freeze([
+  ...furyCards, ...arcaneCards, ...natureCards, ...orderCards, ...shadowCards, ...voidCards,
+  ...secondWaveCards,
+]) as readonly CardDefinition[];
+
+if (CARDS.length !== 114 || new Set(CARDS.map((card) => card.id)).size !== 114) {
+  throw new Error('El catálogo debe contener 114 cartas (90 de NEX-01 y 24 de NEX-02) con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(

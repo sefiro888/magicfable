@@ -15,15 +15,20 @@ describe('catálogo del Nexo', () => {
     expect(FACTIONS.filter((faction) => !faction.unlocked)).toHaveLength(0);
   });
 
-  it('contiene exactamente 90 diseños únicos repartidos entre las 6 facciones', () => {
-    expect(CARDS).toHaveLength(90);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(90);
-    expect(cardsForFaction('fury')).toHaveLength(17);
-    expect(cardsForFaction('arcane')).toHaveLength(17);
-    expect(cardsForFaction('nature')).toHaveLength(14);
-    expect(cardsForFaction('order')).toHaveLength(14);
-    expect(cardsForFaction('shadow')).toHaveLength(14);
-    expect(cardsForFaction('void')).toHaveLength(14);
+  it('contiene 114 diseños únicos: las 90 de NEX-01 más las 24 de NEX-02', () => {
+    expect(CARDS).toHaveLength(114);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(114);
+    // La segunda oleada reparte exactamente 4 cartas por facción, así que
+    // ninguna se queda atrás respecto a las demás.
+    expect(cardsForFaction('fury')).toHaveLength(21);
+    expect(cardsForFaction('arcane')).toHaveLength(21);
+    expect(cardsForFaction('nature')).toHaveLength(18);
+    expect(cardsForFaction('order')).toHaveLength(18);
+    expect(cardsForFaction('shadow')).toHaveLength(18);
+    expect(cardsForFaction('void')).toHaveLength(18);
+    const secondWave = CARDS.filter((card) => card.set.startsWith('NEX-02'));
+    expect(secondWave).toHaveLength(24);
+    expect(new Set(secondWave.map((card) => card.collectorNumber)).size).toBe(24);
   });
 
   it('incluye las doce cartas obligatorias', () => {
