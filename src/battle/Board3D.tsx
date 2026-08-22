@@ -168,7 +168,7 @@ const CursorMarker = memo(function CursorMarker({ position, reducedMotion }: { p
   )
 })
 
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, subtle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, subtle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -213,6 +213,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
           emissive={emissive}
           emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : threatened ? 0.55 : deployRow ? 0.3 : 0}
         />
+        <TerrainMarks rubble={rubble} cover={cover} position={position} />
       </mesh>
     )
   }
@@ -240,8 +241,62 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
         emissive={emissive}
         emissiveIntensity={valid ? 1.05 : scorched ? 0.9 : threatened ? 0.85 : deployRow ? 0.78 : 0.62}
       />
+      <TerrainMarks rubble={rubble} cover={cover} position={position} />
     </mesh>
   )
+})
+
+/**
+ * Terreno dibujado sobre la casilla: bloques de escombro para las ruinas y una
+ * empalizada baja para la cobertura. Va como hijo de la losa, así que hereda su
+ * posición y se mueve con ella.
+ *
+ * Las formas se derivan de la posición (no del azar) para que el mismo mapa se
+ * vea siempre igual sin guardar nada extra en el estado.
+ */
+const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position }: { rubble: boolean; cover: boolean; position: Position }) {
+  if (rubble) {
+    const semilla = position.x * 7 + position.y * 13
+    return (
+      <group position={[0, 0.06, 0]}>
+        {[0, 1, 2, 3].map((index) => {
+          const angulo = ((semilla + index * 5) % 12) / 12 * Math.PI * 2
+          const radio = 0.12 + ((semilla + index) % 3) * 0.07
+          const alto = 0.16 + ((semilla + index * 3) % 4) * 0.06
+          return (
+            <mesh
+              key={index}
+              position={[Math.cos(angulo) * radio, alto / 2, Math.sin(angulo) * radio]}
+              rotation={[angulo * 0.4, angulo, angulo * 0.25]}
+              castShadow={false}
+            >
+              <boxGeometry args={[0.2 + (index % 2) * 0.08, alto, 0.18 + (index % 3) * 0.06]} />
+              {/* Emisivo alto a propósito: sin él las caras que no miran a la luz
+                  se ven negras y el escombro parece una mancha, no una piedra. */}
+              <meshStandardMaterial color="#a3947f" roughness={0.95} metalness={0.04} emissive="#5b5044" emissiveIntensity={0.75} />
+            </mesh>
+          )
+        })}
+      </group>
+    )
+  }
+  if (cover) {
+    return (
+      <group position={[0, 0.06, 0]}>
+        {[-0.3, 0, 0.3].map((offset) => (
+          <mesh key={offset} position={[offset, 0.13, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]}>
+            <boxGeometry args={[0.2, 0.28, 0.1]} />
+            <meshStandardMaterial color="#b7a373" roughness={0.85} metalness={0.08} emissive="#6a5c33" emissiveIntensity={0.7} />
+          </mesh>
+        ))}
+        <mesh position={[0, 0.25, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]}>
+          <boxGeometry args={[0.86, 0.08, 0.13]} />
+          <meshStandardMaterial color="#cbb583" roughness={0.8} metalness={0.1} emissive="#7a6a3c" emissiveIntensity={0.7} />
+        </mesh>
+      </group>
+    )
+  }
+  return null
 })
 
 /**
@@ -950,6 +1005,15 @@ function Scene(props: Board3DProps) {
     () => new Set(props.state.tileEffects.filter((tile) => tile.kind === 'scorched').map((tile) => cellKey(tile.position))),
     [props.state.tileEffects],
   )
+  // Terreno del mapa: parte fija del campo, no un efecto pasajero.
+  const rubbleSet = useMemo(
+    () => new Set(props.state.terrain.filter((tile) => tile.kind === 'rubble').map((tile) => cellKey(tile.position))),
+    [props.state.terrain],
+  )
+  const coverSet = useMemo(
+    () => new Set(props.state.terrain.filter((tile) => tile.kind === 'cover').map((tile) => cellKey(tile.position))),
+    [props.state.terrain],
+  )
   const targetSet = useMemo(() => new Set(props.validTargets), [props.validTargets])
   /**
    * Casillas que una unidad rival ya alcanza desde donde está: pisar ahí es
@@ -1020,6 +1084,8 @@ function Scene(props: Board3DProps) {
             valid={validSet.has(key)}
             occupied={occupiedSet.has(key)}
             scorched={scorchedSet.has(key)}
+            rubble={rubbleSet.has(key)}
+            cover={coverSet.has(key)}
             subtle={subtleCells}
             own={isOwnHalf(position.y, props.localPlayerId)}
             deployRow={position.y === ownDeployRow}

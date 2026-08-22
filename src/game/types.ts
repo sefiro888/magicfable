@@ -188,11 +188,34 @@ export type PieceStatus =
    */
   | { readonly kind: 'stunned'; readonly expiresOnTurn: number };
 
+/**
+ * Marca temporal que deja un efecto sobre una casilla (hoy solo el fuego).
+ * Caduca sola en el turno indicado.
+ */
 export interface TileEffect {
   readonly kind: 'scorched';
   readonly position: Position;
   readonly sourceOwner: PlayerId;
   readonly expiresOnTurn: number;
+}
+
+/**
+ * Terreno del campo de batalla: parte del mapa, no un efecto pasajero.
+ *
+ * Hasta ahora las 64 casillas eran idénticas y la posición solo importaba por
+ * las distancias. Con terreno, el tablero tiene sitios que valen más que otros:
+ * hay que rodear, disputar y elegir dónde plantarse.
+ *
+ * - `rubble` (ruinas): nadie puede entrar ni desplegar ahí, y corta la línea de
+ *   los ataques a distancia. Son los muros del mapa.
+ * - `cover` (cobertura): quien esté encima recibe 1 de daño menos de los
+ *   ataques a distancia. Premia adelantar y quedarse.
+ */
+export type TerrainKind = 'rubble' | 'cover';
+
+export interface TerrainTile {
+  readonly kind: TerrainKind;
+  readonly position: Position;
 }
 
 export interface BoardPiece {
@@ -292,6 +315,8 @@ export interface MatchState {
   readonly players: Readonly<Record<PlayerId, PlayerState>>;
   readonly board: readonly BoardPiece[];
   readonly tileEffects: readonly TileEffect[];
+  /** Terreno fijo de la partida: se reparte al crearla y no cambia. */
+  readonly terrain: readonly TerrainTile[];
   readonly animations: readonly AnimationEvent[];
   readonly winner?: PlayerId;
   readonly startedAtTurn: number;

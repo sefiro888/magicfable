@@ -10,7 +10,13 @@ import type { BoardPiece, MatchState, PlayerId, Position } from './types';
  * catálogo para que el test falle también si alguna pierde su palabra clave.
  */
 
-const freshMatch = (seed = 42): MatchState => createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, seed);
+/**
+ * Partida de pruebas SIN terreno: estos tests colocan piezas en casillas
+ * concretas y disparan en línea recta, así que unas ruinas repartidas por la
+ * semilla romperían el caso por un motivo que no es el que se está probando.
+ * El terreno tiene sus propios tests en `terrain.test.ts`.
+ */
+const freshMatch = (seed = 42): MatchState => ({ ...createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, seed), terrain: [] });
 
 const withPlayer = (
   state: MatchState,

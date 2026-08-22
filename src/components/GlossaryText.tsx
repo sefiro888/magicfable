@@ -17,6 +17,18 @@ export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
     definition: 'La energía de las runas quebradas. Cada fuente produce 1 de Esencia de su variante por turno; los costes de color solo se pagan con su variante.',
   },
   {
+    id: 'ruinas',
+    terms: ['Ruinas', 'Escombros'],
+    label: 'Ruinas',
+    definition: 'Casillas cubiertas de escombros. No se pueden pisar ni sobrevolar, y cortan la línea de tiro de los ataques a distancia.',
+  },
+  {
+    id: 'cobertura',
+    terms: ['Cobertura'],
+    label: 'Cobertura',
+    definition: 'Casillas con parapeto. La unidad que está encima recibe 1 punto menos de daño de los ataques a distancia (el cuerpo a cuerpo la ignora).',
+  },
+  {
     id: 'agotar',
     terms: ['Agota', 'Agotar', 'Agotada', 'Agotado', 'Agotadas', 'Agotados'],
     label: 'Agotar',

@@ -2,6 +2,7 @@ import { BOARD_SIZE, deploymentRow, isInsideBoard, nexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import { COMMANDER_BY_ID, expandDeck } from './decks';
 import { payMana, restoreMana } from './mana';
+import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
 import type { ManaCost } from './types';
 import { deriveSeed, shuffleSeeded } from './random';
 import { validateDeck } from './deck-validation';
@@ -132,6 +133,7 @@ export const createMatch = (
     },
     board: [],
     tileEffects: [],
+    terrain: generateTerrain(seed),
     animations: [],
     startedAtTurn: 1,
   };
@@ -211,6 +213,9 @@ const pathIsClear = (
     if (state.board.some((piece) => piece.instanceId !== ignoredPieceId && piece.position.x === x && piece.position.y === y)) {
       return false;
     }
+    // Las ruinas son parte del mapa: tapan el paso y cortan la línea de tiro
+    // igual que lo haría una unidad plantada en medio.
+    if (isBlocked(state, { x, y })) return false;
     x += dx;
     y += dy;
   }
@@ -249,6 +254,8 @@ const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boole
   const definition = pieceDefinition(piece);
   if (!definition || definition.type !== 'unit' || piece.owner !== state.activePlayer) return false;
   if (piece.movedThisTurn || isFrozen(state, piece) || !isInsideBoard(to) || pieceAt(state, to)) return false;
+  // Ni siquiera los voladores aterrizan sobre escombros.
+  if (isBlocked(state, to)) return false;
   if (piece.enteredOnTurn === state.turn && !definition.keywords.includes('impulse')) return false;
   // Horror Abisal: ralentiza a los enemigos que atacó, sin bajar de 0.
   const movement = Math.max(0, (definition.movement ?? 1) - (piece.movementModifier ?? 0));
@@ -338,6 +345,8 @@ export const getValidDeploymentPositions = (
   const positions = new Map<string, Position>();
   const add = (position: Position): void => {
     if (!isInsideBoard(position) || pieceAt(state, position)) return;
+    // Sobre escombros no se despliega, igual que no se puede caminar por ellos.
+    if (isBlocked(state, position)) return;
     positions.set(`${position.x},${position.y}`, position);
   };
   for (let x = 0; x < BOARD_SIZE; x += 1) add({ x, y: row });
@@ -1341,9 +1350,16 @@ const computeAttackAmount = (
   defender?: BoardPiece,
 ): number => {
   const attackBuff = card.effects.find((effect) => effect.kind === 'buff-self-on-attack');
+  // Cobertura: quien dispara desde lejos pierde fuerza contra quien está
+  // parapetado. El cuerpo a cuerpo (alcance 1) la ignora: ahí ya estás encima.
+  const shielded = defender
+    && (card.range ?? 1) > 1
+    && givesCover(state, defender.position)
+    ? COVER_REDUCTION
+    : 0;
   return Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card, defender));
+    attackBonus(state, attacker, card, defender) - shielded);
 };
 
 export const attackPiece = (

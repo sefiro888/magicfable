@@ -16,7 +16,13 @@ import { STARTER_DECKS } from './decks';
 import { applyAction, createMatch, endTurn, getValidDeploymentPositions, getValidMoves } from './engine';
 import type { MatchState } from './types';
 
-const freshMatch = (seed = 42): MatchState => createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, seed);
+/**
+ * Partida de pruebas SIN terreno: estos tests colocan piezas en casillas
+ * concretas y disparan en línea recta, así que unas ruinas repartidas por la
+ * semilla romperían el caso por un motivo que no es el que se está probando.
+ * El terreno tiene sus propios tests en `terrain.test.ts`.
+ */
+const freshMatch = (seed = 42): MatchState => ({ ...createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, seed), terrain: [] });
 
 describe('configuración lógica del tablero 8×8', () => {
   it('define exactamente 64 casillas en una rejilla de 8×8', () => {
