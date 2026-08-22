@@ -642,3 +642,47 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* ── Poder del comandante ── */
+.commanderPower {
+  display: flex; flex-direction: column; gap: 5px; width: 100%; margin-top: 10px;
+  padding: 10px 12px; cursor: pointer; text-align: left;
+  border: 1px solid rgba(215,180,103,.45); border-left: 3px solid var(--gold, #d7b467);
+  background: rgba(215,180,103,.08); color: inherit;
+  transition: background .15s ease, border-color .15s ease;
+}
+.commanderPower:hover:not(:disabled) { background: rgba(215,180,103,.16); }
+.commanderPower:disabled { cursor: default; opacity: .45; }
+.commanderPower[data-used='true'] { border-left-color: #55524b; background: rgba(255,255,255,.02); }
+.commanderPower[data-aiming='true'] {
+  border-color: #ffd77a; background: rgba(215,180,103,.22);
+  animation: powerAim 1.1s ease-in-out infinite;
+}
+@keyframes powerAim { 50% { background: rgba(215,180,103,.1); } }
+.powerHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.powerHead strong { font-family: var(--display, Georgia, serif); font-size: 13px; color: #f0e8d6; }
+.powerCost { display: flex; gap: 4px; }
+.powerCost span {
+  display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: 9px; background: rgba(255,255,255,.12); color: #e8e2d4; font-size: 11px; font-weight: 700;
+}
+.powerCost span[data-faction='fury'] { background: rgba(224,74,46,.5); }
+.powerCost span[data-faction='arcane'] { background: rgba(88,201,255,.4); color: #08131f; }
+.powerCost span[data-faction='nature'] { background: rgba(94,190,110,.45); color: #08150c; }
+.powerCost span[data-faction='order'] { background: rgba(240,207,113,.55); color: #1a1408; }
+.powerCost span[data-faction='shadow'] { background: rgba(135,84,173,.55); }
+.powerCost span[data-faction='void'] { background: rgba(203,121,255,.45); }
+.commanderPower small { color: #918e86; font-size: 11px; line-height: 1.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .commanderPower[data-aiming='true'] { animation: none; }
+}
+
+/* Objetivos del poder del comandante. */
+.powerTargets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.powerTargets button {
+  padding: 6px 10px; cursor: pointer; border: 1px solid rgba(255,120,110,.5);
+  background: rgba(255,90,80,.12); color: #f3ded9; font-size: 11px;
+}
+.powerTargets button:hover { background: rgba(255,90,80,.24); }
+.powerTargets p { margin: 0; color: #918e86; font-size: 11px; }

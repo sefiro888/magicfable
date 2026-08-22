@@ -87,6 +87,7 @@ const createPlayer = (
     unitDiscountPending: false,
     firstUnitDeployedThisTurn: false,
     mulliganTaken: false,
+    commanderPowerUsed: false,
     stats: { cardsPlayed: 0, damageDealt: 0 },
   };
 };
@@ -1418,6 +1419,81 @@ export const attackPiece = (
   return success(next);
 };
 
+
+/**
+ * Poder del comandante: una jugada grande, pagada con Esencia, que solo se
+ * puede usar UNA vez por partida.
+ *
+ * Reutiliza la resolución de hechizos con una carta virtual en vez de duplicar
+ * toda la maquinaria de efectos: así cualquier efecto que ya sepa resolver un
+ * hechizo vale también para un poder, sin mantener dos caminos distintos.
+ */
+export const activateCommanderPower = (
+  state: MatchState,
+  playerId: PlayerId,
+  target?: SpellTarget,
+): ActionResult => {
+  const turnError = validateTurn(state, playerId);
+  if (turnError) return turnError;
+  const player = state.players[playerId];
+  const commander = COMMANDER_BY_ID[player.commanderId];
+  if (!commander) return fail(state, 'card-not-found', 'No se encuentra tu comandante.');
+  const power = commander.power;
+  if (player.commanderPowerUsed) {
+    return fail(state, 'cannot-attack', `${commander.name} ya ha usado su poder en esta partida.`);
+  }
+  if (power.needsEnemyTarget) {
+    const piece = target?.kind === 'piece'
+      ? state.board.find((candidate) => candidate.instanceId === target.pieceId)
+      : undefined;
+    if (!piece) return fail(state, 'target-required', 'Señala una unidad enemiga.');
+    if (piece.owner === playerId) return fail(state, 'target-required', 'El poder solo apunta a unidades enemigas.');
+  }
+  const payment = payMana(player.resources, power.cost);
+  if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay Esencia disponible suficiente.');
+
+  let next = withPlayer(state, playerId, {
+    ...player,
+    resources: payment.resources,
+    commanderPowerUsed: true,
+  });
+  next = enqueue(next, {
+    type: 'spell',
+    actorId: playerId,
+    targetId: target?.kind === 'piece' ? target.pieceId : `${playerId}-nexus`,
+    effectId: power.effectId,
+    faction: commander.faction,
+    durationMs: 460,
+  });
+  // Carta virtual: solo existe para pasar por `resolveSpell`.
+  const virtual = {
+    id: `${commander.id}-power`,
+    name: power.name,
+    faction: commander.faction,
+    type: 'instant',
+    rarity: 'mythic',
+    cost: power.cost,
+    rules: power.description,
+    flavor: commander.flavor,
+    keywords: [],
+    collectorNumber: 0,
+    aiTags: [],
+    unique: true,
+    effects: power.effects,
+    vfx: commander.vfx,
+    color: commander.faction,
+    art: commander.art,
+    set: 'NEX-01 · Despertar',
+    artist: 'Atelier del Nexo',
+    unlocked: true,
+    sfx: { play: `${commander.faction}-play`, impact: `${commander.faction}-impact` },
+  } as unknown as CardDefinition;
+  next = resolveSpell(next, playerId, virtual, target);
+  // No hace falta comprobar la victoria aquí: los efectos que tocan un Nexo la
+  // declaran ellos mismos al aplicar el daño.
+  return success(next);
+};
+
 export const attackNexus = (
   state: MatchState,
   playerId: PlayerId,
@@ -1656,6 +1732,8 @@ export const applyAction = (state: MatchState, action: GameAction): ActionResult
       return attackPiece(state, action.playerId, action.attackerId, action.defenderId);
     case 'attack-nexus':
       return attackNexus(state, action.playerId, action.attackerId);
+    case 'commander-power':
+      return activateCommanderPower(state, action.playerId, action.target);
     case 'end-turn':
       return endTurn(state, action.playerId);
   }

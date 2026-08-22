@@ -117,6 +117,16 @@ export const CommanderDefinitionSchema = z
     flavor: z.string().min(1),
     art: CardArtSchema,
     vfx: CardVfxSchema,
+    power: z
+      .object({
+        name: z.string().min(1),
+        description: z.string().min(1),
+        cost: ManaCostSchema,
+        needsEnemyTarget: z.boolean().optional(),
+        effects: z.array(CardEffectSchema).min(1),
+        effectId: z.string().min(1),
+      })
+      .strict(),
   })
   .strict();
 

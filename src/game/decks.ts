@@ -16,6 +16,13 @@ export const COMMANDERS = [
       alt: 'Kaela ante el corazón incandescente de la Caldera',
     },
     vfx: { persistentEffect: 'commander-caldera-aura', impactEffect: 'commander-fury-hit' },
+    power: {
+      name: 'Erupción de la Caldera',
+      description: 'Inflige 2 de daño a todas las unidades enemigas.',
+      cost: { generic: 2, colored: { fury: 1 } },
+      effects: [{ kind: 'damage-all-enemies', amount: 2 }],
+      effectId: 'commander-fury-power',
+    },
   }) as CommanderDefinition,
   CommanderDefinitionSchema.parse({
     id: 'oriel-custodio-septima-runa',
@@ -31,6 +38,14 @@ export const COMMANDERS = [
       alt: 'Oriel custodiando una runa suspendida entre cristales',
     },
     vfx: { persistentEffect: 'commander-rune-aura', impactEffect: 'commander-arcane-hit' },
+    power: {
+      name: 'Quietud de la Séptima Runa',
+      description: 'Congela una unidad enemiga 2 turnos y robas 1 carta.',
+      cost: { generic: 1, colored: { arcane: 1 } },
+      needsEnemyTarget: true,
+      effects: [{ kind: 'freeze', duration: 2 }, { kind: 'draw', amount: 1 }],
+      effectId: 'commander-arcane-power',
+    },
   }) as CommanderDefinition,
   CommanderDefinitionSchema.parse({
     id: 'verdania-guardiana-raices',
@@ -46,6 +61,13 @@ export const COMMANDERS = [
       alt: 'Verdania rodeada de antiguos árboles y magia verdadera',
     },
     vfx: { persistentEffect: 'commander-nature-aura', impactEffect: 'commander-nature-hit' },
+    power: {
+      name: 'Savia del Origen',
+      description: 'Cura 7 de Vida a tu Nexo y escruta 1.',
+      cost: { generic: 1, colored: { nature: 1 } },
+      effects: [{ kind: 'heal-nexus', amount: 7 }, { kind: 'scry', amount: 1 }],
+      effectId: 'commander-nature-power',
+    },
   }) as CommanderDefinition,
   CommanderDefinitionSchema.parse({
     id: 'asterin-protector-luz',
@@ -61,6 +83,13 @@ export const COMMANDERS = [
       alt: 'Asterin con alas de luz celestial y armadura dorada',
     },
     vfx: { persistentEffect: 'commander-order-aura', impactEffect: 'commander-order-hit' },
+    power: {
+      name: 'Égida Eterna',
+      description: 'Inflige 3 de daño a todas las unidades enemigas y cura 3 a tu Nexo.',
+      cost: { generic: 2, colored: { order: 1 } },
+      effects: [{ kind: 'damage-all-enemies', amount: 3 }, { kind: 'heal-nexus', amount: 3 }],
+      effectId: 'commander-order-power',
+    },
   }) as CommanderDefinition,
   CommanderDefinitionSchema.parse({
     id: 'malachar-reidor-sombra',
@@ -76,6 +105,13 @@ export const COMMANDERS = [
       alt: 'Malachar flotando en sombras púrpuras y neblina oscura',
     },
     vfx: { persistentEffect: 'commander-shadow-aura', impactEffect: 'commander-shadow-hit' },
+    power: {
+      name: 'Diezmo de Malachar',
+      description: 'El rival descarta 1 carta y tu Nexo se cura 4.',
+      cost: { generic: 1, colored: { shadow: 1 } },
+      effects: [{ kind: 'discard', amount: 1, target: 'enemy-hand' }, { kind: 'heal-nexus', amount: 4 }],
+      effectId: 'commander-shadow-power',
+    },
   }) as CommanderDefinition,
   CommanderDefinitionSchema.parse({
     id: 'nyxaris-heraldo-vacio',
@@ -91,6 +127,14 @@ export const COMMANDERS = [
       alt: 'Nyxaris emergiendo de una fractura violeta en el espacio',
     },
     vfx: { persistentEffect: 'commander-void-aura', impactEffect: 'commander-void-hit' },
+    power: {
+      name: 'Fractura del Heraldo',
+      description: 'Inflige 4 de daño a una unidad enemiga.',
+      cost: { generic: 2, colored: { void: 1 } },
+      needsEnemyTarget: true,
+      effects: [{ kind: 'damage', amount: 4, target: 'enemy-piece' }],
+      effectId: 'commander-void-power',
+    },
   }) as CommanderDefinition,
 ] as const;
 

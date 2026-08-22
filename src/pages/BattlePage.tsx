@@ -435,6 +435,35 @@ export function BattlePage() {
 
   const inspectCard = useCallback((cardId?: string) => useMatchStore.getState().inspect(cardId), [])
 
+  /**
+   * Poder del comandante. Los que piden objetivo entran en un modo de
+   * señalamiento: el siguiente clic sobre una unidad enemiga lo lanza. Así no
+   * hace falta una interfaz aparte para elegir, se reutiliza el tablero.
+   */
+  const [aimingPower, setAimingPower] = useState(false)
+  const power = commander?.power
+  const powerPayment = useMemo(
+    () => (power && match ? planManaPayment(match.players[ME].resources, power.cost) : undefined),
+    [power, match, ME],
+  )
+  const powerUsed = match?.players[ME].commanderPowerUsed ?? false
+  const canUsePower = Boolean(
+    power && !powerUsed && match && !match.winner && match.activePlayer === ME && !queueBusy && powerPayment?.payable,
+  )
+  // Sin memoizar a propósito: solo la usa el botón del panel, que se
+  // re-renderiza con la partida de todas formas. El disparo con objetivo va
+  // por `onPiece`, que sí está memoizado porque lo consume el tablero 3D.
+  const castPower = (target?: { kind: 'piece'; pieceId: string }) => {
+    if (!power) return
+    if (power.needsEnemyTarget && !target) {
+      setAimingPower(true)
+      useMatchStore.getState().setMessage(`${power.name}: señala una unidad enemiga.`)
+      return
+    }
+    setAimingPower(false)
+    if (doAction({ type: 'commander-power', playerId: ME, target })) finishSelection()
+  }
+
   const onCell = useCallback((position: Position) => {
     if (photoMode) return
     if (selectedInstance && selectedCard && isBoardCard(selectedCard)) {
@@ -787,6 +816,55 @@ export function BattlePage() {
             </div>
             {commander && <p className={styles.commanderRules}>{commander.rules}</p>}
             {player.unitDiscountPending && <p className={styles.commanderBoon}>Pasiva activa: tu siguiente unidad cuesta 1 menos.</p>}
+            {/* Poder del comandante: una vez por partida, y la única jugada
+                del juego que no sale de una carta. */}
+            {power && (
+              <button
+                type="button"
+                className={styles.commanderPower}
+                data-aiming={aimingPower || undefined}
+                data-used={powerUsed || undefined}
+                onClick={() => (aimingPower ? setAimingPower(false) : castPower())}
+                disabled={!canUsePower && !aimingPower}
+                title={powerUsed ? 'Ya usado en esta partida' : power.description}
+              >
+                <span className={styles.powerHead}>
+                  <strong>{power.name}</strong>
+                  <span className={styles.powerCost}>
+                    {power.cost.generic > 0 && <span>{power.cost.generic}</span>}
+                    {Object.entries(power.cost.colored).map(([faction, amount]) => (
+                      <span key={faction} data-faction={faction}>{amount}</span>
+                    ))}
+                  </span>
+                </span>
+                <small>
+                  {powerUsed
+                    ? 'Ya lo has usado en esta partida.'
+                    : aimingPower
+                      ? 'Elige el objetivo abajo · pulsa para cancelar'
+                      : power.description}
+                </small>
+              </button>
+            )}
+            {/* Objetivos del poder: se eligen aquí en vez de interceptando el
+                clic del tablero, que obligaría a leer estado dentro del
+                manejador memoizado que consume la escena 3D. */}
+            {aimingPower && power && (
+              <div className={styles.powerTargets}>
+                {match.board.filter((piece) => piece.owner === RIVAL).map((piece) => (
+                  <button
+                    key={piece.instanceId}
+                    type="button"
+                    onClick={() => castPower({ kind: 'piece', pieceId: piece.instanceId })}
+                  >
+                    {CARD_BY_ID[piece.cardId]?.name ?? 'Unidad'}
+                  </button>
+                ))}
+                {match.board.every((piece) => piece.owner !== RIVAL) && (
+                  <p>No hay unidades enemigas a las que apuntar.</p>
+                )}
+              </div>
+            )}
           </section>
           <section className={styles.panelSection}>
             <div className={styles.lifeRow}>

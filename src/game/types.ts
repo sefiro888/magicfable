@@ -114,6 +114,22 @@ export interface CardDefinition {
   readonly effects: readonly CardEffect[];
 }
 
+/**
+ * Poder de comandante: una jugada grande que se paga con Esencia y se usa UNA
+ * vez por partida. Las pasivas de comandante siempre han sido automáticas, así
+ * que no daban ninguna decisión; esto añade un momento de «¿ahora o luego?»
+ * sin necesidad de cartas nuevas.
+ */
+export interface CommanderPower {
+  readonly name: string;
+  readonly description: string;
+  readonly cost: ManaCost;
+  /** Necesita señalar una unidad enemiga (p. ej. congelarla). */
+  readonly needsEnemyTarget?: boolean;
+  readonly effects: readonly CardEffect[];
+  readonly effectId: string;
+}
+
 export interface CommanderDefinition {
   readonly id: string;
   readonly name: string;
@@ -124,6 +140,7 @@ export interface CommanderDefinition {
   readonly flavor: string;
   readonly art: CardArt;
   readonly vfx: CardVfx;
+  readonly power: CommanderPower;
 }
 
 export interface DeckEntry {
@@ -221,6 +238,8 @@ export interface PlayerState {
   /** Pasiva de Nyxaris: la primera unidad del turno ya entró en juego. */
   readonly firstUnitDeployedThisTurn: boolean;
   readonly mulliganTaken: boolean;
+  /** El poder del comandante solo se puede usar una vez por partida. */
+  readonly commanderPowerUsed: boolean;
   readonly stats: PlayerStats;
 }
 
@@ -301,6 +320,12 @@ export type GameAction =
       readonly defenderId: string;
     }
   | { readonly type: 'attack-nexus'; readonly playerId: PlayerId; readonly attackerId: string }
+  | {
+      readonly type: 'commander-power';
+      readonly playerId: PlayerId;
+      /** Unidad señalada, si el poder la pide. */
+      readonly target?: SpellTarget;
+    }
   | { readonly type: 'end-turn'; readonly playerId: PlayerId };
 
 export interface ActionResult {
