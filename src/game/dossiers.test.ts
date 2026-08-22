@@ -91,6 +91,21 @@ describe('dosieres de facción', () => {
     }
   });
 
+  it('dos dosieres no reclaman el mismo nombre de archivo', () => {
+    // `tools/art-inbox/` es una sola carpeta: si dos facciones piden
+    // `zigurat.png`, la segunda machaca a la primera sin avisar de nada.
+    const dueño = new Map<string, string>();
+    const choques: string[] = [];
+    for (const dossier of DOSIERES) {
+      for (const id of dossier.ids) {
+        const previo = dueño.get(id);
+        if (previo) choques.push(`${id}: ${previo} y ${dossier.archivo}`);
+        else dueño.set(id, dossier.archivo);
+      }
+    }
+    expect(choques).toEqual([]);
+  });
+
   it('los dosieres ya implementados coinciden por completo con el catálogo', () => {
     const implementadas = new Set([...Object.keys(CARD_BY_ID), ...Object.keys(COMMANDER_BY_ID)]);
     for (const dossier of DOSIERES) {
