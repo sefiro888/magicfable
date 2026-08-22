@@ -225,6 +225,7 @@
 .handToggle {
   position: absolute; z-index: 42; top: -15px; left: 50%; transform: translateX(-50%);
   padding: 4px 16px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; min-height: 30px;
   border: 1px solid var(--line-bright); border-radius: 99px;
   color: #e8dcbc; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
   background: linear-gradient(#1c1f2b, #10121b);
@@ -553,7 +554,9 @@
   /* Deja hueco al escudo ⛨ (.ownPanelToggle), que va posicionado sobre la
      esquina superior izquierda: sin este margen se comía la mitad del botón
      de salir y solo se leía «ALIR». */
-  .exit { margin-left: 34px; max-width: none; padding: 8px 9px; font-size: 8px; white-space: nowrap; }
+  .exit { margin-left: 44px; min-height: 40px; max-width: none; padding: 8px 11px; font-size: 8px; white-space: nowrap; }
+  /* El resumen del rival abre su panel: es un botón, y como tal se pulsa. */
+  .enemySummary { min-height: 40px; }
   .exitLong { display: none; }
   .exitShort { display: inline; }
   .turn { overflow: hidden; }
@@ -587,21 +590,7 @@
     width: 52vw; max-height: none; border: 0; background: none; box-shadow: none;
   }
   .rightPanel[data-context-empty] .context { padding: 0; }
-  .rightPanel[data-context-empty] /* Duna — Ofrenda: interruptor de pagar Vida por el efecto mejorado. Va en rojo
-   apagado y no en dorado a propósito: lo que se gasta aquí es tu Nexo. */
-.offering {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  width: 100%; margin-top: 9px; padding: 8px 10px; min-height: 40px;
-  border: 1px solid rgba(215,180,103,.28); background: rgba(215,180,103,.05);
-  color: #c8bfa6; font-family: inherit; font-size: 11px; letter-spacing: .06em; cursor: pointer;
-}
-.offering:hover:not(:disabled) { border-color: var(--gold); color: var(--ivory); }
-.offering[data-paying] { border-color: #d78a6a; background: rgba(199,90,60,.14); color: #f0cbb8; font-weight: 700; }
-.offering:disabled { opacity: .45; cursor: not-allowed; }
-.offering small { color: inherit; opacity: .75; font-size: 10px; }
-.offering:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
-
-.panelLabel { display: none; }
+  .rightPanel[data-context-empty] .panelLabel { display: none; }
   .rightPanel[data-context-empty] .actionHint {
     border: 1px solid var(--line); background: rgba(11,13,20,.92);
   }
@@ -629,21 +618,26 @@
      deje ver lo suficiente de cada una (nombre, coste, arte) sin necesidad de
      tocarlas primero — con 128px solo asomaba una franja muy fina. */
   .handBar { height: 150px; }
-  .handBar[data-tucked] { height: 46px; }
+  .handBar[data-tucked] { height: 52px; }
+  /* Recoger y desplegar la mano es lo que más se pulsa de toda la batalla:
+     en móvil sube a 40 px, y el carril recogido crece con él. */
+  .handToggle { min-height: 40px; padding: 4px 22px; font-size: 11px; top: -20px; }
   .hints { display: none; }
-  .helpButton, .glossaryButton, .photoModeButton { top: auto; bottom: 210px; width: 30px; height: 30px; font-size: 15px; }
+  /* 30 px se quedaban cortos para el pulgar; a 40 hay que reespaciarlos o se
+     solapan entre ellos. */
+  .helpButton, .glossaryButton, .photoModeButton { top: auto; bottom: 206px; width: 40px; height: 40px; font-size: 17px; }
   .helpButton { right: 6px; }
-  .glossaryButton { right: 44px; }
-  .photoModeButton { right: 82px; }
-  .photoModeHint { top: auto; bottom: 246px; }
+  .glossaryButton { right: 52px; }
+  .photoModeButton { right: 98px; }
+  .photoModeHint { top: auto; bottom: 252px; }
 
   /* Crónica de batalla: redundante en móvil con el aviso central de eventos. */
   .historyLogWrap { display: none; }
 
   .ownPanelToggle {
     display: grid; place-items: center; position: absolute; z-index: 45;
-    top: 6px; left: 6px; width: 30px; height: 30px; cursor: pointer;
-    font-size: 15px; color: #e6d9b6; border: 1px solid var(--line-bright); border-radius: 50%;
+    top: 6px; left: 6px; width: 40px; height: 40px; cursor: pointer;
+    font-size: 17px; color: #e6d9b6; border: 1px solid var(--line-bright); border-radius: 50%;
     background: rgba(11,13,20,.84); backdrop-filter: blur(8px);
     transition: color .15s ease, border-color .15s ease;
   }

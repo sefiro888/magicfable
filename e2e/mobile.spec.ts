@@ -162,3 +162,52 @@ test('en móvil, la sección activa de la barra se ve sin desplazarla a mano', a
   await expect(activo).toHaveText('Mazos')
   await expect(activo).toBeInViewport({ ratio: 0.9 })
 })
+
+/**
+ * Y lo mismo DENTRO de la batalla, que es donde más se toca y donde estaban
+ * los peores: el botón de salir a 55×29, el de recoger la mano a 100×24 y los
+ * cuatro botones flotantes a 30×30.
+ *
+ * Este caso necesita `hasTouch`: sin él Playwright deja el puntero fino y las
+ * reglas `@media (hover: none) and (pointer: coarse)` del proyecto —que son
+ * varias— no llegan a aplicarse, así que se estaría midiendo una ventana
+ * estrecha con ratón en vez de un móvil.
+ */
+test.describe('en la batalla', () => {
+  test.use({ hasTouch: true, isMobile: true })
+
+  test('nada de lo que se pulsa en el tablero baja de la medida del pulgar', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.addInitScript(() => {
+      localStorage.setItem('cronicas-nexo-howto-visto', '1')
+      localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
+        state: { muted: true, confirmEndTurn: false }, version: 7,
+      }))
+    })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/battle?seed=1311657807')
+    await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+    await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
+    await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
+    await page.waitForTimeout(2500)
+
+    const pequenos = await page.evaluate(() => {
+      const MIN = 34
+      // La estrella de «fijar carta» dibuja 34 px y estira su zona sensible
+      // con un pseudo-elemento; el abanico la escala, así que su caja mide
+      // menos de lo que responde al dedo.
+      const salida: string[] = []
+      for (const el of Array.from(document.querySelectorAll('button'))) {
+        if (el.className.includes('favoriteToggle')) continue
+        const rect = el.getBoundingClientRect()
+        if (rect.width === 0 || rect.height === 0) continue
+        if (rect.width < MIN || rect.height < MIN) {
+          const texto = (el.textContent || el.getAttribute('aria-label') || el.tagName).trim().slice(0, 30)
+          salida.push(`${Math.round(rect.width)}x${Math.round(rect.height)} · ${texto}`)
+        }
+      }
+      return salida
+    })
+    expect(pequenos, 'objetivos demasiado pequeños en la batalla').toEqual([])
+  })
+})

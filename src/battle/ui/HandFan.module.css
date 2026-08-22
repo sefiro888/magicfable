@@ -99,3 +99,28 @@
 .favoriteToggle:hover {
   transform: scale(1.12);
 }
+
+/* En táctil no hay «pasar el ratón por encima»: la estrella se quedaba al 40%
+   de opacidad y a 22 px, o sea invisible e imposible de acertar. Aquí se ve
+   siempre y crece hasta la medida del pulgar. */
+@media (hover: none) and (pointer: coarse) {
+  .favoriteToggle {
+    top: 4px;
+    right: 6px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+    opacity: 0.85;
+    background: rgba(8, 10, 16, 0.72);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  /* El dibujo se queda en 34 px —más grande taparía el arte de la carta— y es
+     la zona que responde al dedo la que se estira hasta pasar de 40 incluso
+     con el escalado del abanico encima. */
+  .favoriteToggle::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+  }
+}

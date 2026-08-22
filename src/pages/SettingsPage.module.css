@@ -53,9 +53,12 @@
   .control input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; }
   .control input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 
-  .toggle { width: 56px; height: 32px; }
-  .toggle::after { width: 22px; height: 22px; top: 4px; }
-  .toggle[data-on="true"]::after { left: 29px; }
+  /* 32 px de alto se quedaban por debajo del pulgar. El dibujo crece a 36 y
+     el `::before` de abajo estira la zona que responde hasta bien pasados los
+     44, que es la medida cómoda. */
+  .toggle { width: 60px; height: 36px; }
+  .toggle::after { width: 26px; height: 26px; top: 4px; }
+  .toggle[data-on="true"]::after { left: 30px; }
   /* Zona táctil ampliada sin engordar el dibujo del interruptor. */
   .toggle::before { content: ""; position: absolute; inset: -8px; border-radius: 99px; }
 
