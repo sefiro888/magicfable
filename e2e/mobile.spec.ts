@@ -148,3 +148,17 @@ test('las chapas de las unidades no se pisan en móvil', async ({ page }) => {
   await page.waitForTimeout(600)
   expect(await nombresVisibles()).toBeGreaterThan(0)
 })
+
+/**
+ * En móvil la barra de secciones no cabe y se desplaza de lado. Al entrar en
+ * una del final (Mazos es la última) se quedaba al principio: ni el nombre ni
+ * el subrayado de la sección activa se veían, así que no había forma de saber
+ * dónde estabas.
+ */
+test('en móvil, la sección activa de la barra se ve sin desplazarla a mano', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/decks')
+  const activo = page.locator('nav [data-active="true"]')
+  await expect(activo).toHaveText('Mazos')
+  await expect(activo).toBeInViewport({ ratio: 0.9 })
+})

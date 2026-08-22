@@ -2,6 +2,7 @@
 .topbar { height: 60px; position: relative; z-index: 30; display: grid; grid-template-columns: 340px 1fr 340px; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(8,10,16,.92); backdrop-filter: blur(14px); }
 .exit { width: max-content; padding: 7px 11px; border: 1px solid rgba(255,255,255,.12); color: #aaa69e; background: rgba(255,255,255,.025); cursor: pointer; font-size: 10px; letter-spacing: .11em; text-transform: uppercase; }
 .exit:hover { border-color: var(--line-bright); color: var(--ivory); }
+.exitShort { display: none; }
 .turn { text-align: center; }
 .turn strong { display: block; font-family: var(--display); color: var(--gold-bright); font-size: 17px; font-weight: 500; }
 .turn span { color: #848179; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
@@ -535,7 +536,12 @@
   /* Cabecera: sin esto el texto de turno envolvía a dos líneas y desbordaba
      los 52px reservados, empujándose sobre los paneles de debajo. */
   .topbar { grid-template-columns: auto 1fr auto; padding: 0 8px; height: 52px; column-gap: 6px; }
-  .exit { max-width: 84px; padding: 6px 7px; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Deja hueco al escudo ⛨ (.ownPanelToggle), que va posicionado sobre la
+     esquina superior izquierda: sin este margen se comía la mitad del botón
+     de salir y solo se leía «ALIR». */
+  .exit { margin-left: 34px; max-width: none; padding: 8px 9px; font-size: 8px; white-space: nowrap; }
+  .exitLong { display: none; }
+  .exitShort { display: inline; }
   .turn { overflow: hidden; }
   .turn strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .turn span { font-size: 7.5px; white-space: nowrap; }
@@ -560,6 +566,17 @@
   /* rightPanel no lleva backdrop-filter en móvil por diseño desde la regla
      base de arriba (min-width:761px) — no hay nada que anular aquí. */
   .rightPanel { right: 6px; bottom: auto; }
+  /* Sin nada seleccionado, el panel se queda en su línea de guía. Antes
+     ocupaba 45vw x 30vh de forma permanente —tapando el Nexo rival y las dos
+     primeras filas del tablero— solo para repetir «selecciona una carta». */
+  .rightPanel[data-context-empty] {
+    width: 52vw; max-height: none; border: 0; background: none; box-shadow: none;
+  }
+  .rightPanel[data-context-empty] .context { padding: 0; }
+  .rightPanel[data-context-empty] .panelLabel { display: none; }
+  .rightPanel[data-context-empty] .actionHint {
+    border: 1px solid var(--line); background: rgba(11,13,20,.92);
+  }
   .panelSection { padding: 8px 9px; }
   .portrait { display: none; }
   .commander { grid-template-columns: 1fr; }

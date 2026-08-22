@@ -754,7 +754,10 @@ export function BattlePage() {
             navigate('/play')
           }}
         >
-          ← Abandonar el Santuario
+          {/* Dos rótulos: el largo se recorta a «ABANDONA…» en móvil, que no
+              dice nada. Ahí se usa el corto entero en vez de un texto a medias. */}
+          <span className={styles.exitLong}>← Abandonar el Santuario</span>
+          <span className={styles.exitShort}>← Salir</span>
         </button>
         <div className={styles.turn}>
           <strong>{match.activePlayer === ME ? 'Tu turno' : 'Turno rival'}</strong>
@@ -925,7 +928,10 @@ export function BattlePage() {
             </div>
           </section>
         </aside>
-        <aside className={styles.rightPanel}>
+        {/* `data-context-empty` es para el CSS de móvil: sin nada seleccionado,
+            el panel se reduce a su línea de guía en vez de ocupar media
+            pantalla para decir «selecciona una carta». */}
+        <aside className={styles.rightPanel} data-context-empty={!activeInfo || undefined}>
           <SelectionPanel
             card={activeInfo}
             heading={viewedBoardCard ? (viewingForeign ? 'Ficha rival' : 'Consulta') : activeInfo ? 'Selección' : 'Contexto'}

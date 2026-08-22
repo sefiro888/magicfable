@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { usePreferences } from '../store/preferences'
 import { playSynthCue } from '../services/audio'
@@ -23,6 +24,20 @@ export function AppShell() {
   // de /battle suena este y dentro no se pisan.
   useSoundtrack('menu', !isBattle)
 
+  /**
+   * En móvil la barra de secciones no cabe y se desplaza de lado. Al entrar en
+   * una sección del final (Galería, Mazos) la barra se quedaba al principio:
+   * no se veía ni el nombre de la sección ni su subrayado, así que no había
+   * forma de saber dónde estabas. Aquí se trae la pestaña activa a la vista.
+   */
+  const navRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const activo = navRef.current?.querySelector<HTMLElement>('[data-active="true"]')
+    // `block: 'nearest'` a propósito: sin él el navegador también desplaza la
+    // página en vertical y la sección aparecería ya empezada.
+    activo?.scrollIntoView({ inline: 'center', block: 'nearest' })
+  }, [location.pathname])
+
   const toggleSound = () => {
     if (muted) playSynthCue('ui')
     setMuted(!muted)
@@ -46,7 +61,7 @@ export function AppShell() {
                 <small>El destino está en tus cartas</small>
               </span>
             </NavLink>
-            <nav className={styles.nav} aria-label="Navegación principal">
+            <nav ref={navRef} className={styles.nav} aria-label="Navegación principal">
               {links.map((link) => (
                 <NavLink
                   key={link.to}
