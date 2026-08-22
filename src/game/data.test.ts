@@ -9,15 +9,17 @@ import { CardDefinitionSchema, CommanderDefinitionSchema, DeckDefinitionSchema }
 import type { DeckDefinition } from './types';
 
 describe('catálogo del Nexo', () => {
-  it('declara siete facciones, todas habilitadas', () => {
-    expect(FACTIONS).toHaveLength(7);
-    expect(PLAYABLE_FACTIONS.map((faction) => faction.id)).toEqual(['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna']);
+  it('declara ocho facciones, todas habilitadas', () => {
+    expect(FACTIONS).toHaveLength(8);
+    expect(PLAYABLE_FACTIONS.map((faction) => faction.id)).toEqual([
+      'fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul',
+    ]);
     expect(FACTIONS.filter((faction) => !faction.unlocked)).toHaveLength(0);
   });
 
-  it('contiene 145 diseños únicos: NEX-01, NEX-02 y la facción Duna', () => {
-    expect(CARDS).toHaveLength(145);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(145);
+  it('contiene 176 diseños únicos: NEX-01, NEX-02, Duna y Fimbul', () => {
+    expect(CARDS).toHaveLength(176);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(176);
     // La segunda oleada reparte exactamente 4 cartas por facción, así que
     // ninguna se queda atrás respecto a las demás.
     expect(cardsForFaction('fury')).toHaveLength(21);
@@ -29,10 +31,13 @@ describe('catálogo del Nexo', () => {
     const secondWave = CARDS.filter((card) => card.set.startsWith('NEX-02'));
     expect(secondWave).toHaveLength(24);
     expect(new Set(secondWave.map((card) => card.collectorNumber)).size).toBe(24);
-    // Duna llega entera de una vez: es una facción, no una expansión repartida.
+    // Duna y Fimbul llegan enteras de una vez: son facciones, no expansiones repartidas.
     const duna = CARDS.filter((card) => card.set.startsWith('NEX-03'));
     expect(duna).toHaveLength(31);
     expect(duna.every((card) => card.faction === 'duna')).toBe(true);
+    const fimbul = CARDS.filter((card) => card.set.startsWith('NEX-04'));
+    expect(fimbul).toHaveLength(31);
+    expect(fimbul.every((card) => card.faction === 'fimbul')).toBe(true);
   });
 
   it('incluye las doce cartas obligatorias', () => {
@@ -72,7 +77,7 @@ describe('catálogo del Nexo', () => {
   });
 
   it('define comandantes de 35 de vida con datos válidos', () => {
-    expect(COMMANDERS).toHaveLength(13);
+    expect(COMMANDERS).toHaveLength(14);
     expect(COMMANDERS.every((commander) => commander.nexusHealth === 35)).toBe(true);
     for (const commander of COMMANDERS) {
       expect(CommanderDefinitionSchema.safeParse(commander).success).toBe(true);
@@ -81,10 +86,10 @@ describe('catálogo del Nexo', () => {
 
   it('da a cada facción comandantes únicos que no colisionan con ninguna carta', () => {
     // Las seis originales tienen líder de siempre y alternativo de NEX-02.
-    // Duna es facción nueva y de momento solo trae el suyo.
+    // Duna y Fimbul son facciones nuevas y de momento solo traen el suyo.
     for (const faction of PLAYABLE_FACTIONS) {
       const owners = COMMANDERS.filter((commander) => commander.faction === faction.id);
-      expect(owners, faction.id).toHaveLength(faction.id === 'duna' ? 1 : 2);
+      expect(owners, faction.id).toHaveLength(faction.id === 'duna' || faction.id === 'fimbul' ? 1 : 2);
     }
     // Ids de comandante únicos entre sí.
     expect(new Set(COMMANDERS.map((commander) => commander.id)).size).toBe(COMMANDERS.length);

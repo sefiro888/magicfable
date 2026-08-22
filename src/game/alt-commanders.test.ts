@@ -70,8 +70,8 @@ const makePiece = (
 
 describe('elección de comandante', () => {
   it('cada facción con dos líderes deja quedarse con el elegido', () => {
-    // Duna llegó después y aún no tiene alternativo: se salta.
-    for (const deck of STARTER_DECKS.filter((candidate) => candidate.faction !== 'duna')) {
+    // Duna y Fimbul llegaron después y aún no tienen alternativo: se saltan.
+    for (const deck of STARTER_DECKS.filter((candidate) => candidate.faction !== 'duna' && candidate.faction !== 'fimbul')) {
       const leaders = COMMANDERS.filter((commander) => commander.faction === deck.faction);
       expect(leaders, deck.id).toHaveLength(2);
       const alternativo = leaders.find((commander) => commander.id !== deck.commanderId)!;

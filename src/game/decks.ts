@@ -297,6 +297,29 @@ export const COMMANDERS = [
       effectId: 'commander-duna-power',
     },
   }) as CommanderDefinition,
+  // --- Fimbul (NEX-04 «El Invierno que No Termina») ---
+  CommanderDefinitionSchema.parse({
+    id: 'hildr-la-que-elige',
+    name: 'Hildr',
+    title: 'La que Elige a los Caídos',
+    faction: 'fimbul',
+    nexusHealth: 35,
+    rules: 'La primera vez cada turno que una unidad tuya ataca a otra con más Ataque, robas 1 carta.',
+    flavor: 'No decide quién gana. Decide a quién se lleva.',
+    art: {
+      webp: '/assets/cards/art/hildr-la-que-elige.webp',
+      fallback: '/assets/cards/art/hildr-la-que-elige.svg',
+      alt: 'Hildr con lanza y yelmo de hierro ante un campo nevado bajo la aurora boreal',
+    },
+    vfx: { persistentEffect: 'commander-fimbul-aura', impactEffect: 'commander-fimbul-hit' },
+    power: {
+      name: 'Elección del Campo',
+      description: 'Todas tus unidades ganan +2 de Ataque hasta el final del turno y pueden volver a atacar.',
+      cost: { generic: 2, colored: { fimbul: 1 } },
+      effects: [{ kind: 'buff-all-allies-attack', amount: 2 }, { kind: 'refresh-attack-all' }],
+      effectId: 'commander-fimbul-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -526,7 +549,48 @@ const dunaDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
-export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck]) as readonly DeckDefinition[];
+/**
+ * Fimbul: quiere el intercambio difícil, no el fácil. 20 fuentes y una lista
+ * que se apoya en Desafío y Furor tal como pide el dosier — Húscarle, Lobo y
+ * Valquiria buscan chocar con lo grande del rival, y Berserker y Gigante
+ * rinden justo cuando ya les han pegado.
+ */
+const fimbulDeck = DeckDefinitionSchema.parse({
+  id: 'invierno-fimbul',
+  name: 'El Invierno que No Termina',
+  faction: 'fimbul',
+  commanderId: 'hildr-la-que-elige',
+  cards: [
+    { cardId: 'fuente-fimbul', count: 20 },
+    { cardId: 'escudero-del-thing', count: 2 },
+    { cardId: 'doncella-escudo', count: 2 },
+    { cardId: 'cuervo-de-la-horca', count: 1 },
+    { cardId: 'berserker-de-piel-de-oso', count: 2 },
+    { cardId: 'arquera-de-hielo', count: 2 },
+    { cardId: 'huscarle-del-rey', count: 2 },
+    { cardId: 'skald-de-las-sagas', count: 1 },
+    { cardId: 'jinete-del-drakkar', count: 1 },
+    { cardId: 'draugr-del-tumulo', count: 1 },
+    { cardId: 'jarl-de-la-costa', count: 1 },
+    { cardId: 'herrero-de-los-enanos', count: 1 },
+    { cardId: 'lobo-de-fenrir', count: 1 },
+    { cardId: 'valquiria-de-la-eleccion', count: 1 },
+    { cardId: 'gigante-de-la-escarcha', count: 1 },
+    { cardId: 'serpiente-del-mundo', count: 1 },
+    { cardId: 'holmgang', count: 1 },
+    { cardId: 'martillo-que-vuelve', count: 1 },
+    { cardId: 'runa-de-la-victoria', count: 1 },
+    { cardId: 'invierno-de-fimbul', count: 1 },
+    { cardId: 'lanza-que-no-falla', count: 1 },
+    { cardId: 'ocaso-de-los-dioses', count: 1 },
+    { cardId: 'muro-de-escudos', count: 1 },
+    { cardId: 'salon-de-los-caidos', count: 1 },
+    { cardId: 'piedra-runica', count: 1 },
+    { cardId: 'fresno-del-mundo', count: 1 },
+  ],
+}) as DeckDefinition;
+
+export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck, fimbulDeck]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(
   Object.fromEntries(STARTER_DECKS.map((deck) => [deck.id, deck])),

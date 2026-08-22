@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -65,7 +65,7 @@ export interface CardSfx {
 
 export type CardEffect =
   | { readonly kind: 'damage'; readonly amount: number; readonly target: 'enemy-piece' | 'any-piece' }
-  | { readonly kind: 'damage-all-enemies'; readonly amount: number; readonly scorch?: boolean }
+  | { readonly kind: 'damage-all-enemies'; readonly amount: number; readonly scorch?: boolean; readonly includeAllies?: boolean }
   | { readonly kind: 'freeze'; readonly duration: number }
   /** Aturde a la unidad señalada: no podrá atacar en su próximo turno, pero sí moverse. */
   | { readonly kind: 'stun' }
@@ -85,6 +85,14 @@ export type CardEffect =
   | { readonly kind: 'scry'; readonly amount: number }
   | { readonly kind: 'scorch'; readonly duration: number }
   | { readonly kind: 'refresh-move' }
+  /** Devuelve el ataque a una unidad aliada que ya hubiera atacado este turno. */
+  | { readonly kind: 'refresh-attack' }
+  /** Escudo a TODAS las unidades propias, del mismo valor cada una. */
+  | { readonly kind: 'shield-all-allies'; readonly amount: number }
+  /** Poder de Hildr: +N de Ataque hasta el final del turno a TODAS las unidades propias. */
+  | { readonly kind: 'buff-all-allies-attack'; readonly amount: number }
+  /** Poder de Hildr: devuelve el ataque a TODAS las unidades propias que ya hubieran atacado. */
+  | { readonly kind: 'refresh-attack-all' }
   | { readonly kind: 'splash-weakest-enemy'; readonly amount: number }
   | { readonly kind: 'destroy-all-enemy-structures'; readonly gainEssencePerResistance: boolean }
   /**
@@ -303,6 +311,10 @@ export interface PlayerState {
   readonly commanderDrainCountThisTurn?: number;
   /** Duna: cuántas Ofrendas se han pagado ya este turno (Khaeris y la Mesa miran esto). */
   readonly offeringsPaidThisTurn?: number;
+  /** Fimbul: si alguna unidad propia ganó un Desafío este turno (lo mira el Skald). */
+  readonly challengedThisTurn?: boolean;
+  /** Fimbul: si alguna unidad propia murió este turno (lo mira el Salón de los Caídos). */
+  readonly unitDiedThisTurn?: boolean;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;

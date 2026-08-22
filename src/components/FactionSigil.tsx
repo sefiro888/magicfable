@@ -10,6 +10,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   shadow: 'Sombra',
   void: 'Vacío',
   duna: 'Duna',
+  fimbul: 'Fimbul',
 };
 
 export interface FactionSigilProps {

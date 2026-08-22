@@ -13,6 +13,7 @@ export const ManaCostSchema = z
         shadow: z.number().int().nonnegative().optional(),
         void: z.number().int().nonnegative().optional(),
         duna: z.number().int().nonnegative().optional(),
+        fimbul: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -47,7 +48,7 @@ export const CardSfxSchema = z
 
 export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('damage'), amount: z.number().int().positive(), target: z.enum(['enemy-piece', 'any-piece']) }),
-  z.object({ kind: z.literal('damage-all-enemies'), amount: z.number().int().positive(), scorch: z.boolean().optional() }),
+  z.object({ kind: z.literal('damage-all-enemies'), amount: z.number().int().positive(), scorch: z.boolean().optional(), includeAllies: z.boolean().optional() }),
   z.object({ kind: z.literal('freeze'), duration: z.number().int().positive() }),
   z.object({ kind: z.literal('stun') }),
   z.object({ kind: z.literal('grant-keyword'), keyword: z.enum(KEYWORDS) }),
@@ -62,6 +63,10 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('scry'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('scorch'), duration: z.number().int().positive() }),
   z.object({ kind: z.literal('refresh-move') }),
+  z.object({ kind: z.literal('refresh-attack') }),
+  z.object({ kind: z.literal('shield-all-allies'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('buff-all-allies-attack'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('refresh-attack-all') }),
   z.object({ kind: z.literal('splash-weakest-enemy'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('destroy-all-enemy-structures'), gainEssencePerResistance: z.boolean() }),
   z.object({ kind: z.literal('offering'), cost: z.number().int().positive() }),

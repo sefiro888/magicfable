@@ -18,6 +18,9 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   shadow: 'sanctuary',
   void: 'sanctuary',
   duna: 'duna',
+  // Fría, de piedra, de noche: el Santuario ya tiene ese carácter, no hace
+  // falta un escenario propio para que encaje.
+  fimbul: 'sanctuary',
 }
 
 /**

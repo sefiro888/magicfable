@@ -71,6 +71,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['ofrenda', 'juicio', 'remontada'],
   },
+  {
+    id: 'fimbul',
+    name: 'Fimbul',
+    description: 'El invierno que no termina: desafía a lo más fuerte y pega más cuanto peor está.',
+    color: '#5a5f66',
+    accentColor: '#d8a944',
+    icon: 'axe',
+    unlocked: true,
+    themes: ['desafío', 'furor', 'invierno'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -81,6 +91,7 @@ export const FACTION_BY_ID = Object.freeze({
   shadow: FACTIONS[4],
   void: FACTIONS[5],
   duna: FACTIONS[6],
+  fimbul: FACTIONS[7],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

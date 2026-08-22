@@ -2,6 +2,7 @@ import { BOARD_SIZE, deploymentRow, isInsideBoard, nexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import { COMMANDER_BY_ID, expandDeck } from './decks';
 import { activeEffects, canPayOffering, isUnderJudgement, offeringCost, offeringOf } from './duna';
+import { isChallenge, isFurious } from './fimbul';
 import { payMana, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
 import type { ManaCost } from './types';
@@ -255,8 +256,23 @@ const pathIsClear = (
  * clave en combate debe pasar por aquí, no por `card.keywords`, o los
  * préstamos temporales no se notarían.
  */
-const hasKeyword = (piece: BoardPiece, keyword: Keyword): boolean =>
-  Boolean(pieceDefinition(piece)?.keywords.includes(keyword)) || Boolean(piece.grantedKeywords?.includes(keyword));
+const hasKeyword = (piece: BoardPiece, keyword: Keyword): boolean => {
+  const card = pieceDefinition(piece);
+  if (card?.keywords.includes(keyword)) return true;
+  if (piece.grantedKeywords?.includes(keyword)) return true;
+  // Furor de Fimbul: el Draugr del Túmulo presta Perforar mientras esté
+  // malherido. Es un préstamo condicionado a su propia Vida, no a un turno,
+  // así que va aparte de `grantedKeywords` (que caduca con el turno).
+  if (
+    keyword === 'pierce'
+    && card
+    && isFurious(piece, card)
+    && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'furor-grant-pierce')
+  ) {
+    return true;
+  }
+  return false;
+};
 
 /**
  * Vínculo vital, contando la pasiva de Veyra: bajo su mando TODAS las
@@ -528,6 +544,13 @@ const damagePieceDetailed = (
         ...piece, currentHealth: Math.min(maxHealth, piece.currentHealth + (dyingDefinition?.resistance ?? 0)),
       }));
     }
+    // Salón de los Caídos de Fimbul: mira si ha muerto una unidad PROPIA este
+    // turno, sin importar cómo. Va aquí porque este es el único sitio por el
+    // que pasa toda muerte del juego, venga de combate, de un hechizo o de
+    // un barrido — cualquier otro punto de enganche dejaría fuera algún caso.
+    if (dyingDefinition?.type === 'unit') {
+      next = withPlayer(next, target.owner, { ...next.players[target.owner], unitDiedThisTurn: true });
+    }
     // Nigromante Oscuro: roba una carta por cada unidad aliada propia que muere.
     if (dyingDefinition?.type === 'unit') {
       const necromancers = next.board.filter(
@@ -715,10 +738,12 @@ export const spellNeedsPiece = (card: CardDefinition): boolean =>
       effect.kind === 'freeze' ||
       effect.kind === 'scorch' ||
       effect.kind === 'refresh-move' ||
+      effect.kind === 'refresh-attack' ||
       effect.kind === 'stun' ||
       effect.kind === 'grant-keyword' ||
       (effect.kind === 'passive' && effect.id === 'curse-drain-health') ||
-      (effect.kind === 'passive' && effect.id === 'target-attack-until-end'),
+      (effect.kind === 'passive' && effect.id === 'target-attack-until-end') ||
+      (effect.kind === 'passive' && effect.id === 'target-permanent-buff'),
   );
 
 const resolveDrawAndDiscard = (
@@ -767,7 +792,9 @@ const resolveSpell = (
       damageDealt += Math.min(effect.amount + bonusDamage, before);
     } else if (effect.kind === 'damage-all-enemies') {
       const enemy = opponentOf(caster);
-      for (const piece of next.board.filter((candidate) => candidate.owner === enemy && pieceDefinition(candidate)?.type === 'unit')) {
+      for (const piece of next.board.filter(
+        (candidate) => (candidate.owner === enemy || effect.includeAllies) && pieceDefinition(candidate)?.type === 'unit',
+      )) {
         const before = piece.currentHealth;
         next = damagePiece(next, piece.instanceId, effect.amount, caster, card.vfx.impactEffect);
         damageDealt += Math.min(effect.amount, before);
@@ -896,6 +923,14 @@ const resolveSpell = (
       next = enqueue(next, {
         type: 'spell', targetId: targetPiece.instanceId, effectId: 'astral-refresh', durationMs: 320,
       });
+    } else if (effect.kind === 'refresh-attack' && targetPiece?.owner === caster) {
+      // Holmgang: le devuelve el golpe a una unidad que ya había atacado.
+      // Mismo patrón que refresh-move, sobre `attackedThisTurn` en vez de
+      // `movedThisTurn`.
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({ ...piece, attackedThisTurn: false }));
+      next = enqueue(next, {
+        type: 'spell', targetId: targetPiece.instanceId, effectId: 'astral-refresh', durationMs: 320,
+      });
     } else if (effect.kind === 'splash-weakest-enemy') {
       const enemy = opponentOf(caster);
       const candidates = next.board
@@ -924,6 +959,59 @@ const resolveSpell = (
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece, currentHealth: piece.currentHealth + (effect.value ?? 1),
       }));
+    } else if (effect.kind === 'passive' && effect.id === 'target-permanent-buff' && targetPiece?.owner === caster) {
+      // Runa de la Victoria: mismo patrón que la Necrópolis (upkeep-grow-ally),
+      // pero disparado por un hechizo con objetivo en vez de al final del
+      // turno. El bono de Ataque no caduca porque se acumula en
+      // `permanentAttackBonus`, al que vuelve `attackModifier` en cada
+      // cambio de turno.
+      const value = effect.value ?? 1;
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({
+        ...piece,
+        attackModifier: piece.attackModifier + value,
+        currentHealth: piece.currentHealth + value,
+        permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + value,
+      }));
+    } else if (effect.kind === 'shield-all-allies') {
+      // Juramento del Anillo: un escudo para cada unidad propia a la vez.
+      for (const piece of next.board.filter(
+        (candidate) => candidate.owner === caster && pieceDefinition(candidate)?.type === 'unit',
+      )) {
+        next = updatePiece(next, piece.instanceId, (target) => ({
+          ...target,
+          statuses: [...target.statuses.filter((status) => status.kind !== 'shielded'), { kind: 'shielded', amount: effect.amount }],
+        }));
+      }
+    } else if (effect.kind === 'buff-all-allies-attack') {
+      // Elección del Campo (Hildr): +N de Ataque hasta el final del turno
+      // para todas las unidades propias, sin necesitar objetivo.
+      for (const piece of next.board.filter(
+        (candidate) => candidate.owner === caster && pieceDefinition(candidate)?.type === 'unit',
+      )) {
+        next = updatePiece(next, piece.instanceId, (target) => ({
+          ...target, attackModifier: target.attackModifier + effect.amount,
+        }));
+      }
+    } else if (effect.kind === 'refresh-attack-all') {
+      // Elección del Campo (Hildr): mismo patrón que refresh-attack, pero
+      // sobre todas las unidades propias a la vez.
+      for (const piece of next.board.filter((candidate) => candidate.owner === caster)) {
+        next = updatePiece(next, piece.instanceId, (target) => ({ ...target, attackedThisTurn: false }));
+      }
+    } else if (effect.kind === 'passive' && effect.id === 'survivors-permanent-attack-buff') {
+      // Ocaso de los Dioses: se resuelve DESPUÉS del barrido que lo precede en
+      // la misma lista de efectos, así que `next.board` ya solo contiene a
+      // quien sobrevivió.
+      const value = effect.value ?? 1;
+      for (const piece of next.board.filter(
+        (candidate) => candidate.owner === caster && pieceDefinition(candidate)?.type === 'unit',
+      )) {
+        next = updatePiece(next, piece.instanceId, (target) => ({
+          ...target,
+          attackModifier: target.attackModifier + value,
+          permanentAttackBonus: (target.permanentAttackBonus ?? 0) + value,
+        }));
+      }
     } else if (effect.kind === 'passive' && effect.id === 'curse-drain-health' && targetPiece && targetPiece.owner !== caster) {
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece, statuses: [...piece.statuses.filter((status) => status.kind !== 'cursed'), { kind: 'cursed', amount: effect.value ?? 1 }],
@@ -966,7 +1054,7 @@ const resolveEntryEffects = (
       }
     } else if (effect.kind === 'damage-all-enemies') {
       for (const target of next.board.filter(
-        (candidate) => candidate.owner !== piece.owner && pieceDefinition(candidate)?.type === 'unit',
+        (candidate) => (candidate.owner !== piece.owner || effect.includeAllies) && pieceDefinition(candidate)?.type === 'unit',
       )) {
         next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect);
       }
@@ -1192,10 +1280,10 @@ const cardTargetRejectionReason = (
     return 'Solo puede apuntar a una unidad aliada.';
   }
   const friendlyBuff = card.effects.some(
-    (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
+    (effect) => effect.kind === 'passive' && (effect.id === 'target-attack-until-end' || effect.id === 'target-permanent-buff'),
   );
   if (friendlyBuff && piece.owner !== playerId) return 'Solo puede apuntar a una unidad aliada.';
-  const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move');
+  const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move' || effect.kind === 'refresh-attack');
   if (refreshMove && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) {
     return 'Solo puede apuntar a una unidad aliada.';
   }
@@ -1531,6 +1619,50 @@ const applyOnAttackExtras = (
   const defender = defenderId ? next.board.find((piece) => piece.instanceId === defenderId) : undefined;
   const defenderIsUnit = defender ? pieceDefinition(defender)?.type === 'unit' : false;
 
+  // Desafío de Fimbul: solo se activa si el defensor iguala o supera el
+  // Ataque del atacante. Se comprueba con la pieza tal como estaba ANTES del
+  // golpe (el propio `attacker` capturado más arriba en `attackPiece`, pero
+  // aquí solo llega su id, así que se relee del tablero: el atacante no
+  // cambia de Ataque por el hecho de golpear).
+  const attackerPiece = next.board.find((piece) => piece.instanceId === attackerId);
+  const challenged = Boolean(
+    attackerPiece && defender && defenderIsUnit
+    && isChallenge(attackerPiece, card, defender, pieceDefinition(defender)!),
+  );
+  if (challenged) {
+    // El Skald mira si ALGUNA unidad propia ganó un Desafío este turno, no
+    // solo la que lo lleva escrito en su propia carta: la marca se pone
+    // siempre que se cumple la condición, tenga o no la carta un efecto de
+    // Desafío propio.
+    const alreadyChallengedThisTurn = next.players[playerId].challengedThisTurn === true;
+    next = withPlayer(next, playerId, { ...next.players[playerId], challengedThisTurn: true });
+    // Hildr: solo la PRIMERA vez cada turno, no cada Desafío que se gane.
+    if (!alreadyChallengedThisTurn && next.players[playerId].commanderId === 'hildr-la-que-elige') {
+      next = resolveDrawAndDiscard(next, playerId, 1, 0);
+    }
+    const shieldOnAttack = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'challenge-shield-on-attack');
+    if (shieldOnAttack?.kind === 'passive') {
+      next = updatePiece(next, attackerId, (piece) => ({
+        ...piece,
+        statuses: [...piece.statuses.filter((status) => status.kind !== 'shielded'), { kind: 'shielded', amount: shieldOnAttack.value ?? 1 }],
+      }));
+    }
+    const healOnAttack = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'challenge-heal-on-attack');
+    if (healOnAttack?.kind === 'passive') {
+      next = healNexus(next, playerId, healOnAttack.value ?? 1);
+    }
+    // Lobo de Fenrir: si la defensora sobrevive al intercambio, la remata de
+    // todos modos. Se relee su Vida actual porque ya ha pasado el golpe (y el
+    // posible contragolpe cuerpo a cuerpo) para cuando esto se evalúa.
+    const destroySurvivor = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'challenge-destroy-survivor');
+    if (destroySurvivor) {
+      const survivor = defenderId ? next.board.find((piece) => piece.instanceId === defenderId) : undefined;
+      if (survivor) {
+        next = damagePiece(next, survivor.instanceId, survivor.currentHealth + 99, playerId, card.vfx.impactEffect);
+      }
+    }
+  }
+
   if (defenderIsUnit && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'freeze-on-damage')) {
     next = addStatus(next, defenderId!, 1);
   }
@@ -1649,9 +1781,24 @@ const computeAttackAmount = (
     && givesCover(state, defender.position)
     ? COVER_REDUCTION
     : 0;
+  // Furor de Fimbul: el Berserker de Piel de Oso pega más cuanto peor está.
+  const furorBuff = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'furor-attack-bonus');
+  const furorBonus = furorBuff?.kind === 'passive' && isFurious(attacker, card) ? furorBuff.value ?? 0 : 0;
+  // Jarl de la Costa: da Desafío a cualquier otra unidad propia (+1 en ese
+  // combate) mientras esté en el tablero. Es una aura, así que se comprueba
+  // aparte de las cartas que llevan su propio Desafío escrito.
+  const defenderCardForJarl = defender ? pieceDefinition(defender) : undefined;
+  const jarlBonus =
+    defender
+    && defenderCardForJarl
+    && card.id !== 'jarl-de-la-costa'
+    && isChallenge(attacker, card, defender, defenderCardForJarl)
+    && state.board.some((piece) => piece.owner === attacker.owner && piece.cardId === 'jarl-de-la-costa')
+      ? 1
+      : 0;
   return Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card, defender) - shielded);
+    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus - shielded);
 };
 
 export const attackPiece = (
@@ -2059,6 +2206,23 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
         if (next.players[playerId].hand.length <= UPKEEP_HAND_LIMIT) {
           next = resolveDrawAndDiscard(next, playerId, value, 0);
         }
+      } else if (effect.id === 'furor-upkeep-damage-all-enemies' && isFurious(structure, card)) {
+        // Gigante de la Escarcha: solo mientras esté malherido. Se relee la
+        // pieza del tablero actual porque el bucle puede haberla dañado ya
+        // en una vuelta anterior de este mismo mantenimiento.
+        const self = next.board.find((piece) => piece.instanceId === structure.instanceId);
+        if (self && isFurious(self, card)) {
+          for (const target of next.board.filter(
+            (piece) => piece.owner === enemyId && pieceDefinition(piece)?.type === 'unit',
+          )) {
+            next = damagePiece(next, target.instanceId, value, playerId, card.vfx.impactEffect);
+          }
+        }
+      } else if (effect.id === 'upkeep-draw-if-challenged' && next.players[playerId].challengedThisTurn) {
+        next = resolveDrawAndDiscard(next, playerId, value, 0);
+      } else if (effect.id === 'upkeep-draw-and-heal-if-died' && next.players[playerId].unitDiedThisTurn) {
+        next = resolveDrawAndDiscard(next, playerId, 1, 0);
+        next = healNexus(next, playerId, value);
       }
     }
   }
@@ -2099,6 +2263,8 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         commanderControlDrawUsedThisTurn: false,
         commanderDrainCountThisTurn: 0,
         offeringsPaidThisTurn: 0,
+        challengedThisTurn: false,
+        unitDiedThisTurn: false,
       },
       [nextPlayerId]: {
         ...incoming,
@@ -2110,6 +2276,8 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         commanderControlDrawUsedThisTurn: false,
         commanderDrainCountThisTurn: 0,
         offeringsPaidThisTurn: 0,
+        challengedThisTurn: false,
+        unitDiedThisTurn: false,
       },
     },
     board: state.board.map((piece) => ({
