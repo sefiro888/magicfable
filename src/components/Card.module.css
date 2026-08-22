@@ -516,3 +516,19 @@
   .interactive:hover .artImage { transform: none; }
   .foil { transition: none; }
 }
+
+/* La galería en móvil va a dos columnas: la carta se estrecha para caber y
+   suelta el texto de sabor, que a este tamaño no se lee y solo hace la ficha
+   más alta. Todo el detalle sigue estando al pulsarla. */
+@media (max-width: 560px) {
+  .gallery {
+    --card-width: min(44vw, 11rem);
+    --card-pad: .4rem;
+    --card-font: .62rem;
+  }
+  /* Nombre algo más pequeño: a dos columnas, «Berserker Ignívoro» se cortaba
+     a la mitad. */
+  .gallery .name { font-size: .86em; }
+  .gallery .rules { -webkit-line-clamp: 4; }
+  .gallery .flavor { display: none; }
+}

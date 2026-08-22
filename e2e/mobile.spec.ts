@@ -211,3 +211,27 @@ test.describe('en la batalla', () => {
     expect(pequenos, 'objetivos demasiado pequeños en la batalla').toEqual([])
   })
 })
+
+/**
+ * La galería tiene que poder explorarse con el pulgar.
+ *
+ * Con 145 cartas a una por fila medía 51.600 px de scroll —más de sesenta
+ * pantallas seguidas— y encontrar una carta concreta era imposible. A dos
+ * columnas baja a menos de la mitad.
+ */
+test('en móvil la galería va a dos columnas, no a una tira infinita', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/gallery')
+  await expect(page.locator('[data-card-id]').first()).toBeVisible({ timeout: 20_000 })
+
+  // Las dos primeras cartas comparten fila: misma altura, distinta columna.
+  const primera = (await page.locator('[data-card-id]').nth(0).boundingBox())!
+  const segunda = (await page.locator('[data-card-id]').nth(1).boundingBox())!
+  expect(Math.abs(primera.y - segunda.y)).toBeLessThan(8)
+  expect(segunda.x).toBeGreaterThan(primera.x + primera.width - 1)
+
+  // Y el catálogo entero cabe en un scroll manejable.
+  const alto = await page.evaluate(() => document.documentElement.scrollHeight)
+  expect(alto, 'la galería se ha vuelto a estirar').toBeLessThan(26_000)
+})

@@ -174,3 +174,9 @@
   .close { transition: none; }
   .close:hover { transform: none; }
 }
+
+/* En táctil no hay tecla Esc que pulsar: la pista sobra y solo ocupa sitio en
+   una pantalla donde falta. Para cerrar están la X y tocar fuera. */
+@media (hover: none) and (pointer: coarse) {
+  .shortcutHint { display: none; }
+}

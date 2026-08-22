@@ -26,7 +26,7 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   void:   'Distorsiona el espacio, aniquila estructuras y golpea antes de que te vean venir.',
 }
 
-/** Opciones del rival: el sorteo de siempre, o cualquiera de las otras cinco facciones. */
+/** Opciones del rival: el sorteo de siempre, o cualquiera de las demás facciones. */
 const DIFFICULTIES: readonly { value: AiDifficulty; label: string; hint: string }[] = [
   { value: 'easy', label: 'Fácil', hint: 'Pelea en el tablero pero no remata tu Nexo.' },
   { value: 'normal', label: 'Normal', hint: 'Ataca en cuanto tiene algo a tiro.' },
@@ -54,7 +54,9 @@ export function PlayPage() {
   )
   const rivalHint = rival
     ? DECK_DESCRIPTIONS[rival.faction] ?? ''
-    : 'Se sortea entre las otras cinco facciones al empezar.'
+    // El número sale del catálogo: decía «las otras cinco» a mano y se quedó
+    // viejo en cuanto entró la séptima facción.
+    : `Se sortea entre las otras ${STARTER_DECKS.length - 1} facciones al empezar.`
 
   const start = () => {
     if (!preferences.muted) playSynthCue('ui')

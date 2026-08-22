@@ -49,7 +49,11 @@
 @media (max-width: 560px) {
   .page { padding: 26px 12px 80px; }
   .filters { grid-template-columns: 1fr; }
-  .grid { grid-template-columns: 1fr; }
+  /* Dos columnas, no una. Con 145 cartas a una por fila el catálogo medía
+     51.600 px de scroll —más de sesenta pantallas— y era imposible explorarlo.
+     La carta se estrecha en Card.module.css para que quepan; el detalle
+     completo sigue estando a un toque de distancia. */
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 18px 8px; }
 }
 
 /* Pestañas y filtros a tamaño de pulgar: en móvil salían a 32 px de alto. */
