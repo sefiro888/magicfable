@@ -8,6 +8,7 @@ import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from 
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
 import { DamageNumbers } from './DamageNumbers'
+import { FallenPieces } from './FallenPieces'
 import { RecentHits } from './RecentHits'
 import { EventEffects } from './EventEffects'
 import {
@@ -79,7 +80,12 @@ interface Board3DProps {
   activeEvent?: AnimationEvent
   /** Casilla enfocada con el teclado (flechas). Undefined = se está jugando con ratón. */
   cursorCell?: Position
+  /** Cola de animaciones aún por reproducir: sirve para saber qué piezas van a morir. */
+  pendingEvents?: readonly AnimationEvent[]
 }
+
+/** Referencia estable para cuando no hay cola: evita re-renderizar por una lista nueva vacía. */
+const EMPTY_EVENTS: readonly AnimationEvent[] = []
 
 const boardX = gridToWorldX
 const boardZ = gridToWorldZ
@@ -587,6 +593,17 @@ function Nexus({
   useCursor(hovered && targetable)
   const [justHit, setJustHit] = useState(false)
   const lastEvent = useRef<AnimationEvent | undefined>(undefined)
+  /**
+   * Golpe recibido: hasta ahora el Nexo solo cambiaba un dato en su etiqueta
+   * HTML y en 3D no pasaba absolutamente nada — la parte más importante de la
+   * partida (quitarle Vida al rival) era la menos vistosa. Ahora encaja el
+   * golpe: se hunde, tiembla, sus cristales se encienden y sale una onda por
+   * la base.
+   */
+  const structure = useRef<Group>(null)
+  const shock = useRef<Mesh>(null)
+  const crystals = useRef<Group>(null)
+  const hitAt = useRef(-10)
   useEffect(() => {
     if (
       activeEvent &&
@@ -595,6 +612,7 @@ function Nexus({
       (activeEvent.type === 'nexus-damage' || activeEvent.type === 'victory')
     ) {
       lastEvent.current = activeEvent
+      hitAt.current = performance.now()
       setJustHit(true)
       const timer = window.setTimeout(() => setJustHit(false), 380)
       return () => window.clearTimeout(timer)
@@ -604,8 +622,43 @@ function Nexus({
   const z = nexusWorldZ(playerId)
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
+  /** Cuánto dura la reacción al golpe, en milisegundos. */
+  const HIT_MS = 620
+
+  useFrame(() => {
+    const since = performance.now() - hitAt.current
+    const progress = Math.min(1, since / HIT_MS)
+    const golpe = progress < 1 ? 1 - progress : 0
+    const node = structure.current
+    if (node) {
+      // Se hunde de golpe y vuelve, con una vibración que se apaga.
+      node.position.y = -0.16 * golpe * golpe
+      node.rotation.z = Math.sin(since * 0.06) * 0.05 * golpe
+      node.position.x = Math.sin(since * 0.09) * 0.06 * golpe
+    }
+    if (crystals.current) {
+      for (const shard of crystals.current.children) {
+        const material = (shard as Mesh).material as MeshStandardMaterial
+        material.emissiveIntensity = 0.85 + golpe * 3.2
+      }
+    }
+    if (shock.current) {
+      // Onda que sale de la base y se desvanece.
+      const material = shock.current.material as MeshBasicMaterial
+      material.opacity = golpe * 0.55
+      shock.current.scale.setScalar(0.6 + (1 - golpe) * 2.4)
+      shock.current.visible = golpe > 0.01
+    }
+  })
+
   return (
     <group position={[0, 0, z]}>
+      {/* Onda expansiva del impacto, a ras de suelo. */}
+      <mesh ref={shock} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+        <ringGeometry args={[0.7, 0.95, 40]} />
+        <meshBasicMaterial color={mine ? '#ff9a5a' : '#8fdcff'} transparent opacity={0} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      <group ref={structure}>
       {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
       <mesh position={[0, 0.04, 0]} receiveShadow>
         <cylinderGeometry args={[0.98, 1.2, 0.22, 8]} />
@@ -619,7 +672,8 @@ function Nexus({
         <cylinderGeometry args={[0.74, 0.6, 0.12, 8]} />
         <meshStandardMaterial color="#2a3145" roughness={0.7} metalness={0.25} emissive={ringEmissive} emissiveIntensity={0.35} />
       </mesh>
-      {/* Corona de esquirlas de cristal alrededor del borde del pedestal (estática). */}
+      {/* Corona de esquirlas de cristal alrededor del borde del pedestal. */}
+      <group ref={crystals}>
       {[...Array(8).keys()].map((index) => {
         const angle = (index / 8) * Math.PI * 2
         return (
@@ -629,6 +683,8 @@ function Nexus({
           </mesh>
         )
       })}
+      </group>
+      </group>
       {/* Volumen invisible: conserva el clic/hover en 3D sin gastar una textura. */}
       <mesh
         position={[0, 0.66, 0]}
@@ -1013,6 +1069,13 @@ function Scene(props: Board3DProps) {
         activeEvent={props.activeEvent}
       />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
+      <FallenPieces
+        event={props.activeEvent}
+        pendingEvents={props.pendingEvents ?? EMPTY_EVENTS}
+        board={props.state.board}
+        localPlayerId={props.localPlayerId}
+        reducedMotion={props.reducedMotion}
+      />
       <DamageNumbers event={props.activeEvent} />
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>

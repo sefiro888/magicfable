@@ -718,6 +718,7 @@ export function BattlePage() {
             quality={preferences.graphicsQuality}
             scenario={preferences.scenario}
             activeEvent={currentEvent}
+            pendingEvents={store.pendingAnimations}
             cursorCell={boardCursor.cell}
           />
           {/* Voz del cursor de teclado para lectores de pantalla: el tablero 3D
