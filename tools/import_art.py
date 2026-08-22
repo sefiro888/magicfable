@@ -39,6 +39,7 @@ FACTION_COLORS = {
     "order": "#d8caa4",
     "shadow": "#261d2d",
     "void": "#59327d",
+    "duna": "#c9a86a",
 }
 
 # Facción de cada id conocido que aún no vive en una carta del catálogo.
@@ -88,6 +89,39 @@ COMMANDER_FACTIONS = {
     "salto-de-umbral": "void",
     "faro-de-la-fractura": "void",
     "devorador-de-ecos": "void",
+    # --- Facción Duna (NEX-03 «El Tribunal de Arena») ---
+    "khaeris-la-balanza": "duna",
+    "fuente-duna": "duna",
+    "escriba-del-tribunal": "duna",
+    "lancero-de-arena": "duna",
+    "chacal-guardian": "duna",
+    "portadora-de-ofrendas": "duna",
+    "embalsamador": "duna",
+    "guardiana-de-la-tumba": "duna",
+    "sacerdote-solar": "duna",
+    "momia-funcionaria": "duna",
+    "arquera-del-nilo": "duna",
+    "escorpion-de-basalto": "duna",
+    "heraldo-con-cabeza-de-ibis": "duna",
+    "coloso-de-la-necropolis": "duna",
+    "devoradora-del-inframundo": "duna",
+    "visir-de-la-arena": "duna",
+    "leon-de-la-sequia": "duna",
+    "plegaria-al-sol": "duna",
+    "tormenta-de-arena": "duna",
+    "balanza-de-maat": "duna",
+    "vendaje-ritual": "duna",
+    "crecida-del-rio": "duna",
+    "maldicion-del-sello": "duna",
+    "juicio-de-los-cuarenta-y-dos": "duna",
+    "oro-de-la-camara": "duna",
+    "eclipse": "duna",
+    "obelisco": "duna",
+    "mesa-de-ofrendas": "duna",
+    "pozo-escalonado": "duna",
+    "puerta-sellada": "duna",
+    "templo-del-veredicto": "duna",
+    "necropolis": "duna",
 }
 
 

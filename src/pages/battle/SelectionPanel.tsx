@@ -17,10 +17,21 @@ interface SelectionPanelProps {
   /** Hechizo sin objetivo y pagable: se puede lanzar directamente desde aquí. */
   canCast: boolean
   onCast: () => void
+  /**
+   * Duna — Ofrenda: solo llega si la carta elegida pide una. Es una decisión
+   * que hay que tomar ANTES de resolver la carta, así que vive aquí, junto al
+   * texto que explica qué se gana pagándola.
+   */
+  offering?: {
+    readonly cost: number
+    readonly paying: boolean
+    readonly affordable: boolean
+    readonly onToggle: () => void
+  }
 }
 
 /** Panel lateral derecho: detalle de la carta o unidad activa y la guía de acción. */
-export function SelectionPanel({ card, heading, stats, hint, canCast, onCast }: SelectionPanelProps) {
+export function SelectionPanel({ card, heading, stats, hint, canCast, onCast, offering }: SelectionPanelProps) {
   return (
     <section className={`${styles.panelSection} ${styles.context}`} data-empty={!card || undefined}>
       <span className={styles.panelLabel}>{heading}</span>
@@ -45,6 +56,24 @@ export function SelectionPanel({ card, heading, stats, hint, canCast, onCast }: 
           )}
           <p className={styles.contextFlavor}>«{card.flavor}»</p>
         </>
+      )}
+      {offering && (
+        <button
+          className={styles.offering}
+          type="button"
+          data-paying={offering.paying || undefined}
+          onClick={offering.onToggle}
+          disabled={!offering.affordable}
+          aria-pressed={offering.paying}
+          title={
+            offering.affordable
+              ? 'La Ofrenda se paga con la Vida de tu propio Nexo al jugar la carta.'
+              : 'No te queda Vida suficiente para pagar esta Ofrenda.'
+          }
+        >
+          <span>{offering.paying ? '◆ Ofrendarás' : '◇ Ofrendar'}</span>
+          <small>{offering.affordable ? `${offering.cost} de Vida` : 'sin Vida suficiente'}</small>
+        </button>
       )}
       {hint && (
         <p key={hint} className={styles.actionHint} data-warning={hint.startsWith('No tienes') || undefined} role="status">

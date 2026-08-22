@@ -3,8 +3,8 @@ import { persist } from 'zustand/middleware'
 import { COMMANDER_BY_ID, STARTER_DECKS } from '../game'
 
 /**
- * La Torre del Nexo: seis combates encadenados contra los seis comandantes,
- * conservando la Vida que te queda de un piso al siguiente.
+ * La Torre del Nexo: un combate contra cada facción, conservando la Vida que
+ * te queda de un piso al siguiente.
  *
  * Es la primera modalidad con continuidad entre partidas del juego. La gracia
  * está en que la Vida no se recupera sola: ganar un piso barato importa tanto
@@ -12,8 +12,12 @@ import { COMMANDER_BY_ID, STARTER_DECKS } from '../game'
  * la cura — nunca completa, para que la Torre siga apretando.
  */
 
-/** Cuántos pisos tiene la Torre: los cinco rivales y el espejo final. */
-export const TOWER_FLOORS = 6
+/**
+ * Cuántos pisos tiene la Torre: todos los demás mazos y el espejo final contra
+ * el tuyo. Se deriva del catálogo para que añadir una facción sume un piso en
+ * vez de dejar un rival fuera sin que nadie se entere.
+ */
+export const TOWER_FLOORS = STARTER_DECKS.length
 
 export type BlessingId = 'mend' | 'surge' | 'insight'
 

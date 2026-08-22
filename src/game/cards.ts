@@ -10,6 +10,9 @@ type CardSeed = Omit<
 /** Nombre del conjunto de la segunda oleada, para no repetirlo 24 veces. */
 const SECOND_WAVE_SET = 'NEX-02 · Fractura';
 
+/** Conjunto de la facción Duna. */
+const DUNA_SET = 'NEX-03 · El Tribunal de Arena';
+
 const factionCost = (faction: FactionId, colored: number, generic = 0): ManaCost => ({
   generic,
   colored: colored === 0 ? {} : { [faction]: colored },
@@ -1160,13 +1163,373 @@ const secondWaveCards: readonly CardDefinition[] = [
   }),
 ];
 
+/**
+ * NEX-03 «El Tribunal de Arena»: la facción Duna.
+ *
+ * Su gracia son dos mecánicas que se responden la una a la otra (ver
+ * `duna.ts`): **Ofrenda**, que convierte tu Vida en un recurso que gastas por
+ * voluntad propia, y **Juicio**, que te premia justo por ir por detrás. Es la
+ * única facción que saca provecho de estar perdiendo, así que remonta en vez
+ * de rendirse.
+ *
+ * Las ramas condicionales se escriben dentro de `effects`: todo lo que va tras
+ * un `offering` o un `judgement` solo se resuelve si la condición se cumple,
+ * `otherwise` abre la alternativa y `always` vuelve a lo común.
+ */
+const dunaCards: readonly CardDefinition[] = [
+  defineCard({
+    id: 'fuente-duna', name: 'Fuente de Duna', faction: 'duna', type: 'mana', subtype: 'Fuente',
+    rarity: 'common', cost: factionCost('duna', 0),
+    rules: 'Agota esta fuente: genera 1 de Esencia Dorada.',
+    flavor: 'El desierto guarda el oro del mediodía para quien sepa pedirlo.',
+    keywords: [], collectorNumber: 115, aiTags: ['resource'], unique: false, effects: [],
+    vfx: { persistentEffect: 'duna-source-glow' }, sfx: { play: 'resource-duna' },
+    set: DUNA_SET,
+  }),
+
+  // --- Unidades ---
+  defineCard({
+    id: 'escriba-del-tribunal', name: 'Escriba del Tribunal', faction: 'duna', type: 'unit', subtype: 'Humanoide',
+    rarity: 'common', cost: factionCost('duna', 1), attack: 1, health: 3, range: 1, movement: 1,
+    rules: 'Al entrar en juego, escruta 1.',
+    flavor: 'Lo escribe todo. Especialmente lo que preferirías olvidar.',
+    keywords: [], collectorNumber: 116, aiTags: ['utility', 'cheap'], unique: false,
+    effects: [{ kind: 'scry', amount: 1 }],
+    vfx: { summonEffect: 'papyrus-unfurl' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'lancero-de-arena', name: 'Lancero de Arena', faction: 'duna', type: 'unit', subtype: 'Soldado',
+    rarity: 'common', cost: factionCost('duna', 1, 1), attack: 2, health: 3, range: 2, movement: 1,
+    rules: 'Guardia: las unidades enemigas adyacentes solo pueden atacarle a él.',
+    flavor: 'La formación aguanta porque nadie recuerda cómo se rompe.',
+    keywords: ['guard'], collectorNumber: 117, aiTags: ['defense', 'ranged'], unique: false, effects: [],
+    vfx: { summonEffect: 'sand-step', attackEffect: 'spear-thrust' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'chacal-guardian', name: 'Chacal Guardián', faction: 'duna', type: 'unit', subtype: 'Bestia',
+    rarity: 'common', cost: factionCost('duna', 1, 1), attack: 3, health: 2, range: 1, movement: 3,
+    rules: 'Impulso: puede moverse el turno en que entra en juego.',
+    flavor: 'Conoce el camino a la tumba de memoria. En los dos sentidos.',
+    keywords: ['impulse'], collectorNumber: 118, aiTags: ['fast', 'aggressive'], unique: false, effects: [],
+    vfx: { summonEffect: 'jackal-dash', attackEffect: 'jackal-bite' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'portadora-de-ofrendas', name: 'Portadora de Ofrendas', faction: 'duna', type: 'unit', subtype: 'Humanoide',
+    rarity: 'common', cost: factionCost('duna', 1, 1), attack: 2, health: 2, range: 1, movement: 2,
+    rules: 'Ofrenda 2: al entrar en juego, robas 1 carta.',
+    flavor: 'Lleva en la cabeza más de lo que pesa el cesto.',
+    keywords: [], collectorNumber: 119, aiTags: ['offering', 'draw'], unique: false,
+    effects: [{ kind: 'offering', cost: 2 }, { kind: 'draw', amount: 1 }],
+    vfx: { summonEffect: 'offering-basket' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'embalsamador', name: 'Embalsamador', faction: 'duna', type: 'unit', subtype: 'Humanoide',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 1), attack: 1, health: 4, range: 1, movement: 1,
+    rules: 'Al final de tu turno, cura 1 a tu Nexo. Juicio: cura 3 en su lugar.',
+    flavor: 'Su trabajo empieza donde el de los médicos termina.',
+    keywords: [], collectorNumber: 120, aiTags: ['heal', 'judgement'], unique: false,
+    effects: [
+      { kind: 'passive', id: 'upkeep-heal-nexus', value: 1 },
+      { kind: 'judgement' },
+      { kind: 'passive', id: 'upkeep-heal-nexus', value: 2 },
+    ],
+    vfx: { summonEffect: 'linen-wrap', persistentEffect: 'embalm-glow' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'guardiana-de-la-tumba', name: 'Guardiana de la Tumba', faction: 'duna', type: 'unit', subtype: 'Constructo',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 2), attack: 2, health: 6, range: 1, movement: 1,
+    rules: 'Guardia. No puede ser aturdida.',
+    flavor: 'Lleva mil años haciendo exactamente lo mismo.',
+    keywords: ['guard'], collectorNumber: 121, aiTags: ['defense', 'durable'], unique: false,
+    effects: [{ kind: 'passive', id: 'stun-immune' }],
+    vfx: { summonEffect: 'basalt-rise', persistentEffect: 'tomb-vigil' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'sacerdote-solar', name: 'Sacerdote Solar', faction: 'duna', type: 'unit', subtype: 'Humanoide',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 2), attack: 3, health: 3, range: 2, movement: 1,
+    rules: 'Ofrenda 3: al entrar en juego, inflige 3 de daño a la unidad enemiga con más Ataque.',
+    flavor: 'El sol no negocia; solo se le puede pagar.',
+    keywords: [], collectorNumber: 122, aiTags: ['offering', 'removal'], unique: false,
+    effects: [{ kind: 'offering', cost: 3 }, { kind: 'passive', id: 'entry-damage-strongest', value: 3 }],
+    vfx: { summonEffect: 'sun-disc', impactEffect: 'solar-lance' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'momia-funcionaria', name: 'Momia Funcionaria', faction: 'duna', type: 'unit', subtype: 'No muerto',
+    rarity: 'common', cost: factionCost('duna', 1, 1), attack: 3, health: 3, range: 1, movement: 1,
+    rules: 'Cuerpo lento: no puede moverse el turno en que entra en juego.',
+    flavor: 'Volvió al puesto. Nadie le dijo que ya no hacía falta.',
+    keywords: [], collectorNumber: 123, aiTags: ['value', 'slow'], unique: false, effects: [],
+    vfx: { summonEffect: 'bandage-stir' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'arquera-del-nilo', name: 'Arquera del Nilo', faction: 'duna', type: 'unit', subtype: 'Soldado',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 1), attack: 2, health: 3, range: 3, movement: 1,
+    rules: 'Juicio: sus ataques infligen 1 de daño adicional.',
+    flavor: 'Apunta mejor cuando el asunto se ha puesto serio.',
+    keywords: [], collectorNumber: 124, aiTags: ['ranged', 'judgement'], unique: false,
+    effects: [{ kind: 'passive', id: 'judgement-attack-bonus', value: 1 }],
+    vfx: { summonEffect: 'reed-bow', attackEffect: 'nile-arrow' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'escorpion-de-basalto', name: 'Escorpión de Basalto', faction: 'duna', type: 'unit', subtype: 'Constructo',
+    rarity: 'rare', cost: factionCost('duna', 1, 2), attack: 4, health: 4, range: 1, movement: 2,
+    rules: 'Aturdir: la unidad que golpea no podrá atacar en su próximo turno.',
+    flavor: 'Tallado para custodiar un umbral que ya no existe.',
+    keywords: ['stun'], collectorNumber: 125, aiTags: ['control', 'combat'], unique: false, effects: [],
+    vfx: { summonEffect: 'basalt-rise', attackEffect: 'scorpion-strike', impactEffect: 'stun-daze' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'heraldo-con-cabeza-de-ibis', name: 'Heraldo con Cabeza de Ibis', faction: 'duna', type: 'unit', subtype: 'Celestial',
+    rarity: 'rare', cost: factionCost('duna', 1, 2), attack: 3, health: 4, range: 2, movement: 2,
+    rules: 'Volador. Al entrar en juego, escruta 2.',
+    flavor: 'Sabe el final de la frase antes de que empieces a decirla.',
+    keywords: ['flying'], collectorNumber: 126, aiTags: ['ranged', 'utility'], unique: false,
+    effects: [{ kind: 'scry', amount: 2 }],
+    vfx: { summonEffect: 'ibis-wings', attackEffect: 'stylus-strike' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'coloso-de-la-necropolis', name: 'Coloso de la Necrópolis', faction: 'duna', type: 'unit', subtype: 'Constructo',
+    rarity: 'mythic', cost: factionCost('duna', 2, 4), attack: 6, health: 8, range: 1, movement: 1,
+    rules: 'Guardia. Ofrenda 4: al entrar en juego, inflige 3 de daño a todas las unidades enemigas.',
+    flavor: 'Se levanta cuando la necrópolis considera que ya está bien.',
+    keywords: ['guard'], collectorNumber: 127, aiTags: ['finisher', 'offering'], unique: true,
+    effects: [{ kind: 'offering', cost: 4 }, { kind: 'damage-all-enemies', amount: 3 }],
+    vfx: { summonEffect: 'colossus-wake', impactEffect: 'stone-shockwave' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'devoradora-del-inframundo', name: 'Devoradora del Inframundo', faction: 'duna', type: 'unit', subtype: 'Horror',
+    rarity: 'mythic', cost: factionCost('duna', 2, 3), attack: 5, health: 5, range: 1, movement: 2,
+    rules: 'Vínculo vital. Juicio: al final de tu turno, el Nexo rival pierde 2 de Vida.',
+    flavor: 'Espera bajo la balanza a que el veredicto le dé de comer.',
+    keywords: ['lifelink'], collectorNumber: 128, aiTags: ['finisher', 'judgement'], unique: true,
+    effects: [{ kind: 'judgement' }, { kind: 'passive', id: 'upkeep-burn-nexus', value: 2 }],
+    vfx: { summonEffect: 'underworld-maw', attackEffect: 'devour-bite' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'visir-de-la-arena', name: 'Visir de la Arena', faction: 'duna', type: 'unit', subtype: 'Humanoide',
+    rarity: 'rare', cost: factionCost('duna', 1, 2), attack: 3, health: 4, range: 1, movement: 1,
+    rules: 'Tus Ofrendas cuestan 1 de Vida menos.',
+    flavor: 'Administra el precio de todo, empezando por el suyo.',
+    keywords: [], collectorNumber: 129, aiTags: ['offering', 'support'], unique: false,
+    effects: [{ kind: 'passive', id: 'offering-discount', value: 1 }],
+    vfx: { summonEffect: 'vizier-decree', persistentEffect: 'ledger-glow' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'leon-de-la-sequia', name: 'León de la Sequía', faction: 'duna', type: 'unit', subtype: 'Bestia',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 2), attack: 4, health: 3, range: 1, movement: 2,
+    rules: 'Golpe veloz: puede atacar el turno en que entra en juego.',
+    flavor: 'Cuando el río no sube, baja él.',
+    keywords: ['swift-strike'], collectorNumber: 130, aiTags: ['aggressive', 'fast'], unique: false, effects: [],
+    vfx: { summonEffect: 'lion-prowl', attackEffect: 'drought-claw' },
+    set: DUNA_SET,
+  }),
+
+  // --- Hechizos ---
+  defineCard({
+    id: 'plegaria-al-sol', name: 'Plegaria al Sol', faction: 'duna', type: 'instant', subtype: 'Conjuro',
+    rarity: 'common', cost: factionCost('duna', 1),
+    rules: 'Inflige 3 de daño a una unidad enemiga. Ofrenda 2: inflige 5 en su lugar.',
+    flavor: 'Se paga primero. Siempre se paga primero.',
+    keywords: [], collectorNumber: 131, aiTags: ['removal', 'offering'], unique: false,
+    effects: [
+      { kind: 'damage', amount: 3, target: 'enemy-piece' },
+      { kind: 'offering', cost: 2 },
+      { kind: 'damage', amount: 2, target: 'enemy-piece' },
+    ],
+    vfx: { impactEffect: 'solar-lance' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'tormenta-de-arena', name: 'Tormenta de Arena', faction: 'duna', type: 'instant', subtype: 'Cataclismo',
+    rarity: 'rare', cost: factionCost('duna', 1, 2),
+    rules: 'Inflige 2 de daño a todas las unidades enemigas y les resta 1 de Movimiento este turno.',
+    flavor: 'Cambió el mapa dos veces antes del mediodía.',
+    keywords: [], collectorNumber: 132, aiTags: ['area-damage', 'control'], unique: false,
+    effects: [{ kind: 'damage-all-enemies', amount: 2 }, { kind: 'slow-all-enemies', amount: 1 }],
+    vfx: { impactEffect: 'sandstorm-sweep' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'balanza-de-maat', name: 'Balanza de Maat', faction: 'duna', type: 'instant', subtype: 'Ritual',
+    rarity: 'mythic', cost: factionCost('duna', 2, 2),
+    rules: 'Juicio: destruye la unidad enemiga con más Ataque. Si no, inflige 4 de daño a una unidad enemiga.',
+    flavor: 'La pluma no pesa nada y aun así gana casi siempre.',
+    keywords: [], collectorNumber: 133, aiTags: ['removal', 'judgement'], unique: true,
+    effects: [
+      { kind: 'judgement' },
+      { kind: 'destroy-strongest-enemy' },
+      { kind: 'otherwise' },
+      { kind: 'damage', amount: 4, target: 'enemy-piece' },
+    ],
+    vfx: { impactEffect: 'scales-verdict' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'vendaje-ritual', name: 'Vendaje Ritual', faction: 'duna', type: 'instant', subtype: 'Conjuro',
+    rarity: 'common', cost: factionCost('duna', 1),
+    rules: 'Una unidad aliada gana un escudo de 3.',
+    flavor: 'Cada vuelta de lino es una promesa distinta.',
+    keywords: [], collectorNumber: 134, aiTags: ['protection'], unique: false,
+    effects: [{ kind: 'passive', id: 'target-shield', value: 3 }],
+    vfx: { impactEffect: 'linen-wrap' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'crecida-del-rio', name: 'Crecida del Río', faction: 'duna', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 1),
+    rules: 'Cura 6 de Vida a tu Nexo. Juicio: cura 10 en su lugar.',
+    flavor: 'Todo lo que el año se llevó, vuelve en una noche.',
+    keywords: [], collectorNumber: 135, aiTags: ['heal', 'judgement'], unique: false,
+    effects: [
+      { kind: 'heal-nexus', amount: 6 },
+      { kind: 'judgement' },
+      { kind: 'heal-nexus', amount: 4 },
+    ],
+    vfx: { impactEffect: 'river-flood' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'maldicion-del-sello', name: 'Maldición del Sello', faction: 'duna', type: 'instant', subtype: 'Encantamiento',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 1),
+    rules: 'Congela una unidad enemiga 1 turno. Ofrenda 2: además le inflige 2 de daño.',
+    flavor: 'Estaba escrito en la puerta y nadie lo leyó.',
+    keywords: [], collectorNumber: 136, aiTags: ['control', 'offering'], unique: false,
+    effects: [
+      { kind: 'freeze', duration: 1 },
+      { kind: 'offering', cost: 2 },
+      { kind: 'damage', amount: 2, target: 'enemy-piece' },
+    ],
+    vfx: { impactEffect: 'seal-curse' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'juicio-de-los-cuarenta-y-dos', name: 'Juicio de los Cuarenta y Dos', faction: 'duna', type: 'instant', subtype: 'Ritual',
+    rarity: 'rare', cost: factionCost('duna', 1, 2),
+    rules: 'El rival descarta 1 carta. Juicio: descarta 2 y robas 1.',
+    flavor: 'Cuarenta y dos preguntas. Ninguna admite matices.',
+    keywords: [], collectorNumber: 137, aiTags: ['disruption', 'judgement'], unique: false,
+    effects: [
+      { kind: 'discard', amount: 1, target: 'enemy-hand' },
+      { kind: 'judgement' },
+      { kind: 'discard', amount: 1, target: 'enemy-hand' },
+      { kind: 'draw', amount: 1 },
+    ],
+    vfx: { impactEffect: 'forty-two-verdict' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'oro-de-la-camara', name: 'Oro de la Cámara', faction: 'duna', type: 'instant', subtype: 'Ritual',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 1),
+    rules: 'Robas 2 cartas. Ofrenda 3: robas 3 en su lugar.',
+    flavor: 'Lo enterraron para el viaje. El viaje se aplazó.',
+    keywords: [], collectorNumber: 138, aiTags: ['draw', 'offering'], unique: false,
+    effects: [
+      { kind: 'draw', amount: 2 },
+      { kind: 'offering', cost: 3 },
+      { kind: 'draw', amount: 1 },
+    ],
+    vfx: { impactEffect: 'chamber-gold' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'eclipse', name: 'Eclipse', faction: 'duna', type: 'instant', subtype: 'Cataclismo',
+    rarity: 'rare', cost: factionCost('duna', 1, 2),
+    rules: 'Ofrenda 4: inflige 4 de daño a todas las unidades enemigas y cura 4 a tu Nexo.',
+    flavor: 'El disco se cerró y el tribunal entero se puso de pie.',
+    keywords: [], collectorNumber: 139, aiTags: ['area-damage', 'offering'], unique: false,
+    effects: [
+      { kind: 'offering', cost: 4 },
+      { kind: 'damage-all-enemies', amount: 4 },
+      { kind: 'heal-nexus', amount: 4 },
+    ],
+    vfx: { impactEffect: 'eclipse-shadow' },
+    set: DUNA_SET,
+  }),
+
+  // --- Estructuras ---
+  defineCard({
+    id: 'obelisco', name: 'Obelisco', faction: 'duna', type: 'structure', subtype: 'Obelisco',
+    rarity: 'common', cost: factionCost('duna', 1, 1), resistance: 5,
+    rules: 'Tus unidades a distancia infligen 1 de daño adicional.',
+    flavor: 'Un dedo de piedra señalando quién manda.',
+    keywords: [], collectorNumber: 140, aiTags: ['structure', 'buff'], unique: false,
+    effects: [{ kind: 'passive', id: 'ranged-attack-bonus', value: 1 }],
+    vfx: { summonEffect: 'obelisk-raise', persistentEffect: 'gilded-tip' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'mesa-de-ofrendas', name: 'Mesa de Ofrendas', faction: 'duna', type: 'structure', subtype: 'Altar',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 1), resistance: 4,
+    rules: 'La primera Ofrenda que pagues cada turno cuesta 1 de Vida menos.',
+    flavor: 'Se deja lo mejor y se espera de pie.',
+    keywords: [], collectorNumber: 141, aiTags: ['structure', 'offering'], unique: false,
+    effects: [{ kind: 'passive', id: 'offering-discount-first', value: 1 }],
+    vfx: { summonEffect: 'offering-table', persistentEffect: 'incense-smoke' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'pozo-escalonado', name: 'Pozo Escalonado', faction: 'duna', type: 'structure', subtype: 'Pozo',
+    rarity: 'uncommon', cost: factionCost('duna', 1, 1), resistance: 5,
+    rules: 'Al final de tu turno, cura 2 a tu Nexo.',
+    flavor: 'Baja tantos escalones como años lleve sin llover.',
+    keywords: [], collectorNumber: 142, aiTags: ['structure', 'heal'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-heal-nexus', value: 2 }],
+    vfx: { summonEffect: 'stepwell-dig', persistentEffect: 'still-water' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'puerta-sellada', name: 'Puerta Sellada', faction: 'duna', type: 'structure', subtype: 'Fortaleza',
+    rarity: 'rare', cost: factionCost('duna', 1, 2), resistance: 9,
+    rules: 'Guardia: las unidades enemigas adyacentes solo pueden atacarle a ella.',
+    flavor: 'Lo que está detrás pagó por no ser molestado.',
+    keywords: ['guard'], collectorNumber: 143, aiTags: ['structure', 'defense'], unique: false, effects: [],
+    vfx: { summonEffect: 'sealed-door', persistentEffect: 'hieroglyph-glow' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'templo-del-veredicto', name: 'Templo del Veredicto', faction: 'duna', type: 'structure', subtype: 'Templo',
+    rarity: 'rare', cost: factionCost('duna', 1, 2), resistance: 6,
+    rules: 'Juicio: al final de tu turno, robas 1 carta.',
+    flavor: 'Se llena cuando las cosas van mal. Por eso está tan cuidado.',
+    keywords: [], collectorNumber: 144, aiTags: ['structure', 'draw', 'judgement'], unique: false,
+    effects: [{ kind: 'judgement' }, { kind: 'passive', id: 'upkeep-draw', value: 1 }],
+    vfx: { summonEffect: 'temple-raise', persistentEffect: 'verdict-light' },
+    set: DUNA_SET,
+  }),
+  defineCard({
+    id: 'necropolis', name: 'Necrópolis', faction: 'duna', type: 'structure', subtype: 'Necrópolis',
+    rarity: 'mythic', cost: factionCost('duna', 2, 2), resistance: 7,
+    rules: 'Juicio: al final de tu turno, una unidad aliada gana +1 de Ataque y +1 de Vida permanentes.',
+    flavor: 'La ciudad de los que ya no discuten.',
+    keywords: [], collectorNumber: 145, aiTags: ['structure', 'judgement', 'buff'], unique: true,
+    effects: [{ kind: 'judgement' }, { kind: 'passive', id: 'upkeep-grow-ally', value: 1 }],
+    vfx: { summonEffect: 'necropolis-rise', persistentEffect: 'tomb-lights' },
+    set: DUNA_SET,
+  }),
+];
+
 export const CARDS = Object.freeze([
   ...furyCards, ...arcaneCards, ...natureCards, ...orderCards, ...shadowCards, ...voidCards,
   ...secondWaveCards,
+  ...dunaCards,
 ]) as readonly CardDefinition[];
 
-if (CARDS.length !== 114 || new Set(CARDS.map((card) => card.id)).size !== 114) {
-  throw new Error('El catálogo debe contener 114 cartas (90 de NEX-01 y 24 de NEX-02) con identificadores únicos.');
+if (CARDS.length !== 145 || new Set(CARDS.map((card) => card.id)).size !== 145) {
+  throw new Error('El catálogo debe contener 145 cartas (90 de NEX-01, 24 de NEX-02 y 31 de NEX-03) con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(

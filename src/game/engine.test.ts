@@ -38,6 +38,7 @@ const SOURCE_BY_FACTION: Record<FactionId, string> = {
   order: 'fuente-orden',
   shadow: 'fuente-sombra',
   void: 'fuente-vacio',
+  duna: 'fuente-duna',
 };
 
 const resources = (faction: FactionId, count: number, exhausted = false): readonly ResourceState[] =>

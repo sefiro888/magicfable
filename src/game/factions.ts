@@ -61,6 +61,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['portales', 'teletransporte', 'distorsión'],
   },
+  {
+    id: 'duna',
+    name: 'Duna',
+    description: 'El Tribunal de Arena: paga con tu propia Vida y gana cuando vas perdiendo.',
+    color: '#c9a86a',
+    accentColor: '#ffd76a',
+    icon: 'scales',
+    unlocked: true,
+    themes: ['ofrenda', 'juicio', 'remontada'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -70,6 +80,7 @@ export const FACTION_BY_ID = Object.freeze({
   order: FACTIONS[3],
   shadow: FACTIONS[4],
   void: FACTIONS[5],
+  duna: FACTIONS[6],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

@@ -274,6 +274,29 @@ export const COMMANDERS = [
       effectId: 'commander-void-power',
     },
   }) as CommanderDefinition,
+  // --- Duna (NEX-03 «El Tribunal de Arena») ---
+  CommanderDefinitionSchema.parse({
+    id: 'khaeris-la-balanza',
+    name: 'Khaeris',
+    title: 'La Balanza',
+    faction: 'duna',
+    nexusHealth: 35,
+    rules: 'La primera vez cada turno que pagas una Ofrenda, robas 1 carta.',
+    flavor: 'No juzga lo que hiciste. Pesa lo que queda de ti.',
+    art: {
+      webp: '/assets/cards/art/khaeris-la-balanza.webp',
+      fallback: '/assets/cards/art/khaeris-la-balanza.svg',
+      alt: 'Khaeris con máscara ceremonial de chacal sosteniendo una balanza de oro',
+    },
+    vfx: { persistentEffect: 'commander-duna-aura', impactEffect: 'commander-duna-hit' },
+    power: {
+      name: 'Pesaje del Corazón',
+      description: 'Cura 8 a tu Nexo y el rival descarta 1 carta.',
+      cost: { generic: 2, colored: { duna: 1 } },
+      effects: [{ kind: 'heal-nexus', amount: 8 }, { kind: 'discard', amount: 1, target: 'enemy-hand' }],
+      effectId: 'commander-duna-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -452,7 +475,47 @@ const voidDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
-export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck]) as readonly DeckDefinition[];
+/**
+ * Duna: 20 fuentes y una lista que gira sobre Ofrenda y Juicio. Lleva más
+ * curación de la que parece razonable a propósito — es lo que le permite
+ * pagar Ofrendas sin morirse y volver a subir después de que el Tribunal ya
+ * haya fallado a su favor.
+ */
+const dunaDeck = DeckDefinitionSchema.parse({
+  id: 'tribunal-duna',
+  name: 'Tribunal de Arena',
+  faction: 'duna',
+  commanderId: 'khaeris-la-balanza',
+  cards: [
+    { cardId: 'fuente-duna', count: 20 },
+    { cardId: 'escriba-del-tribunal', count: 1 },
+    { cardId: 'lancero-de-arena', count: 2 },
+    { cardId: 'chacal-guardian', count: 1 },
+    { cardId: 'portadora-de-ofrendas', count: 2 },
+    { cardId: 'embalsamador', count: 2 },
+    { cardId: 'guardiana-de-la-tumba', count: 1 },
+    { cardId: 'sacerdote-solar', count: 2 },
+    { cardId: 'momia-funcionaria', count: 1 },
+    { cardId: 'arquera-del-nilo', count: 2 },
+    { cardId: 'escorpion-de-basalto', count: 1 },
+    { cardId: 'heraldo-con-cabeza-de-ibis', count: 1 },
+    { cardId: 'coloso-de-la-necropolis', count: 1 },
+    { cardId: 'devoradora-del-inframundo', count: 1 },
+    { cardId: 'visir-de-la-arena', count: 1 },
+    { cardId: 'leon-de-la-sequia', count: 1 },
+    { cardId: 'plegaria-al-sol', count: 1 },
+    { cardId: 'crecida-del-rio', count: 2 },
+    { cardId: 'vendaje-ritual', count: 1 },
+    { cardId: 'maldicion-del-sello', count: 1 },
+    { cardId: 'obelisco', count: 1 },
+    { cardId: 'pozo-escalonado', count: 1 },
+    { cardId: 'puerta-sellada', count: 1 },
+    { cardId: 'templo-del-veredicto', count: 1 },
+    { cardId: 'balanza-de-maat', count: 1 },
+  ],
+}) as DeckDefinition;
+
+export const STARTER_DECKS = Object.freeze([furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(
   Object.fromEntries(STARTER_DECKS.map((deck) => [deck.id, deck])),

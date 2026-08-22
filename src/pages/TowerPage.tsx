@@ -58,7 +58,7 @@ export function TowerPage() {
           <h1>Torre del Nexo</h1>
         </div>
         <p>
-          Seis combates encadenados contra los seis comandantes. Tu Nexo <strong>no se cura solo</strong>:
+          Un combate contra cada facción, {TOWER_FLOORS} en total. Tu Nexo <strong>no se cura solo</strong>:
           la Vida que te quede es la que llevas al piso siguiente.
           <br />
           <span className={styles.note}>

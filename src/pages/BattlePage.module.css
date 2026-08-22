@@ -60,6 +60,20 @@
 .rightPanel { bottom: 12px; }
 .rightPanel { right: 12px; display: flex; flex-direction: column; }
 .panelSection { padding: 15px; border-bottom: 1px solid rgba(255,255,255,.07); }
+/* Duna — Ofrenda: interruptor de pagar Vida por el efecto mejorado. Va en rojo
+   apagado y no en dorado a propósito: lo que se gasta aquí es tu Nexo. */
+.offering {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; margin-top: 9px; padding: 8px 10px; min-height: 40px;
+  border: 1px solid rgba(215,180,103,.28); background: rgba(215,180,103,.05);
+  color: #c8bfa6; font-family: inherit; font-size: 11px; letter-spacing: .06em; cursor: pointer;
+}
+.offering:hover:not(:disabled) { border-color: var(--gold); color: var(--ivory); }
+.offering[data-paying] { border-color: #d78a6a; background: rgba(199,90,60,.14); color: #f0cbb8; font-weight: 700; }
+.offering:disabled { opacity: .45; cursor: not-allowed; }
+.offering small { color: inherit; opacity: .75; font-size: 10px; }
+.offering:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+
 .panelLabel { color: #77746d; font-size: 8px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
 /* El retrato manda: el arte del comandante ocupa todo el ancho del panel. */
 .commander { margin-top: 10px; display: grid; gap: 9px; }
@@ -573,7 +587,21 @@
     width: 52vw; max-height: none; border: 0; background: none; box-shadow: none;
   }
   .rightPanel[data-context-empty] .context { padding: 0; }
-  .rightPanel[data-context-empty] .panelLabel { display: none; }
+  .rightPanel[data-context-empty] /* Duna — Ofrenda: interruptor de pagar Vida por el efecto mejorado. Va en rojo
+   apagado y no en dorado a propósito: lo que se gasta aquí es tu Nexo. */
+.offering {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; margin-top: 9px; padding: 8px 10px; min-height: 40px;
+  border: 1px solid rgba(215,180,103,.28); background: rgba(215,180,103,.05);
+  color: #c8bfa6; font-family: inherit; font-size: 11px; letter-spacing: .06em; cursor: pointer;
+}
+.offering:hover:not(:disabled) { border-color: var(--gold); color: var(--ivory); }
+.offering[data-paying] { border-color: #d78a6a; background: rgba(199,90,60,.14); color: #f0cbb8; font-weight: 700; }
+.offering:disabled { opacity: .45; cursor: not-allowed; }
+.offering small { color: inherit; opacity: .75; font-size: 10px; }
+.offering:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+
+.panelLabel { display: none; }
   .rightPanel[data-context-empty] .actionHint {
     border: 1px solid var(--line); background: rgba(11,13,20,.92);
   }

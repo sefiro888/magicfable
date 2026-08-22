@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -87,6 +87,25 @@ export type CardEffect =
   | { readonly kind: 'refresh-move' }
   | { readonly kind: 'splash-weakest-enemy'; readonly amount: number }
   | { readonly kind: 'destroy-all-enemy-structures'; readonly gainEssencePerResistance: boolean }
+  /**
+   * Duna — Ofrenda N: coste opcional en Vida del propio Nexo. Los efectos que
+   * vienen DESPUÉS en la lista solo se resuelven si se ha pagado.
+   */
+  | { readonly kind: 'offering'; readonly cost: number }
+  /**
+   * Duna — Juicio: los efectos que vienen después solo se resuelven si tu Nexo
+   * tiene menos Vida que el del rival. Es la contrapartida de Ofrenda: cuanto
+   * más has pagado, más cerca estás de que el Tribunal falle a tu favor.
+   */
+  | { readonly kind: 'judgement' }
+  /** Rama alternativa: se resuelve cuando la condición anterior NO se cumplió. */
+  | { readonly kind: 'otherwise' }
+  /** Marca de fin de las ramas condicionales: lo que sigue se resuelve siempre. */
+  | { readonly kind: 'always' }
+  /** Resta Movimiento a todas las unidades enemigas hasta que termine su turno. */
+  | { readonly kind: 'slow-all-enemies'; readonly amount: number }
+  /** Destruye la unidad enemiga con más Ataque. */
+  | { readonly kind: 'destroy-strongest-enemy' }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 export interface CardDefinition {
@@ -244,6 +263,12 @@ export interface BoardPiece {
    * definición de la carta es inmutable y compartida por todas sus copias.
    */
   readonly grantedKeywords?: readonly Keyword[];
+  /**
+   * Parte de `attackModifier` que NO caduca al terminar el turno (Necrópolis).
+   * Va aparte porque el modificador normal se pone a cero cada turno, y sin
+   * esta marca un +1 «permanente» duraría exactamente un turno.
+   */
+  readonly permanentAttackBonus?: number;
   readonly statuses: readonly PieceStatus[];
 }
 
@@ -276,6 +301,8 @@ export interface PlayerState {
   readonly commanderControlDrawUsedThisTurn?: boolean;
   /** Pasiva de Orén: cuántas veces ha drenado ya este turno (tope de 2). */
   readonly commanderDrainCountThisTurn?: number;
+  /** Duna: cuántas Ofrendas se han pagado ya este turno (Khaeris y la Mesa miran esto). */
+  readonly offeringsPaidThisTurn?: number;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;
@@ -352,6 +379,12 @@ export type GameAction =
       readonly cardInstanceId: string;
       readonly position?: Position;
       readonly target?: SpellTarget;
+      /**
+       * Duna — Ofrenda: pagar Vida del propio Nexo para obtener el efecto
+       * mejorado de la carta. Es una decisión del jugador, así que viaja en la
+       * acción y no en la definición de la carta.
+       */
+      readonly offering?: boolean;
     }
   | { readonly type: 'move'; readonly playerId: PlayerId; readonly pieceId: string; readonly to: Position }
   | {

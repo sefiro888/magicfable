@@ -40,6 +40,7 @@ import { FactionSigil } from '../components'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useSoundtrack } from '../services/useAudioMix'
 import { useMatchStore } from '../store/match'
+import { canPayOffering, offeringCost, offeringOf } from '../game/duna'
 import { useNetworkStore } from '../store/network'
 import { rejoinRoom } from '../multiplayer/room'
 import { clearTicket, readTicket } from '../multiplayer/ticket'
@@ -333,6 +334,19 @@ export function BattlePage() {
   const payment = match && selectedCard
     ? planManaPayment(player?.resources ?? [], effectiveCost(match, ME, selectedCard))
     : undefined
+  /**
+   * Duna — Ofrenda: si el jugador ha decidido pagar Vida por el efecto
+   * mejorado de la carta que tiene elegida. Se guarda por id de carta y no
+   * como un simple booleano para que cambiar de carta no arrastre la decisión
+   * tomada sobre la anterior.
+   */
+  const [offeringFor, setOfferingFor] = useState<string>()
+  const offeringBase = selectedCard ? offeringOf(selectedCard) : undefined
+  const offeringAffordable = Boolean(
+    match && offeringBase !== undefined && canPayOffering(match, ME, offeringBase),
+  )
+  const offeringToll = match && offeringBase !== undefined ? offeringCost(match, ME, offeringBase) : 0
+  const offering = Boolean(selectedInstance && offeringFor === selectedInstance.instanceId && offeringAffordable)
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
   const rivalCommander = rival ? COMMANDER_BY_ID[rival.commanderId] : undefined
   const inspected = store.inspectedCardId ? CARD_BY_ID[store.inspectedCardId] : undefined
@@ -446,11 +460,14 @@ export function BattlePage() {
       // Los hechizos con objetivo siguen pidiendo clic sobre la ficha: una
       // casilla vacía no les dice a quién apuntar.
       if (!isBoardCard(card)) return
-      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: instanceId, position, target: { kind: 'none' } })) {
+      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: instanceId, position, target: { kind: 'none' }, offering })) {
         finishSelection()
       }
     }
-  }, [player, match, ME, doAction, finishSelection])
+    // `offering` entra en las dependencias a propósito: sin él, marcar la
+    // Ofrenda y soltar la carta arrastrándola la jugaría sin pagarla, en
+    // silencio y sin que el jugador se enterase.
+  }, [player, match, ME, doAction, finishSelection, offering])
 
   const consumeDragged = drag.consumeDragged
   const onHandSelect = useCallback((instanceId: string) => {
@@ -503,13 +520,13 @@ export function BattlePage() {
   const onCell = useCallback((position: Position) => {
     if (photoMode) return
     if (selectedInstance && selectedCard && isBoardCard(selectedCard)) {
-      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' } })) finishSelection()
+      if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' }, offering })) finishSelection()
       return
     }
     if (selectedPiece && moves.some((cell) => cell.x === position.x && cell.y === position.y)) {
       if (doAction({ type: 'move', playerId: ME, pieceId: selectedPiece.instanceId, to: position })) finishSelection()
     }
-  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME])
+  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME, offering])
 
   const onPiece = useCallback((pieceId: string) => {
     if (photoMode || !match) return
@@ -517,7 +534,7 @@ export function BattlePage() {
     if (!piece) return
     if (match.activePlayer === ME) {
       if (selectedInstance && selectedCard && !isBoardCard(selectedCard)) {
-        if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId } })) finishSelection()
+        if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId }, offering })) finishSelection()
         return
       }
       if (selectedPiece && attacks.pieceIds.includes(pieceId)) {
@@ -534,7 +551,7 @@ export function BattlePage() {
     // turno, para poder planear mientras observas la jugada del rival.
     const state = useMatchStore.getState()
     state.viewPiece(state.viewedPieceId === pieceId ? undefined : pieceId)
-  }, [photoMode, match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection, ME, store.selectedPieceId])
+  }, [photoMode, match, selectedInstance, selectedCard, selectedPiece, attacks, doAction, finishSelection, ME, store.selectedPieceId, offering])
 
   const onNexus = useCallback((playerId: PlayerId) => {
     if (photoMode) return
@@ -640,7 +657,7 @@ export function BattlePage() {
 
   const playSelectedWithoutTarget = () => {
     if (!selectedInstance || !selectedCard) return
-    if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'none' } })) finishSelection()
+    if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'none' } , offering })) finishSelection()
   }
 
   const abandonMatch = () => {
@@ -944,6 +961,14 @@ export function BattlePage() {
             hint={actionHint}
             canCast={canCastDirectly && payment?.payable === true}
             onCast={playSelectedWithoutTarget}
+            offering={offeringBase === undefined ? undefined : {
+              cost: offeringToll,
+              paying: offering,
+              affordable: offeringAffordable,
+              onToggle: () => setOfferingFor(
+                offering ? undefined : selectedInstance?.instanceId,
+              ),
+            }}
           />
           {/* En móvil se oculta: el aviso central de eventos ya anuncia cada
               acción, así que este registro es redundante ahí y solo le quita

@@ -1,6 +1,7 @@
 import { BOARD_SIZE, deploymentRow, isInsideBoard, nexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import { COMMANDER_BY_ID, expandDeck } from './decks';
+import { activeEffects, canPayOffering, isUnderJudgement, offeringCost, offeringOf } from './duna';
 import { payMana, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
 import type { ManaCost } from './types';
@@ -262,6 +263,16 @@ const hasKeyword = (piece: BoardPiece, keyword: Keyword): boolean =>
  * unidades voladoras lo tienen, aunque su carta no lo diga. Va aparte de
  * `hasKeyword` porque depende del comandante, no de la pieza.
  */
+/** Guardiana de la Tumba: lleva mil años ahí y no hay forma de aturdirla. */
+const isStunImmune = (state: MatchState, pieceId: string): boolean => {
+  const piece = state.board.find((candidate) => candidate.instanceId === pieceId);
+  return Boolean(
+    piece && pieceDefinition(piece)?.effects.some(
+      (effect) => effect.kind === 'passive' && effect.id === 'stun-immune',
+    ),
+  );
+};
+
 const hasLifelink = (state: MatchState, piece: BoardPiece, ownerId: PlayerId): boolean =>
   hasKeyword(piece, 'lifelink')
   || (state.players[ownerId].commanderId === 'veyra-espada-consagrada' && hasKeyword(piece, 'flying'));
@@ -734,6 +745,7 @@ const resolveSpell = (
   caster: PlayerId,
   card: CardDefinition,
   target: SpellTarget | undefined,
+  offered = false,
 ): MatchState => {
   let next = state;
   const initialTarget = requireTargetPiece(next, target);
@@ -741,7 +753,9 @@ const resolveSpell = (
   let draws = 0;
   let discards = 0;
   let damageDealt = 0;
-  for (const effect of card.effects) {
+  // Duna: las ramas de Ofrenda y Juicio se podan aquí, así que el bucle no se
+  // entera de que existen.
+  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster) })) {
     const targetPiece = requireTargetPiece(next, target);
     if (effect.kind === 'damage' && targetPiece) {
       const bonus = frozenAtCast
@@ -788,7 +802,7 @@ const resolveSpell = (
     } else if (effect.kind === 'freeze' && targetPiece) {
       next = addStatus(next, targetPiece.instanceId, effect.duration);
       next = applySialuDraw(next, caster, targetPiece.instanceId);
-    } else if (effect.kind === 'stun' && targetPiece) {
+    } else if (effect.kind === 'stun' && targetPiece && !isStunImmune(next, targetPiece.instanceId)) {
       // Mismo cálculo que el aturdir de combate: turno + 2 cubre exactamente
       // el siguiente turno de su dueño, ni más ni menos.
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
@@ -803,6 +817,16 @@ const resolveSpell = (
         effectId: 'stun-daze', durationMs: 300,
       });
       next = applySialuDraw(next, caster, targetPiece.instanceId);
+    } else if (effect.kind === 'passive' && effect.id === 'target-shield' && targetPiece?.owner === caster) {
+      const amount = effect.value ?? 1;
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({
+        ...piece,
+        statuses: [...piece.statuses.filter((status) => status.kind !== 'shielded'), { kind: 'shielded', amount }],
+      }));
+      next = enqueue(next, {
+        type: 'shield', actorId: caster, targetId: targetPiece.instanceId,
+        to: targetPiece.position, amount, effectId: 'linen-wrap', durationMs: 300,
+      });
     } else if (effect.kind === 'grant-keyword' && targetPiece?.owner === caster) {
       const keyword = effect.keyword;
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
@@ -833,6 +857,29 @@ const resolveSpell = (
         next = resolveDrawAndDiscard(next, opponentOf(caster), 0, effect.amount);
       } else {
         discards += effect.amount;
+      }
+    } else if (effect.kind === 'slow-all-enemies') {
+      const enemyId = opponentOf(caster);
+      next = {
+        ...next,
+        board: next.board.map((piece) =>
+          piece.owner === enemyId
+            ? { ...piece, movementModifier: (piece.movementModifier ?? 0) + effect.amount }
+            : piece,
+        ),
+      };
+    } else if (effect.kind === 'destroy-strongest-enemy') {
+      // La más peligrosa, no la primera: el Ataque manda, y el id desempata
+      // para que la misma partida se resuelva siempre igual.
+      const victim = next.board
+        .filter((piece) => piece.owner !== caster && pieceDefinition(piece)?.type === 'unit')
+        .sort((left, right) => {
+          const l = (pieceDefinition(left)?.attack ?? 0) + left.attackModifier;
+          const r = (pieceDefinition(right)?.attack ?? 0) + right.attackModifier;
+          return r - l || left.instanceId.localeCompare(right.instanceId);
+        })[0];
+      if (victim) {
+        next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, caster, card.vfx.impactEffect);
       }
     } else if (effect.kind === 'scry') {
       next = enqueue(next, {
@@ -898,9 +945,14 @@ const orthogonalNeighbors = (position: Position): readonly Position[] =>
     .map(([dx, dy]) => ({ x: position.x + dx, y: position.y + dy }))
     .filter(isInsideBoard);
 
-const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDefinition): MatchState => {
+const resolveEntryEffects = (
+  state: MatchState,
+  piece: BoardPiece,
+  card: CardDefinition,
+  offered = false,
+): MatchState => {
   let next = state;
-  for (const effect of card.effects) {
+  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner) })) {
     if (effect.kind === 'adjacent-damage') {
       if (effect.trigger === 'attack') continue;
       const targets = next.board.filter(
@@ -932,7 +984,7 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
       if (victim && effect.kind === 'freeze') {
         next = addStatus(next, victim.instanceId, effect.duration);
         next = applySialuDraw(next, piece.owner, victim.instanceId);
-      } else if (victim) {
+      } else if (victim && !isStunImmune(next, victim.instanceId)) {
         next = updatePiece(next, victim.instanceId, (target) => ({
           ...target,
           statuses: [
@@ -971,6 +1023,15 @@ const resolveEntryEffects = (state: MatchState, piece: BoardPiece, card: CardDef
         type: 'spell', actorId: piece.owner, targetId: piece.instanceId,
         amount: effect.amount, effectId: 'scry-top-cards', durationMs: 300,
       });
+    } else if (effect.kind === 'passive' && effect.id === 'entry-damage-strongest') {
+      const victim = next.board
+        .filter((candidate) => candidate.owner !== piece.owner && pieceDefinition(candidate)?.type === 'unit')
+        .sort((left, right) => {
+          const l = (pieceDefinition(left)?.attack ?? 0) + left.attackModifier;
+          const r = (pieceDefinition(right)?.attack ?? 0) + right.attackModifier;
+          return r - l || left.instanceId.localeCompare(right.instanceId);
+        })[0];
+      if (victim) next = damagePiece(next, victim.instanceId, effect.value ?? 1, piece.owner, card.vfx.impactEffect);
     } else if (effect.kind === 'passive' && effect.id === 'entry-adjacent-enemy-damage') {
       const target = next.board.find(
         (candidate) => candidate.owner !== piece.owner && distance(candidate.position, piece.position) === 1,
@@ -1205,6 +1266,7 @@ export const playCard = (
   cardInstanceId: string,
   position?: Position,
   target?: SpellTarget,
+  offering = false,
 ): ActionResult => {
   const turnError = validateTurn(state, playerId);
   if (turnError) return turnError;
@@ -1240,16 +1302,36 @@ export const playCard = (
     state.board.some((piece) => piece.owner === playerId && piece.cardId === 'forja-carmesi');
   const usedUnitDiscount =
     card.type === 'unit' && player.unitDiscountPending && card.cost.generic > 0;
+  // Duna — Ofrenda: se cobra AQUÍ, con la carta ya pagada en Esencia y antes
+  // de que se resuelva nada. Si el jugador no puede permitírsela (le dejaría
+  // el Nexo a 0 o menos), la carta se juega sin ella en vez de rechazarse:
+  // rechazarla convertiría un extra opcional en un requisito.
+  const offeringBase = offeringOf(card);
+  const paysOffering =
+    offering && offeringBase !== undefined && canPayOffering(state, playerId, offeringBase);
+  const offeringToll = paysOffering ? offeringCost(state, playerId, offeringBase!) : 0;
   let nextPlayer: PlayerState = {
     ...player,
     hand: player.hand.filter((candidate) => candidate.instanceId !== cardInstanceId),
     resources: payment.resources,
+    nexusHealth: player.nexusHealth - offeringToll,
+    offeringsPaidThisTurn: (player.offeringsPaidThisTurn ?? 0) + (paysOffering ? 1 : 0),
     spellsCastThisTurn: card.type === 'instant' ? player.spellsCastThisTurn + 1 : player.spellsCastThisTurn,
     forgeBuffUsedThisTurn: player.forgeBuffUsedThisTurn || receivesForgeBuff,
     unitDiscountPending: player.unitDiscountPending && !usedUnitDiscount,
     stats: { ...player.stats, cardsPlayed: player.stats.cardsPlayed + 1 },
   };
   let next = withPlayer(state, playerId, nextPlayer);
+  if (paysOffering) {
+    next = enqueue(next, {
+      type: 'nexus-damage', actorId: playerId, targetId: `${playerId}-nexus`,
+      amount: offeringToll, effectId: 'duna-offering', durationMs: 320,
+    });
+    // Pasiva de Khaeris: la primera Ofrenda de cada turno le devuelve una carta.
+    if (player.commanderId === 'khaeris-la-balanza' && (player.offeringsPaidThisTurn ?? 0) === 0) {
+      next = drawInternal(next, playerId);
+    }
+  }
   if (payment.plan.resourceIds.length > 0) {
     next = enqueue(next, {
       type: 'mana-flow', actorId: playerId, targetId: cardInstanceId,
@@ -1339,7 +1421,7 @@ export const playCard = (
         amount: shieldAmount, effectId: 'commander-order-aura', durationMs: 300,
       });
     }
-    next = resolveEntryEffects(next, piece, card);
+    next = resolveEntryEffects(next, piece, card, paysOffering);
   } else {
     nextPlayer = next.players[playerId];
     next = withPlayer(next, playerId, {
@@ -1352,7 +1434,7 @@ export const playCard = (
       to: spellTargetPiece?.position,
       effectId: card.vfx.impactEffect ?? card.vfx.persistentEffect, durationMs: 420,
     });
-    next = resolveSpell(next, playerId, card, target);
+    next = resolveSpell(next, playerId, card, target, paysOffering);
     const afterSpell = next.players[playerId];
     const hasTower = next.board.some(
       (piece) => piece.owner === playerId && piece.cardId === 'torre-horizonte',
@@ -1636,7 +1718,12 @@ export const attackPiece = (
     next = healNexus(next, playerId, 1);
   }
   // Aturdir: la superviviente no podrá atacar en su próximo turno (sí moverse).
-  if (hit.dealt > 0 && card.keywords.includes('stun') && next.board.some((piece) => piece.instanceId === defenderId)) {
+  if (
+    hit.dealt > 0
+    && card.keywords.includes('stun')
+    && next.board.some((piece) => piece.instanceId === defenderId)
+    && !isStunImmune(next, defenderId)
+  ) {
     next = updatePiece(next, defenderId, (piece) => ({
       ...piece,
       statuses: [
@@ -1877,15 +1964,18 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
   // Se recorre la foto inicial del tablero: si una estructura muere a mitad
   // del mantenimiento (no puede hoy, pero podría), no queremos que el bucle
   // dependa de un array que cambia debajo.
-  const structures = state.board.filter(
-    (piece) => piece.owner === playerId && pieceDefinition(piece)?.type === 'structure',
-  );
+  // Unidades también, no solo estructuras: el Embalsamador de Duna cura al
+  // final del turno igual que un pozo, y separarlos obligaría a duplicar todo
+  // esto para las piezas que no son edificios.
+  const structures = state.board.filter((piece) => piece.owner === playerId);
   for (const structure of structures) {
     const card = pieceDefinition(structure);
     if (!card) continue;
     // Solo si sigue en pie: entre una estructura y otra puede haber muerto.
     if (!next.board.some((piece) => piece.instanceId === structure.instanceId)) continue;
-    for (const effect of card.effects) {
+    // Las ramas de Juicio se evalúan aquí, con la Vida tal como está al
+    // terminar el turno: es justo el momento que describe la carta.
+    for (const effect of activeEffects(card, { offered: false, judged: isUnderJudgement(next, playerId) })) {
       if (effect.kind !== 'passive') continue;
       const value = effect.value ?? 1;
       if (effect.id === 'upkeep-heal-nexus') {
@@ -1928,6 +2018,36 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
           next = updatePiece(next, ally.instanceId, (piece) => ({
             ...piece,
             statuses: [...piece.statuses, { kind: 'shielded', amount: value }],
+          }));
+        }
+      } else if (effect.id === 'upkeep-burn-nexus') {
+        // Quema sin curar: la Devoradora se alimenta del veredicto, no drena.
+        const result = damageNexus(next, enemyId, value, playerId, structure.instanceId, card);
+        next = result.state;
+        if (result.lethal) {
+          next = { ...next, winner: playerId, phase: 'finished' };
+          next = enqueue(next, {
+            type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`,
+            effectId: `${card.faction}-victory`, durationMs: 900,
+          });
+          return next;
+        }
+      } else if (effect.id === 'upkeep-draw') {
+        next = resolveDrawAndDiscard(next, playerId, value, 0);
+      } else if (effect.id === 'upkeep-grow-ally') {
+        // Crece la unidad más expuesta: reforzar a la que ya está sana
+        // desperdiciaría el turno casi siempre.
+        const ally = next.board
+          .filter((piece) => piece.owner === playerId && pieceDefinition(piece)?.type === 'unit')
+          .sort((left, right) =>
+            left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId),
+          )[0];
+        if (ally) {
+          next = updatePiece(next, ally.instanceId, (piece) => ({
+            ...piece,
+            attackModifier: piece.attackModifier + value,
+            currentHealth: piece.currentHealth + value,
+            permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + value,
           }));
         }
       } else if (effect.id === 'upkeep-loot') {
@@ -1978,6 +2098,7 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         commanderKillHealUsedThisTurn: false,
         commanderControlDrawUsedThisTurn: false,
         commanderDrainCountThisTurn: 0,
+        offeringsPaidThisTurn: 0,
       },
       [nextPlayerId]: {
         ...incoming,
@@ -1988,13 +2109,15 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         commanderKillHealUsedThisTurn: false,
         commanderControlDrawUsedThisTurn: false,
         commanderDrainCountThisTurn: 0,
+        offeringsPaidThisTurn: 0,
       },
     },
     board: state.board.map((piece) => ({
       ...piece,
       movedThisTurn: piece.owner === nextPlayerId ? false : piece.movedThisTurn,
       attackedThisTurn: piece.owner === nextPlayerId ? false : piece.attackedThisTurn,
-      attackModifier: piece.owner === playerId ? 0 : piece.attackModifier,
+      // Se vuelve al bono permanente, no a cero: lo que dio la Necrópolis se queda.
+      attackModifier: piece.owner === playerId ? (piece.permanentAttackBonus ?? 0) : piece.attackModifier,
       // Las palabras clave prestadas caducan con el turno de quien las recibió.
       grantedKeywords: piece.owner === playerId ? undefined : piece.grantedKeywords,
       // Horror Abisal: la ralentización dura exactamente el siguiente turno del enemigo.
@@ -2072,7 +2195,7 @@ export const applyAction = (state: MatchState, action: GameAction): ActionResult
     case 'play-resource':
       return playResource(state, action.playerId, action.cardInstanceId);
     case 'play-card':
-      return playCard(state, action.playerId, action.cardInstanceId, action.position, action.target);
+      return playCard(state, action.playerId, action.cardInstanceId, action.position, action.target, action.offering);
     case 'move':
       return movePiece(state, action.playerId, action.pieceId, action.to);
     case 'attack-piece':

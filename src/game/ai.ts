@@ -1,5 +1,6 @@
 import { distanceToCenter, distanceToEnemyNexusRow } from './board';
 import { CARD_BY_ID } from './cards';
+import { canPayOffering, offeringCost, offeringOf } from './duna';
 import { COMMANDER_BY_ID } from './decks';
 import {
   applyAction,
@@ -165,19 +166,39 @@ const chooseDeployment = (state: MatchState, me: PlayerId): Position | undefined
   })[0];
 };
 
+/**
+ * Colchón de Vida por debajo del cual la IA deja de pagar Ofrendas.
+ *
+ * Duna gana pagando con su Nexo, pero un bot que ofrenda siempre se suicida en
+ * cinco turnos. Con este margen paga mientras va sobrada y aprieta el freno en
+ * cuanto la partida se pone seria, que es más o menos lo que haría alguien.
+ */
+const AI_OFFERING_RESERVE = 12;
+
+/** ¿Le conviene a la IA pagar la Ofrenda de esta carta? */
+const shouldOffer = (state: MatchState, card: CardDefinition, me: PlayerId): boolean => {
+  const base = offeringOf(card);
+  if (base === undefined) return false;
+  if (!canPayOffering(state, me, base)) return false;
+  return state.players[me].nexusHealth - offeringCost(state, me, base) >= AI_OFFERING_RESERVE;
+};
+
 const actionForCard = (state: MatchState, instance: CardInstance, me: PlayerId): GameAction | undefined => {
   const card = CARD_BY_ID[instance.cardId];
   if (!card || card.type === 'mana') return undefined;
   if (!planManaPayment(state.players[me].resources, effectiveCost(state, me, card)).payable) return undefined;
+  // El campo solo se añade cuando de verdad se ofrenda: así las acciones de
+  // las otras seis facciones salen exactamente igual que antes.
+  const offering = shouldOffer(state, card, me) ? { offering: true } : {};
   if (card.type === 'unit' || card.type === 'structure') {
     const position = chooseDeployment(state, me);
     return position
-      ? { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, position }
+      ? { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, position, ...offering }
       : undefined;
   }
   const target = targetForCard(state, card, me);
   if (spellNeedsPiece(card) && (!target || target.kind !== 'piece')) return undefined;
-  return { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, target };
+  return { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, target, ...offering };
 };
 
 const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>, me: PlayerId): GameAction | undefined => {

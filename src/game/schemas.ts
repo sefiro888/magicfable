@@ -12,6 +12,7 @@ export const ManaCostSchema = z
         order: z.number().int().nonnegative().optional(),
         shadow: z.number().int().nonnegative().optional(),
         void: z.number().int().nonnegative().optional(),
+        duna: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -63,6 +64,12 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('refresh-move') }),
   z.object({ kind: z.literal('splash-weakest-enemy'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('destroy-all-enemy-structures'), gainEssencePerResistance: z.boolean() }),
+  z.object({ kind: z.literal('offering'), cost: z.number().int().positive() }),
+  z.object({ kind: z.literal('judgement') }),
+  z.object({ kind: z.literal('otherwise') }),
+  z.object({ kind: z.literal('always') }),
+  z.object({ kind: z.literal('slow-all-enemies'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('destroy-strongest-enemy') }),
   z.object({ kind: z.literal('passive'), id: z.string().min(1), value: z.number().optional() }),
 ]);
 

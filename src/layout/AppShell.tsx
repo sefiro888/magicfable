@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { PLAYABLE_FACTIONS } from '../game'
 import { usePreferences } from '../store/preferences'
 import { playSynthCue } from '../services/audio'
 import { useAudioMix, useSoundtrack } from '../services/useAudioMix'
@@ -84,7 +85,7 @@ export function AppShell() {
           <main className={styles.main}><Outlet /></main>
           <footer className={styles.footer}>
             <span>PROTOTIPO VERTICAL · IA Y MULTIJUGADOR</span>
-            <span>6 FACCIONES · NEXO 35</span>
+            <span>{PLAYABLE_FACTIONS.length} FACCIONES · NEXO 35</span>
           </footer>
         </div>
       )}

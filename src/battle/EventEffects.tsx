@@ -18,6 +18,7 @@ const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonl
   order: { color: '#f2cf68', glow: 'gold' },
   shadow: { color: '#b98ee0', glow: 'shadow' },
   void: { color: '#c775ff', glow: 'void' },
+  duna: { color: '#ffd76a', glow: 'gold' },
 }
 
 /**
