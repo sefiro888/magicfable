@@ -1,5 +1,6 @@
 import { act } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { useRecords, type MatchRecord } from '../store/records'
 import { AchievementToast } from './AchievementToast'
@@ -27,14 +28,25 @@ afterEach(() => {
   useRecords.getState().clear()
 })
 
+/**
+ * El aviso consulta la ruta actual —en la batalla no se muestra—, así que
+ * necesita un router alrededor para montarse.
+ */
+const renderEn = (ruta = '/') =>
+  render(
+    <MemoryRouter initialEntries={[ruta]}>
+      <AchievementToast />
+    </MemoryRouter>,
+  )
+
 describe('AchievementToast', () => {
   it('no muestra nada al montar sin logros nuevos', () => {
-    render(<AchievementToast />)
+    renderEn()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('anuncia un logro que se desbloquea después de montar', async () => {
-    render(<AchievementToast />)
+    renderEn()
     act(() => {
       useRecords.getState().addRecord(win())
     })
@@ -44,12 +56,24 @@ describe('AchievementToast', () => {
   it('no reanuncia un logro que ya estaba desbloqueado antes de montar', () => {
     // Simula abrir la app con una victoria previa ya registrada.
     useRecords.getState().addRecord(win())
-    render(<AchievementToast />)
+    renderEn()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('en la batalla se calla: el resumen final ya lista los logros', async () => {
+    // Aparecían los dos a la vez, el aviso flotando encima del resumen que ya
+    // los enumeraba, y en un móvil eso le roba al modal setenta píxeles de una
+    // pantalla que va justa.
+    renderEn('/battle')
+    act(() => {
+      useRecords.getState().addRecord(win())
+    })
+    await waitFor(() => expect(useRecords.getState().records).toHaveLength(1))
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('encola dos logros desbloqueados a la vez y muestra el primero', async () => {
-    render(<AchievementToast />)
+    renderEn()
     act(() => {
       // Turno 7 desbloquea a la vez «Primera sangre» y «Victoria relámpago».
       useRecords.getState().addRecord(win({ turns: 7 }))

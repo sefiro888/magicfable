@@ -336,3 +336,79 @@ for (const ancho of [375, 390]) {
     }
   })
 }
+
+/**
+ * El resumen de fin de partida es lo último que ve el jugador y en un móvil va
+ * justo de alto: con gráfica, racha, reto diario y dos logros llega casi al
+ * borde. Aquí se comprueba que cabe entero, que los botones quedan dentro de
+ * la pantalla y que nada de lo que se pulsa baja de la medida del pulgar.
+ */
+for (const ancho of [375, 390]) {
+  test(`el resumen de fin de partida cabe en un móvil de ${ancho}`, async ({ page }) => {
+    test.setTimeout(90_000)
+    const historial = Array.from({ length: 20 }, (_, index) => ({
+      turn: index + 1,
+      player: Math.max(6, 35 - index * 1.4),
+      ai: Math.max(0, 35 - index * 1.7),
+    }))
+    await page.addInitScript(() => {
+      localStorage.setItem('cronicas-nexo-howto-visto', '1')
+      localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
+        state: { muted: true, confirmEndTurn: false }, version: 7,
+      }))
+    })
+
+    // Jugar veinte turnos de verdad sería lento y frágil: la partida terminada
+    // se siembra ya resuelta.
+    const { STARTER_DECKS, createMatch } = await import('../src/game')
+    const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 99)
+    const match = {
+      ...base,
+      turn: 20,
+      phase: 'finished' as const,
+      winner: 'player' as const,
+      players: {
+        ...base.players,
+        player: {
+          ...base.players.player, mulliganTaken: true, nexusHealth: 6,
+          stats: { cardsPlayed: 22, damageDealt: 58 },
+        },
+        ai: { ...base.players.ai, mulliganTaken: true, nexusHealth: 0 },
+      },
+    }
+    await page.addInitScript(([m, h]) => {
+      localStorage.setItem('cronicas-nexo-match', JSON.stringify({
+        state: {
+          match: m, history: [], matchLog: [], healthHistory: h,
+          startedAtMs: Date.now() - 900000, elapsedSeconds: 912,
+        },
+        version: 2,
+      }))
+    }, [match, historial] as const)
+
+    await page.setViewportSize({ width: ancho, height: ancho === 375 ? 812 : 844 })
+    await page.goto('/battle')
+    await expect(page.getByRole('button', { name: /Volver al inicio/i })).toBeVisible({ timeout: 25_000 })
+    await page.waitForTimeout(1500)
+
+    const medida = await page.evaluate(() => {
+      const acciones = document.querySelector('[class*="resultActions"]') as HTMLElement | null
+      const descarga = document.querySelector('[class*="downloadLog"]') as HTMLElement | null
+      const caja = acciones?.getBoundingClientRect()
+      const cajaDescarga = descarga?.getBoundingClientRect()
+      return {
+        botonesDentro: caja ? caja.top >= 0 && caja.bottom <= window.innerHeight : false,
+        descargaAlto: cajaDescarga ? Math.round(cajaDescarga.height) : 0,
+        // El aviso flotante de logros no puede solaparse con el resumen: lo
+        // duplica y le quita alto a una pantalla que va justa.
+        avisoFlotante: document.querySelectorAll('[class*="toast"]').length,
+      }
+    })
+    expect(medida.botonesDentro, 'los botones del resumen se salen de la pantalla').toBe(true)
+    expect(medida.descargaAlto, 'descargar el registro es un botón y se pulsa').toBeGreaterThanOrEqual(38)
+    expect(medida.avisoFlotante, 'el aviso de logros duplica el resumen').toBe(0)
+
+    // Y la gráfica dice con cuánta Vida acabó cada uno, no solo que bajaban.
+    await expect(page.getByText(/Tu Nexo · \d+/)).toBeVisible()
+  })
+}

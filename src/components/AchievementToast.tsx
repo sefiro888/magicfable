@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useRecords } from '../store/records'
 import { evaluateAchievements, type Achievement } from '../store/achievements'
 import styles from './AchievementToast.module.css'
@@ -11,6 +12,11 @@ import styles from './AchievementToast.module.css'
  */
 export function AchievementToast() {
   const records = useRecords((state) => state.records)
+  // Los logros se desbloquean al terminar una partida, y justo entonces el
+  // resumen de fin de batalla ya los lista dentro del propio modal. Sacarlos
+  // además flotando arriba duplica la noticia y, en un móvil, le roba al
+  // resumen setenta píxeles de una pantalla que va justa.
+  const enBatalla = useLocation().pathname === '/battle'
   const seen = useRef<Set<string> | undefined>(undefined)
   const [queue, setQueue] = useState<readonly Achievement[]>([])
 
@@ -36,7 +42,7 @@ export function AchievementToast() {
   }, [queue])
 
   const current = queue[0]
-  if (!current) return null
+  if (!current || enBatalla) return null
 
   return (
     <div className={styles.toast} role="status" key={current.id}>

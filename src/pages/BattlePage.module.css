@@ -417,6 +417,9 @@
 .healthChart svg { width: 100%; max-width: 260px; height: auto; }
 .healthChartMine { fill: none; stroke: var(--gold-bright); stroke-width: 2; }
 .healthChartRival { fill: none; stroke: #ff6b5b; stroke-width: 2; }
+/* Escala de la gráfica: apenas visible, solo lo justo para dar referencia. */
+.healthChartGrid { stroke: rgba(255,255,255,.12); stroke-width: 1; stroke-dasharray: 3 4; }
+.healthChartScale { fill: #6f6c65; font-size: 8px; font-family: var(--display); }
 .healthChartLegend { display: flex; gap: 16px; font-size: 10px; }
 .healthChartLegend .healthChartMine, .healthChartLegend .healthChartRival { fill: currentColor; }
 .healthChartLegend span:first-child { color: var(--gold-bright); }
@@ -651,6 +654,9 @@
   .glossaryButton { right: 52px; }
   .photoModeButton { right: 98px; }
   .photoModeHint { top: auto; bottom: 252px; }
+
+  /* Descargar el registro es un botón de verdad y medía 32 px de alto. */
+  .downloadLog { min-height: 40px; padding: 8px 10px; font-size: 11px; }
 
   /* Crónica de batalla: redundante en móvil con el aviso central de eventos. */
   .historyLogWrap { display: none; }
