@@ -17,6 +17,18 @@ export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
     definition: 'La energía de las runas quebradas. Cada fuente produce 1 de Esencia de su variante por turno; los costes de color solo se pagan con su variante.',
   },
   {
+    id: 'ofrenda',
+    terms: ['Ofrenda'],
+    label: 'Ofrenda',
+    definition: 'Duna. Al jugar la carta puedes pagar esa cantidad de Vida de tu propio Nexo para obtener el efecto mejorado. Es opcional: si no te queda Vida suficiente, la carta se juega sin ella.',
+  },
+  {
+    id: 'juicio',
+    terms: ['Juicio'],
+    label: 'Juicio',
+    definition: 'Duna. Si tu Nexo tiene MENOS Vida que el del rival, la carta hace además lo que dice tras «Juicio». Ir empatado no basta: hay que ir por detrás.',
+  },
+  {
     id: 'ruinas',
     terms: ['Ruinas', 'Escombros'],
     label: 'Ruinas',

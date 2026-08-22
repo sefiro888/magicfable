@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * Capturas de los tres escenarios 3D, para poder compararlos de verdad
+ * Capturas de los cuatro escenarios 3D, para poder compararlos de verdad
  * mientras se trabaja su aspecto. Igual que board-shot: fuera del gate.
  *
  *   RUN_SHOTS=1 npx playwright test e2e/scenario-shots.spec.ts
  */
 test.skip(!process.env.RUN_SHOTS, 'solo bajo demanda con RUN_SHOTS=1')
 
-const SCENARIOS = ['aether-citadel', 'sanctuary', 'caldera'] as const
+const SCENARIOS = ['aether-citadel', 'sanctuary', 'caldera', 'duna'] as const
 
 for (const scenario of SCENARIOS) {
   test(`captura del escenario ${scenario}`, async ({ page }) => {
@@ -16,7 +16,7 @@ for (const scenario of SCENARIOS) {
     await page.addInitScript((value) => {
       localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
         state: { scenario: value, graphicsQuality: 'high', muted: true },
-        version: 4,
+        version: 7,
       }))
       localStorage.setItem('cronicas-nexo-howto-visto', '1')
     }, scenario)

@@ -899,3 +899,138 @@ export const marbleTexture = (): CanvasTexture => {
   }
   return finishTexture('marble', canvas);
 };
+
+/**
+ * Arenisca tallada: la piedra de Duna. Vetas horizontales de sedimento, poros
+ * y una retícula muy tenue de sillares, con jeroglíficos apuntados de vez en
+ * cuando. Se dibuja a propósito muy poco contrastada: sobre ella van columnas
+ * enormes, y una textura ruidosa las convertiría en confeti a lo lejos.
+ */
+export const sandstoneTexture = (): CanvasTexture => {
+  const cached = cache.get('sandstone');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x44554e41);
+
+  context.fillStyle = '#c9a86a';
+  context.fillRect(0, 0, size, size);
+  // Vetas de sedimento: bandas horizontales, que es como se deposita la arenisca.
+  for (let index = 0; index < 48; index += 1) {
+    const y = random() * size;
+    const alto = 2 + random() * 14;
+    const tono = 176 + Math.floor(random() * 46);
+    context.fillStyle = `rgba(${tono}, ${tono - 26}, ${tono - 74}, ${0.2 + random() * 0.3})`;
+    context.fillRect(0, y, size, alto);
+  }
+  // Poros y grano.
+  for (let index = 0; index < 1400; index += 1) {
+    const tono = 150 + Math.floor(random() * 80);
+    context.fillStyle = `rgba(${tono}, ${tono - 30}, ${tono - 80}, ${0.12 + random() * 0.25})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 2, 1 + random() * 2);
+  }
+  // Juntas de sillar, apenas insinuadas.
+  context.strokeStyle = 'rgba(120, 92, 48, 0.28)';
+  context.lineWidth = 1;
+  for (let y = 0; y <= size; y += 64) {
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(size, y);
+    context.stroke();
+  }
+  for (let fila = 0; fila * 64 <= size; fila += 1) {
+    const desfase = fila % 2 === 0 ? 0 : 48;
+    for (let x = desfase; x <= size; x += 96) {
+      context.beginPath();
+      context.moveTo(x, fila * 64);
+      context.lineTo(x, fila * 64 + 64);
+      context.stroke();
+    }
+  }
+  // Jeroglíficos: trazos cortos agrupados en cartuchos, sin dibujar nada
+  // legible — a esta distancia solo cuenta la silueta.
+  context.strokeStyle = 'rgba(96, 72, 34, 0.4)';
+  for (let grupo = 0; grupo < 10; grupo += 1) {
+    const x = 20 + random() * (size - 60);
+    const y = 20 + random() * (size - 60);
+    for (let signo = 0; signo < 5; signo += 1) {
+      context.lineWidth = 1 + random();
+      context.beginPath();
+      const sy = y + signo * 9;
+      context.moveTo(x, sy);
+      context.lineTo(x + 4 + random() * 9, sy);
+      context.moveTo(x + 2, sy - 3);
+      context.lineTo(x + 2, sy + 3);
+      context.stroke();
+    }
+  }
+  return finishTexture('sandstone', canvas);
+};
+
+/**
+ * Arena de duna: grano fino con la ondulación que deja el viento. Va en el
+ * suelo, que ocupa media pantalla, así que el patrón se mantiene suave para
+ * que no cintilee al mover la cámara.
+ */
+export const desertSandTexture = (): CanvasTexture => {
+  const cached = cache.get('desert-sand');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x53414e44);
+
+  context.fillStyle = '#dcbc82';
+  context.fillRect(0, 0, size, size);
+  // Rizos del viento: ondas paralelas, ligeramente irregulares.
+  for (let index = 0; index < 60; index += 1) {
+    const y = (index / 60) * size + (random() - 0.5) * 5;
+    context.strokeStyle = `rgba(196, 158, 100, ${0.16 + random() * 0.2})`;
+    context.lineWidth = 2 + random() * 3;
+    context.beginPath();
+    context.moveTo(0, y);
+    for (let x = 0; x <= size; x += 24) context.lineTo(x, y + Math.sin(x / 46 + index) * 4);
+    context.stroke();
+  }
+  for (let index = 0; index < 2200; index += 1) {
+    const tono = 205 + Math.floor(random() * 45);
+    context.fillStyle = `rgba(${tono}, ${tono - 34}, ${tono - 92}, ${0.1 + random() * 0.2})`;
+    context.fillRect(random() * size, random() * size, 1, 1);
+  }
+  return finishTexture('desert-sand', canvas);
+};
+
+/**
+ * Cielo de mediodía en el desierto: azul lavado arriba, blanco cegador cerca
+ * del horizonte y una franja dorada donde la calima levanta el polvo.
+ *
+ * El azul de arriba es lo que salva el escenario: sin él, con la arena y la
+ * piedra del mismo tono, la escena entera se convierte en una mancha amarilla
+ * sin profundidad.
+ */
+export const desertSkyTexture = (): CanvasTexture => {
+  const cached = cache.get('desert-sky');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x53554e21);
+
+  const sky = context.createLinearGradient(0, 0, 0, size);
+  sky.addColorStop(0, '#4d86bd');
+  sky.addColorStop(0.24, '#7cabd4');
+  sky.addColorStop(0.44, '#b7cfe0');
+  sky.addColorStop(0.6, '#e9e2cd');
+  sky.addColorStop(0.72, '#f6e3b4');
+  sky.addColorStop(0.85, '#e9c98d');
+  sky.addColorStop(1, '#d9b478');
+  context.fillStyle = sky;
+  context.fillRect(0, 0, size, size);
+
+  // Calima: velos horizontales muy tenues en la franja baja, que es la única
+  // que la cámara llega a ver.
+  for (let index = 0; index < 26; index += 1) {
+    const y = size * (0.55 + random() * 0.4);
+    context.fillStyle = `rgba(255, 240, 205, ${0.04 + random() * 0.07})`;
+    context.fillRect(0, y, size, 6 + random() * 26);
+  }
+  return finishTexture('desert-sky', canvas);
+};

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high'
-export type ScenarioId = 'aether-citadel' | 'sanctuary' | 'caldera'
+export type ScenarioId = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna'
 export type AiDifficulty = 'easy' | 'normal' | 'hard'
 
 export interface PreferencesState {

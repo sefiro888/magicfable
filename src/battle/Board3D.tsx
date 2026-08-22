@@ -38,6 +38,9 @@ const SanctuaryScenario = lazy(() =>
 const CalderaScenario = lazy(() =>
   import('./scenarios/CalderaScenario').then((m) => ({ default: m.CalderaScenario })),
 )
+const DunaNecropolis = lazy(() =>
+  import('./scenarios/DunaNecropolis').then((m) => ({ default: m.DunaNecropolis })),
+)
 
 interface Board3DProps {
   state: MatchState
@@ -1071,6 +1074,8 @@ function Scene(props: Board3DProps) {
           <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'caldera' ? (
           <CalderaScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'duna' ? (
+          <DunaNecropolis quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : (
           <SanctuaryScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         )}

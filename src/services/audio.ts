@@ -321,7 +321,7 @@ export function playSynthCue(cue: SoundCue): void {
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────
 
-export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'menu'
+export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'menu'
 
 /**
  * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
@@ -361,7 +361,7 @@ interface AmbienceProfile {
     detune: number
   }
   detail: {
-    kind: 'chime' | 'drip' | 'ember'
+    kind: 'chime' | 'drip' | 'ember' | 'sandgust'
     /** Separación mínima y máxima entre sucesos, en segundos. */
     everyMin: number
     everyMax: number
@@ -387,6 +387,14 @@ export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
     air: { color: 'brown', cutoff: 190, sweep: 110, breath: 0.09, gain: 0.22 },
     drone: { root: 65.4, intervals: [0, 1, 12], wave: 'sawtooth', gain: 0.045, detune: 9 },
     detail: { kind: 'ember', everyMin: 1.6, everyMax: 5, gain: 0.1 },
+  },
+  // Desierto a mediodía: viento seco y ancho, tono cálido de quinta abierta y
+  // rachas de arena de vez en cuando. Nada de agua ni de cristal: la Necrópolis
+  // tiene que sonar a sitio sin sombra.
+  duna: {
+    air: { color: 'pink', cutoff: 1150, sweep: 620, breath: 0.042, gain: 0.17 },
+    drone: { root: 73.4, intervals: [0, 7, 14], wave: 'triangle', gain: 0.05, detune: 7 },
+    detail: { kind: 'sandgust', everyMin: 5, everyMax: 13, gain: 0.13 },
   },
   // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
   menu: {
@@ -460,6 +468,31 @@ const playDetail = (active: Engine, handle: AmbienceHandle, profile: AmbiencePro
     filter.Q.value = 1.2
     filter.frequency.value = 900 + Math.random() * 2200
     gain.gain.setValueAtTime(profile.detail.gain * (0.5 + Math.random() * 0.5), at)
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + duration)
+    source.connect(filter).connect(gain)
+    source.start(at)
+    source.stop(at + duration)
+    handle.sources.add(source)
+    source.addEventListener('ended', () => handle.sources.delete(source))
+    return
+  }
+
+  if (profile.detail.kind === 'sandgust') {
+    // Racha de arena: ruido filtrado que entra y sale despacio, con el corte
+    // barriendo hacia arriba — el siseo del grano al levantarse y posarse.
+    const duration = 1.6 + Math.random() * 1.8
+    const buffer = context.createBuffer(1, Math.max(1, Math.floor(context.sampleRate * duration)), context.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1
+    const source = context.createBufferSource()
+    source.buffer = buffer
+    const filter = context.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.Q.value = 0.7
+    filter.frequency.setValueAtTime(700 + Math.random() * 400, at)
+    filter.frequency.linearRampToValueAtTime(2200 + Math.random() * 900, at + duration)
+    gain.gain.setValueAtTime(0.0001, at)
+    gain.gain.exponentialRampToValueAtTime(profile.detail.gain * (0.6 + Math.random() * 0.5), at + duration * 0.35)
     gain.gain.exponentialRampToValueAtTime(0.0001, at + duration)
     source.connect(filter).connect(gain)
     source.start(at)
