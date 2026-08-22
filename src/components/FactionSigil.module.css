@@ -25,6 +25,7 @@
 .order { --sigil-color: #efd58b; }
 .shadow { --sigil-color: #a77ac5; }
 .void { --sigil-color: #c77dff; }
+.duna { --sigil-color: #ffd76a; }
 
 @media (prefers-reduced-motion: reduce) {
   .sigil { filter: none; }

@@ -51,6 +51,7 @@ export function GalleryPage() {
     return () => window.removeEventListener('keydown', close)
   }, [inspected])
 
+  const setCount = useMemo(() => new Set(CARDS.map((card) => card.set)).size, [])
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('es')
     return CARDS.filter((card) => {
@@ -88,7 +89,9 @@ export function GalleryPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}><div><small>Archivo NEX-01 · Despertar</small><h1>Galería de cartas</h1></div><div className={styles.count}><strong>{filtered.length}</strong> de {CARDS.length} diseños</div></header>
+      {/* El rótulo se deriva de las cartas: decía «NEX-01 · Despertar» a mano y
+          dejó de ser cierto en cuanto llegó la segunda oleada. */}
+      <header className={styles.header}><div><small>Archivo del Nexo · {setCount} conjuntos</small><h1>Galería de cartas</h1></div><div className={styles.count}><strong>{filtered.length}</strong> de {CARDS.length} diseños</div></header>
       <div className={styles.filters}>
         <input className={styles.search} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, regla o historia…" aria-label="Buscar cartas" />
         <select className={styles.select} value={type} onChange={(event) => setType(event.target.value as FilterValue<CardType>)} aria-label="Filtrar por tipo"><option value="all">Todos los tipos</option>{CARD_TYPES.map((value) => <option key={value} value={value}>{TYPE_LABELS[value]}</option>)}</select>
