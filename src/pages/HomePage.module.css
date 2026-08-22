@@ -121,7 +121,12 @@
   .cardFan { display: none; }
   .featureStrip { grid-template-columns: repeat(2, 1fr); margin: -30px 14px 0; }
   .feature { padding: 15px 17px; }
-  .heroContent { padding: 44px 16px 70px; }
+  /* El héroe ocupaba la altura entera de la pantalla y no dejaba asomar nada:
+     al abrir el juego en el móvil no había ninguna pista de que debajo hubiera
+     más. Con el 76% asoma ya el borde de la franja de datos, que es lo que
+     invita a seguir bajando. */
+  .hero { min-height: min(620px, calc(76vh - 76px)); }
+  .heroContent { padding: 34px 16px 52px; }
   .title { font-size: clamp(42px, 14vw, 64px); }
   .lead { font-size: 15px; }
   .buttons { flex-wrap: wrap; }

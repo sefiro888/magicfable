@@ -88,7 +88,7 @@ export function HomePage() {
       )}
 
       <section className={styles.section}>
-        <header className={styles.sectionHeader}><small>Elige tu vínculo</small><h2>Seis fuerzas despiertan</h2></header>
+        <header className={styles.sectionHeader}><small>Elige tu vínculo</small><h2>{PLAYABLE_FACTIONS.length} fuerzas despiertan</h2></header>
         <div className={styles.factions}>
           {PLAYABLE_FACTIONS.map((faction) => (
             <article key={faction.id} className={`${styles.faction} ${styles[faction.id]}`}>
