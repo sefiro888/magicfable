@@ -77,7 +77,7 @@ export const canPayOffering = (state: MatchState, playerId: PlayerId, base: numb
  */
 export const activeEffects = (
   card: CardDefinition,
-  options: { readonly offered: boolean; readonly judged: boolean },
+  options: { readonly offered: boolean; readonly judged: boolean; readonly hasMandate?: boolean },
 ): readonly CardEffect[] => {
   const active: CardEffect[] = [];
   let skipping = false;
@@ -91,6 +91,13 @@ export const activeEffects = (
     if (effect.kind === 'judgement') {
       lastConditionMet = options.judged;
       skipping = !options.judged;
+      continue;
+    }
+    // Jade — el Mandato: mismo patrón de rama que Ofrenda/Juicio, para poder
+    // combinar «Mandato: …» con lo que ya sabe resolver este podador.
+    if (effect.kind === 'mandate') {
+      lastConditionMet = options.hasMandate ?? false;
+      skipping = !lastConditionMet;
       continue;
     }
     if (effect.kind === 'otherwise') {

@@ -21,6 +21,7 @@ const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonl
   duna: { color: '#ffd76a', glow: 'gold' },
   fimbul: { color: '#d8a944', glow: 'ember' },
   samsara: { color: '#ffd27a', glow: 'ember' },
+  jade: { color: '#f2c14e', glow: 'ember' },
 }
 
 /**

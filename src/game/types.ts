@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -122,7 +122,18 @@ export type CardEffect =
   | { readonly kind: 'return-fallen-allies'; readonly bonus: number }
   /** Poder de Indrayani: devuelve del cementerio toda unidad con Renacer que aún no lo gastó. */
   | { readonly kind: 'return-graveyard-renacer' }
+  /** Jade — abre una rama que solo cuenta si el jugador tiene el Mandato Celestial. */
+  | { readonly kind: 'mandate' }
+  /**
+   * Jade: reclama el Mandato Celestial para quien juega o despliega la carta.
+   * Mandato Revocado: si se lo arrebata al rival, además roba `bonusDrawIfRivalHeld`.
+   */
+  | { readonly kind: 'claim-mandate'; readonly bonusDrawIfRivalHeld?: number }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
+
+/** Jade — los cinco elementos: cada uno genera al siguiente en el ciclo fijo. */
+export const ELEMENTS = ['madera', 'fuego', 'tierra', 'metal', 'agua'] as const;
+export type Element = (typeof ELEMENTS)[number];
 
 export interface CardDefinition {
   readonly id: string;
@@ -135,6 +146,8 @@ export interface CardDefinition {
   readonly cost: ManaCost;
   readonly rules: string;
   readonly flavor: string;
+  /** Jade — Generación: qué elemento lleva esta carta, si es que lleva alguno. */
+  readonly element?: Element;
   readonly attack?: number;
   readonly health?: number;
   readonly resistance?: number;
@@ -342,6 +355,8 @@ export interface PlayerState {
   readonly unitsDiedThisTurnLog?: readonly string[];
   /** Pasiva de Indrayani: ya se robó por la primera muerte propia de este turno. */
   readonly firstUnitDeathDrawUsedThisTurn?: boolean;
+  /** Pasiva de Xiwangmu: ya se aplicó el descuento a la primera carta de este turno. */
+  readonly firstCardDiscountUsedThisTurn?: boolean;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;
@@ -402,6 +417,8 @@ export interface MatchState {
   readonly animations: readonly AnimationEvent[];
   readonly winner?: PlayerId;
   readonly startedAtTurn: number;
+  /** Jade — el Mandato Celestial: un único favor que está en poder de un jugador, o de ninguno. */
+  readonly mandate?: PlayerId;
 }
 
 export type SpellTarget =

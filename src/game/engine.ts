@@ -5,6 +5,7 @@ import { activeEffects, canPayOffering, isUnderJudgement, offeringCost, offering
 import { isChallenge, isFurious } from './fimbul';
 import { payMana, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
+import { ELEMENTS } from './types';
 import type { ManaCost } from './types';
 import { deriveSeed, shuffleSeeded } from './random';
 import { validateDeck } from './deck-validation';
@@ -829,7 +830,7 @@ const resolveSpell = (
   let damageDealt = 0;
   // Duna: las ramas de Ofrenda y Juicio se podan aquí, así que el bucle no se
   // entera de que existen.
-  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster) })) {
+  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster), hasMandate: next.mandate === caster })) {
     const targetPiece = requireTargetPiece(next, target);
     if (effect.kind === 'damage' && targetPiece) {
       const bonus = frozenAtCast
@@ -878,6 +879,14 @@ const resolveSpell = (
     } else if (effect.kind === 'freeze' && targetPiece) {
       next = addStatus(next, targetPiece.instanceId, effect.duration);
       next = applySialuDraw(next, caster, targetPiece.instanceId);
+    } else if (effect.kind === 'passive' && effect.id === 'freeze-all-enemies') {
+      // Eclipse del Dragón (Jade): congela TODAS las unidades enemigas a la vez.
+      const duration = effect.value ?? 1;
+      for (const enemy of next.board.filter(
+        (piece) => piece.owner !== caster && pieceDefinition(piece)?.type === 'unit',
+      )) {
+        next = addStatus(next, enemy.instanceId, duration);
+      }
     } else if (effect.kind === 'stun' && targetPiece && !isStunImmune(next, targetPiece.instanceId)) {
       // Mismo cálculo que el aturdir de combate: turno + 2 cubre exactamente
       // el siguiente turno de su dueño, ni más ni menos.
@@ -980,6 +989,15 @@ const resolveSpell = (
           hand: [...next.players[caster].hand, ...revived],
           unitsDiedThisTurnLog: [],
         });
+      }
+    } else if (effect.kind === 'claim-mandate') {
+      // Jade: el Mandato Celestial pasa a manos de quien lanza la carta,
+      // arrebatándoselo al rival si lo tenía. Mandato Revocado premia
+      // arrebatarlo de verdad con cartas extra.
+      const rivalHeldIt = next.mandate !== undefined && next.mandate !== caster;
+      next = { ...next, mandate: caster };
+      if (rivalHeldIt && effect.bonusDrawIfRivalHeld) {
+        next = resolveDrawAndDiscard(next, caster, effect.bonusDrawIfRivalHeld, 0);
       }
     } else if (effect.kind === 'return-graveyard-renacer') {
       // Poder de Indrayani: recupera del cementerio TODA carta con Renacer,
@@ -1150,7 +1168,8 @@ const resolveEntryEffects = (
   offered = false,
 ): MatchState => {
   let next = state;
-  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner) })) {
+  const resolvedEffects = activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner), hasMandate: next.mandate === piece.owner });
+  for (const effect of resolvedEffects) {
     if (effect.kind === 'adjacent-damage') {
       if (effect.trigger === 'attack') continue;
       const targets = next.board.filter(
@@ -1271,6 +1290,8 @@ const resolveEntryEffects = (
       if ((next.players[piece.owner].unitsDiedThisTurn ?? 0) > 0) {
         next = resolveDrawAndDiscard(next, opponentOf(piece.owner), 0, effect.value ?? 1);
       }
+    } else if (effect.kind === 'claim-mandate') {
+      next = { ...next, mandate: piece.owner };
     } else if (effect.kind === 'destroy-low-health-all') {
       // Danzante de la Destrucción: barrido de Vida baja, sin distinguir bando.
       for (const target of next.board.filter(
@@ -1292,7 +1313,7 @@ const resolveEntryEffects = (
       };
     }
   }
-  const discardEffect = card.effects.find((effect) => effect.kind === 'discard');
+  const discardEffect = resolvedEffects.find((effect) => effect.kind === 'discard');
   if (discardEffect?.kind === 'discard') {
     const target = discardEffect.target === 'enemy-hand' ? opponentOf(piece.owner) : piece.owner;
     next = resolveDrawAndDiscard(next, target, 0, discardEffect.amount);
@@ -1529,7 +1550,15 @@ export const playCard = (
   // consigo un descuento de coste genérico para este despliegue.
   const baseCost = effectiveCost(state, playerId, card);
   const renacerDiscount = Math.min(baseCost.generic, instance.costDiscount ?? 0);
-  const cost = renacerDiscount > 0 ? { ...baseCost, generic: baseCost.generic - renacerDiscount } : baseCost;
+  // Xiwangmu (Jade): mientras tengas el Mandato, la primera carta de cada turno cuesta 1 menos.
+  const xiwangmuDiscount =
+    player.commanderId === 'xiwangmu-la-reina-madre'
+    && state.mandate === playerId
+    && !player.firstCardDiscountUsedThisTurn
+      ? Math.min(baseCost.generic - renacerDiscount, 1)
+      : 0;
+  const totalDiscount = renacerDiscount + xiwangmuDiscount;
+  const cost = totalDiscount > 0 ? { ...baseCost, generic: baseCost.generic - totalDiscount } : baseCost;
   const payment = payMana(player.resources, cost);
   if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay Esencia disponible suficiente.');
   const receivesForgeBuff =
@@ -1555,6 +1584,7 @@ export const playCard = (
     spellsCastThisTurn: card.type === 'instant' ? player.spellsCastThisTurn + 1 : player.spellsCastThisTurn,
     forgeBuffUsedThisTurn: player.forgeBuffUsedThisTurn || receivesForgeBuff,
     unitDiscountPending: player.unitDiscountPending && !usedUnitDiscount,
+    firstCardDiscountUsedThisTurn: player.firstCardDiscountUsedThisTurn || xiwangmuDiscount > 0,
     stats: { ...player.stats, cardsPlayed: player.stats.cardsPlayed + 1 },
   };
   let next = withPlayer(state, playerId, nextPlayer);
@@ -1616,18 +1646,28 @@ export const playCard = (
     // Samsara — Renacer/Karma: bonos permanentes que la copia trae de vuelta de la mano.
     const renacerBonusAttack = instance.bonusAttack ?? 0;
     const renacerBonusHealth = instance.bonusHealth ?? 0;
+    // Jade — Generación: +1/+1 si ya controlas una unidad del elemento que
+    // genera al de esta carta (Madera→Fuego→Tierra→Metal→Agua→Madera).
+    const elementBonus =
+      card.type === 'unit' && card.element
+      && state.board.some(
+        (ally) => ally.owner === playerId && pieceDefinition(ally)?.element === elementGeneratorOf(card.element!),
+      )
+        ? 1
+        : 0;
+    const permanentBonus = renacerBonusAttack + elementBonus;
     const piece: BoardPiece = {
       instanceId: instance.instanceId,
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth,
-      attackModifier: (receivesForgeBuff ? 1 : 0) + renacerBonusAttack,
+      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus,
+      attackModifier: (receivesForgeBuff ? 1 : 0) + permanentBonus,
       movedThisTurn: false,
       attackedThisTurn: false,
       enteredOnTurn: nyxarisRush ? state.turn - 1 : state.turn,
       statuses: asterinShield ? [{ kind: 'shielded', amount: shieldAmount }] : [],
-      ...(renacerBonusAttack > 0 ? { permanentAttackBonus: renacerBonusAttack } : {}),
+      ...(permanentBonus > 0 ? { permanentAttackBonus: permanentBonus } : {}),
       ...(instance.renacerSpent ? { renacerSpent: true } : {}),
     };
     next = { ...next, board: [...next.board, piece] };
@@ -1949,9 +1989,20 @@ const computeAttackAmount = (
     && state.board.some((piece) => piece.owner === attacker.owner && piece.cardId === 'jarl-de-la-costa')
       ? 1
       : 0;
+  // Monje de la Montaña (Jade): +2 de Ataque mientras tengas el Mandato.
+  const mandateBuff = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'mandate-attack-bonus');
+  const mandateBonus = mandateBuff?.kind === 'passive' && state.mandate === attacker.owner ? mandateBuff.value ?? 0 : 0;
+  // General de los Mil Estandartes: da +1 de Ataque a sus OTRAS unidades
+  // mientras tenga el Mandato. Aura, igual que la del Jarl de la Costa.
+  const generalBonus =
+    card.id !== 'general-de-los-mil-estandartes'
+    && state.mandate === attacker.owner
+    && state.board.some((piece) => piece.owner === attacker.owner && piece.cardId === 'general-de-los-mil-estandartes')
+      ? 1
+      : 0;
   return Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus - shielded);
+    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus + mandateBonus + generalBonus - shielded);
 };
 
 export const attackPiece = (
@@ -2275,7 +2326,13 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
     if (!next.board.some((piece) => piece.instanceId === structure.instanceId)) continue;
     // Las ramas de Juicio se evalúan aquí, con la Vida tal como está al
     // terminar el turno: es justo el momento que describe la carta.
-    for (const effect of activeEffects(card, { offered: false, judged: isUnderJudgement(next, playerId) })) {
+    // Palacio de Jade: si no tienes el Mandato, la propia estructura lo
+    // reclama al final del turno — es la excepción que confirma la regla, así
+    // que se mira aparte de las ramas normales de «Mandato: …».
+    if (card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'claim-mandate-if-missing') && next.mandate !== playerId) {
+      next = { ...next, mandate: playerId };
+    }
+    for (const effect of activeEffects(card, { offered: false, judged: isUnderJudgement(next, playerId), hasMandate: next.mandate === playerId })) {
       if (effect.kind !== 'passive') continue;
       const value = effect.value ?? 1;
       if (effect.id === 'upkeep-heal-nexus') {
@@ -2392,6 +2449,12 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
 /** Tope de mano por encima del cual el mantenimiento deja de robar. */
 const UPKEEP_HAND_LIMIT = 5;
 
+/** Jade — Generación: qué elemento genera al elemento dado, en el ciclo fijo de cinco. */
+const elementGeneratorOf = (element: (typeof ELEMENTS)[number]): (typeof ELEMENTS)[number] => {
+  const index = ELEMENTS.indexOf(element);
+  return ELEMENTS[(index - 1 + ELEMENTS.length) % ELEMENTS.length]!;
+};
+
 export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => {
   const turnError = validateTurn(state, playerId);
   if (turnError) return turnError;
@@ -2400,6 +2463,11 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
   const afterUpkeep = resolveStructureUpkeep(state, playerId);
   if (afterUpkeep.phase === 'finished') return success(afterUpkeep);
   state = afterUpkeep;
+  // Jade: el Mandato Celestial se cae solo si terminas tu turno sin ninguna
+  // unidad propia en el tablero — el Cielo no respalda a quien no tiene nada.
+  if (state.mandate === playerId && !state.board.some((piece) => piece.owner === playerId)) {
+    state = { ...state, mandate: undefined };
+  }
   const nextPlayerId = opponentOf(playerId);
   const nextTurn = state.turn + 1;
   const incoming = state.players[nextPlayerId];
@@ -2428,6 +2496,7 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         unitsDiedThisTurn: 0,
         unitsDiedThisTurnLog: [],
         firstUnitDeathDrawUsedThisTurn: false,
+        firstCardDiscountUsedThisTurn: false,
       },
       [nextPlayerId]: {
         ...incoming,
@@ -2444,6 +2513,7 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         unitsDiedThisTurn: 0,
         unitsDiedThisTurnLog: [],
         firstUnitDeathDrawUsedThisTurn: false,
+        firstCardDiscountUsedThisTurn: false,
       },
     },
     board: state.board.map((piece) => ({

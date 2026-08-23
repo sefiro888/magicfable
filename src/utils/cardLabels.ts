@@ -10,6 +10,7 @@ export const FACTION_LABELS: Record<FactionId, string> = {
   duna: 'Duna',
   fimbul: 'Fimbul',
   samsara: 'Samsara',
+  jade: 'Jade',
 }
 
 export const TYPE_LABELS: Record<CardType, string> = {

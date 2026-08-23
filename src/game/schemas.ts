@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CARD_TYPES, FACTION_IDS, KEYWORDS, RARITIES } from './types';
+import { CARD_TYPES, ELEMENTS, FACTION_IDS, KEYWORDS, RARITIES } from './types';
 
 export const ManaCostSchema = z
   .object({
@@ -15,6 +15,7 @@ export const ManaCostSchema = z
         duna: z.number().int().nonnegative().optional(),
         fimbul: z.number().int().nonnegative().optional(),
         samsara: z.number().int().nonnegative().optional(),
+        jade: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -83,6 +84,8 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   }),
   z.object({ kind: z.literal('return-fallen-allies'), bonus: z.number().int().positive() }),
   z.object({ kind: z.literal('return-graveyard-renacer') }),
+  z.object({ kind: z.literal('mandate') }),
+  z.object({ kind: z.literal('claim-mandate'), bonusDrawIfRivalHeld: z.number().int().positive().optional() }),
   z.object({ kind: z.literal('passive'), id: z.string().min(1), value: z.number().optional() }),
 ]);
 
@@ -98,6 +101,7 @@ export const CardDefinitionSchema = z
     cost: ManaCostSchema,
     rules: z.string().min(1),
     flavor: z.string().min(1),
+    element: z.enum(ELEMENTS).optional(),
     attack: z.number().int().nonnegative().optional(),
     health: z.number().int().positive().optional(),
     resistance: z.number().int().positive().optional(),

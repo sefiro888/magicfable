@@ -22,6 +22,7 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   // falta un escenario propio para que encaje.
   fimbul: 'sanctuary',
   samsara: 'duna',
+  jade: 'aether-citadel',
 }
 
 /**

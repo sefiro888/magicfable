@@ -343,6 +343,29 @@ export const COMMANDERS = [
       effectId: 'commander-samsara-power',
     },
   }) as CommanderDefinition,
+  // --- Jade (NEX-06 «El Mandato del Cielo») ---
+  CommanderDefinitionSchema.parse({
+    id: 'xiwangmu-la-reina-madre',
+    name: 'Xiwangmu',
+    title: 'La Reina Madre de Occidente',
+    faction: 'jade',
+    nexusHealth: 35,
+    rules: 'Mientras tengas el Mandato, la primera carta que juegas cada turno cuesta 1 genérico menos.',
+    flavor: 'Su jardín da fruta cada tres mil años. Sabe esperar.',
+    art: {
+      webp: '/assets/cards/art/xiwangmu-la-reina-madre.webp',
+      fallback: '/assets/cards/art/xiwangmu-la-reina-madre.svg',
+      alt: 'Xiwangmu con tocado de jade y oro sosteniendo un melocotón de la inmortalidad',
+    },
+    vfx: { persistentEffect: 'commander-jade-aura', impactEffect: 'commander-jade-hit' },
+    power: {
+      name: 'Melocotón de la Inmortalidad',
+      description: 'Cura 8 a tu Nexo, robas 1 carta y reclamas el Mandato Celestial.',
+      cost: { generic: 2, colored: { jade: 1 } },
+      effects: [{ kind: 'heal-nexus', amount: 8 }, { kind: 'draw', amount: 1 }, { kind: 'claim-mandate' }],
+      effectId: 'commander-jade-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -653,8 +676,49 @@ const samsaraDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
+/**
+ * Jade: gira sobre el Mandato Celestial tal como pide el dosier — Qilin y
+ * General lo reclaman al entrar, Monje y Zorra rinden más mientras lo tengas,
+ * y Sello Imperial/Mandato Revocado te dejan pelear por él fuera de turno.
+ */
+const jadeDeck = DeckDefinitionSchema.parse({
+  id: 'mandato-jade',
+  name: 'El Mandato del Cielo',
+  faction: 'jade',
+  commanderId: 'xiwangmu-la-reina-madre',
+  cards: [
+    { cardId: 'fuente-jade', count: 20 },
+    { cardId: 'guardia-de-terracota', count: 2 },
+    { cardId: 'grulla-mensajera', count: 1 },
+    { cardId: 'jinete-de-la-estepa', count: 2 },
+    { cardId: 'funcionario-del-censo', count: 2 },
+    { cardId: 'arquero-de-la-muralla', count: 1 },
+    { cardId: 'monje-de-la-montana', count: 1 },
+    { cardId: 'alquimista-del-cinabrio', count: 1 },
+    { cardId: 'tigre-blanco-del-oeste', count: 1 },
+    { cardId: 'tortuga-negra-del-norte', count: 1 },
+    { cardId: 'ave-bermeja-del-sur', count: 1 },
+    { cardId: 'qilin-de-buen-augurio', count: 1 },
+    { cardId: 'zorra-de-nueve-colas', count: 1 },
+    { cardId: 'leon-guardian-de-bronce', count: 1 },
+    { cardId: 'dragon-del-rio-amarillo', count: 1 },
+    { cardId: 'general-de-los-mil-estandartes', count: 1 },
+    { cardId: 'sello-imperial', count: 1 },
+    { cardId: 'mandato-revocado', count: 1 },
+    { cardId: 'fuegos-de-artificio', count: 2 },
+    { cardId: 'viento-del-este', count: 1 },
+    { cardId: 'inundacion-del-rio', count: 1 },
+    { cardId: 'examen-imperial', count: 1 },
+    { cardId: 'decreto-de-jade', count: 1 },
+    { cardId: 'gran-muralla', count: 1 },
+    { cardId: 'torre-del-tambor', count: 1 },
+    { cardId: 'altar-del-cielo', count: 1 },
+    { cardId: 'palacio-de-jade', count: 1 },
+  ],
+}) as DeckDefinition;
+
 export const STARTER_DECKS = Object.freeze([
-  furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck, fimbulDeck, samsaraDeck,
+  furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck, fimbulDeck, samsaraDeck, jadeDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(

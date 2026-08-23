@@ -91,6 +91,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['renacer', 'avatar', 'ciclo'],
   },
+  {
+    id: 'jade',
+    name: 'Jade',
+    description: 'El Mandato del Cielo: un solo favor que cambia de bando y decide quién gobierna la mesa.',
+    color: '#b8322c',
+    accentColor: '#f2c14e',
+    icon: 'seal',
+    unlocked: true,
+    themes: ['mandato', 'elementos', 'corte'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -103,6 +113,7 @@ export const FACTION_BY_ID = Object.freeze({
   duna: FACTIONS[6],
   fimbul: FACTIONS[7],
   samsara: FACTIONS[8],
+  jade: FACTIONS[9],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);
