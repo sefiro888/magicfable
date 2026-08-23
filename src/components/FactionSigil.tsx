@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react';
 import { FACTION_BY_ID } from '../game/factions';
 import type { FactionId } from '../game/types';
 import { withBase } from '../utils/assets';
@@ -17,6 +18,47 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   olimpo: 'Olimpo',
 };
 
+/**
+ * Glifos vectoriales propios para facciones que todavía no tienen su
+ * ilustración de sigilo (`sigil-<facción>.webp`) encargada. Es el respaldo
+ * cuando esa imagen no existe o falla al cargar — antes caía en un simple
+ * monograma con la inicial, muy pobre al lado de los sigilos ilustrados de
+ * las facciones originales. Cada uno es una figura simple y reconocible del
+ * tema de su facción, en el mismo espíritu que un escudo o un anillo.
+ */
+const CUSTOM_GLYPHS: Partial<Record<FactionId, (color: string) => ReactNode>> = {
+  // Fimbul: el hacha del Desafío.
+  fimbul: (color) => (
+    <>
+      <line x1="24" y1="9" x2="24" y2="55" stroke={color} strokeWidth="4" strokeLinecap="round" />
+      <path d="M24 11 C41 6 56 15 51 28 C46 39 31 37 24 27 Z" fill={color} />
+    </>
+  ),
+  // Samsara: la rueda que gira, ocho radios.
+  samsara: (color) => (
+    <>
+      <circle cx="32" cy="32" r="22" fill="none" stroke={color} strokeWidth="4" />
+      <circle cx="32" cy="32" r="6" fill={color} />
+      <g stroke={color} strokeWidth="3" strokeLinecap="round">
+        <line x1="32" y1="6" x2="32" y2="18" />
+        <line x1="32" y1="46" x2="32" y2="58" />
+        <line x1="6" y1="32" x2="18" y2="32" />
+        <line x1="46" y1="32" x2="58" y2="32" />
+        <line x1="14.3" y1="14.3" x2="22.4" y2="22.4" />
+        <line x1="41.6" y1="41.6" x2="49.7" y2="49.7" />
+        <line x1="49.7" y1="14.3" x2="41.6" y2="22.4" />
+        <line x1="22.4" y1="41.6" x2="14.3" y2="49.7" />
+      </g>
+    </>
+  ),
+  // Jade: el disco bi, jade tallado con un vacío circular en el centro.
+  jade: (color) => (
+    <circle cx="32" cy="32" r="21" fill="none" stroke={color} strokeWidth="11" />
+  ),
+  // Olimpo: el rayo.
+  olimpo: (color) => <path d="M35 4 L14 36 H28 L23 60 L52 26 H36 Z" fill={color} />,
+};
+
 export interface FactionSigilProps {
   readonly faction: FactionId;
   readonly size?: 'small' | 'medium' | 'large';
@@ -32,8 +74,10 @@ export function FactionSigil({
   className,
   title,
 }: FactionSigilProps) {
+  const [imageFailed, setImageFailed] = useState(false);
   const label = title ?? `Símbolo de ${FACTION_LABELS[faction]}`;
   const classes = [styles.sigil, styles[size], styles[faction], className].filter(Boolean).join(' ');
+  const glyph = CUSTOM_GLYPHS[faction];
   return (
     <span
       className={classes}
@@ -42,26 +86,18 @@ export function FactionSigil({
       aria-hidden={decorative || undefined}
       title={decorative ? undefined : label}
     >
-      <img
-        src={withBase(`/assets/factions/sigil-${faction}.webp`)}
-        alt=""
-        aria-hidden="true"
-        // Facciones sin ilustración de sigilo propia todavía (o cuyo archivo
-        // falte por lo que sea) caen en un monograma generado en el momento,
-        // en vez de en el icono roto del navegador.
-        onError={(event) => {
-          const img = event.currentTarget;
-          if (img.dataset.fallback) return;
-          img.dataset.fallback = '1';
-          const color = FACTION_BY_ID[faction].accentColor;
-          const initial = FACTION_LABELS[faction].charAt(0);
-          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
-            + `<circle cx="32" cy="32" r="32" fill="${color}"/>`
-            + `<text x="32" y="44" font-size="34" font-family="Georgia, serif" text-anchor="middle" fill="#141210">${initial}</text>`
-            + `</svg>`;
-          img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-        }}
-      />
+      {imageFailed && glyph ? (
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          {glyph(FACTION_BY_ID[faction].accentColor)}
+        </svg>
+      ) : (
+        <img
+          src={withBase(`/assets/factions/sigil-${faction}.webp`)}
+          alt=""
+          aria-hidden="true"
+          onError={() => setImageFailed(true)}
+        />
+      )}
     </span>
   );
 }
