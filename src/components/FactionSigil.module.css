@@ -26,6 +26,10 @@
 .shadow { --sigil-color: #a77ac5; }
 .void { --sigil-color: #c77dff; }
 .duna { --sigil-color: #ffd76a; }
+.fimbul { --sigil-color: #d8a944; }
+.samsara { --sigil-color: #ffd27a; }
+.jade { --sigil-color: #f2c14e; }
+.olimpo { --sigil-color: #cf9b3f; }
 
 @media (prefers-reduced-motion: reduce) {
   .sigil { filter: none; }

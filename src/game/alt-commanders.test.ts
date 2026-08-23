@@ -70,8 +70,8 @@ const makePiece = (
 
 describe('elección de comandante', () => {
   it('cada facción con dos líderes deja quedarse con el elegido', () => {
-    // Duna, Fimbul, Samsara y Jade llegaron después y aún no tienen alternativo: se saltan.
-    const soloCommanderFactions = new Set(['duna', 'fimbul', 'samsara', 'jade']);
+    // Duna, Fimbul, Samsara, Jade y Olimpo llegaron después y aún no tienen alternativo: se saltan.
+    const soloCommanderFactions = new Set(['duna', 'fimbul', 'samsara', 'jade', 'olimpo']);
     for (const deck of STARTER_DECKS.filter((candidate) => !soloCommanderFactions.has(candidate.faction))) {
       const leaders = COMMANDERS.filter((commander) => commander.faction === deck.faction);
       expect(leaders, deck.id).toHaveLength(2);

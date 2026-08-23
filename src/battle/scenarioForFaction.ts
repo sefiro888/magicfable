@@ -23,6 +23,7 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   fimbul: 'sanctuary',
   samsara: 'duna',
   jade: 'aether-citadel',
+  olimpo: 'sanctuary',
 }
 
 /**

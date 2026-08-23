@@ -16,6 +16,7 @@ export const ManaCostSchema = z
         fimbul: z.number().int().nonnegative().optional(),
         samsara: z.number().int().nonnegative().optional(),
         jade: z.number().int().nonnegative().optional(),
+        olimpo: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -86,6 +87,8 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('return-graveyard-renacer') }),
   z.object({ kind: z.literal('mandate') }),
   z.object({ kind: z.literal('claim-mandate'), bonusDrawIfRivalHeld: z.number().int().positive().optional() }),
+  z.object({ kind: z.literal('buff-all-allies-permanent'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('reset-hybris-and-heal') }),
   z.object({ kind: z.literal('passive'), id: z.string().min(1), value: z.number().optional() }),
 ]);
 

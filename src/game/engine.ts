@@ -319,6 +319,15 @@ const isPacified = (state: MatchState, attacker: BoardPiece): boolean =>
       pieceDefinition(piece)?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'pacify-adjacent-enemies'),
   );
 
+/** Titán Encadenado (Olimpo): no puede atacar hasta que la Hybris de su dueño llegue al mínimo que pide su carta. */
+const blockedByLowHybris = (state: MatchState, attacker: BoardPiece): boolean => {
+  const requirement = pieceDefinition(attacker)?.effects.find(
+    (effect) => effect.kind === 'passive' && effect.id === 'hybris-attack-requirement',
+  );
+  if (requirement?.kind !== 'passive') return false;
+  return (state.players[attacker.owner].hybris ?? 0) < (requirement.value ?? 0);
+};
+
 const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boolean => {
   const definition = pieceDefinition(piece);
   if (!definition || definition.type !== 'unit' || piece.owner !== state.activePlayer) return false;
@@ -359,6 +368,7 @@ const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: Board
   if (isStunned(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
   if (isPacified(state, attacker)) return false;
+  if (blockedByLowHybris(state, attacker)) return false;
   // Guardia: si hay Guardias enemigos adyacentes, el objetivo debe ser uno de ellos (salvo incorpóreos).
   const guards = adjacentEnemyGuards(state, attacker);
   if (guards.size > 0 && !guards.has(defender.instanceId) && !ignoresGuards(definition)) return false;
@@ -374,6 +384,7 @@ const canAttackEnemyNexus = (state: MatchState, attacker: BoardPiece): boolean =
   if (isStunned(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
   if (isPacified(state, attacker)) return false;
+  if (blockedByLowHybris(state, attacker)) return false;
   // Guardia: no se puede golpear el Nexo mientras un Guardia enemigo esté adyacente (salvo incorpóreos).
   if (adjacentEnemyGuards(state, attacker).size > 0 && !ignoresGuards(definition)) return false;
   const enemy = opponentOf(attacker.owner);
@@ -990,6 +1001,28 @@ const resolveSpell = (
           unitsDiedThisTurnLog: [],
         });
       }
+    } else if (effect.kind === 'passive' && effect.id === 'gain-hybris') {
+      // Hybris (hechizo, Olimpo): sube el contador directamente, sin pasar por el Nexo enemigo.
+      next = withPlayer(next, caster, { ...next.players[caster], hybris: (next.players[caster].hybris ?? 0) + (effect.value ?? 1) });
+    } else if (effect.kind === 'reset-hybris-and-heal') {
+      // Poder de Némesis: cura tanta Vida como Hybris borra.
+      const current = next.players[caster].hybris ?? 0;
+      if (current > 0) {
+        next = withPlayer(next, caster, { ...next.players[caster], hybris: 0 });
+        next = healNexus(next, caster, current);
+      }
+    } else if (effect.kind === 'buff-all-allies-permanent') {
+      // Hybris (hechizo, Olimpo): +N/+N permanentes a toda la mesa propia.
+      for (const piece of next.board.filter(
+        (candidate) => candidate.owner === caster && pieceDefinition(candidate)?.type === 'unit',
+      )) {
+        next = updatePiece(next, piece.instanceId, (target) => ({
+          ...target,
+          attackModifier: target.attackModifier + effect.amount,
+          currentHealth: target.currentHealth + effect.amount,
+          permanentAttackBonus: (target.permanentAttackBonus ?? 0) + effect.amount,
+        }));
+      }
     } else if (effect.kind === 'claim-mandate') {
       // Jade: el Mandato Celestial pasa a manos de quien lanza la carta,
       // arrebatándoselo al rival si lo tenía. Mandato Revocado premia
@@ -1428,6 +1461,10 @@ const cardTargetRejectionReason = (
   if (card.id === 'juicio-divino' && piece.currentHealth > 2) {
     return 'Solo puede destruir una unidad enemiga con 2 Vida o menos.';
   }
+  // Hilo de las Moiras: solo puede destruir unidades enemigas con 5 Vida o menos.
+  if (card.id === 'hilo-de-las-moiras' && piece.currentHealth > 5) {
+    return 'Solo puede destruir una unidad enemiga con 5 Vida o menos.';
+  }
   const curseDrain = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'curse-drain-health');
   if (curseDrain && piece.owner === playerId) return 'Solo puede apuntar a una ficha enemiga.';
   // Aturdir es un castigo, no una bendición: solo vale contra unidades
@@ -1610,6 +1647,9 @@ export const playCard = (
     if (maximumHealth === undefined) return fail(state, 'invalid-card-type', 'La carta no tiene resistencia válida.');
     const commanderId = player.commanderId;
     const verdaniaBonus = commanderId === 'verdania-guardiana-raices' && card.type === 'unit' ? 1 : 0;
+    // Némesis (Olimpo): mientras la Hybris propia sea baja, sus unidades entran más duras.
+    const nemesisBonus =
+      commanderId === 'nemesis-la-que-mide' && card.type === 'unit' && (player.hybris ?? 0) <= 5 ? 1 : 0;
     // Oso Forestal / Arboleda Sagrada: cada aliada propia en juego con esta aura suma su bono
     // a toda unidad nueva que entra (no a estructuras, el texto dice "unidades aliadas").
     const alliedAuraBonus = card.type === 'unit'
@@ -1661,7 +1701,7 @@ export const playCard = (
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus,
+      currentHealth: maximumHealth + verdaniaBonus + nemesisBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus,
       attackModifier: (receivesForgeBuff ? 1 : 0) + permanentBonus,
       movedThisTurn: false,
       attackedThisTurn: false,
@@ -2042,6 +2082,7 @@ export const attackPiece = (
     const enemyId = opponentOf(playerId);
     const pierced = damageNexus(next, enemyId, overkill, playerId, attackerId, card);
     next = pierced.state;
+    if (card.faction === 'olimpo') next = applyHybrisGain(next, playerId, attackerId);
     if (pierced.lethal) {
       next = { ...next, winner: playerId, phase: 'finished' };
       next = enqueue(next, {
@@ -2177,6 +2218,29 @@ export const activateCommanderPower = (
   return success(next);
 };
 
+/**
+ * Hybris (Olimpo): cada vez que una unidad daña de verdad al Nexo enemigo
+ * (ataque directo o el exceso de Perforar), gana +1/+1 permanentes y sube en 1
+ * el contador de su dueño — el Héroe de los Doce Trabajos dobla su propio
+ * bono, pero el contador del jugador sube igual que para cualquier otra.
+ */
+const applyHybrisGain = (state: MatchState, playerId: PlayerId, attackerId: string): MatchState => {
+  const attacker = state.board.find((piece) => piece.instanceId === attackerId);
+  if (!attacker) return state;
+  const card = pieceDefinition(attacker);
+  const doubleGrowth = card?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'hybris-double-growth');
+  const growth = doubleGrowth ? 2 : 1;
+  let next = updatePiece(state, attackerId, (piece) => ({
+    ...piece,
+    attackModifier: piece.attackModifier + growth,
+    currentHealth: piece.currentHealth + growth,
+    permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + growth,
+  }));
+  const player = next.players[playerId];
+  next = withPlayer(next, playerId, { ...player, hybris: (player.hybris ?? 0) + 1 });
+  return next;
+};
+
 export const attackNexus = (
   state: MatchState,
   playerId: PlayerId,
@@ -2199,6 +2263,7 @@ export const attackNexus = (
   });
   const struck = damageNexus(next, enemyId, amount, playerId, attackerId, card);
   next = struck.state;
+  if (amount > 0 && card.faction === 'olimpo') next = applyHybrisGain(next, playerId, attackerId);
   // Vínculo vital: golpear el Nexo enemigo también cura el propio.
   if (amount > 0 && hasLifelink(next, attacker, playerId)) {
     next = healNexus(next, playerId, amount);
@@ -2440,6 +2505,73 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
         // Asceta de la Ceniza (Samsara): cura por CADA unidad propia muerta este turno.
         const deaths = next.players[playerId].unitsDiedThisTurn ?? 0;
         if (deaths > 0) next = healNexus(next, playerId, value * deaths);
+      } else if (effect.id === 'upkeep-scry') {
+        // Oráculo de Delfos (Olimpo).
+        next = enqueue(next, { type: 'spell', actorId: playerId, amount: value, effectId: 'scry-top-cards', durationMs: 300 });
+      } else if (effect.id === 'upkeep-draw-if-hybris-high') {
+        // Oráculo de Delfos: además roba si la Hybris ya está alta.
+        if ((next.players[playerId].hybris ?? 0) >= 6) next = resolveDrawAndDiscard(next, playerId, value, 0);
+      } else if (effect.id === 'upkeep-heal-half-hybris') {
+        // Sacerdotisa de Eleusis (Olimpo): cura la mitad de la Hybris, redondeando abajo.
+        const amount = Math.floor((next.players[playerId].hybris ?? 0) / 2);
+        if (amount > 0) next = healNexus(next, playerId, amount);
+      } else if (effect.id === 'upkeep-gain-hybris') {
+        // Altar de los Doce (Olimpo): sube la Hybris igual que si hubieras golpeado el Nexo.
+        next = withPlayer(next, playerId, { ...next.players[playerId], hybris: (next.players[playerId].hybris ?? 0) + value });
+      } else if (effect.id === 'metamorphosis-grow-if-wounded' && card.type === 'unit') {
+        // Hidra de Lerna (Olimpo): si sigue en pie herida al final del turno, +N/+N. Se repite cada turno.
+        const self = next.board.find((piece) => piece.instanceId === structure.instanceId);
+        if (self && self.currentHealth > 0 && self.currentHealth < (card.health ?? 0)) {
+          next = updatePiece(next, self.instanceId, (piece) => ({
+            ...piece,
+            attackModifier: piece.attackModifier + value,
+            currentHealth: piece.currentHealth + value,
+            permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + value,
+          }));
+        }
+      } else if (effect.id === 'metamorphose-into-constellation' && card.type === 'unit') {
+        // Pegaso de Corinto (Olimpo): con Hybris 8+ se transforma una vez, a 5/5 fijos.
+        const self = next.board.find((piece) => piece.instanceId === structure.instanceId);
+        if (self && !self.metamorphosed && (next.players[playerId].hybris ?? 0) >= 8) {
+          const targetStat = value || 5;
+          next = updatePiece(next, self.instanceId, (piece) => ({
+            ...piece,
+            attackModifier: targetStat - (card.attack ?? 0),
+            permanentAttackBonus: targetStat - (card.attack ?? 0),
+            currentHealth: targetStat,
+            metamorphosed: true,
+          }));
+        }
+      }
+    }
+  }
+  // Olimpo: al final de tu turno, si tu Hybris es 6 o más, tu Nexo pierde la
+  // mitad de la Hybris (redondeando abajo) — el Templo de Columnas puede
+  // rebajar esa pérdida, nunca por debajo de 0.
+  const hybris = next.players[playerId].hybris ?? 0;
+  if (hybris >= 6) {
+    const reduction = next.board
+      .filter((piece) => piece.owner === playerId)
+      .reduce((total, piece) => {
+        const relief = pieceDefinition(piece)?.effects.find(
+          (effect) => effect.kind === 'passive' && effect.id === 'hybris-penalty-reduction',
+        );
+        return relief?.kind === 'passive' ? total + (relief.value ?? 1) : total;
+      }, 0);
+    const loss = Math.max(0, Math.floor(hybris / 2) - reduction);
+    if (loss > 0) {
+      const remaining = Math.max(0, next.players[playerId].nexusHealth - loss);
+      next = withPlayer(next, playerId, { ...next.players[playerId], nexusHealth: remaining });
+      next = enqueue(next, {
+        type: 'nexus-damage', actorId: playerId, targetId: `${playerId}-nexus`,
+        amount: loss, effectId: 'olimpo-hybris-backlash', durationMs: 420,
+      });
+      if (remaining <= 0) {
+        next = { ...next, winner: enemyId, phase: 'finished' };
+        next = enqueue(next, {
+          type: 'victory', actorId: enemyId, targetId: `${playerId}-nexus`, effectId: 'olimpo-hybris-ruin', durationMs: 900,
+        });
+        return next;
       }
     }
   }

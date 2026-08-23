@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -129,6 +129,10 @@ export type CardEffect =
    * Mandato Revocado: si se lo arrebata al rival, además roba `bonusDrawIfRivalHeld`.
    */
   | { readonly kind: 'claim-mandate'; readonly bonusDrawIfRivalHeld?: number }
+  /** Hybris (Olimpo): +N/+N permanentes a TODAS las unidades propias a la vez. */
+  | { readonly kind: 'buff-all-allies-permanent'; readonly amount: number }
+  /** Poder de Némesis: pone la Hybris propia a cero y cura al Nexo lo que borró. */
+  | { readonly kind: 'reset-hybris-and-heal' }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 /** Jade — los cinco elementos: cada uno genera al siguiente en el ciclo fijo. */
@@ -311,6 +315,8 @@ export interface BoardPiece {
   readonly permanentAttackBonus?: number;
   /** Samsara — Renacer: si esta unidad ya gastó su única revivificación. */
   readonly renacerSpent?: boolean;
+  /** Olimpo — Metamorfosis: si esta unidad ya se transformó (Pegaso de Corinto, una vez). */
+  readonly metamorphosed?: boolean;
   readonly statuses: readonly PieceStatus[];
 }
 
@@ -357,6 +363,8 @@ export interface PlayerState {
   readonly firstUnitDeathDrawUsedThisTurn?: boolean;
   /** Pasiva de Xiwangmu: ya se aplicó el descuento a la primera carta de este turno. */
   readonly firstCardDiscountUsedThisTurn?: boolean;
+  /** Olimpo — Hybris: contador de desmesura por jugador. NO se reinicia con el turno. */
+  readonly hybris?: number;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;

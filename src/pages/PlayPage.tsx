@@ -15,6 +15,11 @@ const showcase: Record<string, readonly string[]> = {
   order:  ['angel-celestial', 'paladin-glorioso', 'juicio-divino'],
   shadow: ['murcielago-sombra', 'nigromante-oscuro', 'pesadilla-mortal'],
   void:   ['basilisco-caos', 'leviatan-abismal', 'aniquilacion-vacio'],
+  duna:   ['coloso-de-la-necropolis', 'devoradora-del-inframundo', 'escorpion-de-basalto'],
+  fimbul: ['gigante-de-la-escarcha', 'lobo-de-fenrir', 'valquiria-de-la-eleccion'],
+  samsara: ['danzante-de-la-destruccion', 'avatar-del-jabali', 'garuda-de-alas-de-sol'],
+  jade:   ['dragon-del-rio-amarillo', 'general-de-los-mil-estandartes', 'zorra-de-nueve-colas'],
+  olimpo: ['titan-encadenado', 'heroe-de-los-doce-trabajos', 'hidra-de-lerna'],
 }
 
 const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
@@ -24,6 +29,11 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   order:  'Forma una línea defensiva infranqueable y castiga con la justicia del Orden.',
   shadow: 'Drena la vida enemiga, revive desde el cementerio y conquista con el miedo.',
   void:   'Distorsiona el espacio, aniquila estructuras y golpea antes de que te vean venir.',
+  duna:   'Paga con tu propia Vida como Ofrenda y remonta cuando el Tribunal falla a tu favor.',
+  fimbul: 'Desafía a lo más fuerte del rival y pega más cuanto peor está tu propia unidad.',
+  samsara: 'Deja morir a tus unidades a propósito: la rueda las devuelve mayores cada vez.',
+  jade:   'Arrebata el Mandato Celestial y hazlo rendir mientras lo conserves.',
+  olimpo: 'Golpea el Nexo enemigo para crecer sin freno, y decide a tiempo cuándo parar.',
 }
 
 /** Opciones del rival: el sorteo de siempre, o cualquiera de las demás facciones. */

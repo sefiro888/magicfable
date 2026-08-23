@@ -366,6 +366,29 @@ export const COMMANDERS = [
       effectId: 'commander-jade-power',
     },
   }) as CommanderDefinition,
+  // --- Olimpo (NEX-07 «La Medida y el Exceso») ---
+  CommanderDefinitionSchema.parse({
+    id: 'nemesis-la-que-mide',
+    name: 'Némesis',
+    title: 'La que Mide',
+    faction: 'olimpo',
+    nexusHealth: 35,
+    rules: 'Mientras tu Hybris sea 5 o menos, tus unidades tienen +1 de Vida.',
+    flavor: 'No castiga la maldad. Castiga la desproporción, que es más común.',
+    art: {
+      webp: '/assets/cards/art/nemesis-la-que-mide.webp',
+      fallback: '/assets/cards/art/nemesis-la-que-mide.svg',
+      alt: 'Némesis con alas oscuras sosteniendo una vara de medir y una brida',
+    },
+    vfx: { persistentEffect: 'commander-olimpo-aura', impactEffect: 'commander-olimpo-hit' },
+    power: {
+      name: 'Restitución',
+      description: 'Pon tu Hybris a cero y cura a tu Nexo tanta Vida como el contador que has borrado.',
+      cost: { generic: 2, colored: { olimpo: 1 } },
+      effects: [{ kind: 'reset-hybris-and-heal' }],
+      effectId: 'commander-olimpo-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -717,8 +740,49 @@ const jadeDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
+/**
+ * Olimpo: busca golpear el Nexo pronto para que Hybris crezca, y decide
+ * cuándo frenar antes de que la desmesura le pase factura — Sacerdotisa y
+ * Templo aguantan el peaje, Némesis lo borra una vez por partida.
+ */
+const olimpoDeck = DeckDefinitionSchema.parse({
+  id: 'medida-olimpo',
+  name: 'La Medida y el Exceso',
+  faction: 'olimpo',
+  commanderId: 'nemesis-la-que-mide',
+  cards: [
+    { cardId: 'fuente-olimpo', count: 20 },
+    { cardId: 'hoplita-de-la-falange', count: 2 },
+    { cardId: 'corredor-de-maraton', count: 2 },
+    { cardId: 'arquera-de-creta', count: 2 },
+    { cardId: 'oraculo-de-delfos', count: 2 },
+    { cardId: 'sirena-de-las-rocas', count: 2 },
+    { cardId: 'escultor-de-marmol', count: 1 },
+    { cardId: 'centauro-del-pelion', count: 1 },
+    { cardId: 'pegaso-de-corinto', count: 1 },
+    { cardId: 'medusa-de-mirada-fija', count: 1 },
+    { cardId: 'minotauro-del-laberinto', count: 1 },
+    { cardId: 'quimera-de-licia', count: 1 },
+    { cardId: 'sacerdotisa-de-eleusis', count: 1 },
+    { cardId: 'heroe-de-los-doce-trabajos', count: 1 },
+    { cardId: 'hidra-de-lerna', count: 1 },
+    { cardId: 'titan-encadenado', count: 1 },
+    { cardId: 'rayo-del-olimpo', count: 1 },
+    { cardId: 'ambrosia', count: 1 },
+    { cardId: 'hilo-de-las-moiras', count: 1 },
+    { cardId: 'canto-de-las-musas', count: 1 },
+    { cardId: 'tempestad-del-egeo', count: 1 },
+    { cardId: 'hybris', count: 1 },
+    { cardId: 'templo-de-columnas', count: 1 },
+    { cardId: 'muralla-ciclopea', count: 1 },
+    { cardId: 'agora', count: 1 },
+    { cardId: 'altar-de-los-doce', count: 1 },
+  ],
+}) as DeckDefinition;
+
 export const STARTER_DECKS = Object.freeze([
-  furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck, dunaDeck, fimbulDeck, samsaraDeck, jadeDeck,
+  furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck,
+  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(

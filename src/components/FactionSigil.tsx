@@ -1,3 +1,4 @@
+import { FACTION_BY_ID } from '../game/factions';
 import type { FactionId } from '../game/types';
 import { withBase } from '../utils/assets';
 import styles from './FactionSigil.module.css';
@@ -13,6 +14,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   fimbul: 'Fimbul',
   samsara: 'Samsara',
   jade: 'Jade',
+  olimpo: 'Olimpo',
 };
 
 export interface FactionSigilProps {
@@ -40,7 +42,26 @@ export function FactionSigil({
       aria-hidden={decorative || undefined}
       title={decorative ? undefined : label}
     >
-      <img src={withBase(`/assets/factions/sigil-${faction}.webp`)} alt="" aria-hidden="true" />
+      <img
+        src={withBase(`/assets/factions/sigil-${faction}.webp`)}
+        alt=""
+        aria-hidden="true"
+        // Facciones sin ilustración de sigilo propia todavía (o cuyo archivo
+        // falte por lo que sea) caen en un monograma generado en el momento,
+        // en vez de en el icono roto del navegador.
+        onError={(event) => {
+          const img = event.currentTarget;
+          if (img.dataset.fallback) return;
+          img.dataset.fallback = '1';
+          const color = FACTION_BY_ID[faction].accentColor;
+          const initial = FACTION_LABELS[faction].charAt(0);
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
+            + `<circle cx="32" cy="32" r="32" fill="${color}"/>`
+            + `<text x="32" y="44" font-size="34" font-family="Georgia, serif" text-anchor="middle" fill="#141210">${initial}</text>`
+            + `</svg>`;
+          img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        }}
+      />
     </span>
   );
 }

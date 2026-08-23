@@ -11,6 +11,7 @@ export const FACTION_LABELS: Record<FactionId, string> = {
   fimbul: 'Fimbul',
   samsara: 'Samsara',
   jade: 'Jade',
+  olimpo: 'Olimpo',
 }
 
 export const TYPE_LABELS: Record<CardType, string> = {

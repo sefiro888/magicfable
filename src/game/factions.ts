@@ -101,6 +101,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['mandato', 'elementos', 'corte'],
   },
+  {
+    id: 'olimpo',
+    name: 'Olimpo',
+    description: 'La medida y el exceso: cada golpe al Nexo enemigo te hace más grande y más frágil a la vez.',
+    color: '#e8e2d4',
+    accentColor: '#cf9b3f',
+    icon: 'laurel',
+    unlocked: true,
+    themes: ['hybris', 'metamorfosis', 'desmesura'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -114,6 +124,7 @@ export const FACTION_BY_ID = Object.freeze({
   fimbul: FACTIONS[7],
   samsara: FACTIONS[8],
   jade: FACTIONS[9],
+  olimpo: FACTIONS[10],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);
