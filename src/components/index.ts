@@ -8,3 +8,7 @@ export { GlossaryText, CARD_GLOSSARY } from './GlossaryText';
 export type { GlossaryEntry, GlossaryTextProps } from './GlossaryText';
 export { CardInspector } from './CardInspector';
 export type { CardInspectorProps } from './CardInspector';
+export { GlossaryPanel } from './GlossaryPanel';
+export type { GlossaryPanelProps } from './GlossaryPanel';
+export { ArtViewer } from './ArtViewer';
+export type { ArtViewerProps } from './ArtViewer';

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Card, CardInspector } from '../components'
+import { ArtViewer, Card, CardInspector, GlossaryPanel } from '../components'
 import { CARDS, CARD_TYPES, FACTION_IDS, RARITIES, type CardDefinition, type CardType, type FactionId, type Rarity } from '../game'
 import { RarityGem } from '../components/RarityGem'
 import { FACTION_LABELS, KEYWORD_LABELS, RARITY_LABELS, TYPE_LABELS, totalCost } from '../utils/cardLabels'
+import { withBase } from '../utils/assets'
 import styles from './GalleryPage.module.css'
+
+type ViewMode = 'card' | 'art'
 
 type FilterValue<T extends string> = 'all' | T
 
@@ -36,6 +39,8 @@ export function GalleryPage() {
   const [keyword, setKeyword] = useState('all')
   const [sort, setSort] = useState<SortId>('collection')
   const [inspected, setInspected] = useState<CardDefinition>()
+  const [viewMode, setViewMode] = useState<ViewMode>('card')
+  const [glossaryOpen, setGlossaryOpen] = useState(false)
   // Ordenadas por su nombre en español, que es lo que se lee en el desplegable
   // (ordenarlas por el id interno dejaba un orden aparentemente arbitrario).
   const keywords = useMemo(
@@ -91,7 +96,17 @@ export function GalleryPage() {
     <div className={styles.page}>
       {/* El rótulo se deriva de las cartas: decía «NEX-01 · Despertar» a mano y
           dejó de ser cierto en cuanto llegó la segunda oleada. */}
-      <header className={styles.header}><div><small>Archivo del Nexo · {setCount} conjuntos</small><h1>Galería de cartas</h1></div><div className={styles.count}><strong>{filtered.length}</strong> de {CARDS.length} diseños</div></header>
+      <header className={styles.header}>
+        <div><small>Archivo del Nexo · {setCount} conjuntos</small><h1>Galería de cartas</h1></div>
+        <div className={styles.headerActions}>
+          <button type="button" className={styles.headerButton} onClick={() => setGlossaryOpen(true)}>Glosario</button>
+          <div className={styles.viewToggle} role="group" aria-label="Modo de visualización">
+            <button type="button" data-active={viewMode === 'card'} onClick={() => setViewMode('card')}>Carta</button>
+            <button type="button" data-active={viewMode === 'art'} onClick={() => setViewMode('art')}>Solo arte</button>
+          </div>
+          <div className={styles.count}><strong>{filtered.length}</strong> de {CARDS.length} diseños</div>
+        </div>
+      </header>
       <div className={styles.filters}>
         <input className={styles.search} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, regla o historia…" aria-label="Buscar cartas" />
         <select className={styles.select} value={type} onChange={(event) => setType(event.target.value as FilterValue<CardType>)} aria-label="Filtrar por tipo"><option value="all">Todos los tipos</option>{CARD_TYPES.map((value) => <option key={value} value={value}>{TYPE_LABELS[value]}</option>)}</select>
@@ -110,8 +125,23 @@ export function GalleryPage() {
           </span>
         ))}
       </div>
-      <section className={styles.grid} aria-live="polite">{ordered.map((card) => <Card key={card.id} card={card} size="gallery" onSelect={setInspected} onInspect={setInspected} />)}{filtered.length === 0 && <div className={styles.empty}>Ninguna carta coincide con estos filtros.</div>}</section>
-      <CardInspector card={inspected ?? null} onClose={() => setInspected(undefined)} />
+      {viewMode === 'card' ? (
+        <section className={styles.grid} aria-live="polite">{ordered.map((card) => <Card key={card.id} card={card} size="gallery" onSelect={setInspected} onInspect={setInspected} />)}{filtered.length === 0 && <div className={styles.empty}>Ninguna carta coincide con estos filtros.</div>}</section>
+      ) : (
+        <section className={styles.artGrid} aria-live="polite">
+          {ordered.map((card) => (
+            <button key={card.id} type="button" className={styles.artTile} data-faction={card.faction} onClick={() => setInspected(card)}>
+              <img src={withBase(card.art.webp)} alt={card.art.alt} loading="lazy" decoding="async" draggable={false} />
+              <span className={styles.artTileName}>{card.name}</span>
+            </button>
+          ))}
+          {filtered.length === 0 && <div className={styles.empty}>Ninguna carta coincide con estos filtros.</div>}
+        </section>
+      )}
+      {viewMode === 'card'
+        ? <CardInspector card={inspected ?? null} onClose={() => setInspected(undefined)} />
+        : <ArtViewer card={inspected ?? null} onClose={() => setInspected(undefined)} />}
+      {glossaryOpen && <GlossaryPanel onClose={() => setGlossaryOpen(false)} />}
     </div>
   )
 }

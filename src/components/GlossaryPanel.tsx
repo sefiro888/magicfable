@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { CARD_GLOSSARY } from '../../components/GlossaryText'
+import { CARD_GLOSSARY } from './GlossaryText'
 import styles from './GlossaryPanel.module.css'
 
-interface GlossaryPanelProps {
+export interface GlossaryPanelProps {
   readonly onClose: () => void
 }
 
@@ -10,7 +10,7 @@ interface GlossaryPanelProps {
  * Glosario completo, siempre a mano: los tooltips de GlossaryText solo
  * aparecen si el término figura en el texto de la carta seleccionada en ese
  * momento. Este panel lista los mismos términos sin depender de qué carta
- * tengas a la vista.
+ * tengas a la vista. Compartido entre la partida (BattlePage) y la Galería.
  */
 export function GlossaryPanel({ onClose }: GlossaryPanelProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
