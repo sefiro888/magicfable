@@ -145,6 +145,6 @@ describe.skipIf(!RUN)('equilibrio entre facciones', () => {
       )
     }
     writeFileSync(process.env.BALANCE_DECKS_OUT ?? 'balance-decks.txt', lines.join('\n'), 'utf8')
-    expect(STARTER_DECKS.length).toBe(7)
+    expect(STARTER_DECKS.length).toBe(14)
   })
 })
