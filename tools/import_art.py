@@ -26,9 +26,18 @@ except ImportError:
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 INBOX = os.path.join(ROOT, "tools", "art-inbox")
 ART_DIR = os.path.join(ROOT, "public", "assets", "cards", "art")
+# Versión SIN recortar de cada ilustración, para ArtViewer/IllustrationsPage:
+# el recorte cuadrado de `square_crop` (necesario para el marco de la carta)
+# se come sistemáticamente los bordes de las imágenes generadas en formato
+# retrato/paisaje — lo confirmó el usuario viendo una imagen recortada por
+# arriba y por abajo. La sección de "solo arte" necesita la imagen completa.
+ART_FULL_DIR = os.path.join(ROOT, "public", "assets", "cards", "art-full")
 TARGET = 640
 QUALITY = 82
+FULL_MAX_EDGE = 1280
+FULL_QUALITY = 85
 SOURCE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
+os.makedirs(ART_FULL_DIR, exist_ok=True)
 
 # Color del SVG de respaldo por facción. Los ids que no aparezcan aquí usan el
 # gris neutro: el respaldo solo se ve si el WebP no carga.
@@ -202,14 +211,28 @@ def write_svg_fallback(card_id: str, folder: str = "") -> None:
         handle.write(svg)
 
 
+def full_resize(image: Image.Image) -> Image.Image:
+    """Reduce si hace falta, pero SIN recortar: conserva el encuadre original."""
+    width, height = image.size
+    longest = max(width, height)
+    if longest <= FULL_MAX_EDGE:
+        return image
+    scale = FULL_MAX_EDGE / longest
+    return image.resize((round(width * scale), round(height * scale)), Image.Resampling.LANCZOS)
+
+
 def import_one(relative: str) -> int:
     folder, filename = os.path.split(relative)
     card_id, _ = os.path.splitext(filename)
     with Image.open(os.path.join(INBOX, relative)) as source:
-        image = square_crop(source.convert("RGB"))
+        rgb = source.convert("RGB")
+        image = square_crop(rgb)
         image = image.resize((TARGET, TARGET), Image.Resampling.LANCZOS)
         webp_path = os.path.join(ART_DIR, f"{card_id}.webp")
         image.save(webp_path, "WebP", quality=QUALITY)
+
+        full_path = os.path.join(ART_FULL_DIR, f"{card_id}.webp")
+        full_resize(rgb).save(full_path, "WebP", quality=FULL_QUALITY)
     write_svg_fallback(card_id, folder)
     return os.path.getsize(webp_path)
 

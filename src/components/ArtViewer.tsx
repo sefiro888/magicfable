@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent } from 'react';
 
 import type { CardDefinition } from '../game/types';
@@ -21,6 +21,31 @@ const focusableSelector = [
   'input:not([disabled])',
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
+
+/**
+ * `card.art.webp` es el recorte cuadrado que exige el marco de la carta —
+ * se come los bordes de cualquier ilustración que no naciera cuadrada. Esta
+ * sección quiere la imagen completa, así que primero prueba la versión sin
+ * recortar (`art-full/`, generada por `tools/import_art.py`) y solo si no
+ * existe (facciones antiguas, importadas antes de que existiera esa carpeta)
+ * cae al recorte de siempre.
+ */
+function FullArtwork({ card }: { readonly card: CardDefinition }) {
+  const sources = useMemo(
+    () => [withBase(card.art.webp.replace('/cards/art/', '/cards/art-full/')), withBase(card.art.webp)],
+    [card.art.webp],
+  );
+  const [sourceIndex, setSourceIndex] = useState(0);
+  return (
+    <img
+      className={styles.art}
+      src={sources[Math.min(sourceIndex, sources.length - 1)]}
+      alt={card.art.alt}
+      draggable={false}
+      onError={() => setSourceIndex((current) => Math.min(current + 1, sources.length - 1))}
+    />
+  );
+}
 
 /**
  * Solo la ilustración, sin el marco de la carta encima: para quien quiere
@@ -98,7 +123,7 @@ export function ArtViewer({ card, onClose }: ArtViewerProps) {
         </button>
 
         <div className={styles.artFrame}>
-          <img className={styles.art} src={withBase(card.art.webp)} alt={card.art.alt} draggable={false} />
+          <FullArtwork key={card.id} card={card} />
         </div>
 
         <section className={styles.info}>
