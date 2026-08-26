@@ -43,6 +43,7 @@ const SOURCE_BY_FACTION: Record<FactionId, string> = {
   samsara: 'fuente-samsara',
   jade: 'fuente-jade',
   olimpo: 'fuente-olimpo',
+  sol: 'fuente-sol',
 };
 
 const resources = (faction: FactionId, count: number, exhausted = false): readonly ResourceState[] =>

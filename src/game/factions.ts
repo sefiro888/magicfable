@@ -111,6 +111,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['hybris', 'metamorfosis', 'desmesura'],
   },
+  {
+    id: 'sol',
+    name: 'Quinto Sol',
+    description: 'El que hay que alimentar: sacrifica a tus propias unidades y cuenta los días que faltan.',
+    color: '#c98b4b',
+    accentColor: '#f5c33b',
+    icon: 'sun-disc',
+    unlocked: true,
+    themes: ['sacrificio', 'cuenta del sol', 'ofrenda'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -125,6 +135,7 @@ export const FACTION_BY_ID = Object.freeze({
   samsara: FACTIONS[8],
   jade: FACTIONS[9],
   olimpo: FACTIONS[10],
+  sol: FACTIONS[11],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

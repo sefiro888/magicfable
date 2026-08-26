@@ -977,6 +977,17 @@ const resolveSpell = (
       if (victim) {
         next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, caster, card.vfx.impactEffect);
       }
+    } else if (effect.kind === 'damage-all-enemies-by-sun-count') {
+      // Cuenta de los Días / poder de Itzpapálotl (Quinto Sol).
+      const raw = next.players[caster].sunCount ?? 0;
+      const amount = effect.cap !== undefined ? Math.min(raw, effect.cap) : raw;
+      if (amount > 0) {
+        for (const piece of next.board.filter(
+          (candidate) => candidate.owner !== caster && pieceDefinition(candidate)?.type === 'unit',
+        )) {
+          next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect);
+        }
+      }
     } else if (effect.kind === 'conditional-damage-all-enemies') {
       // Ofrenda de Fuego (Samsara): más daño si ya murió una unidad propia este turno.
       const amount = (next.players[caster].unitsDiedThisTurn ?? 0) > 0 ? effect.deathAmount : effect.baseAmount;
@@ -1325,6 +1336,38 @@ const resolveEntryEffects = (
       }
     } else if (effect.kind === 'claim-mandate') {
       next = { ...next, mandate: piece.owner };
+    } else if (effect.kind === 'destroy-strongest-enemy') {
+      // Tzitzimitl, Estrella Caída (Quinto Sol): mismo criterio que la
+      // Balanza de Maat, pero como efecto de entrada en vez de hechizo.
+      const victim = next.board
+        .filter((candidate) => candidate.owner !== piece.owner && pieceDefinition(candidate)?.type === 'unit')
+        .sort((left, right) => {
+          const l = (pieceDefinition(left)?.attack ?? 0) + left.attackModifier;
+          const r = (pieceDefinition(right)?.attack ?? 0) + right.attackModifier;
+          return r - l || left.instanceId.localeCompare(right.instanceId);
+        })[0];
+      if (victim) {
+        next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, piece.owner, card.vfx.impactEffect);
+      }
+    } else if (effect.kind === 'passive' && effect.id === 'entry-self-permanent-buff') {
+      // Colibrí del Sur (Quinto Sol): se refuerza a sí mismo al pagar su propio Sacrificio.
+      const value = effect.value ?? 1;
+      next = updatePiece(next, piece.instanceId, (candidate) => ({
+        ...candidate,
+        attackModifier: candidate.attackModifier + value,
+        currentHealth: candidate.currentHealth + value,
+        permanentAttackBonus: (candidate.permanentAttackBonus ?? 0) + value,
+      }));
+    } else if (effect.kind === 'passive' && effect.id === 'entry-draw-per-sun-count') {
+      // Serpiente Emplumada (Quinto Sol): roba 1 carta por cada N puntos de Cuenta del Sol.
+      const divisor = effect.value ?? 3;
+      const draws = Math.floor((next.players[piece.owner].sunCount ?? 0) / divisor);
+      if (draws > 0) next = resolveDrawAndDiscard(next, piece.owner, draws, 0);
+    } else if (effect.kind === 'passive' && effect.id === 'sun-count-floor') {
+      // Piedra del Sol (Quinto Sol): la Cuenta del Sol nunca empieza por debajo de este valor.
+      const floor = effect.value ?? 2;
+      const owner = next.players[piece.owner];
+      if ((owner.sunCount ?? 0) < floor) next = withPlayer(next, piece.owner, { ...owner, sunCount: floor });
     } else if (effect.kind === 'destroy-low-health-all') {
       // Danzante de la Destrucción: barrido de Vida baja, sin distinguir bando.
       for (const target of next.board.filter(
@@ -1583,6 +1626,14 @@ export const playCard = (
     if (rejection) return fail(state, 'target-required', rejection);
   }
 
+  // Quinto Sol — Sacrificio: coste OBLIGATORIO, a diferencia de la Ofrenda de
+  // Duna (que es opcional). Sin una unidad propia que ofrecer, ni siquiera se
+  // llega a pagar la Esencia.
+  const requiresSacrifice = card.effects.some((effect) => effect.kind === 'sacrifice');
+  if (requiresSacrifice && !hasSacrificeAvailable(state, playerId)) {
+    return fail(state, 'target-required', 'Necesitas una unidad propia que sacrificar para jugar esta carta.');
+  }
+
   // Samsara — Pira del Ghat: una copia que ha vuelto por Renacer puede traer
   // consigo un descuento de coste genérico para este despliegue.
   const baseCost = effectiveCost(state, playerId, card);
@@ -1640,6 +1691,10 @@ export const playCard = (
       type: 'mana-flow', actorId: playerId, targetId: cardInstanceId,
       amount: payment.plan.resourceIds.length, effectId: `${card.faction}-mana-flow`, durationMs: 280,
     });
+  }
+  if (requiresSacrifice) {
+    next = performSacrifice(next, playerId);
+    if (next.phase === 'finished') return success(next);
   }
 
   if (isPiece && position) {
@@ -2040,9 +2095,15 @@ const computeAttackAmount = (
     && state.board.some((piece) => piece.owner === attacker.owner && piece.cardId === 'general-de-los-mil-estandartes')
       ? 1
       : 0;
+  // Danzante del Fuego Nuevo (Quinto Sol): +1 de Ataque por cada punto de
+  // Cuenta del Sol por encima de 5.
+  const danzanteBuff = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'danzante-sun-bonus');
+  const danzanteBonus = danzanteBuff?.kind === 'passive'
+    ? Math.max(0, (state.players[attacker.owner].sunCount ?? 0) - 5)
+    : 0;
   return Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus + mandateBonus + generalBonus - shielded);
+    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus + mandateBonus + generalBonus + danzanteBonus - shielded);
 };
 
 export const attackPiece = (
@@ -2238,6 +2299,58 @@ const applyHybrisGain = (state: MatchState, playerId: PlayerId, attackerId: stri
   }));
   const player = next.players[playerId];
   next = withPlayer(next, playerId, { ...player, hybris: (player.hybris ?? 0) + 1 });
+  return next;
+};
+
+/** ¿Tiene el jugador alguna unidad propia que ofrecer para pagar un Sacrificio? */
+const hasSacrificeAvailable = (state: MatchState, playerId: PlayerId): boolean =>
+  state.board.some((piece) => piece.owner === playerId && pieceDefinition(piece)?.type === 'unit');
+
+/**
+ * Quinto Sol — Sacrificio: destruye la unidad propia más expuesta (menos
+ * Vida) para pagar el coste adicional de la carta que se está jugando.
+ * Dispara sus dos dependencias: los «cuando esta unidad es sacrificada» de
+ * la propia víctima, y la Cuenta del Sol del jugador (el Sacerdote del
+ * Templo Mayor la duplica mientras esté en juego). Se resuelve ANTES que la
+ * carta que se está pagando, así que sus efectos de entrada ya ven la
+ * Cuenta actualizada.
+ */
+const performSacrifice = (state: MatchState, playerId: PlayerId): MatchState => {
+  const victim = state.board
+    .filter((piece) => piece.owner === playerId && pieceDefinition(piece)?.type === 'unit')
+    .sort((left, right) => left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId))[0];
+  if (!victim) return state;
+  const victimCard = pieceDefinition(victim)!;
+  let next = damagePiece(state, victim.instanceId, victim.currentHealth + 99, playerId, victimCard.vfx.impactEffect);
+  const onSacrificeDraw = victimCard.effects.find((effect) => effect.kind === 'passive' && effect.id === 'on-sacrifice-draw');
+  if (onSacrificeDraw?.kind === 'passive') next = resolveDrawAndDiscard(next, playerId, onSacrificeDraw.value ?? 1, 0);
+  const onSacrificeHeal = victimCard.effects.find((effect) => effect.kind === 'passive' && effect.id === 'on-sacrifice-heal-nexus');
+  if (onSacrificeHeal?.kind === 'passive') next = healNexus(next, playerId, onSacrificeHeal.value ?? 1);
+  const doublesCount = next.board.some(
+    (piece) => piece.owner === playerId
+      && pieceDefinition(piece)?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'sacrifice-counts-double'),
+  );
+  const gain = doublesCount ? 2 : 1;
+  const beforeCount = next.players[playerId];
+  next = withPlayer(next, playerId, {
+    ...beforeCount,
+    sunCount: (beforeCount.sunCount ?? 0) + gain,
+    sacrificesThisTurn: (beforeCount.sacrificesThisTurn ?? 0) + 1,
+  });
+  // Itzpapálotl: el primer Sacrificio de cada turno también golpea al Nexo enemigo.
+  const afterCount = next.players[playerId];
+  if (afterCount.commanderId === 'itzpapalotl-mariposa-obsidiana' && !afterCount.firstSacrificeDamageUsedThisTurn) {
+    next = withPlayer(next, playerId, { ...afterCount, firstSacrificeDamageUsedThisTurn: true });
+    const enemyId = opponentOf(playerId);
+    const struck = damageNexus(next, enemyId, 1, playerId, victim.instanceId, victimCard);
+    next = struck.state;
+    if (struck.lethal) {
+      next = { ...next, winner: playerId, phase: 'finished' };
+      next = enqueue(next, {
+        type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`, effectId: 'sol-victory', durationMs: 900,
+      });
+    }
+  }
   return next;
 };
 
@@ -2518,6 +2631,22 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
       } else if (effect.id === 'upkeep-gain-hybris') {
         // Altar de los Doce (Olimpo): sube la Hybris igual que si hubieras golpeado el Nexo.
         next = withPlayer(next, playerId, { ...next.players[playerId], hybris: (next.players[playerId].hybris ?? 0) + value });
+      } else if (effect.id === 'upkeep-heal-per-sacrifice') {
+        // Señora de la Falda de Jade (Quinto Sol): cura por CADA unidad propia sacrificada este turno.
+        const sacrifices = next.players[playerId].sacrificesThisTurn ?? 0;
+        if (sacrifices > 0) next = healNexus(next, playerId, value * sacrifices);
+      } else if (effect.id === 'upkeep-burn-nexus-if-sacrificed' && (next.players[playerId].sacrificesThisTurn ?? 0) > 0) {
+        // Templo Mayor (Quinto Sol).
+        const result = damageNexus(next, enemyId, value, playerId, structure.instanceId, card);
+        next = result.state;
+        if (result.lethal) {
+          next = { ...next, winner: playerId, phase: 'finished' };
+          next = enqueue(next, {
+            type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`,
+            effectId: `${card.faction}-victory`, durationMs: 900,
+          });
+          return next;
+        }
       } else if (effect.id === 'metamorphosis-grow-if-wounded' && card.type === 'unit') {
         // Hidra de Lerna (Olimpo): si sigue en pie herida al final del turno, +N/+N. Se repite cada turno.
         const self = next.board.find((piece) => piece.instanceId === structure.instanceId);
@@ -2629,6 +2758,8 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         unitsDiedThisTurnLog: [],
         firstUnitDeathDrawUsedThisTurn: false,
         firstCardDiscountUsedThisTurn: false,
+        sacrificesThisTurn: 0,
+        firstSacrificeDamageUsedThisTurn: false,
       },
       [nextPlayerId]: {
         ...incoming,
@@ -2646,6 +2777,8 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         unitsDiedThisTurnLog: [],
         firstUnitDeathDrawUsedThisTurn: false,
         firstCardDiscountUsedThisTurn: false,
+        sacrificesThisTurn: 0,
+        firstSacrificeDamageUsedThisTurn: false,
       },
     },
     board: state.board.map((piece) => ({

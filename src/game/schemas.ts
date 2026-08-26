@@ -17,6 +17,7 @@ export const ManaCostSchema = z
         samsara: z.number().int().nonnegative().optional(),
         jade: z.number().int().nonnegative().optional(),
         olimpo: z.number().int().nonnegative().optional(),
+        sol: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -89,6 +90,8 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('claim-mandate'), bonusDrawIfRivalHeld: z.number().int().positive().optional() }),
   z.object({ kind: z.literal('buff-all-allies-permanent'), amount: z.number().int().positive() }),
   z.object({ kind: z.literal('reset-hybris-and-heal') }),
+  z.object({ kind: z.literal('sacrifice') }),
+  z.object({ kind: z.literal('damage-all-enemies-by-sun-count'), cap: z.number().int().positive().optional() }),
   z.object({ kind: z.literal('passive'), id: z.string().min(1), value: z.number().optional() }),
 ]);
 

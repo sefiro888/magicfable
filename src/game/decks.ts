@@ -389,6 +389,29 @@ export const COMMANDERS = [
       effectId: 'commander-olimpo-power',
     },
   }) as CommanderDefinition,
+  // --- Quinto Sol (NEX-08 «El que hay que Alimentar») ---
+  CommanderDefinitionSchema.parse({
+    id: 'itzpapalotl-mariposa-obsidiana',
+    name: 'Itzpapálotl',
+    title: 'Mariposa de Obsidiana',
+    faction: 'sol',
+    nexusHealth: 35,
+    rules: 'El primer Sacrificio de cada turno también inflige 1 de daño al Nexo enemigo.',
+    flavor: 'No pide nada que no vaya a devolver convertido en amanecer.',
+    art: {
+      webp: '/assets/cards/art/itzpapalotl-mariposa-obsidiana.webp',
+      fallback: '/assets/cards/art/itzpapalotl-mariposa-obsidiana.svg',
+      alt: 'Itzpapálotl con alas de hojas de obsidiana bajo un cielo de estrellas cayendo',
+    },
+    vfx: { persistentEffect: 'commander-sol-aura', impactEffect: 'commander-sol-hit' },
+    power: {
+      name: 'Caída de las Estrellas',
+      description: 'Inflige a todas las unidades enemigas daño igual a tu Cuenta del Sol.',
+      cost: { generic: 2, colored: { sol: 1 } },
+      effects: [{ kind: 'damage-all-enemies-by-sun-count' }],
+      effectId: 'commander-sol-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -780,9 +803,50 @@ const olimpoDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
+/**
+ * Quinto Sol: despliega barato y lo gasta. Cargador y Perro son munición con
+ * beneficio propio al morir; Portador, Colibrí y Tzitzimitl exigen esa
+ * munición para entrar; Sacerdote, Danzante, Serpiente y Cuenta de los Días
+ * tiran de la Cuenta del Sol que todos esos Sacrificios van dejando atrás.
+ */
+const solDeck = DeckDefinitionSchema.parse({
+  id: 'alimentar-sol',
+  name: 'El que hay que Alimentar',
+  faction: 'sol',
+  commanderId: 'itzpapalotl-mariposa-obsidiana',
+  cards: [
+    { cardId: 'fuente-sol', count: 20 },
+    { cardId: 'cargador-de-tributo', count: 2 },
+    { cardId: 'guerrero-aguila', count: 2 },
+    { cardId: 'guerrero-jaguar', count: 2 },
+    { cardId: 'perro-guia-del-inframundo', count: 1 },
+    { cardId: 'arquero-de-chinampa', count: 2 },
+    { cardId: 'portador-del-cuchillo', count: 2 },
+    { cardId: 'tejedora-de-plumas', count: 1 },
+    { cardId: 'mensajero-de-obsidiana', count: 1 },
+    { cardId: 'sacerdote-del-templo-mayor', count: 1 },
+    { cardId: 'colibri-del-sur', count: 1 },
+    { cardId: 'danzante-del-fuego-nuevo', count: 1 },
+    { cardId: 'senora-de-la-falda-de-jade', count: 1 },
+    { cardId: 'monolito-viviente', count: 1 },
+    { cardId: 'serpiente-emplumada', count: 1 },
+    { cardId: 'tzitzimitl-estrella-caida', count: 1 },
+    { cardId: 'corazon-ofrecido', count: 1 },
+    { cardId: 'canto-de-guerra', count: 1 },
+    { cardId: 'lluvia-de-obsidiana', count: 1 },
+    { cardId: 'fuego-nuevo', count: 1 },
+    { cardId: 'espejo-humeante', count: 1 },
+    { cardId: 'cuenta-de-los-dias', count: 1 },
+    { cardId: 'templo-mayor', count: 1 },
+    { cardId: 'piedra-del-sol', count: 1 },
+    { cardId: 'muro-de-craneos', count: 1 },
+    { cardId: 'calzada-de-la-laguna', count: 1 },
+  ],
+}) as DeckDefinition;
+
 export const STARTER_DECKS = Object.freeze([
   furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck,
-  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck,
+  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(

@@ -16,6 +16,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   samsara: 'Samsara',
   jade: 'Jade',
   olimpo: 'Olimpo',
+  sol: 'Quinto Sol',
 };
 
 /**
@@ -57,6 +58,22 @@ const CUSTOM_GLYPHS: Partial<Record<FactionId, (color: string) => ReactNode>> = 
   ),
   // Olimpo: el rayo.
   olimpo: (color) => <path d="M35 4 L14 36 H28 L23 60 L52 26 H36 Z" fill={color} />,
+  // Quinto Sol: el disco solar con sus rayos.
+  sol: (color) => (
+    <>
+      <circle cx="32" cy="32" r="14" fill={color} />
+      <g stroke={color} strokeWidth="4" strokeLinecap="round">
+        <line x1="32" y1="4" x2="32" y2="14" />
+        <line x1="32" y1="50" x2="32" y2="60" />
+        <line x1="4" y1="32" x2="14" y2="32" />
+        <line x1="50" y1="32" x2="60" y2="32" />
+        <line x1="11.5" y1="11.5" x2="18.6" y2="18.6" />
+        <line x1="45.4" y1="45.4" x2="52.5" y2="52.5" />
+        <line x1="52.5" y1="11.5" x2="45.4" y2="18.6" />
+        <line x1="18.6" y1="45.4" x2="11.5" y2="52.5" />
+      </g>
+    </>
+  ),
 };
 
 export interface FactionSigilProps {

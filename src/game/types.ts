@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -133,6 +133,18 @@ export type CardEffect =
   | { readonly kind: 'buff-all-allies-permanent'; readonly amount: number }
   /** Poder de Némesis: pone la Hybris propia a cero y cura al Nexo lo que borró. */
   | { readonly kind: 'reset-hybris-and-heal' }
+  /**
+   * Quinto Sol — Sacrificio: coste adicional OBLIGATORIO de destruir una
+   * unidad propia para poder jugar esta carta. Si no tienes ninguna, no se
+   * puede jugar — a diferencia de la Ofrenda de Duna, que es opcional.
+   */
+  | { readonly kind: 'sacrifice' }
+  /**
+   * Inflige a cada unidad enemiga daño igual a la Cuenta del Sol propia
+   * (poder de Itzpapálotl, sin tope) o hasta el tope que diga `cap` (Cuenta
+   * de los Días).
+   */
+  | { readonly kind: 'damage-all-enemies-by-sun-count'; readonly cap?: number }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 /** Jade — los cinco elementos: cada uno genera al siguiente en el ciclo fijo. */
@@ -365,6 +377,12 @@ export interface PlayerState {
   readonly firstCardDiscountUsedThisTurn?: boolean;
   /** Olimpo — Hybris: contador de desmesura por jugador. NO se reinicia con el turno. */
   readonly hybris?: number;
+  /** Quinto Sol — la Cuenta del Sol: sube con cada Sacrificio. NO se reinicia con el turno. */
+  readonly sunCount?: number;
+  /** Quinto Sol: cuántas unidades propias se han sacrificado este turno (Señora de la Falda de Jade, Templo Mayor). */
+  readonly sacrificesThisTurn?: number;
+  /** Pasiva de Itzpapálotl: ya se aplicó el daño al Nexo enemigo por el primer Sacrificio de este turno. */
+  readonly firstSacrificeDamageUsedThisTurn?: boolean;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;
