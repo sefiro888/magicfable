@@ -13,6 +13,7 @@ const links = [
   { to: '/tower', label: 'Torre' },
   { to: '/multiplayer', label: 'Multijugador' },
   { to: '/gallery', label: 'Galería' },
+  { to: '/illustrations', label: 'Ilustraciones' },
   { to: '/decks', label: 'Mazos' },
 ]
 

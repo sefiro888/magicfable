@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage'
 const BattlePage = lazy(() => import('./pages/BattlePage').then((module) => ({ default: module.BattlePage })))
 const DecksPage = lazy(() => import('./pages/DecksPage').then((module) => ({ default: module.DecksPage })))
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then((module) => ({ default: module.GalleryPage })))
+const IllustrationsPage = lazy(() => import('./pages/IllustrationsPage').then((module) => ({ default: module.IllustrationsPage })))
 const MultiplayerPage = lazy(() => import('./pages/MultiplayerPage').then((module) => ({ default: module.MultiplayerPage })))
 const PlayPage = lazy(() => import('./pages/PlayPage').then((module) => ({ default: module.PlayPage })))
 const TowerPage = lazy(() => import('./pages/TowerPage').then((module) => ({ default: module.TowerPage })))
@@ -27,6 +28,7 @@ export function App() {
             <Route path="play" element={<PlayPage />} />
             <Route path="multiplayer" element={<MultiplayerPage />} />
             <Route path="gallery" element={<GalleryPage />} />
+            <Route path="illustrations" element={<IllustrationsPage />} />
             <Route path="decks" element={<DecksPage />} />
             <Route path="tower" element={<TowerPage />} />
             <Route path="settings" element={<SettingsPage />} />
