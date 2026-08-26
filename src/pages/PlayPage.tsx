@@ -21,6 +21,7 @@ const showcase: Record<string, readonly string[]> = {
   jade:   ['dragon-del-rio-amarillo', 'general-de-los-mil-estandartes', 'zorra-de-nueve-colas'],
   olimpo: ['titan-encadenado', 'heroe-de-los-doce-trabajos', 'hidra-de-lerna'],
   sol: ['tzitzimitl-estrella-caida', 'serpiente-emplumada', 'monolito-viviente'],
+  bestiario: ['behemot', 'kraken-del-abismo', 'bakunawa'],
 }
 
 const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
@@ -36,6 +37,7 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   jade:   'Arrebata el Mandato Celestial y hazlo rendir mientras lo conserves.',
   olimpo: 'Golpea el Nexo enemigo para crecer sin freno, y decide a tiempo cuándo parar.',
   sol: 'Sacrifica a tus propias unidades para pagar cartas más fuertes y alimentar la Cuenta del Sol.',
+  bestiario: 'Sin trucos: los cuerpos más grandes y directos del juego, coste por coste.',
 }
 
 /** Opciones del rival: el sorteo de siempre, o cualquiera de las demás facciones. */

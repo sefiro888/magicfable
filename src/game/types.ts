@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [

@@ -412,6 +412,29 @@ export const COMMANDERS = [
       effectId: 'commander-sol-power',
     },
   }) as CommanderDefinition,
+  // --- Bestiario (NEX-09 «Las Bestias que Ningún Pueblo Pudo Domesticar») ---
+  CommanderDefinitionSchema.parse({
+    id: 'vaelith-la-guardabestias',
+    name: 'Vaelith',
+    title: 'La Guardabestias',
+    faction: 'bestiario',
+    nexusHealth: 35,
+    rules: 'Mientras controles una unidad con Guardia, tus unidades entran en juego con +1 de Vida.',
+    flavor: 'No las domó. Aprendió a pedir permiso.',
+    art: {
+      webp: '/assets/cards/art/vaelith-la-guardabestias.webp',
+      fallback: '/assets/cards/art/vaelith-la-guardabestias.svg',
+      alt: 'Vaelith con ropa de cuero remendado sosteniendo una cadena suelta ante el bosque',
+    },
+    vfx: { persistentEffect: 'commander-bestiario-aura', impactEffect: 'commander-bestiario-hit' },
+    power: {
+      name: 'Instinto de Caza',
+      description: 'Inflige 6 de daño a la unidad enemiga con más Ataque y cura 6 a tu Nexo.',
+      cost: { generic: 2, colored: { bestiario: 1 } },
+      effects: [{ kind: 'passive', id: 'entry-damage-strongest', value: 6 }, { kind: 'heal-nexus', amount: 6 }],
+      effectId: 'commander-bestiario-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -844,9 +867,48 @@ const solDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
+/**
+ * Bestiario: sin mecánica propia a propósito — solo palabras clave que ya
+ * existen (Guardia, Impulso, Golpe veloz, Volador, Perforar, Vínculo vital,
+ * Aturdir) y los cuerpos más grandes del juego coste por coste.
+ */
+const bestiarioDeck = DeckDefinitionSchema.parse({
+  id: 'bestias-legendarias',
+  name: 'Bestiario',
+  faction: 'bestiario',
+  commanderId: 'vaelith-la-guardabestias',
+  cards: [
+    { cardId: 'fuente-bestiario', count: 20 },
+    { cardId: 'chupacabras', count: 3 },
+    { cardId: 'yeti-de-la-cumbre', count: 2 },
+    { cardId: 'viborno-alado', count: 2 },
+    { cardId: 'manticora-del-desfiladero', count: 2 },
+    { cardId: 'esfinge-del-umbral', count: 2 },
+    { cardId: 'cancerbero', count: 1 },
+    { cardId: 'anzu-tormenta', count: 1 },
+    { cardId: 'roc-de-las-cumbres', count: 1 },
+    { cardId: 'simurgh-de-plumas-de-cobre', count: 1 },
+    { cardId: 'leon-de-piel-de-hierro', count: 1 },
+    { cardId: 'tarasca-del-rio', count: 1 },
+    { cardId: 'bakunawa', count: 1 },
+    { cardId: 'aspidoquelone', count: 1 },
+    { cardId: 'kraken-del-abismo', count: 1 },
+    { cardId: 'behemot', count: 1 },
+    { cardId: 'aliento-feroz', count: 1 },
+    { cardId: 'coraza-de-escamas', count: 1 },
+    { cardId: 'presa-debilitada', count: 1 },
+    { cardId: 'instinto-de-manada', count: 1 },
+    { cardId: 'estampida', count: 1 },
+    { cardId: 'sangre-antigua', count: 1 },
+    { cardId: 'guarida-profunda', count: 1 },
+    { cardId: 'osario-de-huesos', count: 1 },
+    { cardId: 'fosa-de-alimentacion', count: 1 },
+  ],
+}) as DeckDefinition;
+
 export const STARTER_DECKS = Object.freeze([
   furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck,
-  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck,
+  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(

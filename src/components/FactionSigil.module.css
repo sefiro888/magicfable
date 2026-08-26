@@ -35,6 +35,8 @@
 .samsara { --sigil-color: #ffd27a; }
 .jade { --sigil-color: #f2c14e; }
 .olimpo { --sigil-color: #cf9b3f; }
+.sol { --sigil-color: #f5c33b; }
+.bestiario { --sigil-color: #c9932e; }
 
 @media (prefers-reduced-motion: reduce) {
   .sigil { filter: none; }

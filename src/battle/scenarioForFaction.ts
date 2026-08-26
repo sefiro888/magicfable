@@ -25,6 +25,7 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   jade: 'aether-citadel',
   olimpo: 'sanctuary',
   sol: 'caldera',
+  bestiario: 'sanctuary',
 }
 
 /**

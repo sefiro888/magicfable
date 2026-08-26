@@ -9,17 +9,17 @@ import { CardDefinitionSchema, CommanderDefinitionSchema, DeckDefinitionSchema }
 import type { DeckDefinition } from './types';
 
 describe('catálogo del Nexo', () => {
-  it('declara doce facciones, todas habilitadas', () => {
-    expect(FACTIONS).toHaveLength(12);
+  it('declara trece facciones, todas habilitadas', () => {
+    expect(FACTIONS).toHaveLength(13);
     expect(PLAYABLE_FACTIONS.map((faction) => faction.id)).toEqual([
-      'fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol',
+      'fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario',
     ]);
     expect(FACTIONS.filter((faction) => !faction.unlocked)).toHaveLength(0);
   });
 
-  it('contiene 300 diseños únicos: NEX-01, NEX-02, Duna, Fimbul, Samsara, Jade, Olimpo y Quinto Sol', () => {
-    expect(CARDS).toHaveLength(300);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(300);
+  it('contiene 331 diseños únicos: NEX-01, NEX-02 y siete facciones nuevas', () => {
+    expect(CARDS).toHaveLength(331);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(331);
     // La segunda oleada reparte exactamente 4 cartas por facción, así que
     // ninguna se queda atrás respecto a las demás.
     expect(cardsForFaction('fury')).toHaveLength(21);
@@ -31,25 +31,16 @@ describe('catálogo del Nexo', () => {
     const secondWave = CARDS.filter((card) => card.set.startsWith('NEX-02'));
     expect(secondWave).toHaveLength(24);
     expect(new Set(secondWave.map((card) => card.collectorNumber)).size).toBe(24);
-    // Las seis facciones nuevas llegan enteras de una vez: son facciones, no expansiones repartidas.
-    const duna = CARDS.filter((card) => card.set.startsWith('NEX-03'));
-    expect(duna).toHaveLength(31);
-    expect(duna.every((card) => card.faction === 'duna')).toBe(true);
-    const fimbul = CARDS.filter((card) => card.set.startsWith('NEX-04'));
-    expect(fimbul).toHaveLength(31);
-    expect(fimbul.every((card) => card.faction === 'fimbul')).toBe(true);
-    const samsara = CARDS.filter((card) => card.set.startsWith('NEX-05'));
-    expect(samsara).toHaveLength(31);
-    expect(samsara.every((card) => card.faction === 'samsara')).toBe(true);
-    const jade = CARDS.filter((card) => card.set.startsWith('NEX-06'));
-    expect(jade).toHaveLength(31);
-    expect(jade.every((card) => card.faction === 'jade')).toBe(true);
-    const olimpo = CARDS.filter((card) => card.set.startsWith('NEX-07'));
-    expect(olimpo).toHaveLength(31);
-    expect(olimpo.every((card) => card.faction === 'olimpo')).toBe(true);
-    const sol = CARDS.filter((card) => card.set.startsWith('NEX-08'));
-    expect(sol).toHaveLength(31);
-    expect(sol.every((card) => card.faction === 'sol')).toBe(true);
+    // Las siete facciones nuevas llegan enteras de una vez: son facciones, no expansiones repartidas.
+    const newFactionSets: readonly [string, string][] = [
+      ['NEX-03', 'duna'], ['NEX-04', 'fimbul'], ['NEX-05', 'samsara'], ['NEX-06', 'jade'],
+      ['NEX-07', 'olimpo'], ['NEX-08', 'sol'], ['NEX-09', 'bestiario'],
+    ];
+    for (const [prefix, faction] of newFactionSets) {
+      const cards = CARDS.filter((card) => card.set.startsWith(prefix));
+      expect(cards, prefix).toHaveLength(31);
+      expect(cards.every((card) => card.faction === faction), prefix).toBe(true);
+    }
   });
 
   it('incluye las doce cartas obligatorias', () => {
@@ -89,7 +80,7 @@ describe('catálogo del Nexo', () => {
   });
 
   it('define comandantes de 35 de vida con datos válidos', () => {
-    expect(COMMANDERS).toHaveLength(18);
+    expect(COMMANDERS).toHaveLength(19);
     expect(COMMANDERS.every((commander) => commander.nexusHealth === 35)).toBe(true);
     for (const commander of COMMANDERS) {
       expect(CommanderDefinitionSchema.safeParse(commander).success).toBe(true);
@@ -98,8 +89,8 @@ describe('catálogo del Nexo', () => {
 
   it('da a cada facción comandantes únicos que no colisionan con ninguna carta', () => {
     // Las seis originales tienen líder de siempre y alternativo de NEX-02.
-    // Las seis facciones nuevas son recientes y de momento solo traen el suyo.
-    const soloCommanderFactions = new Set(['duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol']);
+    // Las siete facciones nuevas son recientes y de momento solo traen el suyo.
+    const soloCommanderFactions = new Set(['duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario']);
     for (const faction of PLAYABLE_FACTIONS) {
       const owners = COMMANDERS.filter((commander) => commander.faction === faction.id);
       expect(owners, faction.id).toHaveLength(soloCommanderFactions.has(faction.id) ? 1 : 2);

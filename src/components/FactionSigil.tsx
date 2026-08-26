@@ -17,6 +17,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   jade: 'Jade',
   olimpo: 'Olimpo',
   sol: 'Quinto Sol',
+  bestiario: 'Bestiario',
 };
 
 /**
@@ -73,6 +74,14 @@ const CUSTOM_GLYPHS: Partial<Record<FactionId, (color: string) => ReactNode>> = 
         <line x1="18.6" y1="45.4" x2="11.5" y2="52.5" />
       </g>
     </>
+  ),
+  // Bestiario: tres zarpazos.
+  bestiario: (color) => (
+    <g stroke={color} strokeWidth="6" strokeLinecap="round" fill="none">
+      <path d="M14 10 L22 54" />
+      <path d="M28 8 L34 56" />
+      <path d="M42 10 L50 54" />
+    </g>
   ),
 };
 

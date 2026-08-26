@@ -1105,6 +1105,17 @@ const resolveSpell = (
         next = damagePiece(next, weakest.instanceId, effect.amount, caster, card.vfx.impactEffect);
         damageDealt += Math.min(effect.amount, before);
       }
+    } else if (effect.kind === 'passive' && effect.id === 'entry-damage-strongest') {
+      // Poder de Vaelith (Bestiario): mismo id que el disparador de entrada
+      // de unidad, cableado también al contexto de hechizo/poder de comandante.
+      const victim = next.board
+        .filter((piece) => piece.owner !== caster && pieceDefinition(piece)?.type === 'unit')
+        .sort((left, right) => {
+          const l = (pieceDefinition(left)?.attack ?? 0) + left.attackModifier;
+          const r = (pieceDefinition(right)?.attack ?? 0) + right.attackModifier;
+          return r - l || left.instanceId.localeCompare(right.instanceId);
+        })[0];
+      if (victim) next = damagePiece(next, victim.instanceId, effect.value ?? 1, caster, card.vfx.impactEffect);
     } else if (effect.kind === 'passive' && effect.id === 'target-attack-until-end' && targetPiece?.owner === caster) {
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece,
@@ -1508,6 +1519,10 @@ const cardTargetRejectionReason = (
   if (card.id === 'hilo-de-las-moiras' && piece.currentHealth > 5) {
     return 'Solo puede destruir una unidad enemiga con 5 Vida o menos.';
   }
+  // Presa Debilitada (Bestiario): mismo patrón, mismo tope.
+  if (card.id === 'presa-debilitada' && piece.currentHealth > 5) {
+    return 'Solo puede destruir una unidad enemiga con 5 Vida o menos.';
+  }
   const curseDrain = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'curse-drain-health');
   if (curseDrain && piece.owner === playerId) return 'Solo puede apuntar a una ficha enemiga.';
   // Aturdir es un castigo, no una bendición: solo vale contra unidades
@@ -1705,6 +1720,12 @@ export const playCard = (
     // Némesis (Olimpo): mientras la Hybris propia sea baja, sus unidades entran más duras.
     const nemesisBonus =
       commanderId === 'nemesis-la-que-mide' && card.type === 'unit' && (player.hybris ?? 0) <= 5 ? 1 : 0;
+    // Vaelith (Bestiario): mientras controles una unidad con Guardia, sus unidades entran más duras.
+    const vaelithBonus =
+      commanderId === 'vaelith-la-guardabestias' && card.type === 'unit'
+      && state.board.some((piece) => piece.owner === playerId && pieceDefinition(piece)?.keywords.includes('guard'))
+        ? 1
+        : 0;
     // Oso Forestal / Arboleda Sagrada: cada aliada propia en juego con esta aura suma su bono
     // a toda unidad nueva que entra (no a estructuras, el texto dice "unidades aliadas").
     const alliedAuraBonus = card.type === 'unit'
@@ -1756,7 +1777,7 @@ export const playCard = (
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus + nemesisBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus,
+      currentHealth: maximumHealth + verdaniaBonus + nemesisBonus + vaelithBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus,
       attackModifier: (receivesForgeBuff ? 1 : 0) + permanentBonus,
       movedThisTurn: false,
       attackedThisTurn: false,

@@ -18,6 +18,7 @@ export const ManaCostSchema = z
         jade: z.number().int().nonnegative().optional(),
         olimpo: z.number().int().nonnegative().optional(),
         sol: z.number().int().nonnegative().optional(),
+        bestiario: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })

@@ -121,6 +121,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['sacrificio', 'cuenta del sol', 'ofrenda'],
   },
+  {
+    id: 'bestiario',
+    name: 'Bestiario',
+    description: 'Las bestias que ningún pueblo pudo domesticar: el cuerpo más grande y directo de la mesa.',
+    color: '#1c2e22',
+    accentColor: '#c9932e',
+    icon: 'claw',
+    unlocked: true,
+    themes: ['bestias', 'tamaño', 'palabras clave'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -136,6 +146,7 @@ export const FACTION_BY_ID = Object.freeze({
   jade: FACTIONS[9],
   olimpo: FACTIONS[10],
   sol: FACTIONS[11],
+  bestiario: FACTIONS[12],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);
