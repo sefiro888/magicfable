@@ -18,6 +18,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   olimpo: 'Olimpo',
   sol: 'Quinto Sol',
   bestiario: 'Bestiario',
+  plaga: 'Plaga',
 };
 
 /**
@@ -82,6 +83,13 @@ const CUSTOM_GLYPHS: Partial<Record<FactionId, (color: string) => ReactNode>> = 
       <path d="M28 8 L34 56" />
       <path d="M42 10 L50 54" />
     </g>
+  ),
+  // Plaga: la máscara de pico de peste.
+  plaga: (color) => (
+    <>
+      <path d="M32 8 C19 12 12 26 19 39 C23 47 29 51 32 55 C35 51 41 47 45 39 C52 26 45 12 32 8 Z" fill={color} />
+      <circle cx="32" cy="27" r="4.5" fill="#1a1710" />
+    </>
   ),
 };
 

@@ -541,17 +541,66 @@ const damagePieceDetailed = (
             ),
         )
       : [];
-    next = withPlayer(
-      { ...next, board: next.board.filter((piece) => piece.instanceId !== pieceId) },
-      target.owner,
-      {
-        ...owner,
-        discard: [
-          ...owner.discard,
-          { instanceId: target.instanceId, cardId: target.cardId, ...(target.renacerSpent ? { renacerSpent: true } : {}) },
-        ],
-      },
-    );
+    // Plaga — Contagio: una pieza Infectada que muere NO va al cementerio de
+    // su dueño, se convierte en un Zombi Contagiado bajo quien la infectó, en
+    // su misma casilla. Va aquí, no en un solo punto de infección, porque
+    // cualquier vía de muerte cuenta (combate, hechizo, drenaje del propio
+    // Contagio al final del turno).
+    const infection = target.statuses.find((status) => status.kind === 'infected');
+    if (infection?.kind === 'infected') {
+      const zombieCard = CARD_BY_ID['zombi-contagiado'];
+      next = withPlayer(
+        { ...next, board: next.board.filter((piece) => piece.instanceId !== pieceId) },
+        target.owner,
+        { ...owner, discard: [...owner.discard, { instanceId: target.instanceId, cardId: target.cardId }] },
+      );
+      if (zombieCard) {
+        const zombiePiece: BoardPiece = {
+          instanceId: `${target.instanceId}-plaga-zombie`,
+          cardId: 'zombi-contagiado',
+          owner: infection.infectorId,
+          position: target.position,
+          currentHealth: zombieCard.health ?? 2,
+          attackModifier: 0,
+          movedThisTurn: false,
+          attackedThisTurn: false,
+          enteredOnTurn: next.turn,
+          statuses: [],
+        };
+        next = { ...next, board: [...next.board, zombiePiece] };
+        next = enqueue(next, {
+          type: 'summon', actorId: infection.infectorId, targetId: zombiePiece.instanceId,
+          to: target.position, effectId: zombieCard.vfx.summonEffect, faction: 'plaga', durationMs: 440,
+        });
+      }
+      // Horda sin Fin: crece cada vez que una Infectada enemiga suya muere así.
+      for (const grower of next.board.filter(
+        (piece) => piece.owner === infection.infectorId
+          && pieceDefinition(piece)?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'grow-on-infected-enemy-death'),
+      )) {
+        next = updatePiece(next, grower.instanceId, (piece) => ({
+          ...piece,
+          attackModifier: piece.attackModifier + 1,
+          currentHealth: piece.currentHealth + 1,
+          permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + 1,
+        }));
+      }
+      next = withPlayer(next, infection.infectorId, {
+        ...next.players[infection.infectorId], infectedEnemyDiedThisTurn: true,
+      });
+    } else {
+      next = withPlayer(
+        { ...next, board: next.board.filter((piece) => piece.instanceId !== pieceId) },
+        target.owner,
+        {
+          ...owner,
+          discard: [
+            ...owner.discard,
+            { instanceId: target.instanceId, cardId: target.cardId, ...(target.renacerSpent ? { renacerSpent: true } : {}) },
+          ],
+        },
+      );
+    }
     next = enqueue(next, {
       type: 'destroy', targetId: pieceId, to: target.position, effectId: dyingDefinition?.vfx.deathEffect ?? 'card-destroy', durationMs: 420,
     });
@@ -1034,6 +1083,25 @@ const resolveSpell = (
           permanentAttackBonus: (target.permanentAttackBonus ?? 0) + effect.amount,
         }));
       }
+    } else if (effect.kind === 'passive' && effect.id === 'infect-target' && targetPiece && targetPiece.owner !== caster) {
+      // Mordisco Infeccioso (Plaga): infecta al mismo objetivo al que ya se
+      // le ha hecho daño. Si el daño lo mató, no queda a quién infectar.
+      if (next.board.some((piece) => piece.instanceId === targetPiece.instanceId)) {
+        next = addInfection(next, targetPiece.instanceId, caster);
+      }
+    } else if (effect.kind === 'passive' && effect.id === 'infect-all-enemies') {
+      // Niebla Infecciosa, Plaga que no Cesa, poder de Kessra (Plaga).
+      next = infectAllEnemies(next, caster);
+    } else if (effect.kind === 'passive' && effect.id === 'damage-all-infected-enemies') {
+      // Plaga que no Cesa / poder de Kessra: daño extra a TODAS las
+      // unidades enemigas ya Infectadas en este momento (incluidas las que
+      // el propio hechizo acaba de infectar un instante antes).
+      const amount = effect.value ?? 1;
+      for (const piece of next.board.filter(
+        (candidate) => candidate.owner !== caster && candidate.statuses.some((status) => status.kind === 'infected'),
+      )) {
+        next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect);
+      }
     } else if (effect.kind === 'claim-mandate') {
       // Jade: el Mandato Celestial pasa a manos de quien lanza la carta,
       // arrebatándoselo al rival si lo tenía. Mandato Revocado premia
@@ -1379,6 +1447,9 @@ const resolveEntryEffects = (
       const floor = effect.value ?? 2;
       const owner = next.players[piece.owner];
       if ((owner.sunCount ?? 0) < floor) next = withPlayer(next, piece.owner, { ...owner, sunCount: floor });
+    } else if (effect.kind === 'passive' && effect.id === 'entry-infect-all-enemies') {
+      // Alcalde Caído (Plaga).
+      next = infectAllEnemies(next, piece.owner);
     } else if (effect.kind === 'destroy-low-health-all') {
       // Danzante de la Destrucción: barrido de Vida baja, sin distinguir bando.
       for (const target of next.board.filter(
@@ -1522,6 +1593,10 @@ const cardTargetRejectionReason = (
   // Presa Debilitada (Bestiario): mismo patrón, mismo tope.
   if (card.id === 'presa-debilitada' && piece.currentHealth > 5) {
     return 'Solo puede destruir una unidad enemiga con 5 Vida o menos.';
+  }
+  // Último Aliento (Plaga): solo puede apuntar a una unidad enemiga ya Infectada.
+  if (card.id === 'ultimo-aliento' && !piece.statuses.some((status) => status.kind === 'infected')) {
+    return 'Solo puede destruir una unidad enemiga ya Infectada.';
   }
   const curseDrain = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'curse-drain-health');
   if (curseDrain && piece.owner === playerId) return 'Solo puede apuntar a una ficha enemiga.';
@@ -1771,13 +1846,28 @@ export const playCard = (
       )
         ? 1
         : 0;
-    const permanentBonus = renacerBonusAttack + elementBonus;
+    // Horda (Plaga): al entrar, +N/+N permanentes por cada OTRA unidad
+    // propia con Horda que YA estuviera en el tablero (se cuenta una vez, no
+    // se recalcula después — a diferencia de la Fosa Común Andante, que
+    // recalcula su bono cada vez que ataca).
+    const hordaPermanentBuff = card.type === 'unit'
+      ? card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'horda-permanent-buff')
+      : undefined;
+    const hordaPermanentBonus = hordaPermanentBuff?.kind === 'passive'
+      ? (hordaPermanentBuff.value ?? 1) * state.board.filter(
+          (piece) => piece.owner === playerId
+            && pieceDefinition(piece)?.effects.some(
+              (effect) => effect.kind === 'passive' && (effect.id === 'horda-attack-bonus' || effect.id === 'horda-permanent-buff'),
+            ),
+        ).length
+      : 0;
+    const permanentBonus = renacerBonusAttack + elementBonus + hordaPermanentBonus;
     const piece: BoardPiece = {
       instanceId: instance.instanceId,
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus + nemesisBonus + vaelithBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus,
+      currentHealth: maximumHealth + verdaniaBonus + nemesisBonus + vaelithBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus + hordaPermanentBonus,
       attackModifier: (receivesForgeBuff ? 1 : 0) + permanentBonus,
       movedThisTurn: false,
       attackedThisTurn: false,
@@ -2122,9 +2212,20 @@ const computeAttackAmount = (
   const danzanteBonus = danzanteBuff?.kind === 'passive'
     ? Math.max(0, (state.players[attacker.owner].sunCount ?? 0) - 5)
     : 0;
+  // Horda (Plaga): +N de Ataque por cada OTRA unidad propia con Horda en el
+  // tablero. Es un cálculo dinámico, igual que la Furia de Fimbul.
+  const hordaBuff = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'horda-attack-bonus');
+  const hordaBonus = hordaBuff?.kind === 'passive'
+    ? (hordaBuff.value ?? 1) * state.board.filter(
+        (piece) => piece.owner === attacker.owner && piece.instanceId !== attacker.instanceId
+          && pieceDefinition(piece)?.effects.some(
+            (effect) => effect.kind === 'passive' && (effect.id === 'horda-attack-bonus' || effect.id === 'horda-permanent-buff'),
+          ),
+      ).length
+    : 0;
   return Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus + mandateBonus + generalBonus + danzanteBonus - shielded);
+    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus + mandateBonus + generalBonus + danzanteBonus + hordaBonus - shielded);
 };
 
 export const attackPiece = (
@@ -2156,6 +2257,19 @@ export const attackPiece = (
   // por el anunciado — escudos y reducciones lo recortan antes.
   if (hit.dealt > 0 && hasLifelink(next, attacker, playerId)) {
     next = healNexus(next, playerId, hit.dealt);
+  }
+  // Plaga — Contagio: si la defensora sobrevive al golpe, queda Infectada
+  // (propio o por el aura de la Médica de la Peste). Si el golpe la mata,
+  // muere sin más — no hay a quién infectar.
+  const hasContagio = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'infect-on-damage')
+    || next.board.some(
+      (piece) => piece.owner === playerId && pieceDefinition(piece)?.effects.some(
+        (effect) => effect.kind === 'passive' && effect.id === 'grant-contagio-aura',
+      ),
+    );
+  if (hasContagio && hit.dealt > 0) {
+    const survivor = next.board.find((piece) => piece.instanceId === defenderId);
+    if (survivor) next = addInfection(next, defenderId, playerId);
   }
   // Perforar: si el golpe destruye a la defensora, lo que sobra pasa al Nexo
   // enemigo. Solo cuenta el exceso real sobre la Vida que le quedaba.
@@ -2371,6 +2485,51 @@ const performSacrifice = (state: MatchState, playerId: PlayerId): MatchState => 
         type: 'victory', actorId: playerId, targetId: `${enemyId}-nexus`, effectId: 'sol-victory', durationMs: 900,
       });
     }
+  }
+  return next;
+};
+
+/**
+ * Plaga — Contagio: marca una pieza como Infectada por `infectorId`. Cubre
+ * también la pasiva de Kessra (la primera infección de cada turno roba 1),
+ * así que toda vía de infectar pasa por aquí en vez de repetir el chequeo en
+ * cada sitio que la dispara.
+ */
+const addInfection = (state: MatchState, pieceId: string, infectorId: PlayerId): MatchState => {
+  const target = state.board.find((piece) => piece.instanceId === pieceId);
+  if (!target) return state;
+  let next = updatePiece(state, pieceId, (piece) => ({
+    ...piece,
+    statuses: [...piece.statuses.filter((status) => status.kind !== 'infected'), { kind: 'infected' as const, infectorId }],
+  }));
+  const infector = next.players[infectorId];
+  if (infector.commanderId === 'kessra-paciente-cero' && !infector.firstInfectionDrawUsedThisTurn) {
+    next = withPlayer(next, infectorId, { ...infector, firstInfectionDrawUsedThisTurn: true });
+    next = resolveDrawAndDiscard(next, infectorId, 1, 0);
+  }
+  return next;
+};
+
+/** Infecta a todas las unidades enemigas de `casterId` (Alcalde Caído, Niebla Infecciosa, Plaga que no Cesa, poder de Kessra). */
+const infectAllEnemies = (state: MatchState, casterId: PlayerId): MatchState => {
+  let next = state;
+  for (const enemy of next.board.filter((piece) => piece.owner !== casterId && pieceDefinition(piece)?.type === 'unit')) {
+    next = addInfection(next, enemy.instanceId, casterId);
+  }
+  return next;
+};
+
+/**
+ * Plaga — Contagio: al final de CADA turno (de cualquiera de los dos
+ * jugadores, no solo de quien lo termina), toda pieza Infectada pierde 1 de
+ * Vida. Por eso no vive dentro de `resolveStructureUpkeep` (que solo mira las
+ * piezas del jugador que termina turno): esto recorre el tablero entero.
+ */
+const resolveContagionDrain = (state: MatchState): MatchState => {
+  let next = state;
+  for (const infected of state.board.filter((piece) => piece.statuses.some((status) => status.kind === 'infected'))) {
+    if (!next.board.some((piece) => piece.instanceId === infected.instanceId)) continue;
+    next = damagePiece(next, infected.instanceId, 1, undefined, 'plaga-contagion-drain');
   }
   return next;
 };
@@ -2668,6 +2827,26 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
           });
           return next;
         }
+      } else if (effect.id === 'upkeep-burn-infected-enemy') {
+        // Laboratorio Clandestino (Plaga): una unidad enemiga Infectada, la que sea, pierde 1 de Vida extra.
+        const victim = next.board.find(
+          (piece) => piece.owner === enemyId && piece.statuses.some((status) => status.kind === 'infected'),
+        );
+        if (victim) next = damagePiece(next, victim.instanceId, value, playerId, card.vfx.impactEffect);
+      } else if (effect.id === 'upkeep-draw-and-grow-if-infected-death' && next.players[playerId].infectedEnemyDiedThisTurn) {
+        // Monumento a la Plaga (Plaga).
+        next = resolveDrawAndDiscard(next, playerId, 1, 0);
+        const ally = next.board
+          .filter((piece) => piece.owner === playerId && pieceDefinition(piece)?.type === 'unit')
+          .sort((left, right) => left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId))[0];
+        if (ally) {
+          next = updatePiece(next, ally.instanceId, (piece) => ({
+            ...piece,
+            attackModifier: piece.attackModifier + value,
+            currentHealth: piece.currentHealth + value,
+            permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + value,
+          }));
+        }
       } else if (effect.id === 'metamorphosis-grow-if-wounded' && card.type === 'unit') {
         // Hidra de Lerna (Olimpo): si sigue en pie herida al final del turno, +N/+N. Se repite cada turno.
         const self = next.board.find((piece) => piece.instanceId === structure.instanceId);
@@ -2745,6 +2924,10 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
   const afterUpkeep = resolveStructureUpkeep(state, playerId);
   if (afterUpkeep.phase === 'finished') return success(afterUpkeep);
   state = afterUpkeep;
+  // Plaga — Contagio: el drenaje de las Infectadas es de CUALQUIERA de los
+  // dos turnos, no solo el de quien lo termina.
+  state = resolveContagionDrain(state);
+  if (state.phase === 'finished') return success(state);
   // Jade: el Mandato Celestial se cae solo si terminas tu turno sin ninguna
   // unidad propia en el tablero — el Cielo no respalda a quien no tiene nada.
   if (state.mandate === playerId && !state.board.some((piece) => piece.owner === playerId)) {
@@ -2781,6 +2964,8 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         firstCardDiscountUsedThisTurn: false,
         sacrificesThisTurn: 0,
         firstSacrificeDamageUsedThisTurn: false,
+        firstInfectionDrawUsedThisTurn: false,
+        infectedEnemyDiedThisTurn: false,
       },
       [nextPlayerId]: {
         ...incoming,
@@ -2800,6 +2985,8 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         firstCardDiscountUsedThisTurn: false,
         sacrificesThisTurn: 0,
         firstSacrificeDamageUsedThisTurn: false,
+        firstInfectionDrawUsedThisTurn: false,
+        infectedEnemyDiedThisTurn: false,
       },
     },
     board: state.board.map((piece) => ({

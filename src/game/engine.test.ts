@@ -45,6 +45,7 @@ const SOURCE_BY_FACTION: Record<FactionId, string> = {
   olimpo: 'fuente-olimpo',
   sol: 'fuente-sol',
   bestiario: 'fuente-bestiario',
+  plaga: 'fuente-plaga',
 };
 
 const resources = (faction: FactionId, count: number, exhausted = false): readonly ResourceState[] =>

@@ -25,6 +25,7 @@ const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonl
   olimpo: { color: '#cf9b3f', glow: 'ember' },
   sol: { color: '#f5c33b', glow: 'ember' },
   bestiario: { color: '#c9932e', glow: 'ember' },
+  plaga: { color: '#b8481f', glow: 'ember' },
 }
 
 /**

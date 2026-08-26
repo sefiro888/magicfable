@@ -26,6 +26,7 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   olimpo: 'sanctuary',
   sol: 'caldera',
   bestiario: 'sanctuary',
+  plaga: 'duna',
 }
 
 /**

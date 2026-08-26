@@ -22,6 +22,7 @@ const showcase: Record<string, readonly string[]> = {
   olimpo: ['titan-encadenado', 'heroe-de-los-doce-trabajos', 'hidra-de-lerna'],
   sol: ['tzitzimitl-estrella-caida', 'serpiente-emplumada', 'monolito-viviente'],
   bestiario: ['behemot', 'kraken-del-abismo', 'bakunawa'],
+  plaga: ['titan-de-la-plaga', 'zombi-contagiado', 'golem-de-carne-cosida'],
 }
 
 const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
@@ -38,6 +39,7 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   olimpo: 'Golpea el Nexo enemigo para crecer sin freno, y decide a tiempo cuándo parar.',
   sol: 'Sacrifica a tus propias unidades para pagar cartas más fuertes y alimentar la Cuenta del Sol.',
   bestiario: 'Sin trucos: los cuerpos más grandes y directos del juego, coste por coste.',
+  plaga: 'Infecta al ejército rival y quédate con lo que caiga: la horda crece de ambos lados del tablero.',
 }
 
 /** Opciones del rival: el sorteo de siempre, o cualquiera de las demás facciones. */

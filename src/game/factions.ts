@@ -131,6 +131,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['bestias', 'tamaño', 'palabras clave'],
   },
+  {
+    id: 'plaga',
+    name: 'Plaga',
+    description: 'Lo que muerde, no perdona: infecta a las unidades enemigas y hazlas tuyas cuando caigan.',
+    color: '#4a5c34',
+    accentColor: '#b8481f',
+    icon: 'plague-mask',
+    unlocked: true,
+    themes: ['contagio', 'horda', 'no muertos'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -147,6 +157,7 @@ export const FACTION_BY_ID = Object.freeze({
   olimpo: FACTIONS[10],
   sol: FACTIONS[11],
   bestiario: FACTIONS[12],
+  plaga: FACTIONS[13],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -265,7 +265,14 @@ export type PieceStatus =
    * Congelado: aturdir en el turno N pone `expiresOnTurn` en N+2, de modo que
    * cubre exactamente el siguiente turno de su dueño.
    */
-  | { readonly kind: 'stunned'; readonly expiresOnTurn: number };
+  | { readonly kind: 'stunned'; readonly expiresOnTurn: number }
+  /**
+   * Plaga — Contagio: pierde 1 de Vida al final de CADA turno (de cualquiera
+   * de los dos jugadores, no solo su dueño). Si muere estando así, se
+   * convierte en un Zombi Contagiado bajo `infectorId` en vez de irse al
+   * cementerio de su dueño original.
+   */
+  | { readonly kind: 'infected'; readonly infectorId: PlayerId };
 
 /**
  * Marca temporal que deja un efecto sobre una casilla (hoy solo el fuego).
@@ -383,6 +390,10 @@ export interface PlayerState {
   readonly sacrificesThisTurn?: number;
   /** Pasiva de Itzpapálotl: ya se aplicó el daño al Nexo enemigo por el primer Sacrificio de este turno. */
   readonly firstSacrificeDamageUsedThisTurn?: boolean;
+  /** Pasiva de Kessra: ya se robó por la primera infección de este turno. */
+  readonly firstInfectionDrawUsedThisTurn?: boolean;
+  /** Plaga — Monumento a la Plaga: si una Infectada enemiga suya murió así este turno. */
+  readonly infectedEnemyDiedThisTurn?: boolean;
   readonly mulliganTaken: boolean;
   /** El poder del comandante solo se puede usar una vez por partida. */
   readonly commanderPowerUsed: boolean;

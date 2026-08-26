@@ -9,17 +9,17 @@ import { CardDefinitionSchema, CommanderDefinitionSchema, DeckDefinitionSchema }
 import type { DeckDefinition } from './types';
 
 describe('catálogo del Nexo', () => {
-  it('declara trece facciones, todas habilitadas', () => {
-    expect(FACTIONS).toHaveLength(13);
+  it('declara catorce facciones, todas habilitadas', () => {
+    expect(FACTIONS).toHaveLength(14);
     expect(PLAYABLE_FACTIONS.map((faction) => faction.id)).toEqual([
-      'fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario',
+      'fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga',
     ]);
     expect(FACTIONS.filter((faction) => !faction.unlocked)).toHaveLength(0);
   });
 
-  it('contiene 331 diseños únicos: NEX-01, NEX-02 y siete facciones nuevas', () => {
-    expect(CARDS).toHaveLength(331);
-    expect(new Set(CARDS.map((card) => card.id)).size).toBe(331);
+  it('contiene 362 diseños únicos: NEX-01, NEX-02 y ocho facciones nuevas', () => {
+    expect(CARDS).toHaveLength(362);
+    expect(new Set(CARDS.map((card) => card.id)).size).toBe(362);
     // La segunda oleada reparte exactamente 4 cartas por facción, así que
     // ninguna se queda atrás respecto a las demás.
     expect(cardsForFaction('fury')).toHaveLength(21);
@@ -34,7 +34,7 @@ describe('catálogo del Nexo', () => {
     // Las siete facciones nuevas llegan enteras de una vez: son facciones, no expansiones repartidas.
     const newFactionSets: readonly [string, string][] = [
       ['NEX-03', 'duna'], ['NEX-04', 'fimbul'], ['NEX-05', 'samsara'], ['NEX-06', 'jade'],
-      ['NEX-07', 'olimpo'], ['NEX-08', 'sol'], ['NEX-09', 'bestiario'],
+      ['NEX-07', 'olimpo'], ['NEX-08', 'sol'], ['NEX-09', 'bestiario'], ['NEX-10', 'plaga'],
     ];
     for (const [prefix, faction] of newFactionSets) {
       const cards = CARDS.filter((card) => card.set.startsWith(prefix));
@@ -80,7 +80,7 @@ describe('catálogo del Nexo', () => {
   });
 
   it('define comandantes de 35 de vida con datos válidos', () => {
-    expect(COMMANDERS).toHaveLength(19);
+    expect(COMMANDERS).toHaveLength(20);
     expect(COMMANDERS.every((commander) => commander.nexusHealth === 35)).toBe(true);
     for (const commander of COMMANDERS) {
       expect(CommanderDefinitionSchema.safeParse(commander).success).toBe(true);
@@ -90,7 +90,7 @@ describe('catálogo del Nexo', () => {
   it('da a cada facción comandantes únicos que no colisionan con ninguna carta', () => {
     // Las seis originales tienen líder de siempre y alternativo de NEX-02.
     // Las siete facciones nuevas son recientes y de momento solo traen el suyo.
-    const soloCommanderFactions = new Set(['duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario']);
+    const soloCommanderFactions = new Set(['duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga']);
     for (const faction of PLAYABLE_FACTIONS) {
       const owners = COMMANDERS.filter((commander) => commander.faction === faction.id);
       expect(owners, faction.id).toHaveLength(soloCommanderFactions.has(faction.id) ? 1 : 2);

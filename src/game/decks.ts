@@ -435,6 +435,32 @@ export const COMMANDERS = [
       effectId: 'commander-bestiario-power',
     },
   }) as CommanderDefinition,
+  // --- Plaga (NEX-10 «Lo que Muerde, no Perdona») ---
+  CommanderDefinitionSchema.parse({
+    id: 'kessra-paciente-cero',
+    name: 'Kessra',
+    title: 'La Paciente Cero',
+    faction: 'plaga',
+    nexusHealth: 35,
+    rules: 'La primera vez cada turno que infectas a una unidad enemiga, robas 1 carta.',
+    flavor: 'No recuerda haber estado enferma. Recuerda que dejó de importarle.',
+    art: {
+      webp: '/assets/cards/art/kessra-paciente-cero.webp',
+      fallback: '/assets/cards/art/kessra-paciente-cero.svg',
+      alt: 'Kessra con máscara de pico de peste vacía en una tienda de cuarentena',
+    },
+    vfx: { persistentEffect: 'commander-plaga-aura', impactEffect: 'commander-plaga-hit' },
+    power: {
+      name: 'Brote Final',
+      description: 'Infecta a todas las unidades enemigas y todas las unidades Infectadas pierden 3 de Vida de inmediato.',
+      cost: { generic: 2, colored: { plaga: 1 } },
+      effects: [
+        { kind: 'passive', id: 'infect-all-enemies' },
+        { kind: 'passive', id: 'damage-all-infected-enemies', value: 3 },
+      ],
+      effectId: 'commander-plaga-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -906,9 +932,47 @@ const bestiarioDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
+/**
+ * Plaga: siembra Contagio pronto (Mordedor, Verdugo) para que las piezas
+ * infectadas rivales acaben convirtiéndose en Zombis Contagiados propios, y
+ * deja que Fosa Común Andante y Turba Devoradora crezcan con esa horda.
+ */
+const plagaDeck = DeckDefinitionSchema.parse({
+  id: 'contagio-plaga',
+  name: 'Lo que Muerde, no Perdona',
+  faction: 'plaga',
+  commanderId: 'kessra-paciente-cero',
+  cards: [
+    { cardId: 'fuente-plaga', count: 20 },
+    { cardId: 'mordedor-recien-alzado', count: 3 },
+    { cardId: 'zombi-contagiado', count: 3 },
+    { cardId: 'enjambre-de-moscas', count: 2 },
+    { cardId: 'paciente-en-cuarentena', count: 2 },
+    { cardId: 'verdugo-podrido', count: 2 },
+    { cardId: 'enterrador-ciego', count: 1 },
+    { cardId: 'fosa-comun-andante', count: 1 },
+    { cardId: 'nino-infectado', count: 1 },
+    { cardId: 'alguacil-reanimado', count: 1 },
+    { cardId: 'medica-de-la-peste', count: 1 },
+    { cardId: 'golem-de-carne-cosida', count: 1 },
+    { cardId: 'turba-devoradora', count: 1 },
+    { cardId: 'alcalde-caido', count: 1 },
+    { cardId: 'horda-sin-fin', count: 1 },
+    { cardId: 'titan-de-la-plaga', count: 1 },
+    { cardId: 'mordisco-infeccioso', count: 1 },
+    { cardId: 'niebla-infecciosa', count: 1 },
+    { cardId: 'saqueo-de-tumbas', count: 1 },
+    { cardId: 'avalancha-podrida', count: 1 },
+    { cardId: 'resurreccion-forzada', count: 1 },
+    { cardId: 'foso-comun', count: 1 },
+    { cardId: 'campana-de-cuarentena', count: 1 },
+    { cardId: 'criadero-de-horda', count: 1 },
+  ],
+}) as DeckDefinition;
+
 export const STARTER_DECKS = Object.freeze([
   furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck,
-  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck,
+  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck, plagaDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(

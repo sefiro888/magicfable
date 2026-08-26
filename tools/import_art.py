@@ -150,6 +150,7 @@ FOLDER_FACTIONS = {
     "faccion-enjambre": "enjambre",
     "faccion-duna": "duna",
     "faccion-bestias": "bestiario",
+    "faccion-plaga": "plaga",
 }
 
 

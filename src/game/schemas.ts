@@ -19,6 +19,7 @@ export const ManaCostSchema = z
         olimpo: z.number().int().nonnegative().optional(),
         sol: z.number().int().nonnegative().optional(),
         bestiario: z.number().int().nonnegative().optional(),
+        plaga: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })

@@ -37,6 +37,7 @@
 .olimpo { --sigil-color: #cf9b3f; }
 .sol { --sigil-color: #f5c33b; }
 .bestiario { --sigil-color: #c9932e; }
+.plaga { --sigil-color: #b8481f; }
 
 @media (prefers-reduced-motion: reduce) {
   .sigil { filter: none; }
