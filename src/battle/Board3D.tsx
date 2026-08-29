@@ -393,16 +393,38 @@ const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position, terra
   }
   if (cover) {
     const wood = masonryTexture()
+    const semillaCover = position.x * 5 + position.y * 11
     return (
       <group position={[0, 0.06, 0]}>
-        {[-0.3, 0, 0.3].map((offset) => (
-          <mesh key={offset} position={[offset, 0.13, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]} castShadow receiveShadow>
-            <boxGeometry args={[0.2, 0.28, 0.1]} />
-            <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color={look.cover} roughness={look.rough * 0.9} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
-          </mesh>
-        ))}
-        <mesh position={[0, 0.25, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.86, 0.08, 0.13]} />
+        {/* Empalizada de cinco estacas CLAVADAS y apuntadas, no tres cajas
+            rectangulares alineadas: un parapeto de campaña se hace hincando
+            troncos afilados, y con los escombros ya convertidos en piedra
+            irregular esto se había quedado como lo más tosco del tablero.
+            Cada estaca varía de alto y de inclinación con la posición de la
+            casilla, así que dos parapetos nunca salen calcados. */}
+        {[-0.34, -0.17, 0, 0.17, 0.34].map((offset, index) => {
+          const alto = 0.26 + ((semillaCover + index * 3) % 4) * 0.045
+          const ladeo = 0.1 + ((semillaCover + index) % 3) * 0.06
+          return (
+            <group key={offset} position={[offset, 0, -TILE_SIZE * 0.3]} rotation={[ladeo, index * 0.7, ((index % 3) - 1) * 0.07]}>
+              <mesh position={[0, alto / 2, 0]} castShadow receiveShadow>
+                <cylinderGeometry args={[0.045, 0.055, alto, 6]} />
+                <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color={look.cover} roughness={look.rough * 0.9} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
+              </mesh>
+              {/* Punta afilada: es lo que lo hace leerse como estaca. */}
+              <mesh position={[0, alto + 0.045, 0]} castShadow>
+                <coneGeometry args={[0.045, 0.11, 6]} />
+                <meshStandardMaterial map={wood} color={look.coverTop} roughness={look.rough * 0.85} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
+              </mesh>
+            </group>
+          )
+        })}
+        {/* Travesaño que ata las estacas, algo por debajo de las puntas. El
+            giro de PI/2 en Z es imprescindible: un cilindro nace VERTICAL en
+            Three.js, así que sin tumbarlo el travesaño saldría de pie en
+            medio del parapeto en vez de atravesarlo. */}
+        <mesh position={[0, 0.2, -TILE_SIZE * 0.3]} rotation={[0.1, 0, Math.PI / 2]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.032, 0.032, 0.84, 6]} />
           <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color={look.coverTop} roughness={look.rough * 0.85} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
         </mesh>
       </group>
