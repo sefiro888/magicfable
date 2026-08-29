@@ -335,6 +335,23 @@ const TERRAIN_LOOK: Readonly<Record<BoardTileStyle, {
   forest: { rubble: '#8a8a66', cover: '#6f5a3c', coverTop: '#87704b', emissive: '#22301c', rough: 0.97, metal: 0.02 },
 }
 
+/**
+ * Piedra del pedestal del Nexo, por escena. Era el ÚLTIMO elemento genérico
+ * del tablero: el mismo granito azulado en las seis, mientras el suelo, los
+ * obstáculos, la costura y la atmósfera ya eran propios de cada sitio. Un
+ * Nexo tallado en piedra azul oscura en mitad de una cueva de lava o de un
+ * claro del bosque se lee como traído de fuera.
+ */
+const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; readonly shaft: string; readonly crown: string }>> = {
+  stone: { base: '#3a3529', shaft: '#4a4436', crown: '#5d5541' },
+  basalt: { base: '#241a18', shaft: '#332422', crown: '#46312b' },
+  // El Santuario conserva el azulado de siempre: era su escena de origen.
+  moss: { base: '#161b28', shaft: '#1e2434', crown: '#2a3145' },
+  sand: { base: '#4a3d28', shaft: '#5d4d33', crown: '#75603f' },
+  ice: { base: '#2b3a48', shaft: '#3a4d5e', crown: '#4d6376' },
+  forest: { base: '#2a3022', shaft: '#39412d', crown: '#4b543a' },
+}
+
 const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position, terrainStyle }: { rubble: boolean; cover: boolean; position: Position; terrainStyle: BoardTileStyle }) {
   const look = TERRAIN_LOOK[terrainStyle]
   if (rubble) {
@@ -815,6 +832,7 @@ function Nexus({
   previewLines,
   commanderArt,
   activeEvent,
+  terrainStyle,
 }: {
   playerId: PlayerId
   /** Si este Nexo es el de quien mira la pantalla (no siempre coincide con el bando 'player' del motor: en multijugador el invitado es 'ai'). */
@@ -826,6 +844,8 @@ function Nexus({
   previewLines?: readonly string[]
   commanderArt: string
   activeEvent?: AnimationEvent
+  /** Piedra del sitio: el pedestal se talla en el material de la escena. */
+  terrainStyle: BoardTileStyle
 }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && targetable)
@@ -858,6 +878,8 @@ function Nexus({
     return undefined
   }, [activeEvent, playerId])
   const z = nexusWorldZ(playerId)
+  const stone = NEXUS_STONE[terrainStyle]
+  const stoneMap = masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   /** Cuánto dura la reacción al golpe, en milisegundos. */
@@ -898,17 +920,17 @@ function Nexus({
       </mesh>
       <group ref={structure}>
       {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
-      <mesh position={[0, 0.04, 0]} receiveShadow>
+      <mesh position={[0, 0.04, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[0.98, 1.2, 0.22, 8]} />
-        <meshStandardMaterial color="#161b28" roughness={0.9} metalness={0.12} emissive="#0a0e18" emissiveIntensity={0.4} />
+        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={3} color={stone.base} roughness={0.9} metalness={0.12} emissive="#0a0e18" emissiveIntensity={0.4} />
       </mesh>
-      <mesh position={[0, 0.26, 0]}>
+      <mesh position={[0, 0.26, 0]} castShadow>
         <cylinderGeometry args={[0.62, 0.82, 0.3, 8]} />
-        <meshStandardMaterial color="#1e2434" roughness={0.82} metalness={0.16} emissive="#0c1120" emissiveIntensity={0.45} />
+        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={3} color={stone.shaft} roughness={0.82} metalness={0.16} emissive="#0c1120" emissiveIntensity={0.45} />
       </mesh>
-      <mesh position={[0, 0.46, 0]}>
+      <mesh position={[0, 0.46, 0]} castShadow>
         <cylinderGeometry args={[0.74, 0.6, 0.12, 8]} />
-        <meshStandardMaterial color="#2a3145" roughness={0.7} metalness={0.25} emissive={ringEmissive} emissiveIntensity={0.35} />
+        <meshStandardMaterial map={stoneMap} color={stone.crown} roughness={0.7} metalness={0.25} emissive={ringEmissive} emissiveIntensity={0.35} />
       </mesh>
       {/* Corona de esquirlas de cristal alrededor del borde del pedestal. */}
       <group ref={crystals}>
@@ -1332,6 +1354,7 @@ function Scene(props: Board3DProps) {
         previewLines={props.attackPreview?.targetId === 'player-nexus' ? props.attackPreview.lines : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
         activeEvent={props.activeEvent}
+        terrainStyle={terrainStyle}
       />
       <Nexus
         playerId="ai"
@@ -1343,6 +1366,7 @@ function Scene(props: Board3DProps) {
         previewLines={props.attackPreview?.targetId === 'ai-nexus' ? props.attackPreview.lines : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.art.webp ?? '/assets/cards/art/fuente-arcana.webp'}
         activeEvent={props.activeEvent}
+        terrainStyle={terrainStyle}
       />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
       <FallenPieces
