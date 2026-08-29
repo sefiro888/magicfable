@@ -270,13 +270,19 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
         bumpMap={slab}
         bumpScale={terrainStyle === 'sand' ? 3 : 6}
         roughnessMap={rough}
+        // El resplandor de estado (jugable, amenazada, abrasada…) sigue el
+        // DIBUJO de la piedra en vez de ser un baño uniforme. Sin esto, una
+        // casilla resaltada se convertía en un rectángulo de plástico verde
+        // liso que borraba la textura y el relieve justo en las casillas que
+        // más se miran — se veía clarísimo al seleccionar una carta.
+        emissiveMap={slab}
         color={color}
         roughness={1}
         // Sin mapa de entorno, subir `metalness` no refleja nada: solo apaga
         // la componente difusa y deja la losa negra. Se queda casi a cero.
         metalness={0.05}
         emissive={emissive}
-        emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : threatened ? 0.55 : deployRow ? 0.3 : 0}
+        emissiveIntensity={valid ? 1.15 : scorched ? 1 : hovered ? 0.62 : threatened ? 0.7 : deployRow ? 0.38 : 0}
       />
       <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
     </mesh>
