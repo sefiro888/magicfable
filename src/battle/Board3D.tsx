@@ -251,7 +251,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
         emissive={emissive}
         emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : threatened ? 0.55 : deployRow ? 0.3 : 0}
       />
-      <TerrainMarks rubble={rubble} cover={cover} position={position} />
+      <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
     </mesh>
   )
 })
@@ -264,7 +264,34 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
  * Las formas se derivan de la posición (no del azar) para que el mismo mapa se
  * vea siempre igual sin guardar nada extra en el estado.
  */
-const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position }: { rubble: boolean; cover: boolean; position: Position }) {
+/**
+ * Aspecto del terreno según la escena. Antes ruinas y cobertura eran los
+ * mismos bloques de mampostería parda en las cinco: un escombro de ladrillo
+ * en mitad de un lago helado, o piedra caliza en una cueva de lava, delataba
+ * que el terreno estaba pegado encima y no pertenecía al sitio.
+ */
+const TERRAIN_LOOK: Readonly<Record<BoardTileStyle, {
+  readonly rubble: string
+  readonly cover: string
+  readonly coverTop: string
+  readonly emissive: string
+  readonly rough: number
+  readonly metal: number
+}>> = {
+  // Sillares desprendidos de la propia plaza.
+  stone: { rubble: '#a3947f', cover: '#b7a373', coverTop: '#cbb583', emissive: '#3a332a', rough: 0.95, metal: 0.04 },
+  // Roca volcánica partida, con el rescoldo aún dentro.
+  basalt: { rubble: '#57433f', cover: '#6b4f42', coverTop: '#7d5e4c', emissive: '#4a1c08', rough: 0.92, metal: 0.06 },
+  // Piedra del santuario tomada por el musgo.
+  moss: { rubble: '#7d8478', cover: '#6f7a63', coverTop: '#899471', emissive: '#26301f', rough: 0.96, metal: 0.03 },
+  // Adobe y sillar de arenisca, del mismo color que el patio.
+  sand: { rubble: '#c8ad7c', cover: '#c0a473', coverTop: '#d8bd88', emissive: '#4a3a1e', rough: 0.94, metal: 0.03 },
+  // Bloques de hielo partido: claros, muy poco rugosos y sin emisivo cálido.
+  ice: { rubble: '#a6c2d6', cover: '#9ab6cc', coverTop: '#c2d8e8', emissive: '#1e3242', rough: 0.28, metal: 0.02 },
+}
+
+const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position, terrainStyle }: { rubble: boolean; cover: boolean; position: Position; terrainStyle: BoardTileStyle }) {
+  const look = TERRAIN_LOOK[terrainStyle]
   if (rubble) {
     const semilla = position.x * 7 + position.y * 13
     return (
@@ -287,8 +314,8 @@ const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position }: { r
                   forzado para no leerse como una mancha negra. Con relieve
                   propio (map+bumpMap) la piedra se sostiene sola y el
                   emisivo baja a un simple relleno de sombra, no la luz
-                  principal del objeto. */}
-              <meshStandardMaterial map={masonryTexture()} bumpMap={masonryTexture()} bumpScale={3} color="#a3947f" roughness={0.95} metalness={0.04} emissive="#3a332a" emissiveIntensity={0.35} />
+                  principal del objeto. El COLOR sale de la escena. */}
+              <meshStandardMaterial map={masonryTexture()} bumpMap={masonryTexture()} bumpScale={3} color={look.rubble} roughness={look.rough} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.35} />
             </mesh>
           )
         })}
@@ -302,12 +329,12 @@ const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position }: { r
         {[-0.3, 0, 0.3].map((offset) => (
           <mesh key={offset} position={[offset, 0.13, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]} castShadow receiveShadow>
             <boxGeometry args={[0.2, 0.28, 0.1]} />
-            <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color="#b7a373" roughness={0.85} metalness={0.08} emissive="#3f3720" emissiveIntensity={0.3} />
+            <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color={look.cover} roughness={look.rough * 0.9} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
           </mesh>
         ))}
         <mesh position={[0, 0.25, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.86, 0.08, 0.13]} />
-          <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color="#cbb583" roughness={0.8} metalness={0.1} emissive="#463d24" emissiveIntensity={0.3} />
+          <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color={look.coverTop} roughness={look.rough * 0.85} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
         </mesh>
       </group>
     )
