@@ -332,17 +332,24 @@ const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position, terra
               key={index}
               position={[Math.cos(angulo) * radio, alto / 2, Math.sin(angulo) * radio]}
               rotation={[angulo * 0.4, angulo, angulo * 0.25]}
+              // Escala no uniforme sobre un poliedro: cada bloque sale con una
+              // proporción distinta sin necesidad de más geometría.
+              scale={[0.62 + (index % 2) * 0.2, alto * 3.4, 0.56 + (index % 3) * 0.16]}
               castShadow
               receiveShadow
             >
-              <boxGeometry args={[0.2 + (index % 2) * 0.08, alto, 0.18 + (index % 3) * 0.06]} />
+              {/* Icosaedro de bajo detalle con sombreado plano, no un cubo: un
+                  escombro es una piedra partida con caras irregulares, y con el
+                  suelo ya detallado los cubos cantaban como lo más tosco del
+                  tablero. Mismo coste de dibujo, forma mucho más creíble. */}
+              <icosahedronGeometry args={[0.16, 0]} />
               {/* Textura de mampostería real en vez de color plano: antes el
                   bloque era una silueta lisa y necesitaba mucho emisivo
                   forzado para no leerse como una mancha negra. Con relieve
                   propio (map+bumpMap) la piedra se sostiene sola y el
                   emisivo baja a un simple relleno de sombra, no la luz
                   principal del objeto. El COLOR sale de la escena. */}
-              <meshStandardMaterial map={masonryTexture()} bumpMap={masonryTexture()} bumpScale={3} color={look.rubble} roughness={look.rough} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.35} />
+              <meshStandardMaterial map={masonryTexture()} bumpMap={masonryTexture()} bumpScale={3} color={look.rubble} roughness={look.rough} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.35} flatShading />
             </mesh>
           )
         })}
