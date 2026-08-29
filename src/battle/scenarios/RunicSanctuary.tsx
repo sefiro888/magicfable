@@ -349,15 +349,33 @@ export function RunicSanctuary({ quality, reducedMotion, event }: SanctuaryProps
     <>
       <color attach="background" args={['#050914']} />
       <fog attach="fog" args={['#0d1830', 18, 54]} />
-      {/* Noche real: la luz general es escasa y fría, y la luna hace de clave. */}
-      <ambientLight intensity={1.05} color="#8fa4c8" />
-      <hemisphereLight intensity={0.6} color="#9fc4ff" groundColor="#26313f" />
-      <directionalLight position={[-9, 11, -8]} intensity={2.6} color="#cfe2ff" castShadow={quality !== 'low'} />
+      {/* Noche real: la luz general es escasa y fría, y la luna hace de clave.
+          El relleno plano estaba en 1,65 contra los 2,6 de la luna — un 63%,
+          demasiado para una noche: la piedra perdía el modelado y el musgo de
+          las losas no se distinguía del granito. Bajado a 0,8 (poco menos de
+          un tercio) para que la luna module de verdad. */}
+      <ambientLight intensity={0.42} color="#8fa4c8" />
+      <hemisphereLight intensity={0.38} color="#9fc4ff" groundColor="#26313f" />
+      <directionalLight
+        position={[-9, 11, -8]}
+        intensity={2.8}
+        color="#cfe2ff"
+        castShadow={quality !== 'low'}
+        shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
+        shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
+        // Sin acotar, la cámara de sombra usa el ±5 por defecto y recorta
+        // todo lo que quede fuera del centro del tablero.
+        shadow-camera-left={-11}
+        shadow-camera-right={11}
+        shadow-camera-top={11}
+        shadow-camera-bottom={-11}
+        shadow-bias={-0.0006}
+      />
       {/* Rebote frío desde el agua, para que las fichas no queden negras por debajo. */}
       <pointLight position={[0, -1.2, 4]} color="#3f7ad0" intensity={14} distance={16} />
       {/* Relleno frontal: sin él, todo lo que rodea al tablero queda como una
           silueta negra, porque la luna ilumina desde detrás de la escena. */}
-      <directionalLight position={[2, 7, 14]} intensity={2.3} color="#9cc0ff" />
+      <directionalLight position={[2, 7, 14]} intensity={1.5} color="#9cc0ff" />
 
       <Stars radius={60} depth={26} count={quality === 'high' ? 2200 : quality === 'medium' ? 1100 : 400} factor={3.4} saturation={0.2} fade speed={reducedMotion ? 0 : 0.25} />
       <Moon />
