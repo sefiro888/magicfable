@@ -600,6 +600,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const frame = useRef<Mesh>(null)
   const readyRing = useRef<Mesh>(null)
   const shieldDome = useRef<Mesh>(null)
+  const stunOrbit = useRef<Group>(null)
+  const curseAura = useRef<Mesh>(null)
   const [hovered, setHovered] = useState(false)
   useCursor(hovered)
   const target = useMemo(() => ({ x: boardX(piece.position.x), z: boardZ(piece.position.y) }), [piece.position.x, piece.position.y])
@@ -704,6 +706,25 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
     if (readyRing.current) {
       const material = readyRing.current.material as MeshBasicMaterial
       material.opacity = reducedMotion ? 0.32 : 0.24 + (Math.sin(clock.elapsedTime * 2.1) + 1) * 0.09
+    }
+    // Aturdida: chispas dando vueltas por encima, la señal de siempre para
+    // «esta no va a poder pegar». Giran despacio y suben y bajan un poco.
+    if (stunOrbit.current && !reducedMotion) {
+      const t = clock.elapsedTime
+      stunOrbit.current.rotation.y = t * 1.6
+      stunOrbit.current.children.forEach((child, index) => {
+        child.position.y = Math.sin(t * 3 + index * 2.1) * 0.06
+        // Escala del primer intento: 0,10. A la distancia real de la cámara
+        // las chispas eran puntitos que no se distinguían del ruido de la
+        // escena; hay que irse a más del doble para que se lean como chispas.
+        child.scale.setScalar(0.24 + Math.sin(t * 4 + index * 1.7) * 0.06)
+      })
+    }
+    // Maldita: el aura late al ritmo del drenaje, no a un ritmo decorativo —
+    // este estado le quita Vida cada turno y conviene que se sienta.
+    if (curseAura.current && !reducedMotion) {
+      const material = curseAura.current.material as MeshBasicMaterial
+      material.opacity = 0.55 + Math.sin(clock.elapsedTime * 2.4) * 0.2
     }
     // El escudo respira despacio: lo justo para que se lea como energía
     // activa y no como una burbuja de cristal pegada a la ficha.
@@ -872,6 +893,30 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             depthWrite={false}
             side={DoubleSide}
           />
+        </mesh>
+      )}
+      {/* Aturdida: chispas orbitando por encima de la ficha. */}
+      {stunned && !reducedMotion && (
+        <group ref={stunOrbit} position={[0, 0.78, 0]} scale={CARD_SCALE}>
+          {[0, 1, 2].map((index) => {
+            const angle = (index / 3) * Math.PI * 2
+            return (
+              <sprite key={index} position={[Math.cos(angle) * 0.34, 0, Math.sin(angle) * 0.34]}>
+                <spriteMaterial map={glowTexture('gold')} color="#ffe27a" transparent blending={AdditiveBlending} depthWrite={false} />
+              </sprite>
+            )
+          })}
+        </group>
+      )}
+      {/* Maldita: aura oscura a los pies, que es de donde se la está
+          drenando. En violeta enfermizo para no confundirla con el azul del
+          escudo ni con el dorado del aturdimiento. */}
+      {cursed && (
+        <mesh ref={curseAura} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]} scale={CARD_SCALE}>
+          <circleGeometry args={[0.62, 22]} />
+          {/* Violeta muy saturado y bien opaco: el aditivo sobre el suelo
+              claro de Duna se comía por completo un morado discreto. */}
+          <meshBasicMaterial map={glowTexture('shadow')} color="#c465ff" transparent opacity={0.55} blending={AdditiveBlending} depthWrite={false} />
         </mesh>
       )}
       </group>
