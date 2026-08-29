@@ -1036,6 +1036,129 @@ export const desertSkyTexture = (): CanvasTexture => {
 };
 
 /**
+ * Dosel del bosque visto desde abajo: hojas apretadas con claros por donde
+ * entra el sol.
+ *
+ * Va en la cúpula del cielo del claro, así que hace de «cielo» y de techo a
+ * la vez: lo que se ve arriba no es azul, son copas. Los claros son la razón
+ * de ser de la textura — sin ellos el bosque queda como una cueva verde.
+ */
+export const canopyTexture = (): CanvasTexture => {
+  const cached = cache.get('canopy');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x43414e4f);
+
+  // Fondo: verde muy oscuro, la sombra del interior de la copa.
+  const base = context.createLinearGradient(0, 0, 0, size);
+  base.addColorStop(0, '#0e1a0e');
+  base.addColorStop(0.55, '#162815');
+  base.addColorStop(1, '#24361c');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+
+  // Claros: por donde entra la luz. Se dibujan antes que las hojas para que
+  // las hojas los recorten y queden con borde dentado, no circulares.
+  for (let gap = 0; gap < 26; gap += 1) {
+    const gx = random() * size;
+    const gy = random() * size * 0.85;
+    const radius = 26 + random() * 88;
+    const gradient = context.createRadialGradient(gx, gy, 0, gx, gy, radius);
+    gradient.addColorStop(0, `rgba(255, 246, 208, ${0.55 + random() * 0.4})`);
+    gradient.addColorStop(0.35, `rgba(206, 232, 160, ${0.3 + random() * 0.25})`);
+    gradient.addColorStop(1, 'rgba(150, 190, 120, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(gx - radius, gy - radius, radius * 2, radius * 2);
+  }
+
+  // Masas de hoja: elipses superpuestas en varios verdes.
+  for (let clump = 0; clump < 620; clump += 1) {
+    const cx = random() * size;
+    const cy = random() * size;
+    const verde = 54 + random() * 92;
+    context.save();
+    context.translate(cx, cy);
+    context.rotate(random() * Math.PI * 2);
+    context.fillStyle = `rgba(${Math.floor(verde * 0.5)}, ${Math.floor(verde)}, ${Math.floor(verde * 0.42)}, ${0.3 + random() * 0.45})`;
+    context.beginPath();
+    context.ellipse(0, 0, 10 + random() * 34, 5 + random() * 16, 0, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  // Ramas: siluetas oscuras que cruzan por delante de las hojas.
+  for (let branch = 0; branch < 34; branch += 1) {
+    context.strokeStyle = `rgba(18, 22, 14, ${0.4 + random() * 0.4})`;
+    context.lineWidth = 1.6 + random() * 6;
+    context.beginPath();
+    let bx = random() * size;
+    let by = random() * size;
+    context.moveTo(bx, by);
+    for (let step = 0; step < 5; step += 1) {
+      bx += (random() - 0.5) * 150;
+      by += (random() - 0.5) * 110;
+      context.lineTo(bx, by);
+    }
+    context.stroke();
+  }
+  return finishTexture('canopy', canvas);
+};
+
+/** Suelo del bosque más allá del claro: tierra, hojarasca y helecho. */
+export const forestFloorTexture = (): CanvasTexture => {
+  const cached = cache.get('forest-floor');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x464c4f52);
+
+  context.fillStyle = '#3d3a27';
+  context.fillRect(0, 0, size, size);
+  for (let patch = 0; patch < 40; patch += 1) {
+    const px = random() * size;
+    const py = random() * size;
+    const radius = 20 + random() * 70;
+    const musgo = random() > 0.5;
+    const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+    gradient.addColorStop(0, musgo
+      ? `rgba(64, 92, 42, ${0.24 + random() * 0.3})`
+      : `rgba(94, 76, 48, ${0.2 + random() * 0.26})`);
+    gradient.addColorStop(1, 'rgba(60, 56, 38, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+  }
+  // Hojarasca suelta.
+  for (let leaf = 0; leaf < 320; leaf += 1) {
+    context.save();
+    context.translate(random() * size, random() * size);
+    context.rotate(random() * Math.PI * 2);
+    const otono = random() > 0.5;
+    context.fillStyle = otono
+      ? `rgba(${138 + random() * 62}, ${88 + random() * 44}, ${36 + random() * 26}, ${0.24 + random() * 0.3})`
+      : `rgba(${72 + random() * 40}, ${98 + random() * 44}, ${44 + random() * 24}, ${0.22 + random() * 0.28})`;
+    context.beginPath();
+    context.ellipse(0, 0, 3 + random() * 6, 1.6 + random() * 3, 0, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+  // Ramitas.
+  for (let twig = 0; twig < 60; twig += 1) {
+    context.strokeStyle = `rgba(58, 44, 28, ${0.24 + random() * 0.3})`;
+    context.lineWidth = 0.8 + random() * 1.6;
+    const tx = random() * size;
+    const ty = random() * size;
+    const angle = random() * Math.PI * 2;
+    const len = 6 + random() * 22;
+    context.beginPath();
+    context.moveTo(tx, ty);
+    context.lineTo(tx + Math.cos(angle) * len, ty + Math.sin(angle) * len);
+    context.stroke();
+  }
+  return finishTexture('forest-floor', canvas);
+};
+
+/**
  * Mancha de sombra de contacto: negro opaco en el centro que se deshace hacia
  * los bordes.
  *
@@ -1212,14 +1335,14 @@ export const packedSnowTexture = (): CanvasTexture => {
 //     brilla en ninguna parte — tres materiales que se leen distintos aunque
 //     compartan la misma geometría.
 
-export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice';
+export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest';
 
 /** Cuántos dibujos distintos hay por estilo. Seis bastan para que el ojo no encuentre el patrón. */
 export const BOARD_TILE_VARIANTS = 6;
 
 /** Semilla estable por estilo+variante: el mismo mapa se ve siempre igual. */
 const tileSeed = (style: BoardTileStyle, variant: number): number => {
-  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545 }[style];
+  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245 }[style];
   return (base + variant * 7919) >>> 0;
 };
 
@@ -1414,6 +1537,69 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
     context.stroke();
     drawTileGroove(context, size, 0.5);
     bakeEdgeShade(context, size, 0.38);
+  } else if (style === 'forest') {
+    // Losa del claro: piedra cálida que el bosque se está tragando — musgo
+    // por las juntas, raíces cruzando y hojarasca encima. Deliberadamente más
+    // CÁLIDA y parda que el granito del Santuario, que también lleva musgo:
+    // si las dos escenas verdes comparten tono, dejan de ser dos sitios.
+    const base = context.createLinearGradient(0, 0, size, size);
+    base.addColorStop(0, '#9a9179');
+    base.addColorStop(0.5, '#8a836c');
+    base.addColorStop(1, '#786f5c');
+    context.fillStyle = base;
+    context.fillRect(0, 0, size, size);
+    for (let grain = 0; grain < 2200; grain += 1) {
+      const l = 108 + random() * 74;
+      context.fillStyle = `rgba(${l + 6}, ${l}, ${l - 16}, ${0.06 + random() * 0.14})`;
+      context.fillRect(random() * size, random() * size, 1 + random() * 2.2, 1 + random() * 2.2);
+    }
+    // Raíces: cruzan la losa entera, no se quedan en el borde.
+    for (let root = 0; root < 2 + (variant % 2); root += 1) {
+      const vertical = (variant + root) % 2 === 0;
+      let along = random() * size;
+      context.strokeStyle = `rgba(74, 58, 40, ${0.34 + random() * 0.24})`;
+      context.lineWidth = 2.6 + random() * 4.4;
+      context.beginPath();
+      context.moveTo(vertical ? along : 0, vertical ? 0 : along);
+      for (let step = 0; step <= size; step += 26) {
+        along += (random() - 0.5) * 22;
+        context.lineTo(vertical ? along : step, vertical ? step : along);
+      }
+      context.stroke();
+    }
+    // Musgo entrando por las juntas, más tupido que en el granito.
+    for (let clump = 0; clump < 20; clump += 1) {
+      const along = random() * size;
+      const depth = random() * size * 0.4;
+      const edge = (variant + clump) % 4;
+      const mx = edge === 0 ? along : edge === 1 ? size - depth : edge === 2 ? along : depth;
+      const my = edge === 0 ? depth : edge === 1 ? along : edge === 2 ? size - depth : along;
+      const radius = 12 + random() * 34;
+      const gradient = context.createRadialGradient(mx, my, 0, mx, my, radius);
+      gradient.addColorStop(0, `rgba(78, 108, 46, ${0.4 + random() * 0.3})`);
+      gradient.addColorStop(0.6, `rgba(92, 122, 56, ${0.2 + random() * 0.18})`);
+      gradient.addColorStop(1, 'rgba(88, 116, 54, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(mx - radius, my - radius, radius * 2, radius * 2);
+    }
+    // Hojarasca: elipses giradas, en ocres y verdes apagados.
+    for (let leaf = 0; leaf < 22; leaf += 1) {
+      const lx = random() * size;
+      const ly = random() * size;
+      const otono = random() > 0.45;
+      context.save();
+      context.translate(lx, ly);
+      context.rotate(random() * Math.PI * 2);
+      context.fillStyle = otono
+        ? `rgba(${150 + random() * 60}, ${96 + random() * 46}, ${40 + random() * 30}, ${0.3 + random() * 0.3})`
+        : `rgba(${86 + random() * 40}, ${112 + random() * 44}, ${52 + random() * 26}, ${0.28 + random() * 0.28})`;
+      context.beginPath();
+      context.ellipse(0, 0, 4 + random() * 7, 2 + random() * 3.4, 0, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+    drawTileGroove(context, size, 0.46);
+    bakeEdgeShade(context, size, 0.34);
   } else if (style === 'ice') {
     // Losa helada: piedra gris azulada bajo una capa de hielo, con la nieve
     // apelmazada en las juntas y flores de escarcha creciendo desde los
@@ -1569,7 +1755,7 @@ export const boardTileRoughness = (style: BoardTileStyle, variant: number): Canv
   const random = seededRandom((tileSeed(style, variant) ^ 0x5a5a5a5a) >>> 0);
 
   // Nivel base de mate por material. El hielo es el más brillante del juego.
-  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70 }[style];
+  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226 }[style];
   context.fillStyle = `rgb(${baseLevel}, ${baseLevel}, ${baseLevel})`;
   context.fillRect(0, 0, size, size);
 

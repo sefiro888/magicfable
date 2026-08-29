@@ -321,7 +321,7 @@ export function playSynthCue(cue: SoundCue): void {
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────
 
-export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'menu'
+export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'menu'
 
 /**
  * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
@@ -404,6 +404,16 @@ export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
     air: { color: 'pink', cutoff: 1450, sweep: 380, breath: 0.05, gain: 0.15 },
     drone: { root: 61.7, intervals: [0, 3, 19], wave: 'sine', gain: 0.055, detune: 5 },
     detail: { kind: 'icecrack', everyMin: 6, everyMax: 17, gain: 0.12 },
+  },
+  // Claro del bosque: hojas moviéndose todo el rato (el aire es lo que más
+  // suena, y a media altura: ni el silbido del hielo ni el rumor grave de la
+  // cueva), tono cálido de tercera mayor y goteo del agua que cae de las
+  // ramas. Es el único ambiente del juego en modo mayor — el bosque es el
+  // sitio amable de los seis.
+  grove: {
+    air: { color: 'pink', cutoff: 720, sweep: 340, breath: 0.075, gain: 0.19 },
+    drone: { root: 82.4, intervals: [0, 4, 11], wave: 'triangle', gain: 0.05, detune: 6 },
+    detail: { kind: 'drip', everyMin: 3.5, everyMax: 10, gain: 0.12 },
   },
   // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
   menu: {

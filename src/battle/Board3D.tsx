@@ -45,6 +45,9 @@ const DunaNecropolis = lazy(() =>
 const FimbulFjord = lazy(() =>
   import('./scenarios/FimbulFjord').then((m) => ({ default: m.FimbulFjord })),
 )
+const VerdantGrove = lazy(() =>
+  import('./scenarios/VerdantGrove').then((m) => ({ default: m.VerdantGrove })),
+)
 
 interface Board3DProps {
   state: MatchState
@@ -170,6 +173,12 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#f6f0e6', '#efe8db', '#e6dfd2'],
     enemy: ['#d2e4f4', '#c4d9ee', '#b9d0e8'],
   },
+  // En el claro, «cálido» es la luz del sol que entra por el dosel y «frío»
+  // la penumbra verde de debajo de los árboles.
+  forest: {
+    own: ['#fbf0cf', '#f2e6c2', '#e8dcb6'],
+    enemy: ['#d3e2c8', '#c6d7bb', '#bccfb1'],
+  },
 }
 
 /**
@@ -210,6 +219,7 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   sanctuary: 'moss',
   duna: 'sand',
   fimbul: 'ice',
+  grove: 'forest',
 }
 
 /**
@@ -321,6 +331,8 @@ const TERRAIN_LOOK: Readonly<Record<BoardTileStyle, {
   sand: { rubble: '#c8ad7c', cover: '#c0a473', coverTop: '#d8bd88', emissive: '#4a3a1e', rough: 0.94, metal: 0.03 },
   // Bloques de hielo partido: claros, muy poco rugosos y sin emisivo cálido.
   ice: { rubble: '#a6c2d6', cover: '#9ab6cc', coverTop: '#c2d8e8', emissive: '#1e3242', rough: 0.28, metal: 0.02 },
+  // Piedra del claro comida por el musgo, y madera de rama para la empalizada.
+  forest: { rubble: '#8a8a66', cover: '#6f5a3c', coverTop: '#87704b', emissive: '#22301c', rough: 0.97, metal: 0.02 },
 }
 
 const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position, terrainStyle }: { rubble: boolean; cover: boolean; position: Position; terrainStyle: BoardTileStyle }) {
@@ -409,6 +421,8 @@ const BoardAtmosphere = memo(function BoardAtmosphere({ terrainStyle, quality, r
     moss: { count: 22, color: '#9fc4d8', size: 4.2, speed: 0.16, opacity: 0.32, height: 0.8, y: 0.3 },
     // Motas de luz flotando en la plaza al amanecer.
     stone: { count: 24, color: '#ffe6b0', size: 2.8, speed: 0.2, opacity: 0.42, height: 1.3, y: 0.5 },
+    // Polen y bichillos subiendo por los haces de luz del claro.
+    forest: { count: 34, color: '#f2ffc4', size: 2.6, speed: 0.19, opacity: 0.5, height: 1.4, y: 0.5 },
   }[terrainStyle]
   return (
     <Sparkles
@@ -439,6 +453,7 @@ function Midline({ terrainStyle }: { terrainStyle: BoardTileStyle }) {
     moss: '#9fd8c4',
     sand: '#f0d9a0',
     ice: '#b6e4ff',
+    forest: '#cbe89a',
   }[terrainStyle]
   return (
     <group position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1257,6 +1272,8 @@ function Scene(props: Board3DProps) {
           <DunaNecropolis quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'fimbul' ? (
           <FimbulFjord quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'grove' ? (
+          <VerdantGrove quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : (
           <SanctuaryScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         )}

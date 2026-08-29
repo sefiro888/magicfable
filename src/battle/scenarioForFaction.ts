@@ -13,7 +13,7 @@ import type { ScenarioId } from '../store/preferences'
 const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   fury: 'caldera',
   arcane: 'aether-citadel',
-  nature: 'sanctuary',
+  nature: 'grove',
   order: 'aether-citadel',
   shadow: 'sanctuary',
   void: 'sanctuary',

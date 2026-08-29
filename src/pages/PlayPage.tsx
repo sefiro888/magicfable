@@ -56,6 +56,7 @@ const SCENARIOS: readonly { value: ScenarioId; label: string; hint: string }[] =
   { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Plataforma de hierro sobre un lago de lava.' },
   { value: 'duna', label: 'Necrópolis de Duna', hint: 'Patio de arenisca abierto al desierto, a mediodía.' },
   { value: 'fimbul', label: 'Fiordo de Fimbul', hint: 'Lago helado bajo la aurora, en plena noche polar.' },
+  { value: 'grove', label: 'Claro del Bosque', hint: 'Losas antiguas bajo el dosel, con el sol entrando a trozos.' },
 ]
 
 export function PlayPage() {
