@@ -1,5 +1,6 @@
 import { Html } from '@react-three/drei'
 import { memo, useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { AnimationEvent } from '../game'
 import { gridToWorldX, gridToWorldZ, NEXUS_WORLD } from './grid/gridCoordinates'
 import styles from './DamageNumbers.module.css'
@@ -10,12 +11,18 @@ interface FloatingNumber {
   readonly z: number
   readonly value: number
   readonly color: 'damage' | 'heal' | 'shield'
-  /** Golpes grandes se marcan aparte para que resalten más (mismo umbral que ImpactBurst). */
-  readonly big: boolean
+  /** Tamaño relativo del número, creciente con la cantidad (ver `scaleFor`). */
+  readonly scale: number
 }
 
-/** A partir de qué cantidad un golpe se considera "grande" y se agranda el número flotante. */
-const BIG_THRESHOLD = 4
+/**
+ * Escala continua según la cantidad: antes solo los golpes de 4+ se veían
+ * distintos de un pinchazo de 1, así que la inmensa mayoría de los combates
+ * (la mayoría de las unidades pegan 1-3) no notaban NINGÚN cambio respecto a
+ * la versión de siempre. Ahora todo golpe crece un poco, y uno grande de
+ * verdad destaca mucho más.
+ */
+const scaleFor = (amount: number): number => Math.min(2.1, 1 + amount * 0.16)
 
 /** Cuánto dura la subida del número, en milisegundos. Debe casar con el CSS. */
 const FLOAT_MS = 1200
@@ -61,7 +68,7 @@ export const DamageNumbers = memo(function DamageNumbers({ event }: { event?: An
       z: position[1],
       value,
       color: event.type === 'shield' ? 'shield' : 'damage',
-      big: value >= BIG_THRESHOLD,
+      scale: scaleFor(value),
     }
     setNumbers((current) => [...current, entry])
     const timer = window.setTimeout(
@@ -75,7 +82,7 @@ export const DamageNumbers = memo(function DamageNumbers({ event }: { event?: An
     <group>
       {numbers.map((num) => (
         <Html key={num.id} center position={[num.x, SPAWN_HEIGHT, num.z]} distanceFactor={8} zIndexRange={[16, 0]}>
-          <div className={styles.number} data-color={num.color} data-big={num.big || undefined}>
+          <div className={styles.number} data-color={num.color} style={{ '--num-scale': num.scale } as CSSProperties}>
             {num.color === 'shield' ? '+' : '−'}{num.value}
           </div>
         </Html>

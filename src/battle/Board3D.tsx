@@ -910,14 +910,27 @@ function ResponsiveCamera() {
   return null
 }
 
+/**
+ * Antes solo sacudía la cámara con el golpe al Nexo o un golpe de 4+ de
+ * daño: la inmensa mayoría de los combates (la mayoría de las unidades
+ * pegan 1-3) no sacudían nada, así que un ataque normal se sentía exigido
+ * igual que antes de cualquier mejora. Ahora CUALQUIER daño sacude un poco,
+ * y la magnitud crece con la cantidad — un golpazo se siente claramente más
+ * fuerte que un pinchazo sin dejar de notarse ninguno de los dos.
+ */
 function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
   const shakeStart = useRef(-10)
+  const shakeMagnitude = useRef(0.05)
   const base = useRef(new Vector3())
   const captured = useRef(false)
   useEffect(() => {
     if (!event) return
-    if (event.type === 'nexus-damage' || (event.type === 'damage' && (event.amount ?? 0) >= 4)) {
+    if (event.type === 'nexus-damage') {
       shakeStart.current = performance.now()
+      shakeMagnitude.current = 0.09
+    } else if (event.type === 'damage' && (event.amount ?? 0) > 0) {
+      shakeStart.current = performance.now()
+      shakeMagnitude.current = 0.03 + Math.min(1, (event.amount ?? 0) / 6) * 0.06
     }
   }, [event])
   useFrame(({ camera }) => {
@@ -931,7 +944,7 @@ function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMo
       base.current.copy(camera.position)
       captured.current = true
     }
-    const decay = (1 - since / 0.5) * 0.05
+    const decay = (1 - since / 0.5) * shakeMagnitude.current
     camera.position.set(
       base.current.x + (Math.random() - 0.5) * decay,
       base.current.y + (Math.random() - 0.5) * decay,

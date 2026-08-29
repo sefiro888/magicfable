@@ -468,18 +468,8 @@
 }
 .devPanel button:hover { border-color: #ffb066; }
 .message { position: absolute; z-index: 50; left: 50%; bottom: 223px; transform: translateX(-50%); max-width: 520px; padding: 10px 16px; border: 1px solid rgba(255,104,91,.45); color: #ffc1b9; background: rgba(64,21,21,.92); box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 11px; animation: hintIn .2s ease; }
-.inspectBackdrop, .resultBackdrop { position: absolute; z-index: 100; inset: 0; display: grid; place-items: center; background: rgba(3,4,7,.82); backdrop-filter: blur(10px); animation: backdropFadeIn .2s ease; }
+.resultBackdrop { position: absolute; z-index: 100; inset: 0; display: grid; place-items: center; background: rgba(3,4,7,.82); backdrop-filter: blur(10px); animation: backdropFadeIn .2s ease; }
 @keyframes backdropFadeIn { from { opacity: 0; } to { opacity: 1; } }
-.inspect { width: 720px; display: grid; grid-template-columns: 290px 1fr; gap: 25px; padding: 24px; border: 2px solid var(--line-bright); background: linear-gradient(135deg, #0f1219 0%, #191d27 100%); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08); border-radius: 2px; animation: cardSlideUp .3s cubic-bezier(0.25, 0.8, 0.35, 1); }
-@keyframes cardSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.inspect img { width: 290px; height: 310px; object-fit: cover; border: 1px solid var(--line-bright); background: #17151a; }
-.inspect small { color: var(--gold-bright); letter-spacing: .15em; text-transform: uppercase; font-weight: 700; }
-.inspect h2 { margin: 10px 0 6px; font-family: var(--display); font-size: 30px; font-weight: 500; color: var(--ivory); }
-.inspect > p { color: #a39f97; font-size: 11px; }
-.inspectText { color: #e0d9c9; line-height: 1.6; font-size: 11px; }
-.flavor { padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); color: #9a9590; font-family: var(--display); font-style: italic; line-height: 1.6; font-size: 10px; }
-.closeInspect { margin-top: 18px; padding: 10px 16px; border: 1px solid var(--line-bright); color: var(--ivory); background: rgba(215, 180, 103, 0.08); cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; transition: all .2s ease; }
-.closeInspect:hover { background: rgba(215, 180, 103, 0.15); border-color: var(--gold-bright); }
 .result { width: 530px; padding: 40px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; animation: resultFadeIn .4s ease; }
 .result small { color: var(--gold-bright); font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
 .result h2 { margin: 13px 0 10px; font-family: var(--display); font-size: 48px; font-weight: 500; color: var(--ivory); }
@@ -744,25 +734,7 @@
   }
   .ownPanelToggle[aria-pressed="true"] { color: var(--gold-bright); border-color: var(--gold); }
 
-  /* Modal de inspección de carta: en desktop es una ficha fija de 720px con
-     dos columnas de ancho fijo (290px + 1fr) — en un móvil de ~360-420px eso
-     desborda por completo hacia la derecha (imagen y botón "Cerrar" quedan
-     fuera de pantalla). En vertical se apila en una sola columna que escala
-     con el viewport y se puede desplazar si el contenido no cabe en alto. */
-  .inspectBackdrop { padding: 10px; overflow-y: auto; align-items: flex-start; }
-  .inspect {
-    width: min(420px, 100%);
-    max-height: none;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 16px;
-    margin: auto 0;
-  }
-  .inspect img { width: 100%; height: auto; max-height: 42vh; aspect-ratio: 290 / 310; }
-  .inspect h2 { font-size: 22px; }
-  .inspectText { font-size: 12px; }
-
-  /* Resultado de partida: mismo problema, 530px fijo no cabe en móvil. */
+  /* Resultado de partida: 530px fijo no cabe en móvil. */
   .result { width: min(480px, 100%); padding: 22px; }
   .result h2 { font-size: 34px; }
   .resultStats { grid-template-columns: repeat(2, 1fr); }

@@ -138,34 +138,45 @@ function Projectile({ from, to, tone, timing, arc = 0.9 }: { from: readonly [num
   )
 }
 
-/** Estallido de impacto: anillo expansivo, chispas y golpe de luz. */
-function ImpactBurst({ cell, tone, timing, big = false }: { cell: readonly [number, number]; tone: string; timing: TimedProps; big?: boolean }) {
+/**
+ * Estallido de impacto: anillo expansivo, chispas y golpe de luz.
+ *
+ * `power` (0-1) escala la intensidad de forma continua según la cantidad de
+ * daño (ver `powerFor` en el switch de abajo) — antes era un booleano `big`
+ * que solo distinguía "4 de daño o más" del resto, así que la inmensa
+ * mayoría de los golpes (la mayoría de las unidades pegan 1-3) se veían
+ * SIEMPRE con la versión mínima, indistinguible entre un rasguño y un golpe
+ * decente. Ahora todo golpe se nota un poco más, y uno grande de verdad
+ * sigue destacando por encima.
+ */
+function ImpactBurst({ cell, tone, timing, power = 0 }: { cell: readonly [number, number]; tone: string; timing: TimedProps; power?: number }) {
   const progress = useProgress(timing)
   const ring = useRef<Mesh>(null)
   const sparks = useRef<Group>(null)
   const light = useRef<PointLight>(null)
   const texture = useMemo(() => glowFor(tone), [tone])
+  const sparkCount = 7 + Math.round(power * 3)
   const directions = useMemo(
     () =>
-      Array.from({ length: big ? 10 : 7 }, (_, index) => {
-        const angle = (index / (big ? 10 : 7)) * Math.PI * 2 + 0.4
+      Array.from({ length: sparkCount }, (_, index) => {
+        const angle = (index / sparkCount) * Math.PI * 2 + 0.4
         return [Math.cos(angle), 0.5 + (index % 3) * 0.28, Math.sin(angle)] as const
       }),
-    [big],
+    [sparkCount],
   )
   useFrame(() => {
     const value = progress.current
     const fade = 1 - value
     if (ring.current) {
-      ring.current.scale.setScalar(0.25 + value * (big ? 3.4 : 2.2))
+      ring.current.scale.setScalar(0.25 + value * (2.4 + power * 1.4))
       ;(ring.current.material as MeshBasicMaterial).opacity = fade * 0.9
     }
-    if (light.current) light.current.intensity = fade * (big ? 26 : 13)
+    if (light.current) light.current.intensity = fade * (14 + power * 14)
     sparks.current?.children.forEach((spark, index) => {
       const direction = directions[index]!
-      const reach = value * (big ? 1.5 : 1)
+      const reach = value * (1 + power * 0.6)
       spark.position.set(direction[0] * reach, direction[1] * reach * 0.8, direction[2] * reach)
-      spark.scale.setScalar(Math.max(0.001, (1 - value) * 0.3))
+      spark.scale.setScalar(Math.max(0.001, (1 - value) * (0.3 + power * 0.12)))
     })
   })
   if (timing.reducedMotion) return null
@@ -307,6 +318,9 @@ interface EventEffectsProps {
  * Traduce un AnimationEvent ya resuelto por el motor en su efecto visual.
  * Nunca decide reglas: solo representa lo que el motor ya decidió.
  */
+/** Intensidad continua (0-1) del destello de impacto según el daño real repartido. */
+const powerFor = (amount?: number): number => Math.max(0, Math.min(1, ((amount ?? 0) - 1) / 5))
+
 export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
   const tone = toneOf(event.effectId, event.faction)
@@ -320,12 +334,15 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       return from && to ? <Projectile from={from} to={to} tone={tone} timing={timing} /> : null
     }
     case 'spell':
+      // Un hechizo siempre lleva un mínimo de fuerza propia (0.5): el daño
+      // real (si lo hay) llega en un evento 'damage' aparte justo después,
+      // así que este destello es el que anuncia "está pasando un hechizo".
       return event.to ? (
-        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} />
+        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={0.5} />
       ) : null
     case 'damage':
       return event.to ? (
-        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} big={(event.amount ?? 0) >= 4} />
+        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={powerFor(event.amount)} />
       ) : null
     case 'shield':
       return event.to ? (

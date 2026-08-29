@@ -36,7 +36,7 @@ import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../components/GlossaryPanel'
 import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { describePendingActions, pendingTurnActions } from '../battle/ui/pendingTurnActions'
-import { FactionSigil } from '../components'
+import { ArtViewer, FactionSigil } from '../components'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useSoundtrack } from '../services/useAudioMix'
 import { useMatchStore } from '../store/match'
@@ -50,7 +50,7 @@ import { opponentForFloor, towerMaxHealth, useTower } from '../store/tower'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
-import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS } from '../utils/cardLabels'
+import { TYPE_LABELS } from '../utils/cardLabels'
 import { DevPanel } from './battle/DevPanel'
 import { DragGhost } from './battle/DragGhost'
 import { EnemyPanel } from './battle/EnemyPanel'
@@ -1190,21 +1190,13 @@ export function BattlePage() {
         />
       )}
 
-      {inspected && (
-        <div className={styles.inspectBackdrop} role="dialog" aria-modal="true" aria-label={`Inspección de ${inspected.name}`} onClick={() => store.inspect(undefined)}>
-          <article className={styles.inspect} onClick={(event) => event.stopPropagation()}>
-            <img src={withBase(inspected.art.webp)} alt={inspected.art.alt} />
-            <div>
-              <small>{FACTION_LABELS[inspected.faction]} · {RARITY_LABELS[inspected.rarity]}</small>
-              <h2>{inspected.name}</h2>
-              <p>{TYPE_LABELS[inspected.type]}{inspected.subtype ? ` — ${inspected.subtype}` : ''}</p>
-              <p className={styles.inspectText}>{inspected.rules}</p>
-              <p className={styles.flavor}>«{inspected.flavor}»</p>
-              <button className={styles.closeInspect} onClick={() => store.inspect(undefined)}>Cerrar · Esc</button>
-            </div>
-          </article>
-        </div>
-      )}
+      {/* Antes esto era un modal casero propio con el arte SIEMPRE recortado
+          en cuadrado (el mismo problema que ya se arregló en la Galería) y
+          sin coste/estadísticas/palabras clave — mucho más pobre que lo que
+          ya existía para la Galería. Reutiliza ArtViewer: ilustración
+          completa sin recortar y toda la ficha bien explicada, igual que al
+          consultar una carta fuera de partida. */}
+      {inspected && <ArtViewer card={inspected} onClose={() => store.inspect(undefined)} />}
 
       {match.winner && !queueBusy && (
         <MatchResultDialog

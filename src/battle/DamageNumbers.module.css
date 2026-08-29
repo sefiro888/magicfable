@@ -1,22 +1,30 @@
 .number {
+  --num-scale: 1;
   font-family: var(--display);
   font-weight: 900;
-  font-size: 18px;
+  font-size: calc(20px * var(--num-scale));
   letter-spacing: 0.08em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 12px rgba(0, 0, 0, 0.6);
+  -webkit-text-stroke: 1.5px rgba(0, 0, 0, 0.55);
+  paint-order: stroke fill;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 16px rgba(0, 0, 0, 0.7);
   pointer-events: none;
   white-space: nowrap;
   will-change: transform, opacity;
   /* La subida la lleva el CSS y no JavaScript: antes el progreso se leía
      durante el render, así que el número solo se movía cuando React volvía a
-     renderizar por otro motivo. La duración debe casar con FLOAT_MS. */
-  animation: floatUp 1200ms ease-out forwards;
+     renderizar por otro motivo. La duración debe casar con FLOAT_MS.
+     Antes solo los golpes de 4+ llevaban rebote y el resto (la mayoría de
+     los combates) se veía exactamente igual que siempre — ahora TODO golpe
+     rebota, y --num-scale (ver DamageNumbers.tsx) es lo que hace que uno
+     grande destaque de verdad sobre uno pequeño. */
+  animation: floatUp 1200ms cubic-bezier(.2, .9, .2, 1) forwards;
 }
 @keyframes floatUp {
-  0% { transform: translateY(6px); opacity: 0; }
-  14% { transform: translateY(0); opacity: 1; }
-  70% { opacity: 1; }
-  100% { transform: translateY(-38px); opacity: 0; }
+  0% { transform: translateY(6px) scale(.6); opacity: 0; }
+  16% { transform: translateY(0) scale(1.12); opacity: 1; }
+  26% { transform: translateY(-2px) scale(1); }
+  70% { opacity: 1; transform: translateY(-20px) scale(1); }
+  100% { transform: translateY(-44px) scale(1); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .number { animation: fadeOnly 1200ms ease-out forwards; }
@@ -27,30 +35,13 @@
 }
 .number[data-color='damage'] {
   color: #ff6b5b;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(255, 80, 60, 0.6);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 18px rgba(255, 80, 60, 0.75);
 }
 .number[data-color='heal'] {
   color: #6cd79e;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(108, 215, 158, 0.5);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 18px rgba(108, 215, 158, 0.6);
 }
 .number[data-color='shield'] {
   color: #79c8ff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(121, 200, 255, 0.6);
-}
-/* Golpes grandes (mismo umbral que el destello 3D de ImpactBurst): número más
-   grande y con un puntito de rebote propio, para que un golpazo se note más
-   que un pinchazo de 1 sin tener que leer la cifra con atención. */
-.number[data-big] {
-  font-size: 27px;
-  animation: floatUpBig 1200ms ease-out forwards;
-}
-@keyframes floatUpBig {
-  0% { transform: translateY(6px) scale(.7); opacity: 0; }
-  14% { transform: translateY(0) scale(1.15); opacity: 1; }
-  24% { transform: translateY(-2px) scale(1); }
-  70% { opacity: 1; }
-  100% { transform: translateY(-44px) scale(1); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .number[data-big] { animation: fadeOnly 1200ms ease-out forwards; }
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 18px rgba(121, 200, 255, 0.7);
 }
