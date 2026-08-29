@@ -331,19 +331,33 @@ export function DunaNecropolis({ quality, reducedMotion, event }: DunaProps) {
           muerde antes, se traga las pirámides y el patio queda encerrado en
           una pared amarilla. */}
       <fog attach="fog" args={['#efdcb4', 30, 88]} />
-      <ambientLight intensity={1.5} color="#ffe9c0" />
-      <hemisphereLight intensity={1.3} color="#fff0cc" groundColor="#d9b478" />
+      {/* La luz plana (ambiente + hemisférica) sumaba 2,8 contra los 3,4 del
+          sol: casi tanto relleno como luz principal, así que la cara en
+          sombra de cualquier cosa recibía el 45% de la luz de la cara
+          iluminada y el patio entero salía lavado y sin volumen. Bajada a
+          poco más de un tercio del sol — el desierto a mediodía tiene mucho
+          contraste, no poco. El rebote cálido de la arena sigue vivo por la
+          hemisférica, que es justo para lo que está. */}
+      <ambientLight intensity={0.55} color="#ffe9c0" />
+      <hemisphereLight intensity={0.72} color="#fff0cc" groundColor="#d9b478" />
       {/* Sol cenital: casi vertical, para que las sombras salgan cortas y duras. */}
       <directionalLight
         position={[1.5, 14, -4]}
-        intensity={3.4}
+        intensity={3.6}
         color="#fff3d2"
         castShadow={quality !== 'low'}
         shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
         shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
+        // Sin acotar el volumen, la cámara de sombra usa el ±5 por defecto y
+        // se come las sombras de todo lo que quede fuera del centro.
+        shadow-camera-left={-11}
+        shadow-camera-right={11}
+        shadow-camera-top={11}
+        shadow-camera-bottom={-11}
+        shadow-bias={-0.0006}
       />
       {/* Rebote del suelo: la arena devuelve mucha luz y evita sombras negras. */}
-      <directionalLight position={[-6, 2, 9]} intensity={1.1} color="#f6d9a6" />
+      <directionalLight position={[-6, 2, 9]} intensity={0.85} color="#f6d9a6" />
 
       <SkyDome />
       <SunDisc flare={flare} />

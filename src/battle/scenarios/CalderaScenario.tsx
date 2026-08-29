@@ -294,12 +294,28 @@ export function CalderaScenario({ quality, reducedMotion, event }: CalderaScenar
     <>
       <color attach="background" args={['#180604']} />
       <fog attach="fog" args={['#2a0b04', 14, 40]} />
-      {/* La luz clave viene de ABAJO: es la lava la que ilumina la sala. */}
-      <ambientLight intensity={0.9} color="#ffa06a" />
-      <hemisphereLight intensity={1.15} color="#ff8c46" groundColor="#ffb070" />
-      <spotLight position={[-3, 9, 4]} intensity={54} angle={0.62} penumbra={0.9} castShadow={quality !== 'low'} color="#ffd2ac" />
-      <pointLight position={[0, -1.6, 0]} color="#ff5a12" intensity={40} distance={18} decay={2} />
-      <pointLight position={[5, 1.2, -4]} color="#ff3c0e" intensity={18} distance={12} />
+      {/* La luz clave viene de ABAJO: es la lava la que ilumina la sala.
+          El relleno plano (ambiente + hemisférica) estaba tan alto que la
+          roca perdía todo el modelado: en una cueva de lava el contraste es
+          justo lo que da miedo, y el basalto tiene que quedar casi negro
+          donde la lava no llega. Bajado a la mitad; los puntos de luz de la
+          colada siguen aportando el rebote naranja de verdad, con posición,
+          en vez de un lavado uniforme sin dirección. */}
+      <ambientLight intensity={0.58} color="#ffa06a" />
+      <hemisphereLight intensity={0.58} color="#ff8c46" groundColor="#ffb070" />
+      <spotLight
+        position={[-3, 9, 4]}
+        intensity={62}
+        angle={0.62}
+        penumbra={0.9}
+        castShadow={quality !== 'low'}
+        color="#ffd2ac"
+        shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
+        shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
+        shadow-bias={-0.0006}
+      />
+      <pointLight position={[0, -1.6, 0]} color="#ff5a12" intensity={46} distance={18} decay={2} />
+      <pointLight position={[5, 1.2, -4]} color="#ff3c0e" intensity={20} distance={12} />
 
       <CaveDome />
       <LavaLake flare={flare} reducedMotion={reducedMotion} />
