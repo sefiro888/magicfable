@@ -1,4 +1,5 @@
-import { STARTER_DECKS } from '../game'
+import { STARTER_DECKS, type FactionId } from '../game'
+import { FACTION_LABELS } from '../utils/cardLabels'
 import type { MatchRecord } from './records'
 
 export interface DailyChallenge {
@@ -6,10 +7,6 @@ export interface DailyChallenge {
   readonly title: string
   readonly description: string
   readonly done: boolean
-}
-
-const FACTION_NAMES: Readonly<Record<string, string>> = {
-  fury: 'Furia', arcane: 'Arcano', nature: 'Naturaleza', order: 'Orden', shadow: 'Sombra', void: 'Vacío',
 }
 
 const factionOfDeck = (deckId: string): string | undefined =>
@@ -30,10 +27,10 @@ const RULES: readonly Rule[] = [
   {
     id: 'faction-win',
     build: (day) => {
-      const faction = STARTER_DECKS[day % STARTER_DECKS.length]!.faction
+      const faction = STARTER_DECKS[day % STARTER_DECKS.length]!.faction as FactionId
       return {
-        title: `Victoria de ${FACTION_NAMES[faction] ?? faction}`,
-        description: `Gana una escaramuza con la facción ${FACTION_NAMES[faction] ?? faction}.`,
+        title: `Victoria de ${FACTION_LABELS[faction]}`,
+        description: `Gana una escaramuza con la facción ${FACTION_LABELS[faction]}.`,
         check: (wins) => wins.some((record) => factionOfDeck(record.deckId) === faction),
       }
     },

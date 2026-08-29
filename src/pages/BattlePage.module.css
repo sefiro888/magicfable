@@ -369,6 +369,33 @@
   82% { opacity: 1; }
   100% { opacity: 0; }
 }
+/* Destello de aviso al golpear un Nexo: una viñeta que se enciende y se
+   apaga rápido, sobre TODO el escenario — el destello 3D del Nexo
+   (`NexusShock`) ya existe pero es pequeño y fácil de perder si la cámara
+   no está mirando justo ahí. El propio Nexo pega más fuerte que el rival,
+   a propósito: es la señal de "te están haciendo daño a ti". */
+.nexusFlash {
+  position: absolute;
+  z-index: 45;
+  inset: 0;
+  pointer-events: none;
+  animation: nexusFlashPulse 480ms ease-out forwards;
+}
+.nexusFlash[data-who='self'] {
+  background: radial-gradient(circle at 50% 100%, rgba(255, 30, 30, 0.32), transparent 62%);
+  box-shadow: inset 0 0 0 6px rgba(255, 40, 40, 0.28);
+}
+.nexusFlash[data-who='rival'] {
+  background: radial-gradient(circle at 50% 0%, rgba(255, 90, 40, 0.18), transparent 58%);
+}
+@keyframes nexusFlashPulse {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexusFlash { display: none; }
+}
 .skipQueue {
   position: absolute;
   z-index: 40;
@@ -571,6 +598,7 @@
   .essencePips span[data-spend='true'] { animation: none; filter: brightness(1.6); }
   .actionHint, .message { animation: none; }
 }
+.battle[data-motion='reduced'] .nexusFlash { display: none; }
 .battle[data-motion='reduced'] .turnBanner,
 .battle[data-motion='reduced'] .eventBanner,
 .battle[data-motion='reduced'] .endTurn[data-state='ready'],

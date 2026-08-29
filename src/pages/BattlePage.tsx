@@ -860,6 +860,7 @@ export function BattlePage() {
               {director.eventBanner}
             </div>
           )}
+          {director.nexusFlash && <div className={styles.nexusFlash} data-who={director.nexusFlash} aria-hidden="true" />}
           {queueBusy && pendingCount >= 2 && (
             <button className={styles.skipQueue} onClick={() => store.skipAnimations()}>
               Saltar animaciones ({pendingCount})

@@ -63,6 +63,8 @@ export interface EventDirector {
   eventBanner: string | undefined
   /** Categoría del aviso central actual, para colorearlo (ver `bannerKindFor`). */
   eventBannerKind: EventBannerKind
+  /** Destello de pantalla al golpear un Nexo: 'self' si es el propio (aviso de peligro), 'rival' si es el enemigo. */
+  nexusFlash?: 'self' | 'rival'
   /** Carta que el escrutinio acaba de revelar, para el aviso flotante. */
   revealedCardId?: string
   /** Cuántas cartas hay que ordenar ahora mismo (0 = no hay escrutinio abierto). */
@@ -89,6 +91,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   const [banner, setBanner] = useState<string>()
   const [eventBanner, setEventBanner] = useState<string>()
   const [eventBannerKind, setEventBannerKind] = useState<EventBannerKind>('info')
+  const [nexusFlash, setNexusFlash] = useState<'self' | 'rival'>()
   const [revealedCardId, setRevealedCardId] = useState<string>()
   const [scryAmount, setScryAmount] = useState(0)
   const [scryOrder, setScryOrder] = useState<readonly string[]>([])
@@ -126,6 +129,11 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       if (currentEvent.type === 'reveal' && currentEvent.actorId === me) {
         const revealed = state.match?.players[me].deck.find((card) => card.instanceId === currentEvent.targetId)
         if (revealed) setRevealedCardId(revealed.cardId)
+      }
+      // Destello de pantalla al golpear un Nexo: el propio da un aviso de
+      // peligro más urgente (rojo, más fuerte) que el del rival.
+      if (currentEvent.type === 'nexus-damage' && (currentEvent.amount ?? 0) > 0) {
+        setNexusFlash(currentEvent.targetId === `${me}-nexus` ? 'self' : 'rival')
       }
     }, 0)
     const pace = EVENT_PACE[currentEvent.type] ?? 1
@@ -177,15 +185,23 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     return () => window.clearTimeout(timer)
   }, [revealedCardId])
 
+  useEffect(() => {
+    if (!nexusFlash) return
+    const timer = window.setTimeout(() => setNexusFlash(undefined), 480)
+    return () => window.clearTimeout(timer)
+  }, [nexusFlash])
+
   const resetBanners = () => {
     lastHistoryLength.current = 0
     setEventBanner(undefined)
+    setNexusFlash(undefined)
   }
 
   return {
     banner,
     eventBanner,
     eventBannerKind,
+    nexusFlash,
     revealedCardId,
     scryAmount,
     scryOrder,
