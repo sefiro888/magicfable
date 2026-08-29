@@ -140,11 +140,37 @@ const isOwnHalf = (y: number, localPlayerId: PlayerId): boolean =>
  * dónde acababa tu campo — con 8 filas y unidades que avanzan una casilla por
  * turno, eso es información que hace falta en cada jugada. Se mantiene la
  * variación por casilla para que el suelo no quede plano.
+ *
+ * La relación cálido/frío se respeta en las cinco escenas (es la pista de
+ * juego y no se toca), pero los tonos concretos salen de la paleta de cada
+ * sitio: el ámbar genérico sobre hielo azul hacía que tu mitad pareciera
+ * SUCIA frente a la del rival, en vez de simplemente más cálida.
  */
-const ZONE_TINTS = {
-  own: ['#ffeed2', '#f8e4c6', '#f2dcbe'],
-  enemy: ['#d8e2f7', '#ccd8f0', '#c6d3ee'],
-} as const
+const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: readonly string[]; readonly enemy: readonly string[] }>> = {
+  stone: {
+    own: ['#ffeed2', '#f8e4c6', '#f2dcbe'],
+    enemy: ['#d8e2f7', '#ccd8f0', '#c6d3ee'],
+  },
+  // En la lava todo es cálido: el bando se marca con la BRASA, no con el frío.
+  basalt: {
+    own: ['#ffd9b0', '#ffcc9c', '#f7c28e'],
+    enemy: ['#c9c4d6', '#bcb8cc', '#b2aec4'],
+  },
+  moss: {
+    own: ['#f2ecd2', '#e8e2c4', '#ded9bb'],
+    enemy: ['#cbdaea', '#bfcfe2', '#b6c6da'],
+  },
+  sand: {
+    own: ['#ffeccd', '#f8e1bd', '#f0d7b2'],
+    enemy: ['#d5dff0', '#c9d4e8', '#bfcbe0'],
+  },
+  // Sobre hielo, «cálido» es un blanco crema, no ámbar: los dos lados tienen
+  // que seguir leyéndose como hielo limpio.
+  ice: {
+    own: ['#f6f0e6', '#efe8db', '#e6dfd2'],
+    enemy: ['#d2e4f4', '#c4d9ee', '#b9d0e8'],
+  },
+}
 
 /**
  * Casilla del tablero. Memoizada: con los conjuntos precalculados y el handler
@@ -216,7 +242,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
   const variant = tileVariantFor(position)
   const slab = boardTileTexture(terrainStyle, variant)
   const rough = boardTileRoughness(terrainStyle, variant)
-  const tint = ZONE_TINTS[zone][(position.x * 7 + position.y * 13) % 3]!
+  const tint = ZONE_TINTS_BY_STYLE[terrainStyle][zone][(position.x * 7 + position.y * 13) % 3]!
   const color = valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
   const emissive = valid
     ? validEmissive
