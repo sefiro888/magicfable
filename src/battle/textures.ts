@@ -1105,6 +1105,87 @@ export const canopyTexture = (): CanvasTexture => {
   return finishTexture('canopy', canvas);
 };
 
+/**
+ * Corteza de árbol viejo: surcos verticales profundos, líquenes y la veta
+ * partida en placas.
+ *
+ * Los troncos del claro usaban la textura de mampostería —piedra de sillar—
+ * porque era la única con relieve a mano. A la escala a la que se ven, un
+ * tronco con juntas de ladrillo canta: la corteza va SIEMPRE en vertical y
+ * nunca forma retícula.
+ */
+export const barkTexture = (): CanvasTexture => {
+  const cached = cache.get('bark');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4241524b);
+
+  const base = context.createLinearGradient(0, 0, size, 0);
+  base.addColorStop(0, '#4a3a28');
+  base.addColorStop(0.5, '#5c4832');
+  base.addColorStop(1, '#3f3122');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+
+  // Surcos: recorren la altura entera con desviaciones cortas, y se bifurcan.
+  for (let groove = 0; groove < 46; groove += 1) {
+    let x = random() * size;
+    const oscuro = random() > 0.4;
+    context.strokeStyle = oscuro
+      ? `rgba(24, 17, 10, ${0.4 + random() * 0.4})`
+      : `rgba(126, 102, 72, ${0.2 + random() * 0.26})`;
+    context.lineWidth = 1 + random() * 5;
+    context.beginPath();
+    context.moveTo(x, -4);
+    for (let y = 0; y <= size + 4; y += 14) {
+      x += (random() - 0.5) * 7;
+      context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+
+  // Placas: trozos de corteza levantada, con su sombra por un lado.
+  for (let plate = 0; plate < 34; plate += 1) {
+    const px = random() * size;
+    const py = random() * size;
+    const w = 10 + random() * 26;
+    const h = 26 + random() * 80;
+    context.fillStyle = `rgba(${86 + random() * 40}, ${68 + random() * 32}, ${44 + random() * 24}, ${0.16 + random() * 0.2})`;
+    context.beginPath();
+    context.ellipse(px, py, w / 2, h / 2, 0, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = 'rgba(18, 12, 7, 0.34)';
+    context.lineWidth = 1 + random() * 1.6;
+    context.beginPath();
+    context.ellipse(px + 1.5, py, w / 2, h / 2, 0, -1.2, 1.2);
+    context.stroke();
+  }
+
+  // Grano fino.
+  for (let grain = 0; grain < 2600; grain += 1) {
+    const l = 44 + random() * 70;
+    context.fillStyle = `rgba(${l + 16}, ${l}, ${l - 14}, ${0.06 + random() * 0.16})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 2, 1 + random() * 4);
+  }
+
+  // Líquenes: manchas verdosas y grises, sobre todo en un lado del tronco.
+  for (let lichen = 0; lichen < 24; lichen += 1) {
+    const lx = random() * size * 0.55;
+    const ly = random() * size;
+    const radius = 6 + random() * 22;
+    const gradient = context.createRadialGradient(lx, ly, 0, lx, ly, radius);
+    const verdoso = random() > 0.45;
+    gradient.addColorStop(0, verdoso
+      ? `rgba(122, 148, 92, ${0.22 + random() * 0.24})`
+      : `rgba(150, 152, 138, ${0.16 + random() * 0.2})`);
+    gradient.addColorStop(1, 'rgba(120, 130, 100, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(lx - radius, ly - radius, radius * 2, radius * 2);
+  }
+  return finishTexture('bark', canvas);
+};
+
 /** Suelo del bosque más allá del claro: tierra, hojarasca y helecho. */
 export const forestFloorTexture = (): CanvasTexture => {
   const cached = cache.get('forest-floor');

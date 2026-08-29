@@ -6,7 +6,7 @@ import type { Group, Mesh, MeshStandardMaterial } from 'three'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
 import { BOARD_WORLD_HALF } from '../grid/gridCoordinates'
-import { canopyTexture, forestFloorTexture, masonryTexture } from '../textures'
+import { barkTexture, canopyTexture, forestFloorTexture, masonryTexture } from '../textures'
 
 interface GroveProps {
   quality: GraphicsQuality
@@ -87,6 +87,7 @@ function GroveFloor({ quality }: { quality: GraphicsQuality }) {
  * ellos los que cierran el sitio y explican por qué la luz llega a trozos.
  */
 function Trunks({ quality }: { quality: GraphicsQuality }) {
+  const bark = useMemo(() => barkTexture(), [])
   const trunks = useMemo(() => {
     const total = quality === 'low' ? 10 : 20
     return Array.from({ length: total }, (_, index) => {
@@ -110,7 +111,10 @@ function Trunks({ quality }: { quality: GraphicsQuality }) {
         <group key={index} position={trunk.position} rotation={[trunk.tilt, trunk.spin, trunk.tilt * 0.7]}>
           <mesh castShadow={quality !== 'low'} receiveShadow={quality !== 'low'}>
             <cylinderGeometry args={[trunk.width * 0.78, trunk.width, trunk.height, quality === 'low' ? 6 : 9]} />
-            <meshStandardMaterial map={masonryTexture()} color="#5c4a34" roughness={0.97} metalness={0.02} />
+            {/* Corteza de verdad, no mampostería: a esta escala unas juntas de
+                sillar en un árbol cantan mucho. El `bumpMap` con la misma
+                imagen da el relieve de los surcos sin geometría extra. */}
+            <meshStandardMaterial map={bark} bumpMap={bark} bumpScale={5} color="#8a7659" roughness={0.97} metalness={0.02} />
           </mesh>
           {/* Musgo en la cara baja del tronco, del lado del claro. La altura
               es FIJA, no proporcional al árbol: atada a `trunk.height` salían
