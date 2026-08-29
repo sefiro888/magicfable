@@ -837,6 +837,7 @@ export function BattlePage() {
             readyPieceIds={readyPieceIds}
             onCell={onCell}
             onPiece={onPiece}
+            onInspectPiece={inspectCard}
             onNexus={onNexus}
             onCellHover={onCellHover}
             dragging={Boolean(drag.draggingId)}

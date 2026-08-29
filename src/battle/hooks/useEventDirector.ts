@@ -95,8 +95,8 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   const [revealedCardId, setRevealedCardId] = useState<string>()
   const [scryAmount, setScryAmount] = useState(0)
   const [scryOrder, setScryOrder] = useState<readonly string[]>([])
-  /** Longitud de historial ya anunciada: evita reanunciar entradas viejas al recargar una partida guardada. */
-  const lastHistoryLength = useRef(history.length)
+  /** Última referencia de `history` ya anunciada: evita reanunciar entradas viejas al recargar una partida guardada. */
+  const lastHistoryRef = useRef(history)
 
   // 1) Si no hay evento en reproducción, avanza la cola.
   useEffect(() => {
@@ -156,13 +156,21 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   // ── Aviso central de eventos: anuncia cada acción según ocurre ────────────
   // Reutiliza el mismo texto que ya se anota en «Crónica de batalla», para no
   // mantener dos redacciones distintas del mismo suceso.
+  //
+  // BUG arreglado: `history` en el store se recorta a los últimos 10
+  // registros (`current.history.slice(-9)` + el nuevo) — antes esto se
+  // detectaba comparando LONGITUDES (`history.length`), así que en cuanto la
+  // partida acumulaba 10 entradas la longitud se quedaba fija en 10 para
+  // siempre y la condición `length <= lastLength` pasaba a ser cierta en
+  // TODO dispatch posterior, apagando el aviso central para el resto de la
+  // partida (el usuario lo reportó: "solo se vio las dos primeras jugadas").
+  // Comparar la REFERENCIA del array, que SIEMPRE cambia en cada dispatch
+  // (se reconstruye con spread aunque el tamaño no crezca), no tiene ese
+  // techo.
   useEffect(() => {
-    if (history.length <= lastHistoryLength.current) {
-      lastHistoryLength.current = history.length
-      return undefined
-    }
+    if (history === lastHistoryRef.current) return undefined
     const latest = history[history.length - 1]
-    lastHistoryLength.current = history.length
+    lastHistoryRef.current = history
     if (!latest || latest === 'Has cedido el turno.' || latest === 'Se cede el turno.') return undefined
     // setState se difiere fuera del cuerpo del efecto: mismo patrón que ya usa
     // el director de animaciones un poco más arriba para sus canales laterales.
@@ -192,7 +200,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   }, [nexusFlash])
 
   const resetBanners = () => {
-    lastHistoryLength.current = 0
+    lastHistoryRef.current = []
     setEventBanner(undefined)
     setNexusFlash(undefined)
   }

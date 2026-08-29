@@ -65,6 +65,8 @@ interface Board3DProps {
   onCell: (position: Position) => void
   onPiece: (pieceId: string) => void
   onNexus: (playerId: PlayerId) => void
+  /** Doble clic en una ficha del tablero: abre su ilustración completa, igual que en la mano. */
+  onInspectPiece?: (cardId: string) => void
   /** Casilla bajo el puntero, para saber dónde se suelta una carta arrastrada. */
   onCellHover?: (position?: Position) => void
   /** Ficha/Nexo bajo el cursor: alimenta la vista previa de daño. */
@@ -336,7 +338,7 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, onHover, previewLines, reducedMotion, impulse }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -468,6 +470,10 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   })
   if (!card) return null
   const onClick = () => onPiece(piece.instanceId)
+  const onDoubleClick = (event: ThreeEvent<MouseEvent>) => {
+    event.stopPropagation()
+    onInspect?.(piece.cardId)
+  }
   const maxHealth = card.health ?? card.resistance ?? 1
   const damaged = piece.currentHealth < maxHealth
   // El marco distingue "mía" de "del rival" a simple vista (a petición del
@@ -485,6 +491,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       ref={group}
       position={[target.x, 0.15, target.z]}
       onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
+      onDoubleClick={onDoubleClick}
       onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
@@ -1128,6 +1135,7 @@ function Scene(props: Board3DProps) {
             active={piece.owner === props.state.activePlayer}
             mine={piece.owner === props.localPlayerId}
             onPiece={props.onPiece}
+            onInspect={props.onInspectPiece}
             onHover={props.onHoverPiece}
             previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.lines : undefined}
             reducedMotion={props.reducedMotion}
