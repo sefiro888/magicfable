@@ -599,6 +599,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const group = useRef<Group>(null)
   const frame = useRef<Mesh>(null)
   const readyRing = useRef<Mesh>(null)
+  const shieldDome = useRef<Mesh>(null)
   const [hovered, setHovered] = useState(false)
   useCursor(hovered)
   const target = useMemo(() => ({ x: boardX(piece.position.x), z: boardZ(piece.position.y) }), [piece.position.x, piece.position.y])
@@ -703,6 +704,14 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
     if (readyRing.current) {
       const material = readyRing.current.material as MeshBasicMaterial
       material.opacity = reducedMotion ? 0.32 : 0.24 + (Math.sin(clock.elapsedTime * 2.1) + 1) * 0.09
+    }
+    // El escudo respira despacio: lo justo para que se lea como energía
+    // activa y no como una burbuja de cristal pegada a la ficha.
+    if (shieldDome.current && !reducedMotion) {
+      const material = shieldDome.current.material as MeshStandardMaterial
+      material.emissiveIntensity = 0.35 + Math.sin(clock.elapsedTime * 1.7) * 0.18
+      const breath = 1 + Math.sin(clock.elapsedTime * 1.7) * 0.025
+      shieldDome.current.scale.setScalar(CARD_SCALE * breath)
     }
     // Embestida / retroceso: ida y vuelta con seno, para que salga y regrese
     // en el mismo gesto sin dejar la ficha descolocada si se corta a medias.
@@ -835,6 +844,36 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           </mesh>
         ))}
       </group>
+      {/* Escudo: cúpula traslúcida alrededor de la ficha.
+
+          Llevar escudo solo se veía en una insignia HTML diminuta encima de
+          la carta, y es información que hace falta ANTES de decidir un
+          ataque — de un vistazo al tablero no había forma de saber qué
+          unidades absorbían daño. La opacidad sube con los puntos de escudo
+          (tope a los 4), así que un escudo grande se nota más que uno de 1.
+
+          Va fuera del grupo del arte y con `depthWrite={false}` para no
+          tapar la ilustración ni pelearse con ella por la profundidad. */}
+      {shielded > 0 && (
+        <mesh ref={shieldDome} position={[0, 0.16, 0]} scale={CARD_SCALE}>
+          <sphereGeometry args={[0.72, 20, 14]} />
+          <meshStandardMaterial
+            color="#8fd4ff"
+            transparent
+            // Primer intento: 0,10 + 0,035 por punto. A la distancia real de
+            // la cámara la cúpula era literalmente invisible en captura —
+            // había que fiarse de la insignia otra vez. Subida a valores que
+            // sí se leen sin llegar a tapar la ilustración de la ficha.
+            opacity={0.2 + Math.min(shielded, 4) * 0.055}
+            roughness={0.15}
+            metalness={0.5}
+            emissive="#5fbcff"
+            emissiveIntensity={0.45}
+            depthWrite={false}
+            side={DoubleSide}
+          />
+        </mesh>
+      )}
       </group>
       </group>
       {/* Anillos de selección/disponibilidad: se quedan tumbados en la casilla
