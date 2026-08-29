@@ -1,4 +1,4 @@
-import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
+import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
@@ -18,6 +18,7 @@ import {
   CAMERA_MIN_DISTANCE,
   CAMERA_POSITION,
   CAMERA_TARGET,
+  BOARD_WORLD_SIZE,
   CELL_SIZE,
   gridToWorldX,
   gridToWorldZ,
@@ -340,6 +341,47 @@ const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position, terra
     )
   }
   return null
+})
+
+/**
+ * Atmósfera a ras del tablero: lo que hace que el suelo esté VIVO y no sea
+ * una foto. Cada escena tiene la suya, y va justo por encima de las losas —
+ * los efectos que ya existen viven a nivel de escenario (a 4 unidades de
+ * altura o en el horizonte) y desde la cámara no se leen como parte del
+ * campo de juego.
+ *
+ * Deliberadamente MUY sutil y lento: esto está debajo de las fichas durante
+ * toda la partida, así que cualquier cosa vistosa cansaría a los diez
+ * minutos y competiría con los avisos de daño, que sí tienen que llamar la
+ * atención.
+ */
+const BoardAtmosphere = memo(function BoardAtmosphere({ terrainStyle, quality, reducedMotion }: { terrainStyle: BoardTileStyle; quality: GraphicsQuality; reducedMotion: boolean }) {
+  // En calidad baja no se dibuja: es lo primero que sobra si hay que ahorrar.
+  if (quality === 'low') return null
+  const span = BOARD_WORLD_SIZE * 0.98
+  const look = {
+    // Pavesas subiendo de las juntas calientes.
+    basalt: { count: 26, color: '#ff8a3d', size: 3.4, speed: 0.5, opacity: 0.6, height: 1.5, y: 0.55 },
+    // Nieve fina barriendo el hielo, casi a ras.
+    ice: { count: 40, color: '#eaf6ff', size: 2.2, speed: 0.28, opacity: 0.55, height: 0.9, y: 0.35 },
+    // Polvo de arena levantándose del patio.
+    sand: { count: 30, color: '#f0d9a8', size: 2.6, speed: 0.34, opacity: 0.4, height: 1.1, y: 0.4 },
+    // Bruma baja entre las losas del santuario.
+    moss: { count: 22, color: '#9fc4d8', size: 4.2, speed: 0.16, opacity: 0.32, height: 0.8, y: 0.3 },
+    // Motas de luz flotando en la plaza al amanecer.
+    stone: { count: 24, color: '#ffe6b0', size: 2.8, speed: 0.2, opacity: 0.42, height: 1.3, y: 0.5 },
+  }[terrainStyle]
+  return (
+    <Sparkles
+      count={quality === 'high' ? look.count : Math.round(look.count * 0.55)}
+      scale={[span, look.height, span]}
+      position={[0, look.y, 0]}
+      size={look.size}
+      speed={reducedMotion ? 0 : look.speed}
+      opacity={look.opacity}
+      color={look.color}
+    />
+  )
 })
 
 /**
@@ -1170,6 +1212,7 @@ function Scene(props: Board3DProps) {
       })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} />}
       <Midline />
+      <BoardAtmosphere terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
       <Suspense fallback={null}>
         {props.state.board.map((piece) => (
           <BoardCard
