@@ -1,4 +1,4 @@
-import { CanvasTexture, SRGBColorSpace } from 'three';
+import { CanvasTexture, NoColorSpace, SRGBColorSpace } from 'three';
 
 /**
  * Texturas procedurales del Santuario. Todo se genera en un canvas local:
@@ -1033,4 +1033,346 @@ export const desertSkyTexture = (): CanvasTexture => {
     context.fillRect(0, y, size, 6 + random() * 26);
   }
   return finishTexture('desert-sky', canvas);
+};
+
+// ─── Suelo del tablero ──────────────────────────────────────────────────────
+//
+// Las casillas reutilizaban las texturas de ambiente (basalto, musgo,
+// arenisca), que se generan UNA sola vez y se cachean sin variante: las 64
+// casillas salían idénticas píxel a píxel. Una rejilla perfectamente repetida
+// se lee como falsa al instante por mucho relieve que tenga cada losa.
+//
+// Estas texturas son propias del suelo jugable y aportan las tres cosas que
+// de verdad separan una piedra real de un color plano:
+//
+//  1. VARIANTES por casilla: seis dibujos distintos repartidos por posición,
+//     así que dos losas vecinas nunca son la misma imagen.
+//  2. OCLUSIÓN HORNEADA: cada losa se oscurece hacia sus cuatro bordes. Es lo
+//     que finge la sombra de contacto entre losa y losa, y lo que más
+//     profundidad da por céntimo de esfuerzo.
+//  3. MAPA DE RUGOSIDAD: el brillo deja de ser uniforme. El basalto vitrifica
+//     donde está fresco, el musgo brilla donde está mojado y la arena no
+//     brilla en ninguna parte — tres materiales que se leen distintos aunque
+//     compartan la misma geometría.
+
+export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand';
+
+/** Cuántos dibujos distintos hay por estilo. Seis bastan para que el ojo no encuentre el patrón. */
+export const BOARD_TILE_VARIANTS = 6;
+
+/** Semilla estable por estilo+variante: el mismo mapa se ve siempre igual. */
+const tileSeed = (style: BoardTileStyle, variant: number): number => {
+  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44 }[style];
+  return (base + variant * 7919) >>> 0;
+};
+
+/**
+ * Oscurecimiento hacia los cuatro bordes de la losa. Se dibuja al final, por
+ * encima de todo el detalle, para que también apague el grano y las vetas —
+ * si solo tiñera el fondo, el grano seguiría igual de brillante en la esquina
+ * y delataría que la sombra está pintada.
+ */
+const bakeEdgeShade = (context: CanvasRenderingContext2D, size: number, strength: number): void => {
+  const band = size * 0.34;
+  const edges: readonly [number, number, number, number][] = [
+    [0, 0, band, 0],
+    [size, 0, size - band, 0],
+    [0, 0, 0, band],
+    [0, size, 0, size - band],
+  ];
+  for (const [x0, y0, x1, y1] of edges) {
+    const gradient = context.createLinearGradient(x0, y0, x1, y1);
+    gradient.addColorStop(0, `rgba(0, 0, 0, ${strength})`);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+};
+
+/** Junta tallada en el borde: la línea de sombra donde acaba la losa. */
+const drawTileGroove = (context: CanvasRenderingContext2D, size: number, alpha: number): void => {
+  const width = Math.max(2, size * 0.016);
+  context.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
+  context.lineWidth = width;
+  context.strokeRect(width / 2, width / 2, size - width, size - width);
+};
+
+/** Mapa de color de una losa del tablero. */
+export const boardTileTexture = (style: BoardTileStyle, variant: number): CanvasTexture => {
+  const key = `board-tile-${style}-${variant}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const size = 256;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(tileSeed(style, variant));
+
+  if (style === 'stone') {
+    // Caliza tallada y pulida: cálida, con vetas finas y esquinas desportilladas.
+    const base = context.createLinearGradient(0, 0, size, size);
+    base.addColorStop(0, '#cfc6b2');
+    base.addColorStop(0.55, '#bdb3a0');
+    base.addColorStop(1, '#a99f8d');
+    context.fillStyle = base;
+    context.fillRect(0, 0, size, size);
+    for (let vein = 0; vein < 5; vein += 1) {
+      context.strokeStyle = `rgba(122, 114, 100, ${0.14 + random() * 0.18})`;
+      context.lineWidth = 0.6 + random() * 1.8;
+      context.beginPath();
+      let vx = random() * size;
+      let vy = 0;
+      context.moveTo(vx, vy);
+      while (vy < size) {
+        vy += 12 + random() * 20;
+        vx += (random() - 0.5) * 34;
+        context.lineTo(vx, vy);
+      }
+      context.stroke();
+    }
+    for (let grain = 0; grain < 2200; grain += 1) {
+      const l = 150 + random() * 80;
+      context.fillStyle = `rgba(${l}, ${l - 6}, ${l - 20}, ${0.05 + random() * 0.12})`;
+      context.fillRect(random() * size, random() * size, 1 + random() * 2, 1 + random() * 2);
+    }
+    // Desportillado en una esquina distinta según la variante.
+    const corner = variant % 4;
+    const cx = corner === 0 || corner === 3 ? 0 : size;
+    const cy = corner < 2 ? 0 : size;
+    context.fillStyle = 'rgba(88, 82, 70, 0.5)';
+    context.beginPath();
+    context.moveTo(cx, cy);
+    context.lineTo(cx + (cx === 0 ? 1 : -1) * (16 + random() * 26), cy);
+    context.lineTo(cx, cy + (cy === 0 ? 1 : -1) * (14 + random() * 24));
+    context.closePath();
+    context.fill();
+    drawTileGroove(context, size, 0.4);
+    bakeEdgeShade(context, size, 0.36);
+  } else if (style === 'basalt') {
+    // Roca volcánica: fracturada en prismas, con rescoldo en las grietas.
+    // El tono NO es negro puro a propósito: una losa casi negra multiplicada
+    // por el tinte de zona se convierte en un agujero sin forma, y el tablero
+    // deja de leerse sobre el fondo de lava. Basalto real bajo luz cálida es
+    // gris pardo oscuro, no tinta.
+    context.fillStyle = '#3b2d2c';
+    context.fillRect(0, 0, size, size);
+    for (let patch = 0; patch < 9; patch += 1) {
+      const px = random() * size;
+      const py = random() * size;
+      const radius = 26 + random() * 60;
+      const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+      gradient.addColorStop(0, `rgba(96, 76, 70, ${0.18 + random() * 0.22})`);
+      gradient.addColorStop(1, 'rgba(48, 36, 34, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+    }
+    for (let grain = 0; grain < 1800; grain += 1) {
+      const l = 46 + random() * 62;
+      context.fillStyle = `rgba(${l + 10}, ${l}, ${l - 4}, ${0.16 + random() * 0.3})`;
+      context.fillRect(random() * size, random() * size, 1 + random() * 2.4, 1 + random() * 2.4);
+    }
+    // Fractura columnar: una red de grietas que cruza la losa.
+    const cracks: { x: number; y: number }[][] = [];
+    for (let crack = 0; crack < 3 + (variant % 3); crack += 1) {
+      const path: { x: number; y: number }[] = [];
+      let x = random() * size;
+      let y = -6;
+      while (y < size + 6) {
+        path.push({ x, y });
+        y += 16 + random() * 22;
+        x += (random() - 0.5) * 46;
+      }
+      cracks.push(path);
+      context.strokeStyle = `rgba(0, 0, 0, ${0.5 + random() * 0.35})`;
+      context.lineWidth = 1.4 + random() * 3.2;
+      context.beginPath();
+      context.moveTo(path[0]!.x, path[0]!.y);
+      for (const point of path.slice(1)) context.lineTo(point.x, point.y);
+      context.stroke();
+    }
+    // Rescoldo dentro de la grieta, no encima: más fino y ligeramente desplazado.
+    for (const path of cracks) {
+      if (random() > 0.55) continue;
+      context.strokeStyle = `rgba(255, ${96 + Math.floor(random() * 90)}, 34, ${0.3 + random() * 0.4})`;
+      context.lineWidth = 0.8 + random() * 1.4;
+      context.beginPath();
+      context.moveTo(path[0]!.x, path[0]!.y);
+      for (const point of path.slice(1)) context.lineTo(point.x + 0.8, point.y);
+      context.stroke();
+    }
+    // Ceniza posada, sobre todo hacia los bordes.
+    for (let ash = 0; ash < 260; ash += 1) {
+      const ax = random() * size;
+      const ay = random() * size;
+      const borde = Math.min(ax, ay, size - ax, size - ay) / (size / 2);
+      context.fillStyle = `rgba(150, 142, 138, ${(1 - borde) * 0.16 * random()})`;
+      context.fillRect(ax, ay, 1 + random() * 3, 1 + random() * 3);
+    }
+    drawTileGroove(context, size, 0.55);
+    bakeEdgeShade(context, size, 0.3);
+  } else if (style === 'moss') {
+    // Granito húmedo: frío, moteado, con musgo entrando por juntas y grietas.
+    context.fillStyle = '#6a6f68';
+    context.fillRect(0, 0, size, size);
+    for (let fleck = 0; fleck < 2600; fleck += 1) {
+      const l = 74 + random() * 88;
+      const warm = random() > 0.7;
+      context.fillStyle = warm
+        ? `rgba(${l + 14}, ${l + 4}, ${l - 12}, ${0.1 + random() * 0.2})`
+        : `rgba(${l - 8}, ${l}, ${l - 2}, ${0.1 + random() * 0.22})`;
+      context.fillRect(random() * size, random() * size, 1 + random() * 2.4, 1 + random() * 2.2);
+    }
+    // Musgo: entra desde los bordes hacia dentro, que es por donde se cuela el agua.
+    for (let clump = 0; clump < 16; clump += 1) {
+      const along = random() * size;
+      const depth = random() * size * 0.34;
+      const edge = (variant + clump) % 4;
+      const mx = edge === 0 ? along : edge === 1 ? size - depth : edge === 2 ? along : depth;
+      const my = edge === 0 ? depth : edge === 1 ? along : edge === 2 ? size - depth : along;
+      const radius = 10 + random() * 30;
+      const gradient = context.createRadialGradient(mx, my, 0, mx, my, radius);
+      gradient.addColorStop(0, `rgba(72, 96, 48, ${0.34 + random() * 0.3})`);
+      gradient.addColorStop(0.6, `rgba(84, 104, 56, ${0.16 + random() * 0.16})`);
+      gradient.addColorStop(1, 'rgba(80, 100, 54, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(mx - radius, my - radius, radius * 2, radius * 2);
+    }
+    // Liquen claro, en manchas pequeñas y secas.
+    for (let lichen = 0; lichen < 9; lichen += 1) {
+      context.fillStyle = `rgba(168, 176, 140, ${0.1 + random() * 0.16})`;
+      context.beginPath();
+      context.arc(random() * size, random() * size, 3 + random() * 9, 0, Math.PI * 2);
+      context.fill();
+    }
+    // Grieta con agua estancada.
+    context.strokeStyle = 'rgba(24, 30, 26, 0.5)';
+    context.lineWidth = 1.4 + random() * 2.4;
+    context.beginPath();
+    let gx = random() * size;
+    let gy = 0;
+    context.moveTo(gx, gy);
+    while (gy < size) {
+      gy += 18 + random() * 26;
+      gx += (random() - 0.5) * 40;
+      context.lineTo(gx, gy);
+    }
+    context.stroke();
+    drawTileGroove(context, size, 0.5);
+    bakeEdgeShade(context, size, 0.38);
+  } else {
+    // Arenisca al sol: ocre, con ondulación de viento y arena acumulada.
+    const base = context.createLinearGradient(0, 0, size * 0.3, size);
+    base.addColorStop(0, '#d8b87c');
+    base.addColorStop(0.5, '#c9a86a');
+    base.addColorStop(1, '#b8975c');
+    context.fillStyle = base;
+    context.fillRect(0, 0, size, size);
+    // Estratos: la arenisca se deposita en capas horizontales.
+    for (let layer = 0; layer < 22; layer += 1) {
+      const y = random() * size;
+      const h = 2 + random() * 12;
+      const t = 178 + Math.floor(random() * 44);
+      context.fillStyle = `rgba(${t}, ${t - 28}, ${t - 78}, ${0.12 + random() * 0.2})`;
+      context.fillRect(0, y, size, h);
+    }
+    // Ondulación de viento: crestas suaves y paralelas, giradas por variante.
+    context.save();
+    context.translate(size / 2, size / 2);
+    context.rotate((variant / BOARD_TILE_VARIANTS) * Math.PI);
+    context.translate(-size / 2, -size / 2);
+    for (let ripple = 0; ripple < 14; ripple += 1) {
+      const y = (ripple / 14) * size + (random() - 0.5) * 8;
+      context.strokeStyle = `rgba(232, 206, 158, ${0.1 + random() * 0.14})`;
+      context.lineWidth = 2 + random() * 4;
+      context.beginPath();
+      context.moveTo(-size * 0.3, y);
+      for (let x = -size * 0.3; x < size * 1.3; x += 24) {
+        context.lineTo(x, y + Math.sin(x * 0.05 + ripple) * 4);
+      }
+      context.stroke();
+    }
+    context.restore();
+    for (let grain = 0; grain < 2400; grain += 1) {
+      const t = 156 + random() * 82;
+      context.fillStyle = `rgba(${t}, ${t - 30}, ${t - 80}, ${0.08 + random() * 0.2})`;
+      context.fillRect(random() * size, random() * size, 1 + random() * 2, 1 + random() * 2);
+    }
+    // Arena acumulada en los bordes: la losa se entierra por donde no pisa nadie.
+    for (let drift = 0; drift < 220; drift += 1) {
+      const dx = random() * size;
+      const dy = random() * size;
+      const borde = Math.min(dx, dy, size - dx, size - dy) / (size / 2);
+      context.fillStyle = `rgba(226, 202, 152, ${(1 - borde) * 0.3 * random()})`;
+      context.fillRect(dx, dy, 1 + random() * 3.4, 1 + random() * 3.4);
+    }
+    drawTileGroove(context, size, 0.3);
+    bakeEdgeShade(context, size, 0.28);
+  }
+
+  return finishTexture(key, canvas);
+};
+
+/**
+ * Mapa de rugosidad de la losa: blanco = mate, negro = brillante. Es lo que
+ * hace que dos materiales con la misma geometría se lean como sustancias
+ * distintas — sin esto, el basalto vitrificado y la arena seca reflejan la
+ * luz exactamente igual.
+ */
+export const boardTileRoughness = (style: BoardTileStyle, variant: number): CanvasTexture => {
+  const key = `board-rough-${style}-${variant}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const size = 128;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom((tileSeed(style, variant) ^ 0x5a5a5a5a) >>> 0);
+
+  // Nivel base de mate por material.
+  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244 }[style];
+  context.fillStyle = `rgb(${baseLevel}, ${baseLevel}, ${baseLevel})`;
+  context.fillRect(0, 0, size, size);
+
+  if (style === 'basalt') {
+    // Zonas vitrificadas: manchas muy brillantes donde la roca se enfrió deprisa.
+    for (let glass = 0; glass < 7; glass += 1) {
+      const gx = random() * size;
+      const gy = random() * size;
+      const radius = 12 + random() * 30;
+      const gradient = context.createRadialGradient(gx, gy, 0, gx, gy, radius);
+      gradient.addColorStop(0, 'rgba(40, 40, 40, 0.85)');
+      gradient.addColorStop(1, 'rgba(150, 150, 150, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(gx - radius, gy - radius, radius * 2, radius * 2);
+    }
+  } else if (style === 'moss') {
+    // Charcos: el musgo retiene agua y esas zonas reflejan mucho.
+    for (let pool = 0; pool < 9; pool += 1) {
+      const px = random() * size;
+      const py = random() * size;
+      const radius = 8 + random() * 26;
+      const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+      gradient.addColorStop(0, 'rgba(58, 58, 58, 0.8)');
+      gradient.addColorStop(1, 'rgba(210, 210, 210, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+    }
+  } else if (style === 'stone') {
+    // Pulido desigual: el centro de la losa se lustra con el paso, los bordes no.
+    const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * 0.6);
+    gradient.addColorStop(0, 'rgba(120, 120, 120, 0.55)');
+    gradient.addColorStop(1, 'rgba(220, 220, 220, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+
+  // Ruido fino: sin él la rugosidad queda en bandas y se nota el degradado.
+  for (let noise = 0; noise < 900; noise += 1) {
+    const level = baseLevel - 30 + random() * 60;
+    context.fillStyle = `rgba(${level}, ${level}, ${level}, ${0.1 + random() * 0.2})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 3, 1 + random() * 3);
+  }
+  const texture = finishTexture(key, canvas);
+  // Un mapa de rugosidad NO es color: son datos crudos. Si se deja en sRGB
+  // (lo que hace `finishTexture` por defecto, correcto para los mapas de
+  // color) Three.js le aplica corrección gamma y el material sale bastante
+  // más brillante de lo pedido.
+  texture.colorSpace = NoColorSpace;
+  return texture;
 };

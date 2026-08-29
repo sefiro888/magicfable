@@ -2,7 +2,7 @@ import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
-import type { CanvasTexture, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
@@ -26,7 +26,7 @@ import {
   worldToGrid,
 } from './grid/gridCoordinates'
 import { impulsesForEvent, type Impulse } from './combatImpulse'
-import { basaltTexture, masonryTexture, mossStoneTexture, sandstoneTexture, slabTexture } from './textures'
+import { BOARD_TILE_VARIANTS, boardTileRoughness, boardTileTexture, masonryTexture, type BoardTileStyle } from './textures'
 import styles from './Board3D.module.css'
 
 const AetherCitadel = lazy(() =>
@@ -173,26 +173,24 @@ const CursorMarker = memo(function CursorMarker({ position, reducedMotion }: { p
   )
 })
 
-/** Piedra de cada escenario para la losa de la casilla — antes solo Aether
-    Citadel tenía textura real (`slabTexture`); Caldera, Santuario y Duna se
-    quedaban con color plano sin ningún mapa, mucho más sosas en comparación. */
-type TerrainStyle = 'stone' | 'basalt' | 'moss' | 'sand'
-const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, TerrainStyle>> = {
+/** Piedra de cada escenario para la losa de la casilla. */
+const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle>> = {
   'aether-citadel': 'stone',
   caldera: 'basalt',
   sanctuary: 'moss',
   duna: 'sand',
 }
-const terrainTexture = (style: TerrainStyle, variant: 0 | 1 | 2 | 3): CanvasTexture => {
-  switch (style) {
-    case 'basalt': return basaltTexture()
-    case 'moss': return mossStoneTexture()
-    case 'sand': return sandstoneTexture()
-    default: return slabTexture(variant)
-  }
-}
 
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: TerrainStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+/**
+ * Qué dibujo de losa le toca a cada casilla. Los dos factores son primos
+ * entre sí y con el número de variantes, así que el patrón no se alinea con
+ * las filas ni con las columnas: mirando el tablero no se encuentra la
+ * repetición aunque solo haya seis dibujos distintos.
+ */
+const tileVariantFor = (position: Position): number =>
+  (position.x * 5 + position.y * 11) % BOARD_TILE_VARIANTS
+
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -205,10 +203,14 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
   // común de daltonismo.
   const validColor = intent === 'deploy' ? (colorblindMode ? '#ffb648' : '#7ee6a8') : '#8fd4ff'
   const validEmissive = intent === 'deploy' ? (colorblindMode ? '#8a5411' : '#1c7a4a') : '#1f6f9e'
-  // La losa es una piedra tallada de verdad, con textura y relieve en las
-  // cuatro escenas — antes solo Aether Citadel tenía este tratamiento y el
-  // resto quedaban planas y sin mapa, mucho más sosas en comparación.
-  const slab = terrainTexture(terrainStyle, ((position.x * 3 + position.y * 5) % 4) as 0 | 1 | 2 | 3)
+  // La losa es una piedra tallada de verdad: dibujo propio por casilla (seis
+  // variantes repartidas para que no se vea el patrón), sombra de contacto
+  // horneada en los bordes y mapa de rugosidad para que el material se lea
+  // como la sustancia que es — basalto vitrificado, granito mojado o arena
+  // seca reflejan la luz de forma muy distinta.
+  const variant = tileVariantFor(position)
+  const slab = boardTileTexture(terrainStyle, variant)
+  const rough = boardTileRoughness(terrainStyle, variant)
   const tint = ZONE_TINTS[zone][(position.x * 7 + position.y * 13) % 3]!
   const color = valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
   const emissive = valid
@@ -235,9 +237,12 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       <meshStandardMaterial
         map={slab}
         bumpMap={slab}
-        bumpScale={terrainStyle === 'stone' ? 6 : 4}
+        bumpScale={terrainStyle === 'sand' ? 3 : 6}
+        roughnessMap={rough}
         color={color}
-        roughness={0.9}
+        roughness={1}
+        // Sin mapa de entorno, subir `metalness` no refleja nada: solo apaga
+        // la componente difusa y deja la losa negra. Se queda casi a cero.
         metalness={0.05}
         emissive={emissive}
         emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : threatened ? 0.55 : deployRow ? 0.3 : 0}
