@@ -1,7 +1,7 @@
 import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
+import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
@@ -27,7 +27,7 @@ import {
   worldToGrid,
 } from './grid/gridCoordinates'
 import { impulsesForEvent, type Impulse } from './combatImpulse'
-import { BOARD_TILE_VARIANTS, boardTileRoughness, boardTileTexture, contactShadowTexture, masonryTexture, type BoardTileStyle } from './textures'
+import { BOARD_TILE_VARIANTS, boardTileRoughness, boardTileTexture, contactShadowTexture, glowTexture, masonryTexture, type BoardTileStyle } from './textures'
 import styles from './Board3D.module.css'
 
 const AetherCitadel = lazy(() =>
@@ -231,7 +231,7 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
 const tileVariantFor = (position: Position): number =>
   (position.x * 5 + position.y * 11) % BOARD_TILE_VARIANTS
 
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -295,6 +295,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
         emissiveIntensity={valid ? 1.15 : scorched ? 1 : hovered ? 0.62 : threatened ? 0.7 : deployRow ? 0.38 : 0}
       />
       <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
+      {scorched && <ScorchMarks position={position} reducedMotion={reducedMotion} />}
     </mesh>
   )
 })
@@ -307,6 +308,66 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
  * Las formas se derivan de la posición (no del azar) para que el mismo mapa se
  * vea siempre igual sin guardar nada extra en el estado.
  */
+/**
+ * Casilla abrasada: brasas subiendo y un rescoldo que respira en el suelo.
+ *
+ * Hasta ahora «abrasada» era solo un cambio de color de la losa. Es un efecto
+ * que PERSISTE varios turnos y que cambia cómo se juega esa casilla, así que
+ * merece leerse como fuego de verdad y no como una losa pintada de naranja —
+ * sobre todo ahora que el resaltado sigue la textura y tiñe menos.
+ *
+ * Va como hijo de la losa, igual que el terreno, así que hereda su posición.
+ */
+const ScorchMarks = memo(function ScorchMarks({ position, reducedMotion }: { position: Position; reducedMotion: boolean }) {
+  const embers = useRef<Group>(null)
+  const glow = useRef<Mesh>(null)
+  const texture = useMemo(() => glowTexture('ember'), [])
+  // El desfase por casilla evita que todas las brasas del tablero suban a la vez.
+  const offset = useMemo(() => ((position.x * 7 + position.y * 13) % 10) / 10, [position.x, position.y])
+  const seeds = useMemo(
+    () => Array.from({ length: 5 }, (_, index) => ({
+      x: Math.cos(index * 2.1 + offset * 6) * 0.22,
+      z: Math.sin(index * 1.6 + offset * 6) * 0.22,
+      speed: 0.5 + (index % 3) * 0.22,
+      phase: (index / 5 + offset) % 1,
+    })),
+    [offset],
+  )
+  useFrame(({ clock }) => {
+    if (reducedMotion) return
+    const t = clock.elapsedTime
+    embers.current?.children.forEach((child, index) => {
+      const seed = seeds[index]!
+      // Ciclo propio por brasa: sube, se apaga y vuelve a nacer abajo.
+      const life = (t * seed.speed + seed.phase) % 1
+      child.position.set(seed.x * (1 + life * 0.6), 0.06 + life * 0.5, seed.z * (1 + life * 0.6))
+      child.scale.setScalar(Math.max(0.001, Math.sin(life * Math.PI) * 0.13))
+    })
+    if (glow.current) {
+      const material = glow.current.material as MeshBasicMaterial
+      material.opacity = 0.24 + Math.sin(t * 1.8 + offset * 6) * 0.1
+    }
+  })
+  return (
+    <group position={[0, 0.06, 0]}>
+      {/* Rescoldo a ras: la mancha caliente sobre la piedra. */}
+      <mesh ref={glow} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
+        <circleGeometry args={[0.36, 20]} />
+        <meshBasicMaterial map={texture} color="#ff7a2e" transparent opacity={0.24} blending={AdditiveBlending} depthWrite={false} />
+      </mesh>
+      {!reducedMotion && (
+        <group ref={embers}>
+          {seeds.map((_, index) => (
+            <sprite key={index}>
+              <spriteMaterial map={texture} color="#ffb14d" transparent blending={AdditiveBlending} depthWrite={false} />
+            </sprite>
+          ))}
+        </group>
+      )}
+    </group>
+  )
+})
+
 /**
  * Aspecto del terreno según la escena. Antes ruinas y cobertura eran los
  * mismos bloques de mampostería parda en las cinco: un escombro de ladrillo
@@ -1339,6 +1400,7 @@ function Scene(props: Board3DProps) {
             threatened={!occupiedSet.has(key) && threatenedSet.has(key)}
             intent={props.cellIntent}
             colorblindMode={props.colorblindMode}
+            reducedMotion={props.reducedMotion}
             onCell={props.onCell}
             onHover={props.onCellHover}
           />
