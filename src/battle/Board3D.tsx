@@ -27,7 +27,7 @@ import {
   worldToGrid,
 } from './grid/gridCoordinates'
 import { impulsesForEvent, type Impulse } from './combatImpulse'
-import { BOARD_TILE_VARIANTS, boardTileRoughness, boardTileTexture, masonryTexture, type BoardTileStyle } from './textures'
+import { BOARD_TILE_VARIANTS, boardTileRoughness, boardTileTexture, contactShadowTexture, masonryTexture, type BoardTileStyle } from './textures'
 import styles from './Board3D.module.css'
 
 const AetherCitadel = lazy(() =>
@@ -601,6 +601,19 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
+      {/* Sombra de contacto: va FUERA del grupo de la embestida a propósito.
+          Si acompañara al golpe, la mancha saldría disparada con la ficha y
+          se vería despegarse del suelo — justo lo contrario de lo que hace
+          aquí. Se queda quieta en la casilla, como la sombra de algo que se
+          levanta un poco pero no deja de apoyarse. */}
+      {/* Altura: el grupo está a y=0.15 y la losa llega como mucho a y=0.08
+          (las casillas resaltadas son más altas que las normales, 0.16 frente
+          a 0.11). A -0.085 la mancha quedaba ENTERRADA dentro de la losa justo
+          en las casillas iluminadas, que son las que más se miran. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.048, 0.04]} renderOrder={-1}>
+        <planeGeometry args={[0.92, 0.92]} />
+        <meshBasicMaterial map={contactShadowTexture()} transparent depthWrite={false} opacity={0.85} />
+      </mesh>
       <group ref={strike}>
       <group ref={facing}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.

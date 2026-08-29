@@ -1036,6 +1036,32 @@ export const desertSkyTexture = (): CanvasTexture => {
 };
 
 /**
+ * Mancha de sombra de contacto: negro opaco en el centro que se deshace hacia
+ * los bordes.
+ *
+ * Va DEBAJO de cada ficha del tablero. Las luces ya proyectan sombra real,
+ * pero esa sombra sale despedida en la dirección de la luz y deja el punto de
+ * apoyo limpio — lo justo para que la pieza parezca flotar un dedo por encima
+ * de la losa. Esta mancha es el truco de siempre para pegarla al suelo, y
+ * además funciona igual en las cinco escenas por muy distinta que sea su
+ * iluminación.
+ */
+export const contactShadowTexture = (): CanvasTexture => {
+  const cached = cache.get('contact-shadow');
+  if (cached) return cached;
+  const size = 128;
+  const [canvas, context] = makeCanvas(size);
+  const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'rgba(0, 0, 0, 0.62)');
+  gradient.addColorStop(0.45, 'rgba(0, 0, 0, 0.34)');
+  gradient.addColorStop(0.75, 'rgba(0, 0, 0, 0.1)');
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, size, size);
+  return finishTexture('contact-shadow', canvas);
+};
+
+/**
  * Cielo del fiordo helado: noche polar con aurora boreal.
  *
  * La aurora se dibuja como cortinas verticales de verde y violeta con el
