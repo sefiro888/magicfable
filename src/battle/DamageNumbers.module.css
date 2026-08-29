@@ -37,3 +37,20 @@
   color: #79c8ff;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(121, 200, 255, 0.6);
 }
+/* Golpes grandes (mismo umbral que el destello 3D de ImpactBurst): número más
+   grande y con un puntito de rebote propio, para que un golpazo se note más
+   que un pinchazo de 1 sin tener que leer la cifra con atención. */
+.number[data-big] {
+  font-size: 27px;
+  animation: floatUpBig 1200ms ease-out forwards;
+}
+@keyframes floatUpBig {
+  0% { transform: translateY(6px) scale(.7); opacity: 0; }
+  14% { transform: translateY(0) scale(1.15); opacity: 1; }
+  24% { transform: translateY(-2px) scale(1); }
+  70% { opacity: 1; }
+  100% { transform: translateY(-44px) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .number[data-big] { animation: fadeOnly 1200ms ease-out forwards; }
+}

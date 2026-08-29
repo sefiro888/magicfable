@@ -299,27 +299,73 @@
   100% { opacity: 0; }
 }
 /* Aviso central de eventos: qué acaba de pasar (ataque, hechizo, despliegue…). Más
-   discreto y arriba que el banner de turno, para que ambos puedan convivir. */
+   discreto y arriba que el banner de turno, para que ambos puedan convivir.
+   Coloreado por tipo (`data-kind`, ver useEventDirector) y con una pequeña
+   entrada de rebote: el usuario pedía que un golpe o un hechizo se notaran
+   de un vistazo en el propio escenario, no solo leyendo la Crónica de la
+   derecha. */
 .eventBanner {
   position: absolute;
   z-index: 39;
   top: 14%;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
   max-width: min(560px, 82%);
-  padding: 9px 22px;
-  border-left: 2px solid var(--gold);
+  padding: 11px 26px;
+  border-left: 3px solid var(--gold);
+  border-radius: 3px;
   color: #ecdfb8;
-  background: rgba(8, 10, 16, 0.82);
-  font: 500 15px var(--display);
+  background: rgba(8, 10, 16, 0.88);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  font: 600 17px var(--display);
   letter-spacing: 0.03em;
   text-align: center;
   pointer-events: none;
-  animation: eventBannerIn 1.9s ease forwards;
+  animation: eventBannerIn 1.9s cubic-bezier(.2, .9, .3, 1) forwards;
 }
+.eventBanner::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.eventBanner[data-kind='damage'] {
+  border-color: #ff6a4d;
+  color: #ffe0d2;
+  background: linear-gradient(90deg, rgba(120, 24, 10, 0.55), rgba(8, 10, 16, 0.9) 60%);
+  box-shadow: 0 10px 34px rgba(255, 90, 50, 0.28), 0 0 0 1px rgba(255, 106, 77, 0.25) inset;
+}
+.eventBanner[data-kind='damage']::before { background: #ff6a4d; box-shadow: 0 0 10px 2px rgba(255, 106, 77, 0.7); }
+.eventBanner[data-kind='spell'] {
+  border-color: #c07bff;
+  color: #ecdcff;
+  background: linear-gradient(90deg, rgba(64, 20, 110, 0.55), rgba(8, 10, 16, 0.9) 60%);
+  box-shadow: 0 10px 34px rgba(192, 123, 255, 0.28), 0 0 0 1px rgba(192, 123, 255, 0.25) inset;
+}
+.eventBanner[data-kind='spell']::before { background: #c07bff; box-shadow: 0 0 10px 2px rgba(192, 123, 255, 0.7); }
+.eventBanner[data-kind='nexus'] {
+  border-color: #ff3d3d;
+  color: #ffe2e2;
+  background: linear-gradient(90deg, rgba(130, 10, 10, 0.6), rgba(8, 10, 16, 0.9) 60%);
+  box-shadow: 0 10px 34px rgba(255, 61, 61, 0.32), 0 0 0 1px rgba(255, 61, 61, 0.3) inset;
+  font-size: 18px;
+}
+.eventBanner[data-kind='nexus']::before { background: #ff3d3d; box-shadow: 0 0 12px 3px rgba(255, 61, 61, 0.75); }
+.eventBanner[data-kind='summon'] {
+  border-color: #7ee6a8;
+  color: #ddffe9;
+  background: linear-gradient(90deg, rgba(18, 90, 52, 0.5), rgba(8, 10, 16, 0.9) 60%);
+}
+.eventBanner[data-kind='summon']::before { background: #7ee6a8; box-shadow: 0 0 10px 2px rgba(126, 230, 168, 0.6); }
 @keyframes eventBannerIn {
-  0% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
-  12% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  0% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.92); }
+  10% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.03); }
+  16% { transform: translateX(-50%) translateY(0) scale(1); }
   82% { opacity: 1; }
   100% { opacity: 0; }
 }

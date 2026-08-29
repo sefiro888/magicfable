@@ -855,7 +855,11 @@ export function BattlePage() {
               es un lienzo WebGL, así que su contenido no existe como texto. */}
           <p className={styles.srOnly} role="status" aria-live="polite">{boardCursor.announcement}</p>
           {director.banner && <div className={styles.turnBanner} role="status">{director.banner}</div>}
-          {director.eventBanner && <div key={director.eventBanner} className={styles.eventBanner} role="status">{director.eventBanner}</div>}
+          {director.eventBanner && (
+            <div key={director.eventBanner} className={styles.eventBanner} data-kind={director.eventBannerKind} role="status">
+              {director.eventBanner}
+            </div>
+          )}
           {queueBusy && pendingCount >= 2 && (
             <button className={styles.skipQueue} onClick={() => store.skipAnimations()}>
               Saltar animaciones ({pendingCount})

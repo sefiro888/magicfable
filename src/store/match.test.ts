@@ -125,7 +125,7 @@ describe('store de partida: descripciones del historial', () => {
       cardInstanceId: 'spell',
       target: { kind: 'piece', pieceId: 'target' },
     })
-    expect(latest()).toBe('Lluvia de Ceniza alcanza a Sabueso de Brasa.')
+    expect(latest()).toBe('¡Hechizo! Lluvia de Ceniza inflige 2 de daño a Sabueso de Brasa.')
   })
 
   it('mover una pieza la nombra', () => {
@@ -151,7 +151,7 @@ describe('store de partida: descripciones del historial', () => {
       history: [],
     })
     useMatchStore.getState().dispatch({ type: 'attack-piece', playerId: 'player', attackerId: 'atk', defenderId: 'def' })
-    expect(latest()).toBe('Sabueso de Brasa ataca a Duelista del Prisma.')
+    expect(latest()).toBe('Sabueso de Brasa ataca a Duelista del Prisma (−2).')
   })
 
   it('atacar el Nexo nombra al atacante', () => {
@@ -161,7 +161,7 @@ describe('store de partida: descripciones del historial', () => {
       history: [],
     })
     useMatchStore.getState().dispatch({ type: 'attack-nexus', playerId: 'player', attackerId: 'atk' })
-    expect(latest()).toBe('Sabueso de Brasa golpea el Nexo enemigo.')
+    expect(latest()).toBe('Sabueso de Brasa golpea el Nexo enemigo (−2).')
   })
 
   it('viewPiece guarda la ficha consultada sin tocar la selección de acción', () => {

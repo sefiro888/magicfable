@@ -1,7 +1,7 @@
 import { Html } from '@react-three/drei'
 import { memo, useEffect, useState } from 'react'
 import type { AnimationEvent } from '../game'
-import { gridToWorldX, gridToWorldZ } from './grid/gridCoordinates'
+import { gridToWorldX, gridToWorldZ, NEXUS_WORLD } from './grid/gridCoordinates'
 import styles from './DamageNumbers.module.css'
 
 interface FloatingNumber {
@@ -10,7 +10,12 @@ interface FloatingNumber {
   readonly z: number
   readonly value: number
   readonly color: 'damage' | 'heal' | 'shield'
+  /** Golpes grandes se marcan aparte para que resalten más (mismo umbral que ImpactBurst). */
+  readonly big: boolean
 }
+
+/** A partir de qué cantidad un golpe se considera "grande" y se agranda el número flotante. */
+const BIG_THRESHOLD = 4
 
 /** Cuánto dura la subida del número, en milisegundos. Debe casar con el CSS. */
 const FLOAT_MS = 1200
@@ -37,16 +42,26 @@ export const DamageNumbers = memo(function DamageNumbers({ event }: { event?: An
   const [numbers, setNumbers] = useState<readonly FloatingNumber[]>([])
 
   useEffect(() => {
-    if (!event || !event.to) return
-    if (event.type !== 'damage' && event.type !== 'shield') return
+    if (!event) return
+    if (event.type !== 'damage' && event.type !== 'shield' && event.type !== 'nexus-damage') return
     const value = event.amount ?? 0
     if (value <= 0) return
+    // El golpe al Nexo no lleva `to` (no es una casilla del tablero): se
+    // ubica por el propio id del Nexo, que ya coincide con las claves de
+    // NEXUS_WORLD (`player-nexus`/`ai-nexus`). Antes este evento no tenía
+    // NINGÚN número flotante — solo el destello 3D del Nexo (`NexusShock`),
+    // que pasaba fácilmente desapercibido.
+    const position = event.type === 'nexus-damage'
+      ? (event.targetId ? NEXUS_WORLD[event.targetId] : undefined)
+      : event.to && [gridToWorldX(event.to.x), gridToWorldZ(event.to.y)] as const
+    if (!position) return
     const entry: FloatingNumber = {
       id: `num-${nextId++}`,
-      x: gridToWorldX(event.to.x),
-      z: gridToWorldZ(event.to.y),
+      x: position[0],
+      z: position[1],
       value,
       color: event.type === 'shield' ? 'shield' : 'damage',
+      big: value >= BIG_THRESHOLD,
     }
     setNumbers((current) => [...current, entry])
     const timer = window.setTimeout(
@@ -60,7 +75,7 @@ export const DamageNumbers = memo(function DamageNumbers({ event }: { event?: An
     <group>
       {numbers.map((num) => (
         <Html key={num.id} center position={[num.x, SPAWN_HEIGHT, num.z]} distanceFactor={8} zIndexRange={[16, 0]}>
-          <div className={styles.number} data-color={num.color}>
+          <div className={styles.number} data-color={num.color} data-big={num.big || undefined}>
             {num.color === 'shield' ? '+' : '−'}{num.value}
           </div>
         </Html>

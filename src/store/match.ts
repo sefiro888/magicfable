@@ -147,13 +147,21 @@ const spellTargetName = (state: MatchState, target: SpellTarget | undefined): st
   return undefined
 }
 
+/** Suma el daño de los eventos de animación que produjo la acción, filtrando por objetivo si se da. */
+const damageDealt = (events: readonly AnimationEvent[], targetId?: string): number =>
+  events
+    .filter((event) => (event.type === 'damage' || event.type === 'nexus-damage') && (!targetId || event.targetId === targetId))
+    .reduce((sum, event) => sum + (event.amount ?? 0), 0)
+
 /**
  * Descripción legible de la acción, para el registro «Crónica de batalla» y
- * el aviso central de eventos. Se calcula con el estado ANTERIOR a aplicar
- * la acción: así las piezas que el efecto destruye o mueve aún están donde
- * el jugador las vio.
+ * el aviso central de eventos. Los nombres se leen del estado ANTERIOR a
+ * aplicar la acción (así las piezas que el efecto destruye o mueve aún están
+ * donde el jugador las vio), pero las cifras de daño vienen de los eventos
+ * de animación YA resueltos — antes de esto no había forma de saber cuánto
+ * había dolido un golpe sin abrir la Crónica y aun así no se veía la cifra.
  */
-const actionDescription = (state: MatchState, action: GameAction): string => {
+const actionDescription = (state: MatchState, action: GameAction, events: readonly AnimationEvent[] = []): string => {
   const player = state.players[action.playerId ?? state.activePlayer]
   if (action.type === 'play-resource') {
     const instance = player.hand.find((card) => card.instanceId === action.cardInstanceId)
@@ -165,12 +173,26 @@ const actionDescription = (state: MatchState, action: GameAction): string => {
     const card = instance ? CARD_BY_ID[instance.cardId] : undefined
     const name = card?.name ?? 'Una carta'
     if (card && (card.type === 'unit' || card.type === 'structure')) return `${name} entra en juego.`
+    // Hechizo inmediato: se anuncia como tal (el usuario pedía que quedara
+    // claro que ES un hechizo, no solo "se resuelve") y con la cifra real de
+    // daño si la tuvo, sumando TODOS los objetivos (cubre efectos de área).
+    const prefix = card?.type === 'instant' ? '¡Hechizo! ' : ''
     const target = spellTargetName(state, action.target)
-    return target ? `${name} alcanza a ${target}.` : `${name} se resuelve.`
+    const dealt = damageDealt(events)
+    if (dealt > 0) return `${prefix}${name} inflige ${dealt} de daño${target ? ` a ${target}` : ''}.`
+    return target ? `${prefix}${name} alcanza a ${target}.` : `${prefix}${name} se resuelve.`
   }
   if (action.type === 'move') return `${pieceName(state, action.pieceId)} se reposiciona.`
-  if (action.type === 'attack-piece') return `${pieceName(state, action.attackerId)} ataca a ${pieceName(state, action.defenderId)}.`
-  if (action.type === 'attack-nexus') return `${pieceName(state, action.attackerId)} golpea el Nexo enemigo.`
+  if (action.type === 'attack-piece') {
+    const dealt = damageDealt(events, action.defenderId)
+    const base = `${pieceName(state, action.attackerId)} ataca a ${pieceName(state, action.defenderId)}`
+    return dealt > 0 ? `${base} (−${dealt}).` : `${base}.`
+  }
+  if (action.type === 'attack-nexus') {
+    const dealt = damageDealt(events)
+    const base = `${pieceName(state, action.attackerId)} golpea el Nexo enemigo`
+    return dealt > 0 ? `${base} (−${dealt}).` : `${base}.`
+  }
   if (action.type === 'draw') return 'Se roba una carta.'
   // Fraseo neutro para el bando no-'player': en solitario es la IA, pero en
   // multijugador es un rival humano de verdad, así que no se le llama «IA».
@@ -303,9 +325,9 @@ export const useMatchStore = create<MatchStore>()(
       set((current) => ({ message: result.error?.message ?? 'La acción no es válida.', matchLog: [...current.matchLog, errorEntry] }))
       return false
     }
-    const description = actionDescription(match, action)
     const logEntry: MatchLogEntry = { turn: match.turn, by: action.playerId, type: action.type, ...compactAction(match, action), ok: true }
     const { match: cleaned, events } = drainAnimations(result.state)
+    const description = actionDescription(match, action, events)
     set((current) => ({
       match: cleaned,
       message: undefined,

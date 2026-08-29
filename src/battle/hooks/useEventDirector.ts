@@ -39,11 +39,30 @@ const EVENT_PACE: Readonly<Partial<Record<AnimationEvent['type'], number>>> = {
   turn: 0.9,
 }
 
+/**
+ * Categoría visual del aviso central, para colorearlo y darle un icono según
+ * lo que de verdad ocurrió (el usuario pedía que un hechizo o un golpe se
+ * notaran de un vistazo, no solo leyendo el texto). Se deriva del propio
+ * texto ya redactado por `actionDescription` en vez de duplicar esa lógica
+ * aquí — barato y no exige tocar la forma del store.
+ */
+export type EventBannerKind = 'damage' | 'spell' | 'summon' | 'nexus' | 'info'
+
+const bannerKindFor = (text: string): EventBannerKind => {
+  if (text.startsWith('¡Hechizo!')) return 'spell'
+  if (text.includes('golpea el Nexo')) return 'nexus'
+  if (text.includes('inflige') || /\(−\d+\)/.test(text)) return 'damage'
+  if (text.includes('entra en juego')) return 'summon'
+  return 'info'
+}
+
 export interface EventDirector {
   /** Aviso grande de cambio de turno («Tu turno» / «Turno rival»). */
   banner?: string
   /** Aviso central de la última acción ocurrida, tomado de la crónica de batalla. */
   eventBanner: string | undefined
+  /** Categoría del aviso central actual, para colorearlo (ver `bannerKindFor`). */
+  eventBannerKind: EventBannerKind
   /** Carta que el escrutinio acaba de revelar, para el aviso flotante. */
   revealedCardId?: string
   /** Cuántas cartas hay que ordenar ahora mismo (0 = no hay escrutinio abierto). */
@@ -69,6 +88,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   const history = useMatchStore((state) => state.history)
   const [banner, setBanner] = useState<string>()
   const [eventBanner, setEventBanner] = useState<string>()
+  const [eventBannerKind, setEventBannerKind] = useState<EventBannerKind>('info')
   const [revealedCardId, setRevealedCardId] = useState<string>()
   const [scryAmount, setScryAmount] = useState(0)
   const [scryOrder, setScryOrder] = useState<readonly string[]>([])
@@ -138,7 +158,10 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     if (!latest || latest === 'Has cedido el turno.' || latest === 'Se cede el turno.') return undefined
     // setState se difiere fuera del cuerpo del efecto: mismo patrón que ya usa
     // el director de animaciones un poco más arriba para sus canales laterales.
-    const sideChannel = window.setTimeout(() => setEventBanner(latest), 0)
+    const sideChannel = window.setTimeout(() => {
+      setEventBanner(latest)
+      setEventBannerKind(bannerKindFor(latest))
+    }, 0)
     return () => window.clearTimeout(sideChannel)
   }, [history])
 
@@ -162,6 +185,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   return {
     banner,
     eventBanner,
+    eventBannerKind,
     revealedCardId,
     scryAmount,
     scryOrder,
