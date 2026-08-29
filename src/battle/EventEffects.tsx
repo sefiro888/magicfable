@@ -233,31 +233,62 @@ function FreezeBloom({ cell, timing }: { cell: Position; timing: TimedProps }) {
 function DestroyEmbers({ cell, tone, timing }: { cell: Position; tone: string; timing: TimedProps }) {
   const progress = useProgress(timing)
   const group = useRef<Group>(null)
+  const ring = useRef<Mesh>(null)
+  const flash = useRef<PointLight>(null)
   const texture = useMemo(() => glowFor(tone), [tone])
+  // Más pavesas y con reparto irregular: nueve en ángulos regulares se leían
+  // como una fuente ordenada, no como algo que revienta.
   const seeds = useMemo(
-    () => Array.from({ length: 9 }, (_, index) => ({
-      x: Math.cos(index * 2.4) * 0.3,
-      z: Math.sin(index * 1.7) * 0.3,
-      speed: 0.7 + (index % 4) * 0.3,
-    })),
+    () => Array.from({ length: 16 }, (_, index) => {
+      const angle = index * 2.399 + (index % 3) * 0.4
+      const reach = 0.26 + (index % 5) * 0.12
+      return {
+        x: Math.cos(angle) * reach,
+        z: Math.sin(angle) * reach,
+        speed: 0.6 + (index % 4) * 0.34,
+        size: 0.2 + (index % 3) * 0.09,
+      }
+    }),
     [],
   )
   useFrame(() => {
     const value = progress.current
+    // Reparto hacia fuera muy rápido al principio y luego casi parado: es lo
+    // que separa una explosión de un chorro constante.
+    const burst = 1 - Math.pow(1 - value, 3)
     group.current?.children.forEach((child, index) => {
       const seed = seeds[index]!
-      child.position.set(seed.x * (1 + value), 0.2 + value * seed.speed * 1.4, seed.z * (1 + value))
-      child.scale.setScalar(Math.max(0.001, (1 - value) * 0.26))
+      child.position.set(
+        seed.x * (0.4 + burst * 2.1),
+        0.18 + value * seed.speed * 1.5,
+        seed.z * (0.4 + burst * 2.1),
+      )
+      child.scale.setScalar(Math.max(0.001, (1 - value) * seed.size))
     })
+    if (ring.current) {
+      // Onda de choque a ras de suelo: se abre y se apaga antes que las pavesas.
+      const anillo = Math.min(1, value * 2.2)
+      ring.current.scale.setScalar(0.3 + anillo * 2.6)
+      ;(ring.current.material as MeshBasicMaterial).opacity = Math.max(0, 1 - anillo) * 0.7
+    }
+    // Destello: solo en el primer tercio, si no parece una hoguera encendida.
+    if (flash.current) flash.current.intensity = Math.max(0, 1 - value * 3) * 22
   })
   if (timing.reducedMotion) return null
   return (
-    <group ref={group} position={[boardX(cell.x), 0, boardZ(cell.y)]}>
-      {seeds.map((_, index) => (
-        <sprite key={index}>
-          <spriteMaterial map={texture} transparent blending={AdditiveBlending} depthWrite={false} />
-        </sprite>
-      ))}
+    <group position={[boardX(cell.x), 0, boardZ(cell.y)]}>
+      <mesh ref={ring} position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.28, 0.42, 32]} />
+        <meshBasicMaterial color={tone} transparent opacity={0.7} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      <pointLight ref={flash} position={[0, 0.5, 0]} color={tone} intensity={22} distance={4.2} decay={2} />
+      <group ref={group}>
+        {seeds.map((_, index) => (
+          <sprite key={index}>
+            <spriteMaterial map={texture} transparent blending={AdditiveBlending} depthWrite={false} />
+          </sprite>
+        ))}
+      </group>
     </group>
   )
 }
