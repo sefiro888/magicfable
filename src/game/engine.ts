@@ -2377,10 +2377,19 @@ export const activateCommanderPower = (
     resources: payment.resources,
     commanderPowerUsed: true,
   });
+  // `to` faltaba aquí: EventEffects.tsx exige una posición de casilla para
+  // dibujar el destello de un 'spell' (`event.to ? <ImpactBurst/> : null`),
+  // así que TODO poder de comandante con un objetivo concreto se lanzaba sin
+  // ningún efecto visual — el daño posterior sí se veía (llega en su propio
+  // evento 'damage'), pero el propio lanzamiento del poder, no.
+  const powerTargetPiece = target?.kind === 'piece'
+    ? state.board.find((candidate) => candidate.instanceId === target.pieceId)
+    : undefined;
   next = enqueue(next, {
     type: 'spell',
     actorId: playerId,
     targetId: target?.kind === 'piece' ? target.pieceId : `${playerId}-nexus`,
+    to: powerTargetPiece?.position,
     effectId: power.effectId,
     faction: commander.faction,
     durationMs: 460,

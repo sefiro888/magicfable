@@ -333,13 +333,18 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       const to: readonly [number, number] | undefined = event.to ? [boardX(event.to.x), boardZ(event.to.y)] : target
       return from && to ? <Projectile from={from} to={to} tone={tone} timing={timing} /> : null
     }
-    case 'spell':
+    case 'spell': {
       // Un hechizo siempre lleva un mínimo de fuerza propia (0.5): el daño
       // real (si lo hay) llega en un evento 'damage' aparte justo después,
       // así que este destello es el que anuncia "está pasando un hechizo".
+      // El poder de comandante (effectId "commander-<facción>-power") pega
+      // más fuerte que un hechizo cualquiera: solo se usa una vez o dos por
+      // partida, merece notarse más.
+      const isCommanderPower = /^commander-[a-z]+-power$/.test(event.effectId ?? '')
       return event.to ? (
-        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={0.5} />
+        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={isCommanderPower ? 0.85 : 0.5} />
       ) : null
+    }
     case 'damage':
       return event.to ? (
         <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={powerFor(event.amount)} />

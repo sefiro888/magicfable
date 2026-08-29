@@ -4,6 +4,7 @@ import {
   applyAction,
   CARD_BY_ID,
   clearAnimationQueue,
+  COMMANDER_BY_ID,
   createMatch,
   nextRandom,
   STARTER_DECKS,
@@ -192,6 +193,17 @@ const actionDescription = (state: MatchState, action: GameAction, events: readon
     const dealt = damageDealt(events)
     const base = `${pieceName(state, action.attackerId)} golpea el Nexo enemigo`
     return dealt > 0 ? `${base} (−${dealt}).` : `${base}.`
+  }
+  if (action.type === 'commander-power') {
+    // Antes caía al «default» de más abajo y anunciaba "Has cedido el
+    // turno." — un poder de comandante quedaba indistinguible de pasar el
+    // turno, tanto en la Crónica como en el aviso central.
+    const power = COMMANDER_BY_ID[player.commanderId]?.power
+    const name = power?.name ?? 'Poder de mando'
+    const target = spellTargetName(state, action.target)
+    const dealt = damageDealt(events)
+    if (dealt > 0) return `¡${name}! Inflige ${dealt} de daño${target ? ` a ${target}` : ''}.`
+    return target ? `¡${name}! Alcanza a ${target}.` : `¡${name}!`
   }
   if (action.type === 'draw') return 'Se roba una carta.'
   // Fraseo neutro para el bando no-'player': en solitario es la IA, pero en

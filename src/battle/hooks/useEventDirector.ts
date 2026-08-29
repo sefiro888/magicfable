@@ -46,10 +46,14 @@ const EVENT_PACE: Readonly<Partial<Record<AnimationEvent['type'], number>>> = {
  * texto ya redactado por `actionDescription` en vez de duplicar esa lógica
  * aquí — barato y no exige tocar la forma del store.
  */
-export type EventBannerKind = 'damage' | 'spell' | 'summon' | 'nexus' | 'info'
+export type EventBannerKind = 'damage' | 'spell' | 'power' | 'summon' | 'nexus' | 'info'
 
 const bannerKindFor = (text: string): EventBannerKind => {
   if (text.startsWith('¡Hechizo!')) return 'spell'
+  // Cualquier otro aviso que empiece con «¡» es un poder de comandante (ver
+  // `actionDescription` en store/match.ts) — antes esto ni siquiera se
+  // anunciaba bien, caía en el texto genérico de "cede el turno".
+  if (text.startsWith('¡')) return 'power'
   if (text.includes('golpea el Nexo')) return 'nexus'
   if (text.includes('inflige') || /\(−\d+\)/.test(text)) return 'damage'
   if (text.includes('entra en juego')) return 'summon'

@@ -938,6 +938,12 @@ function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMo
     } else if (event.type === 'damage' && (event.amount ?? 0) > 0) {
       shakeStart.current = performance.now()
       shakeMagnitude.current = 0.03 + Math.min(1, (event.amount ?? 0) / 6) * 0.06
+    } else if (event.type === 'spell' && /^commander-[a-z]+-power$/.test(event.effectId ?? '')) {
+      // El poder de comandante también sacude un poco, a juego con el
+      // destello más fuerte que le da ImpactBurst — es un momento raro
+      // (una o dos veces por partida) y merece sentirse especial.
+      shakeStart.current = performance.now()
+      shakeMagnitude.current = 0.06
     }
   }, [event])
   useFrame(({ camera }) => {

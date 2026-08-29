@@ -362,6 +362,30 @@
   background: linear-gradient(90deg, rgba(18, 90, 52, 0.5), rgba(8, 10, 16, 0.9) 60%);
 }
 .eventBanner[data-kind='summon']::before { background: #7ee6a8; box-shadow: 0 0 10px 2px rgba(126, 230, 168, 0.6); }
+/* Poder de comandante: solo se usa una vez por partida (o casi), así que
+   merece el tratamiento más vistoso de los cinco — dorado brillante con
+   un brillo que recorre el texto, en vez del glow estático del resto. */
+.eventBanner[data-kind='power'] {
+  border-color: #ffd76a;
+  color: #fff3d6;
+  background: linear-gradient(90deg, rgba(140, 100, 10, 0.55), rgba(8, 10, 16, 0.9) 60%);
+  box-shadow: 0 10px 34px rgba(255, 215, 106, 0.35), 0 0 0 1px rgba(255, 215, 106, 0.3) inset;
+  font-size: 18px;
+}
+.eventBanner[data-kind='power']::before { background: #ffd76a; box-shadow: 0 0 12px 3px rgba(255, 215, 106, 0.8); }
+.eventBanner[data-kind='power'] {
+  background-image:
+    linear-gradient(90deg, rgba(140, 100, 10, 0.55), rgba(8, 10, 16, 0.9) 60%),
+    linear-gradient(100deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
+  background-size: 100% 100%, 220% 100%;
+  background-position: 0 0, -60% 0;
+  animation: eventBannerIn 1.9s cubic-bezier(.2, .9, .3, 1) forwards, powerSheen 1.9s ease forwards;
+}
+@keyframes powerSheen {
+  0%, 25% { background-position: 0 0, -60% 0; }
+  55% { background-position: 0 0, 160% 0; }
+  100% { background-position: 0 0, 160% 0; }
+}
 @keyframes eventBannerIn {
   0% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.92); }
   10% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.03); }
