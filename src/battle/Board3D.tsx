@@ -428,12 +428,33 @@ const BoardAtmosphere = memo(function BoardAtmosphere({ terrainStyle, quality, r
  * Cae exactamente en z=0 (entre las filas 3 y 4) por cómo está centrada la
  * cuadrícula, así que no hace falta calcular nada.
  */
-function Midline() {
+function Midline({ terrainStyle }: { terrainStyle: BoardTileStyle }) {
+  // Altura: al engrosar las losas (0,11 normales y 0,16 resaltadas) esta
+  // costura se quedó en 0,045, o sea POR DEBAJO de la cara superior de las
+  // casillas — solo asomaba por la junta y perdía casi toda su fuerza. Sube
+  // por encima de la losa más alta.
+  const tone = {
+    stone: '#e8c98a',
+    basalt: '#ff9a4d',
+    moss: '#9fd8c4',
+    sand: '#f0d9a0',
+    ice: '#b6e4ff',
+  }[terrainStyle]
   return (
-    <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[BOARD_WORLD_HALF * 2, 0.045]} />
-      <meshBasicMaterial color="#e8c98a" transparent opacity={0.5} depthWrite={false} />
-    </mesh>
+    <group position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Línea principal, del color de la escena en vez del ámbar de siempre:
+          sobre el hielo del Fiordo el dorado desentonaba con todo lo demás. */}
+      <mesh>
+        <planeGeometry args={[BOARD_WORLD_HALF * 2, 0.045]} />
+        <meshBasicMaterial color={tone} transparent opacity={0.55} depthWrite={false} />
+      </mesh>
+      {/* Halo tenue a los lados: sin él la línea se corta en seco contra la
+          piedra y parece pegada; así se funde con el suelo. */}
+      <mesh>
+        <planeGeometry args={[BOARD_WORLD_HALF * 2, 0.16]} />
+        <meshBasicMaterial color={tone} transparent opacity={0.12} depthWrite={false} />
+      </mesh>
+    </group>
   )
 }
 
@@ -1263,7 +1284,7 @@ function Scene(props: Board3DProps) {
         )
       })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} />}
-      <Midline />
+      <Midline terrainStyle={terrainStyle} />
       <BoardAtmosphere terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
       <Suspense fallback={null}>
         {props.state.board.map((piece) => (

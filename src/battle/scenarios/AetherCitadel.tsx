@@ -39,6 +39,9 @@ function DawnAtmosphere({ quality }: { quality: GraphicsQuality }) {
         shadow-camera-right={9}
         shadow-camera-top={9}
         shadow-camera-bottom={-9}
+        // Por coherencia con las otras cuatro escenas: evita el acné de
+        // sombra en las superficies casi paralelas a la luz.
+        shadow-bias={-0.0006}
       />
       {/* Relleno frío desde el lado del portal. */}
       <directionalLight position={[-14, 9, 10]} intensity={0.6} color="#8fa8e8" />
