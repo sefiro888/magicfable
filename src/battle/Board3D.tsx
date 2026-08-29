@@ -2,7 +2,7 @@ import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
-import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
+import type { CanvasTexture, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
@@ -26,7 +26,7 @@ import {
   worldToGrid,
 } from './grid/gridCoordinates'
 import { impulsesForEvent, type Impulse } from './combatImpulse'
-import { slabTexture } from './textures'
+import { basaltTexture, masonryTexture, mossStoneTexture, sandstoneTexture, slabTexture } from './textures'
 import styles from './Board3D.module.css'
 
 const AetherCitadel = lazy(() =>
@@ -173,7 +173,26 @@ const CursorMarker = memo(function CursorMarker({ position, reducedMotion }: { p
   )
 })
 
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, subtle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; subtle: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+/** Piedra de cada escenario para la losa de la casilla — antes solo Aether
+    Citadel tenía textura real (`slabTexture`); Caldera, Santuario y Duna se
+    quedaban con color plano sin ningún mapa, mucho más sosas en comparación. */
+type TerrainStyle = 'stone' | 'basalt' | 'moss' | 'sand'
+const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, TerrainStyle>> = {
+  'aether-citadel': 'stone',
+  caldera: 'basalt',
+  sanctuary: 'moss',
+  duna: 'sand',
+}
+const terrainTexture = (style: TerrainStyle, variant: 0 | 1 | 2 | 3): CanvasTexture => {
+  switch (style) {
+    case 'basalt': return basaltTexture()
+    case 'moss': return mossStoneTexture()
+    case 'sand': return sandstoneTexture()
+    default: return slabTexture(variant)
+  }
+}
+
+const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: TerrainStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -186,65 +205,42 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
   // común de daltonismo.
   const validColor = intent === 'deploy' ? (colorblindMode ? '#ffb648' : '#7ee6a8') : '#8fd4ff'
   const validEmissive = intent === 'deploy' ? (colorblindMode ? '#8a5411' : '#1c7a4a') : '#1f6f9e'
-  if (subtle) {
-    // Aether Citadel: la casilla ES una losa de roca tallada, opaca y a ras
-    // de la plaza; la junta oscura entre losas es la piedra del GLB que asoma.
-    const slab = slabTexture(((position.x * 3 + position.y * 5) % 4) as 0 | 1 | 2 | 3)
-    const tint = ZONE_TINTS[zone][(position.x * 7 + position.y * 13) % 3]!
-    const color = valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
-    const emissive = valid
-      ? validEmissive
-      : scorched ? '#7a2c12'
-      : hovered && !occupied ? '#4a3c22'
-      : threatened ? '#5e1414'
-      : deployRow ? '#4a3410'
-      : '#000000'
-    return (
-      <mesh
-        position={[boardX(position.x), valid ? 0.035 : 0.012, boardZ(position.y)]}
-        receiveShadow
-        onClick={(event) => { event.stopPropagation(); onClick() }}
-        onPointerEnter={() => { setHovered(true); onHover?.(position) }}
-        onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
-      >
-        <boxGeometry args={[TILE_SIZE, 0.06, TILE_SIZE]} />
-        <meshStandardMaterial
-          map={slab}
-          bumpMap={slab}
-          bumpScale={6}
-          color={color}
-          roughness={0.9}
-          metalness={0.05}
-          emissive={emissive}
-          emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : threatened ? 0.55 : deployRow ? 0.3 : 0}
-        />
-        <TerrainMarks rubble={rubble} cover={cover} position={position} />
-      </mesh>
-    )
-  }
-  const base = own ? '#4c4235' : '#3a3f4c'
-  const color = valid ? (hovered ? '#f6d77e' : intent === 'deploy' ? (colorblindMode ? '#e6a23c' : '#4bbf83') : '#4e9ed0') : hovered && !occupied ? '#645b44' : scorched ? '#4a2018' : base
+  // La losa es una piedra tallada de verdad, con textura y relieve en las
+  // cuatro escenas — antes solo Aether Citadel tenía este tratamiento y el
+  // resto quedaban planas y sin mapa, mucho más sosas en comparación.
+  const slab = terrainTexture(terrainStyle, ((position.x * 3 + position.y * 5) % 4) as 0 | 1 | 2 | 3)
+  const tint = ZONE_TINTS[zone][(position.x * 7 + position.y * 13) % 3]!
+  const color = valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
   const emissive = valid
-    ? (intent === 'deploy' ? (colorblindMode ? '#7a4a0f' : '#166647') : '#1b6384')
-    : scorched ? '#68240f'
+    ? validEmissive
+    : scorched ? '#7a2c12'
+    : hovered && !occupied ? '#4a3c22'
     : threatened ? '#5e1414'
     : deployRow ? '#4a3410'
-    : own ? '#2a231a' : '#1e2330'
+    : '#000000'
+  // Grosor real (antes 0.06-0.13 según estado): con más profundidad de losa
+  // el canto lateral capta luz rasante y separa mejor una casilla de la
+  // siguiente en vez de leerse como un plano pintado.
+  const height = valid ? 0.16 : 0.11
   return (
     <mesh
       position={[boardX(position.x), 0, boardZ(position.y)]}
       receiveShadow
+      castShadow
       onClick={(event) => { event.stopPropagation(); onClick() }}
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      <boxGeometry args={[TILE_SIZE, valid ? 0.13 : 0.08, TILE_SIZE]} />
+      <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />
       <meshStandardMaterial
+        map={slab}
+        bumpMap={slab}
+        bumpScale={terrainStyle === 'stone' ? 6 : 4}
         color={color}
-        roughness={0.66}
-        metalness={0.18}
+        roughness={0.9}
+        metalness={0.05}
         emissive={emissive}
-        emissiveIntensity={valid ? 1.05 : scorched ? 0.9 : threatened ? 0.85 : deployRow ? 0.78 : 0.62}
+        emissiveIntensity={valid ? 0.9 : scorched ? 0.8 : hovered ? 0.5 : threatened ? 0.55 : deployRow ? 0.3 : 0}
       />
       <TerrainMarks rubble={rubble} cover={cover} position={position} />
     </mesh>
@@ -273,12 +269,17 @@ const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position }: { r
               key={index}
               position={[Math.cos(angulo) * radio, alto / 2, Math.sin(angulo) * radio]}
               rotation={[angulo * 0.4, angulo, angulo * 0.25]}
-              castShadow={false}
+              castShadow
+              receiveShadow
             >
               <boxGeometry args={[0.2 + (index % 2) * 0.08, alto, 0.18 + (index % 3) * 0.06]} />
-              {/* Emisivo alto a propósito: sin él las caras que no miran a la luz
-                  se ven negras y el escombro parece una mancha, no una piedra. */}
-              <meshStandardMaterial color="#a3947f" roughness={0.95} metalness={0.04} emissive="#5b5044" emissiveIntensity={0.75} />
+              {/* Textura de mampostería real en vez de color plano: antes el
+                  bloque era una silueta lisa y necesitaba mucho emisivo
+                  forzado para no leerse como una mancha negra. Con relieve
+                  propio (map+bumpMap) la piedra se sostiene sola y el
+                  emisivo baja a un simple relleno de sombra, no la luz
+                  principal del objeto. */}
+              <meshStandardMaterial map={masonryTexture()} bumpMap={masonryTexture()} bumpScale={3} color="#a3947f" roughness={0.95} metalness={0.04} emissive="#3a332a" emissiveIntensity={0.35} />
             </mesh>
           )
         })}
@@ -286,17 +287,18 @@ const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position }: { r
     )
   }
   if (cover) {
+    const wood = masonryTexture()
     return (
       <group position={[0, 0.06, 0]}>
         {[-0.3, 0, 0.3].map((offset) => (
-          <mesh key={offset} position={[offset, 0.13, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]}>
+          <mesh key={offset} position={[offset, 0.13, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]} castShadow receiveShadow>
             <boxGeometry args={[0.2, 0.28, 0.1]} />
-            <meshStandardMaterial color="#b7a373" roughness={0.85} metalness={0.08} emissive="#6a5c33" emissiveIntensity={0.7} />
+            <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color="#b7a373" roughness={0.85} metalness={0.08} emissive="#3f3720" emissiveIntensity={0.3} />
           </mesh>
         ))}
-        <mesh position={[0, 0.25, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]}>
+        <mesh position={[0, 0.25, -TILE_SIZE * 0.3]} rotation={[0.12, 0, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.86, 0.08, 0.13]} />
-          <meshStandardMaterial color="#cbb583" roughness={0.8} metalness={0.1} emissive="#7a6a3c" emissiveIntensity={0.7} />
+          <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color="#cbb583" roughness={0.8} metalness={0.1} emissive="#463d24" emissiveIntensity={0.3} />
         </mesh>
       </group>
     )
@@ -1076,7 +1078,7 @@ function Scene(props: Board3DProps) {
     return cells
   }, [props.state.board, props.localPlayerId])
   const ownDeployRow = props.localPlayerId === 'player' ? BOARD_SIZE - 1 : 0
-  const subtleCells = props.scenario === 'aether-citadel'
+  const terrainStyle = TERRAIN_STYLE[props.scenario as Exclude<ScenarioId, 'auto'>] ?? 'stone'
 
   /**
    * Quién se mueve en el golpe que está sonando ahora: el atacante embiste
@@ -1117,7 +1119,7 @@ function Scene(props: Board3DProps) {
             scorched={scorchedSet.has(key)}
             rubble={rubbleSet.has(key)}
             cover={coverSet.has(key)}
-            subtle={subtleCells}
+            terrainStyle={terrainStyle}
             own={isOwnHalf(position.y, props.localPlayerId)}
             deployRow={position.y === ownDeployRow}
             threatened={!occupiedSet.has(key) && threatenedSet.has(key)}
