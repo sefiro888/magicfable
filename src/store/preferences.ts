@@ -7,7 +7,7 @@ export type GraphicsQuality = 'low' | 'medium' | 'high'
  * `resolveScenario`. Vive aquí y no como un ajuste aparte para que el selector
  * siga siendo una sola lista.
  */
-export type ScenarioId = 'auto' | 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna'
+export type ScenarioId = 'auto' | 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul'
 export type AiDifficulty = 'easy' | 'normal' | 'hard'
 
 export interface PreferencesState {

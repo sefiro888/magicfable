@@ -1035,6 +1035,137 @@ export const desertSkyTexture = (): CanvasTexture => {
   return finishTexture('desert-sky', canvas);
 };
 
+/**
+ * Cielo del fiordo helado: noche polar con aurora boreal.
+ *
+ * La aurora se dibuja como cortinas verticales de verde y violeta con el
+ * borde inferior más denso, que es como se ve de verdad: la luz nace arriba
+ * y se deshilacha al bajar, nunca al revés.
+ */
+export const auroraSkyTexture = (): CanvasTexture => {
+  const cached = cache.get('aurora-sky');
+  if (cached) return cached;
+  const size = 1024;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4155524f);
+
+  // Noche polar: azul muy oscuro arriba, algo más claro hacia el horizonte.
+  const night = context.createLinearGradient(0, 0, 0, size);
+  night.addColorStop(0, '#040812');
+  night.addColorStop(0.45, '#0a1428');
+  night.addColorStop(0.78, '#16283f');
+  night.addColorStop(1, '#24405a');
+  context.fillStyle = night;
+  context.fillRect(0, 0, size, size);
+
+  // Estrellas: más densas arriba, donde el cielo es más oscuro.
+  for (let star = 0; star < 900; star += 1) {
+    const sx = random() * size;
+    const sy = random() * size * 0.8;
+    const alto = 1 - sy / (size * 0.8);
+    const brillo = 0.2 + random() * 0.8 * alto;
+    const radio = random() > 0.94 ? 1.4 + random() * 1.2 : 0.4 + random() * 0.7;
+    context.fillStyle = `rgba(226, 238, 255, ${brillo})`;
+    context.beginPath();
+    context.arc(sx, sy, radio, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // Cortinas de aurora.
+  for (let curtain = 0; curtain < 7; curtain += 1) {
+    const cx = random() * size;
+    const ancho = 90 + random() * 220;
+    const techo = size * (0.06 + random() * 0.16);
+    const suelo = techo + size * (0.24 + random() * 0.3);
+    const verde = random() > 0.32;
+    const gradient = context.createLinearGradient(0, techo, 0, suelo);
+    gradient.addColorStop(0, verde ? 'rgba(120, 255, 190, 0)' : 'rgba(180, 140, 255, 0)');
+    gradient.addColorStop(0.35, verde ? 'rgba(96, 240, 176, 0.3)' : 'rgba(158, 120, 240, 0.24)');
+    gradient.addColorStop(0.75, verde ? 'rgba(140, 255, 200, 0.42)' : 'rgba(196, 150, 255, 0.32)');
+    gradient.addColorStop(1, verde ? 'rgba(200, 255, 226, 0)' : 'rgba(226, 190, 255, 0)');
+    context.fillStyle = gradient;
+    // Los pliegues: la cortina ondula, no es una banda recta.
+    context.beginPath();
+    context.moveTo(cx, techo);
+    for (let y = techo; y <= suelo; y += 14) {
+      const t = (y - techo) / (suelo - techo);
+      context.lineTo(cx + Math.sin(t * 5 + curtain) * 46 * t, y);
+    }
+    for (let y = suelo; y >= techo; y -= 14) {
+      const t = (y - techo) / (suelo - techo);
+      context.lineTo(cx + Math.sin(t * 5 + curtain) * 46 * t + ancho * (0.5 + t * 0.5), y);
+    }
+    context.closePath();
+    context.fill();
+  }
+
+  // Resplandor difuso: liga las cortinas para que no floten sueltas.
+  for (let glow = 0; glow < 5; glow += 1) {
+    const gx = random() * size;
+    const gy = size * (0.1 + random() * 0.3);
+    const radio = 150 + random() * 260;
+    const gradient = context.createRadialGradient(gx, gy, 0, gx, gy, radio);
+    gradient.addColorStop(0, 'rgba(110, 230, 180, 0.12)');
+    gradient.addColorStop(1, 'rgba(90, 200, 170, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(gx - radio, gy - radio, radio * 2, radio * 2);
+  }
+  return finishTexture('aurora-sky', canvas);
+};
+
+/**
+ * Nieve apelmazada del fiordo. Casi blanca a propósito: el color lo pone la
+ * luz de la aurora, no la textura — una nieve ya teñida de azul se pelearía
+ * con cada cambio de iluminación de la escena.
+ */
+export const packedSnowTexture = (): CanvasTexture => {
+  const cached = cache.get('packed-snow');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x534e4f57);
+
+  context.fillStyle = '#eef4fa';
+  context.fillRect(0, 0, size, size);
+  // Dunas de nieve: ondas suaves y largas, barridas por el viento.
+  for (let drift = 0; drift < 26; drift += 1) {
+    const y = random() * size;
+    const gradient = context.createLinearGradient(0, y - 20, 0, y + 20);
+    gradient.addColorStop(0, 'rgba(206, 222, 238, 0)');
+    gradient.addColorStop(0.5, `rgba(202, 218, 236, ${0.18 + random() * 0.22})`);
+    gradient.addColorStop(1, 'rgba(206, 222, 238, 0)');
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.moveTo(0, y);
+    for (let x = 0; x <= size; x += 32) context.lineTo(x, y + Math.sin(x * 0.012 + drift) * 14);
+    context.lineTo(size, y + 26);
+    for (let x = size; x >= 0; x -= 32) context.lineTo(x, y + Math.sin(x * 0.012 + drift) * 14 + 26);
+    context.closePath();
+    context.fill();
+  }
+  // Costra: la nieve vieja se cuartea en placas.
+  for (let crust = 0; crust < 40; crust += 1) {
+    context.strokeStyle = `rgba(178, 198, 218, ${0.1 + random() * 0.16})`;
+    context.lineWidth = 0.6 + random() * 1.4;
+    context.beginPath();
+    let cx = random() * size;
+    let cy = random() * size;
+    context.moveTo(cx, cy);
+    for (let step = 0; step < 4; step += 1) {
+      cx += (random() - 0.5) * 60;
+      cy += (random() - 0.5) * 60;
+      context.lineTo(cx, cy);
+    }
+    context.stroke();
+  }
+  // Brillo de cristal: los destellos que hacen que la nieve no sea papel.
+  for (let sparkle = 0; sparkle < 1200; sparkle += 1) {
+    context.fillStyle = `rgba(255, 255, 255, ${0.2 + random() * 0.6})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 1.6, 1 + random() * 1.6);
+  }
+  return finishTexture('packed-snow', canvas);
+};
+
 // ─── Suelo del tablero ──────────────────────────────────────────────────────
 //
 // Las casillas reutilizaban las texturas de ambiente (basalto, musgo,
@@ -1055,14 +1186,14 @@ export const desertSkyTexture = (): CanvasTexture => {
 //     brilla en ninguna parte — tres materiales que se leen distintos aunque
 //     compartan la misma geometría.
 
-export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand';
+export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice';
 
 /** Cuántos dibujos distintos hay por estilo. Seis bastan para que el ojo no encuentre el patrón. */
 export const BOARD_TILE_VARIANTS = 6;
 
 /** Semilla estable por estilo+variante: el mismo mapa se ve siempre igual. */
 const tileSeed = (style: BoardTileStyle, variant: number): number => {
-  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44 }[style];
+  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545 }[style];
   return (base + variant * 7919) >>> 0;
 };
 
@@ -1257,6 +1388,93 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
     context.stroke();
     drawTileGroove(context, size, 0.5);
     bakeEdgeShade(context, size, 0.38);
+  } else if (style === 'ice') {
+    // Losa helada: piedra gris azulada bajo una capa de hielo, con la nieve
+    // apelmazada en las juntas y flores de escarcha creciendo desde los
+    // bordes. Es el material más reflectante del juego — por eso su mapa de
+    // rugosidad es el que más contrasta.
+    const base = context.createLinearGradient(0, 0, size, size);
+    base.addColorStop(0, '#c3d4e2');
+    base.addColorStop(0.5, '#a8bccd');
+    base.addColorStop(1, '#8fa6ba');
+    context.fillStyle = base;
+    context.fillRect(0, 0, size, size);
+    // Piedra que se adivina bajo el hielo: manchas frías, desenfocadas.
+    for (let patch = 0; patch < 7; patch += 1) {
+      const px = random() * size;
+      const py = random() * size;
+      const radius = 24 + random() * 58;
+      const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+      gradient.addColorStop(0, `rgba(88, 104, 122, ${0.16 + random() * 0.2})`);
+      gradient.addColorStop(1, 'rgba(120, 140, 160, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+    }
+    // Grietas del hielo: ramifican, no van rectas.
+    const drawCrack = (x: number, y: number, angle: number, length: number, depth: number) => {
+      if (depth > 3 || length < 6) return;
+      const x2 = x + Math.cos(angle) * length;
+      const y2 = y + Math.sin(angle) * length;
+      context.strokeStyle = `rgba(226, 242, 255, ${0.4 - depth * 0.08})`;
+      context.lineWidth = Math.max(0.5, 2.4 - depth * 0.6);
+      context.beginPath();
+      context.moveTo(x, y);
+      context.lineTo(x2, y2);
+      context.stroke();
+      drawCrack(x2, y2, angle + (random() - 0.5) * 1.1, length * (0.5 + random() * 0.3), depth + 1);
+      if (random() > 0.45) drawCrack(x2, y2, angle + (random() - 0.5) * 1.6, length * (0.4 + random() * 0.3), depth + 1);
+    };
+    for (let crack = 0; crack < 2 + (variant % 3); crack += 1) {
+      drawCrack(random() * size, random() * size, random() * Math.PI * 2, 26 + random() * 30, 0);
+    }
+    // Burbujas atrapadas: lo que delata que es hielo y no cristal.
+    for (let bubble = 0; bubble < 40; bubble += 1) {
+      context.fillStyle = `rgba(236, 248, 255, ${0.1 + random() * 0.22})`;
+      context.beginPath();
+      context.arc(random() * size, random() * size, 0.8 + random() * 2.6, 0, Math.PI * 2);
+      context.fill();
+    }
+    // Escarcha: agujas finas que entran desde los bordes hacia el centro.
+    for (let frost = 0; frost < 26; frost += 1) {
+      const edge = (variant + frost) % 4;
+      const along = random() * size;
+      const sx = edge === 0 ? along : edge === 1 ? size : along;
+      const sy = edge === 0 ? 0 : edge === 1 ? along : edge === 2 ? size : along;
+      const inward = edge === 0 ? Math.PI / 2 : edge === 1 ? Math.PI : edge === 2 ? -Math.PI / 2 : 0;
+      const angle = inward + (random() - 0.5) * 0.9;
+      const length = 8 + random() * 26;
+      context.strokeStyle = `rgba(244, 252, 255, ${0.24 + random() * 0.3})`;
+      context.lineWidth = 0.6 + random() * 1.2;
+      context.beginPath();
+      context.moveTo(sx, sy);
+      const ex = sx + Math.cos(angle) * length;
+      const ey = sy + Math.sin(angle) * length;
+      context.lineTo(ex, ey);
+      // Barbas laterales: es lo que convierte una raya en una flor de escarcha.
+      for (let barb = 1; barb <= 3; barb += 1) {
+        const t = barb / 4;
+        const bx = sx + (ex - sx) * t;
+        const by = sy + (ey - sy) * t;
+        const blen = length * 0.22 * (1 - t);
+        context.moveTo(bx, by);
+        context.lineTo(bx + Math.cos(angle + 1.1) * blen, by + Math.sin(angle + 1.1) * blen);
+        context.moveTo(bx, by);
+        context.lineTo(bx + Math.cos(angle - 1.1) * blen, by + Math.sin(angle - 1.1) * blen);
+      }
+      context.stroke();
+    }
+    // Nieve apelmazada en la junta: se acumula justo donde acaba la losa.
+    const snowBand = size * 0.1;
+    for (let flake = 0; flake < 500; flake += 1) {
+      const fx = random() * size;
+      const fy = random() * size;
+      const dist = Math.min(fx, fy, size - fx, size - fy);
+      if (dist > snowBand) continue;
+      context.fillStyle = `rgba(250, 253, 255, ${(1 - dist / snowBand) * 0.55 * random()})`;
+      context.fillRect(fx, fy, 1 + random() * 3, 1 + random() * 3);
+    }
+    drawTileGroove(context, size, 0.34);
+    bakeEdgeShade(context, size, 0.24);
   } else {
     // Arenisca al sol: ocre, con ondulación de viento y arena acumulada.
     const base = context.createLinearGradient(0, 0, size * 0.3, size);
@@ -1324,12 +1542,41 @@ export const boardTileRoughness = (style: BoardTileStyle, variant: number): Canv
   const [canvas, context] = makeCanvas(size);
   const random = seededRandom((tileSeed(style, variant) ^ 0x5a5a5a5a) >>> 0);
 
-  // Nivel base de mate por material.
-  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244 }[style];
+  // Nivel base de mate por material. El hielo es el más brillante del juego.
+  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70 }[style];
   context.fillStyle = `rgb(${baseLevel}, ${baseLevel}, ${baseLevel})`;
   context.fillRect(0, 0, size, size);
 
-  if (style === 'basalt') {
+  if (style === 'ice') {
+    // La nieve apelmazada del borde NO brilla: es el contraste entre el hielo
+    // pulido del centro y la nieve mate de la junta lo que hace que se lean
+    // como dos materiales distintos sobre la misma losa.
+    const band = size * 0.14;
+    const edges: readonly [number, number, number, number][] = [
+      [0, 0, band, 0],
+      [size, 0, size - band, 0],
+      [0, 0, 0, band],
+      [0, size, 0, size - band],
+    ];
+    for (const [x0, y0, x1, y1] of edges) {
+      const gradient = context.createLinearGradient(x0, y0, x1, y1);
+      gradient.addColorStop(0, 'rgba(240, 240, 240, 0.9)');
+      gradient.addColorStop(1, 'rgba(240, 240, 240, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, size, size);
+    }
+    // Zonas escarchadas sueltas, también mates.
+    for (let frost = 0; frost < 8; frost += 1) {
+      const fx = random() * size;
+      const fy = random() * size;
+      const radius = 8 + random() * 22;
+      const gradient = context.createRadialGradient(fx, fy, 0, fx, fy, radius);
+      gradient.addColorStop(0, 'rgba(225, 225, 225, 0.75)');
+      gradient.addColorStop(1, 'rgba(200, 200, 200, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(fx - radius, fy - radius, radius * 2, radius * 2);
+    }
+  } else if (style === 'basalt') {
     // Zonas vitrificadas: manchas muy brillantes donde la roca se enfrió deprisa.
     for (let glass = 0; glass < 7; glass += 1) {
       const gx = random() * size;

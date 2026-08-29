@@ -55,6 +55,7 @@ const SCENARIOS: readonly { value: ScenarioId; label: string; hint: string }[] =
   { value: 'sanctuary', label: 'Santuario de las Runas', hint: 'Círculo de monolitos en una isla, de noche.' },
   { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Plataforma de hierro sobre un lago de lava.' },
   { value: 'duna', label: 'Necrópolis de Duna', hint: 'Patio de arenisca abierto al desierto, a mediodía.' },
+  { value: 'fimbul', label: 'Fiordo de Fimbul', hint: 'Lago helado bajo la aurora, en plena noche polar.' },
 ]
 
 export function PlayPage() {

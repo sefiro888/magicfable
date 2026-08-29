@@ -41,6 +41,9 @@ const CalderaScenario = lazy(() =>
 const DunaNecropolis = lazy(() =>
   import('./scenarios/DunaNecropolis').then((m) => ({ default: m.DunaNecropolis })),
 )
+const FimbulFjord = lazy(() =>
+  import('./scenarios/FimbulFjord').then((m) => ({ default: m.FimbulFjord })),
+)
 
 interface Board3DProps {
   state: MatchState
@@ -179,6 +182,7 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   caldera: 'basalt',
   sanctuary: 'moss',
   duna: 'sand',
+  fimbul: 'ice',
 }
 
 /**
@@ -1109,6 +1113,8 @@ function Scene(props: Board3DProps) {
           <CalderaScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'duna' ? (
           <DunaNecropolis quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'fimbul' ? (
+          <FimbulFjord quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : (
           <SanctuaryScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         )}

@@ -18,14 +18,14 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   shadow: 'sanctuary',
   void: 'sanctuary',
   duna: 'duna',
-  // Fría, de piedra, de noche: el Santuario ya tiene ese carácter, no hace
-  // falta un escenario propio para que encaje.
-  fimbul: 'sanctuary',
+  fimbul: 'fimbul',
   samsara: 'duna',
   jade: 'aether-citadel',
   olimpo: 'sanctuary',
   sol: 'caldera',
-  bestiario: 'sanctuary',
+  // Bestias de ventisca y bosque helado: el fiordo les pega más que el
+  // Santuario, que además cargaba con seis facciones muy distintas.
+  bestiario: 'fimbul',
   plaga: 'duna',
 }
 

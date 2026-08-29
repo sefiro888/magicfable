@@ -321,7 +321,7 @@ export function playSynthCue(cue: SoundCue): void {
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────
 
-export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'menu'
+export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'menu'
 
 /**
  * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
@@ -361,7 +361,7 @@ interface AmbienceProfile {
     detune: number
   }
   detail: {
-    kind: 'chime' | 'drip' | 'ember' | 'sandgust'
+    kind: 'chime' | 'drip' | 'ember' | 'sandgust' | 'icecrack'
     /** Separación mínima y máxima entre sucesos, en segundos. */
     everyMin: number
     everyMax: number
@@ -395,6 +395,15 @@ export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
     air: { color: 'pink', cutoff: 1150, sweep: 620, breath: 0.042, gain: 0.17 },
     drone: { root: 73.4, intervals: [0, 7, 14], wave: 'triangle', gain: 0.05, detune: 7 },
     detail: { kind: 'sandgust', everyMin: 5, everyMax: 13, gain: 0.13 },
+  },
+  // Noche polar sobre un lago helado: viento alto y delgado (nada que lo
+  // frene en kilómetros), tono menor muy grave y el crujido del hielo a lo
+  // lejos. Es el ambiente más vacío de los cinco a propósito — el frío se
+  // transmite por lo que NO suena.
+  fimbul: {
+    air: { color: 'pink', cutoff: 1450, sweep: 380, breath: 0.05, gain: 0.15 },
+    drone: { root: 61.7, intervals: [0, 3, 19], wave: 'sine', gain: 0.055, detune: 5 },
+    detail: { kind: 'icecrack', everyMin: 6, everyMax: 17, gain: 0.12 },
   },
   // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
   menu: {
@@ -493,6 +502,36 @@ const playDetail = (active: Engine, handle: AmbienceHandle, profile: AmbiencePro
     filter.frequency.linearRampToValueAtTime(2200 + Math.random() * 900, at + duration)
     gain.gain.setValueAtTime(0.0001, at)
     gain.gain.exponentialRampToValueAtTime(profile.detail.gain * (0.6 + Math.random() * 0.5), at + duration * 0.35)
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + duration)
+    source.connect(filter).connect(gain)
+    source.start(at)
+    source.stop(at + duration)
+    handle.sources.add(source)
+    source.addEventListener('ended', () => handle.sources.delete(source))
+    return
+  }
+
+  if (profile.detail.kind === 'icecrack') {
+    // Crujido del lago helado: un golpe seco de ruido grave y, pegado detrás,
+    // un tono descendente muy filtrado — es la grieta propagándose bajo la
+    // superficie, que es lo que le da el punto inquietante y lo separa de un
+    // simple chasquido.
+    const duration = 0.5 + Math.random() * 0.5
+    const buffer = context.createBuffer(1, Math.max(1, Math.floor(context.sampleRate * duration)), context.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < data.length; i += 1) {
+      // Ataque instantáneo y cola larga: la energía se va muy rápido al principio.
+      const t = i / data.length
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 9)
+    }
+    const source = context.createBufferSource()
+    source.buffer = buffer
+    const filter = context.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.Q.value = 6
+    filter.frequency.setValueAtTime(1400 + Math.random() * 900, at)
+    filter.frequency.exponentialRampToValueAtTime(180 + Math.random() * 120, at + duration)
+    gain.gain.setValueAtTime(profile.detail.gain * (0.6 + Math.random() * 0.5), at)
     gain.gain.exponentialRampToValueAtTime(0.0001, at + duration)
     source.connect(filter).connect(gain)
     source.start(at)
