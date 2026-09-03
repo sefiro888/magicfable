@@ -331,19 +331,21 @@ export function DunaNecropolis({ quality, reducedMotion, event }: DunaProps) {
           muerde antes, se traga las pirámides y el patio queda encerrado en
           una pared amarilla. */}
       <fog attach="fog" args={['#efdcb4', 30, 88]} />
-      {/* La luz plana (ambiente + hemisférica) sumaba 2,8 contra los 3,4 del
-          sol: casi tanto relleno como luz principal, así que la cara en
-          sombra de cualquier cosa recibía el 45% de la luz de la cara
-          iluminada y el patio entero salía lavado y sin volumen. Bajada a
-          poco más de un tercio del sol — el desierto a mediodía tiene mucho
-          contraste, no poco. El rebote cálido de la arena sigue vivo por la
-          hemisférica, que es justo para lo que está. */}
-      <ambientLight intensity={0.55} color="#ffe9c0" />
-      <hemisphereLight intensity={0.72} color="#fff0cc" groundColor="#d9b478" />
-      {/* Sol cenital: casi vertical, para que las sombras salgan cortas y duras. */}
+      {/* Segunda pasada: seguia lavado. Al contar el rebote de suelo, el
+          relleno sumaba 2,12 contra 3,6 del sol — un 59%, no el tercio que
+          pretendia el comentario anterior — y el total de 5,72 sobre arena
+          casi blanca saturaba a tope, que es donde toda la textura se pierde
+          de golpe. Bajado a 1,28 de relleno contra 3,2 de sol (40%). */}
+      <ambientLight intensity={0.34} color="#ffe9c0" />
+      <hemisphereLight intensity={0.44} color="#fff0cc" groundColor="#c49a5e" />
+      {/* El sol estaba casi vertical (14 de alto contra 1,5 y -4 de lado). Una
+          luz cenital sobre un tablero plano llega igual a toda la superficie:
+          el mapa de normales no tiene con que hacer sombra y las losas salian
+          como rectangulos lisos. Bajandolo, la luz pasa rasante y el relieve
+          de la piedra aparece. */}
       <directionalLight
-        position={[1.5, 14, -4]}
-        intensity={3.6}
+        position={[8, 8.5, -5]}
+        intensity={3.2}
         color="#fff3d2"
         castShadow={quality !== 'low'}
         shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
@@ -357,7 +359,7 @@ export function DunaNecropolis({ quality, reducedMotion, event }: DunaProps) {
         shadow-bias={-0.0006}
       />
       {/* Rebote del suelo: la arena devuelve mucha luz y evita sombras negras. */}
-      <directionalLight position={[-6, 2, 9]} intensity={0.85} color="#f6d9a6" />
+      <directionalLight position={[-6, 2, 9]} intensity={0.5} color="#f6d9a6" />
 
       <SkyDome />
       <SunDisc flare={flare} />

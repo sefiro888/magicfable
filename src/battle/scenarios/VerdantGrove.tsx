@@ -89,21 +89,30 @@ function GroveFloor({ quality }: { quality: GraphicsQuality }) {
 function Trunks({ quality }: { quality: GraphicsQuality }) {
   const bark = useMemo(() => barkTexture(), [])
   const trunks = useMemo(() => {
+    // Los troncos se plantaban en círculo COMPLETO alrededor del claro, y la
+    // cámara mira desde z positivo: los del arco cercano quedaban ENTRE la
+    // cámara y el tablero, así que uno de ellos cruzaba la pantalla de arriba
+    // abajo tapando media partida. Aquí solo se planta el arco que la cámara
+    // ve de frente o de lado; el sector de delante se deja vacío porque cae
+    // fuera de plano de todas formas.
     const total = quality === 'low' ? 10 : 20
-    return Array.from({ length: total }, (_, index) => {
-      const angle = (index / total) * Math.PI * 2 + (index % 3) * 0.12
+    const planted: { position: readonly [number, number, number]; height: number; width: number; tilt: number; spin: number }[] = []
+    for (let index = 0; index < total * 2 && planted.length < total; index += 1) {
+      const angle = (index / (total * 2)) * Math.PI * 2 + (index % 3) * 0.09
+      // sin(angle) > 0 es el lado de la cámara. Se descarta ese sector.
+      if (Math.sin(angle) > 0.12) continue
       const radius = GROVE_RADIUS + 1.6 + (index % 4) * 1.5
       const height = 13 + (index % 5) * 4.5
-      const width = 0.4 + (index % 4) * 0.16
-      return {
-        position: [Math.cos(angle) * radius, height / 2 - 0.6, Math.sin(angle) * radius] as const,
+      planted.push({
+        position: [Math.cos(angle) * radius, height / 2 - 0.6, Math.sin(angle) * radius],
         height,
-        width,
+        width: 0.4 + (index % 4) * 0.16,
         // Ninguno recto ni orientado igual: un bosque plantado en fila canta.
         tilt: ((index % 5) - 2) * 0.035,
         spin: index * 1.3,
-      }
-    })
+      })
+    }
+    return planted
   }, [quality])
   return (
     <group>
@@ -114,7 +123,11 @@ function Trunks({ quality }: { quality: GraphicsQuality }) {
             {/* Corteza de verdad, no mampostería: a esta escala unas juntas de
                 sillar en un árbol cantan mucho. El `bumpMap` con la misma
                 imagen da el relieve de los surcos sin geometría extra. */}
-            <meshStandardMaterial map={bark} bumpMap={bark} bumpScale={5} color="#8a7659" roughness={0.97} metalness={0.02} />
+            {/* Color claro y un emisivo mínimo: la luz clave entra por encima
+                del dosel, así que la cara del tronco que mira a la cámara no
+                recibe casi nada y salían como siluetas NEGRAS en las que no
+                se veía ni la corteza que se les puso. */}
+            <meshStandardMaterial map={bark} bumpMap={bark} bumpScale={5} color="#c4ab86" roughness={0.95} metalness={0.02} emissive="#2e2418" emissiveIntensity={0.55} />
           </mesh>
           {/* Musgo en la cara baja del tronco, del lado del claro. La altura
               es FIJA, no proporcional al árbol: atada a `trunk.height` salían
@@ -238,7 +251,9 @@ function MossyStones({ quality }: { quality: GraphicsQuality }) {
       const radius = GROVE_RADIUS - 0.2 + (index % 3) * 0.5
       return {
         position: [Math.cos(angle) * radius, -0.32, Math.sin(angle) * radius] as const,
-        scale: [0.5 + (index % 4) * 0.22, 0.32 + (index % 3) * 0.16, 0.44 + (index % 5) * 0.16] as const,
+        // Más bajas y menos regulares: con la escala anterior y el sombreado
+        // plano se leían como cristales verdes clavados, no como cantos.
+        scale: [0.42 + (index % 4) * 0.16, 0.22 + (index % 3) * 0.1, 0.36 + (index % 5) * 0.12] as const,
         spin: index * 1.7,
       }
     })
@@ -255,7 +270,9 @@ function MossyStones({ quality }: { quality: GraphicsQuality }) {
           receiveShadow={quality !== 'low'}
         >
           <icosahedronGeometry args={[0.5, 0]} />
-          <meshStandardMaterial color="#5f6b4a" roughness={0.98} metalness={0.02} flatShading />
+          {/* Pardo con verde encima, no verde a secas: una piedra con musgo
+              sigue siendo piedra, y el verde saturado la convertía en gema. */}
+          <meshStandardMaterial color="#6b6a52" roughness={0.98} metalness={0.02} flatShading />
         </mesh>
       ))}
     </group>
@@ -275,8 +292,12 @@ export function VerdantGrove({ quality, reducedMotion }: GroveProps) {
           árboles siga siendo penumbra. El rebote de la hemisférica va teñido
           de verde a propósito: en un bosque, la luz indirecta ha rebotado
           antes en un millón de hojas y llega con su color. */}
-      <ambientLight intensity={0.34} color="#9fbe86" />
-      <hemisphereLight intensity={0.66} color="#cfe8a0" groundColor="#3d4a2a" />
+      {/* Subida respecto al primer ajuste: el sitio es un CLARO, o sea el
+          punto del bosque donde MÁS luz entra, y estaba quedando tan oscuro
+          como el interior de la espesura. Sigue muy por debajo de la luz
+          clave para que el modelado no se pierda. */}
+      <ambientLight intensity={0.52} color="#a8c78f" />
+      <hemisphereLight intensity={0.92} color="#d8eeae" groundColor="#4a5733" />
       <directionalLight
         position={[3, 16, -2]}
         intensity={2.9}
@@ -291,7 +312,7 @@ export function VerdantGrove({ quality, reducedMotion }: GroveProps) {
         shadow-bias={-0.0006}
       />
       {/* Rebote verde del follaje, desde un lado y bajo. */}
-      <directionalLight position={[-9, 3, 7]} intensity={0.7} color="#8ec468" />
+      <directionalLight position={[-9, 3, 7]} intensity={0.95} color="#8ec468" />
 
       <CanopyDome />
       <GroveFloor quality={quality} />

@@ -163,9 +163,13 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#f2ecd2', '#e8e2c4', '#ded9bb'],
     enemy: ['#cbdaea', '#bfcfe2', '#b6c6da'],
   },
+  // El tablero de Duna quedaba EXACTAMENTE del mismo tono que la arena del
+  // patio, asi que la zona de juego no se separaba del fondo. Los tintes bajan
+  // un escalon: sigue siendo arena, pero pisada y algo mas oscura que el
+  // desierto abierto que la rodea.
   sand: {
-    own: ['#ffeccd', '#f8e1bd', '#f0d7b2'],
-    enemy: ['#d5dff0', '#c9d4e8', '#bfcbe0'],
+    own: ['#e9cda2', '#dfc094', '#d4b489'],
+    enemy: ['#b6c2d8', '#aab6cd', '#a1adc4'],
   },
   // Sobre hielo, «cálido» es un blanco crema, no ámbar: los dos lados tienen
   // que seguir leyéndose como hielo limpio.

@@ -25,26 +25,31 @@ function DawnAtmosphere({ quality }: { quality: GraphicsQuality }) {
         <sphereGeometry args={[70, 32, 20]} />
         <meshBasicMaterial map={dawnSkyTexture()} side={1} fog={false} />
       </mesh>
-      <ambientLight intensity={0.48} color="#aeb9d8" />
-      <hemisphereLight intensity={0.4} color="#d8e2ff" groundColor="#5a4a3a" />
+      {/* El sol estaba en 4,8 y, sumado al relleno, la escena llegaba a 6,3
+          sobre piedra clara: con el mapeado ACES eso se va al blanco y
+          desatura, que es por lo que las columnas y las losas salian como
+          cartulina crema sin volumen. Bajado a 3, en linea con las demas
+          escenas, para que el rango util vuelva a caer donde hay textura. */}
+      <ambientLight intensity={0.32} color="#aeb9d8" />
+      <hemisphereLight intensity={0.28} color="#d8e2ff" groundColor="#4a3c2e" />
       {/* Sol de amanecer desde arriba-derecha, como en la referencia. */}
       <directionalLight
-        position={[15, 14, -8]}
-        intensity={4.8}
+        position={[15, 11, -8]}
+        intensity={3}
         color="#ffcf96"
         castShadow={quality !== 'low'}
         shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
         shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
-        shadow-camera-left={-9}
-        shadow-camera-right={9}
-        shadow-camera-top={9}
-        shadow-camera-bottom={-9}
+        shadow-camera-left={-13}
+        shadow-camera-right={13}
+        shadow-camera-top={13}
+        shadow-camera-bottom={-13}
         // Por coherencia con las otras cuatro escenas: evita el acné de
         // sombra en las superficies casi paralelas a la luz.
         shadow-bias={-0.0006}
       />
       {/* Relleno frío desde el lado del portal. */}
-      <directionalLight position={[-14, 9, 10]} intensity={0.6} color="#8fa8e8" />
+      <directionalLight position={[-14, 9, 10]} intensity={0.42} color="#8fa8e8" />
     </>
   )
 }

@@ -301,17 +301,26 @@ export function CalderaScenario({ quality, reducedMotion, event }: CalderaScenar
           donde la lava no llega. Bajado a la mitad; los puntos de luz de la
           colada siguen aportando el rebote naranja de verdad, con posición,
           en vez de un lavado uniforme sin dirección. */}
-      <ambientLight intensity={0.58} color="#ffa06a" />
-      <hemisphereLight intensity={0.58} color="#ff8c46" groundColor="#ffb070" />
-      <spotLight
-        position={[-3, 9, 4]}
-        intensity={62}
-        angle={0.62}
-        penumbra={0.9}
+      <ambientLight intensity={0.4} color="#ffa06a" />
+      <hemisphereLight intensity={0.42} color="#ff8c46" groundColor="#6b3a22" />
+      {/* La clave era un spotLight con decay 2 a nueve unidades de altura: de
+          sus 62 de intensidad llegaban ~0,6 al centro del tablero y casi cero
+          a los bordes, y su cono de 35 grados ni siquiera cubría las ocho
+          casillas de ancho. Resultado: la colada del fondo brillaba mas que la
+          zona de juego y las losas quedaban en negro ilegible. Una direccional
+          no tiene caida con la distancia ni cono, asi que ilumina el tablero
+          entero de forma pareja y el basalto recupera su relieve. */}
+      <directionalLight
+        position={[-6, 11, 7]}
+        intensity={2.5}
         castShadow={quality !== 'low'}
         color="#ffd2ac"
         shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
         shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
+        shadow-camera-left={-14}
+        shadow-camera-right={14}
+        shadow-camera-top={14}
+        shadow-camera-bottom={-14}
         shadow-bias={-0.0006}
       />
       <pointLight position={[0, -1.6, 0]} color="#ff5a12" intensity={46} distance={18} decay={2} />
