@@ -27,7 +27,7 @@ import {
   worldToGrid,
 } from './grid/gridCoordinates'
 import { impulsesForEvent, type Impulse } from './combatImpulse'
-import { BOARD_TILE_VARIANTS, boardTileRoughness, boardTileTexture, contactShadowTexture, glowTexture, masonryTexture, type BoardTileStyle } from './textures'
+import { BOARD_TILE_VARIANTS, boardTileNormal, boardTileRoughness, boardTileTexture, contactShadowTexture, glowTexture, masonryTexture, type BoardTileStyle } from './textures'
 import styles from './Board3D.module.css'
 
 const AetherCitadel = lazy(() =>
@@ -252,6 +252,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
   const variant = tileVariantFor(position)
   const slab = boardTileTexture(terrainStyle, variant)
   const rough = boardTileRoughness(terrainStyle, variant)
+  const normal = boardTileNormal(terrainStyle, variant)
   const tint = ZONE_TINTS_BY_STYLE[terrainStyle][zone][(position.x * 7 + position.y * 13) % 3]!
   const color = valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
   const emissive = valid
@@ -277,8 +278,12 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />
       <meshStandardMaterial
         map={slab}
-        bumpMap={slab}
-        bumpScale={terrainStyle === 'sand' ? 3 : 6}
+        // Mapa de NORMALES en vez del truco de usar el color como altura. Con
+        // `bumpMap={slab}` la piedra daba por bueno que «oscuro = hundido», y
+        // eso salía mal de forma visible: las grietas con rescoldo del basalto
+        // son lo más CLARO de la losa, así que sobresalían en vez de hundirse,
+        // y en el bosque las hojas oscuras se leían como agujeros.
+        normalMap={normal}
         roughnessMap={rough}
         // El resplandor de estado (jugable, amenazada, abrasada…) sigue el
         // DIBUJO de la piedra en vez de ser un baño uniforme. Sin esto, una

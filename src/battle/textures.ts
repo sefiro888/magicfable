@@ -1822,6 +1822,249 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
 };
 
 /**
+ * Campo de ALTURAS de la losa: gris medio = la cara de la piedra, oscuro =
+ * hundido, claro = sobresale.
+ *
+ * Existe porque hasta ahora el relieve salía de usar el mapa de COLOR como
+ * mapa de altura (`bumpMap={slab}`), y eso da por bueno que «oscuro =
+ * hundido», que es físicamente falso y se notaba:
+ *
+ *  - En el basalto, las grietas llevan RESCOLDO, o sea que son lo más claro
+ *    de la losa. Con el color como altura, las grietas SOBRESALÍAN en vez de
+ *    hundirse — justo al revés.
+ *  - En el bosque, una hoja oscura se leía como un agujero, y las raíces
+ *    (que cruzan por encima de la piedra) quedaban hundidas.
+ *  - En el musgo y la nieve pasa lo mismo: son material acumulado ENCIMA,
+ *    no huecos.
+ *
+ * Aquí el relieve se dibuja a propósito, sin depender del color.
+ */
+const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, context: CanvasRenderingContext2D): void => {
+  const random = seededRandom((tileSeed(style, variant) ^ 0x48454947) >>> 0);
+  // Cara de la piedra: el punto medio del que todo sube o baja.
+  context.fillStyle = 'rgb(140, 140, 140)';
+  context.fillRect(0, 0, size, size);
+
+  const dip = (alpha: number) => `rgba(0, 0, 0, ${alpha})`;
+  const rise = (alpha: number) => `rgba(255, 255, 255, ${alpha})`;
+
+  if (style === 'basalt') {
+    // Grietas HUNDIDAS (aunque brillen por el rescoldo) y placas levantadas.
+    for (let plate = 0; plate < 7; plate += 1) {
+      const px = random() * size;
+      const py = random() * size;
+      const radius = 26 + random() * 54;
+      const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+      gradient.addColorStop(0, rise(0.3));
+      gradient.addColorStop(1, rise(0));
+      context.fillStyle = gradient;
+      context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+    }
+    for (let crack = 0; crack < 3 + (variant % 3); crack += 1) {
+      let x = random() * size;
+      let y = -6;
+      context.strokeStyle = dip(0.85);
+      context.lineWidth = 2 + random() * 4;
+      context.beginPath();
+      context.moveTo(x, y);
+      while (y < size + 6) {
+        y += 16 + random() * 22;
+        x += (random() - 0.5) * 46;
+        context.lineTo(x, y);
+      }
+      context.stroke();
+    }
+  } else if (style === 'moss' || style === 'forest') {
+    // Musgo y hojarasca son material ENCIMA de la piedra: sobresalen.
+    const clumps = style === 'forest' ? 20 : 16;
+    for (let clump = 0; clump < clumps; clump += 1) {
+      const along = random() * size;
+      const depth = random() * size * 0.38;
+      const edge = (variant + clump) % 4;
+      const mx = edge === 0 ? along : edge === 1 ? size - depth : edge === 2 ? along : depth;
+      const my = edge === 0 ? depth : edge === 1 ? along : edge === 2 ? size - depth : along;
+      const radius = 12 + random() * 30;
+      const gradient = context.createRadialGradient(mx, my, 0, mx, my, radius);
+      gradient.addColorStop(0, rise(0.5));
+      gradient.addColorStop(1, rise(0));
+      context.fillStyle = gradient;
+      context.fillRect(mx - radius, my - radius, radius * 2, radius * 2);
+    }
+    if (style === 'forest') {
+      // Las raíces cruzan POR ENCIMA de la losa: son lo más alto de todo.
+      for (let root = 0; root < 2 + (variant % 2); root += 1) {
+        const vertical = (variant + root) % 2 === 0;
+        let along = random() * size;
+        context.strokeStyle = rise(0.75);
+        context.lineWidth = 4 + random() * 5;
+        context.beginPath();
+        context.moveTo(vertical ? along : 0, vertical ? 0 : along);
+        for (let step = 0; step <= size; step += 26) {
+          along += (random() - 0.5) * 22;
+          context.lineTo(vertical ? along : step, vertical ? step : along);
+        }
+        context.stroke();
+      }
+    } else {
+      // Grieta con agua: hundida.
+      context.strokeStyle = dip(0.6);
+      context.lineWidth = 2 + random() * 3;
+      context.beginPath();
+      let gx = random() * size;
+      let gy = 0;
+      context.moveTo(gx, gy);
+      while (gy < size) {
+        gy += 18 + random() * 26;
+        gx += (random() - 0.5) * 40;
+        context.lineTo(gx, gy);
+      }
+      context.stroke();
+    }
+  } else if (style === 'ice') {
+    // Grietas del hielo hundidas; escarcha y nieve apelmazada, levantadas.
+    for (let crack = 0; crack < 2 + (variant % 3); crack += 1) {
+      const cx = random() * size;
+      const cy = random() * size;
+      const angle = random() * Math.PI * 2;
+      const length = 40 + random() * 50;
+      context.strokeStyle = dip(0.55);
+      context.lineWidth = 1.6 + random() * 2.4;
+      context.beginPath();
+      context.moveTo(cx, cy);
+      context.lineTo(cx + Math.cos(angle) * length, cy + Math.sin(angle) * length);
+      context.stroke();
+    }
+    const band = size * 0.12;
+    for (let flake = 0; flake < 700; flake += 1) {
+      const fx = random() * size;
+      const fy = random() * size;
+      const dist = Math.min(fx, fy, size - fx, size - fy);
+      if (dist > band) continue;
+      context.fillStyle = rise((1 - dist / band) * 0.5 * random());
+      context.fillRect(fx, fy, 2 + random() * 3, 2 + random() * 3);
+    }
+  } else if (style === 'sand') {
+    // Ondulación de viento: crestas y valles suaves, girados por variante.
+    context.save();
+    context.translate(size / 2, size / 2);
+    context.rotate((variant / BOARD_TILE_VARIANTS) * Math.PI);
+    context.translate(-size / 2, -size / 2);
+    for (let ripple = 0; ripple < 14; ripple += 1) {
+      const y = (ripple / 14) * size;
+      context.strokeStyle = rise(0.34);
+      context.lineWidth = 5;
+      context.beginPath();
+      context.moveTo(-size * 0.3, y);
+      for (let x = -size * 0.3; x < size * 1.3; x += 24) context.lineTo(x, y + Math.sin(x * 0.05 + ripple) * 4);
+      context.stroke();
+      context.strokeStyle = dip(0.28);
+      context.lineWidth = 5;
+      context.beginPath();
+      context.moveTo(-size * 0.3, y + 9);
+      for (let x = -size * 0.3; x < size * 1.3; x += 24) context.lineTo(x, y + 9 + Math.sin(x * 0.05 + ripple) * 4);
+      context.stroke();
+    }
+    context.restore();
+  } else {
+    // Caliza: marcas de cincel hundidas y la esquina desportillada, que es
+    // material que FALTA y por tanto baja.
+    for (let zone = 0; zone < 3; zone += 1) {
+      const zx = random() * size;
+      const zy = random() * size;
+      const angle = random() * Math.PI;
+      for (let mark = 0; mark < 7; mark += 1) {
+        context.strokeStyle = dip(0.3);
+        context.lineWidth = 2;
+        const mx = zx + Math.cos(angle + 1.57) * mark * 9;
+        const my = zy + Math.sin(angle + 1.57) * mark * 9;
+        context.beginPath();
+        context.moveTo(mx, my);
+        context.lineTo(mx + Math.cos(angle) * 16, my + Math.sin(angle) * 16);
+        context.stroke();
+      }
+    }
+    const corner = variant % 4;
+    const cx = corner === 0 || corner === 3 ? 0 : size;
+    const cy = corner < 2 ? 0 : size;
+    context.fillStyle = dip(0.55);
+    context.beginPath();
+    context.moveTo(cx, cy);
+    context.lineTo(cx + (cx === 0 ? 1 : -1) * 26, cy);
+    context.lineTo(cx, cy + (cy === 0 ? 1 : -1) * 24);
+    context.closePath();
+    context.fill();
+  }
+
+  // La junta del borde es lo MÁS hundido de la losa en todos los materiales:
+  // es donde acaba la piedra. Se dibuja al final para que nada la pise.
+  const grooveWidth = Math.max(3, size * 0.03);
+  context.strokeStyle = dip(0.9);
+  context.lineWidth = grooveWidth;
+  context.strokeRect(grooveWidth / 2, grooveWidth / 2, size - grooveWidth, size - grooveWidth);
+};
+
+/**
+ * Mapa de normales de la losa, derivado del campo de alturas por Sobel.
+ *
+ * Un mapa de normales le dice a la luz hacia dónde MIRA cada punto de la
+ * superficie, así que el relieve reacciona de verdad al moverse la luz en vez
+ * de ser un sombreado aproximado a partir del brillo del color.
+ */
+export const boardTileNormal = (style: BoardTileStyle, variant: number): CanvasTexture => {
+  const key = `board-normal-${style}-${variant}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const size = 256;
+  const [, heightContext] = makeCanvas(size);
+  drawTileHeight(style, variant, size, heightContext);
+  const height = heightContext.getImageData(0, 0, size, size).data;
+
+  const [canvas, context] = makeCanvas(size);
+  const out = context.createImageData(size, size);
+  // Muestreo separado dos píxeles: suaviza el ruido del dibujo sin difuminar
+  // las juntas, que son la parte que más tiene que notarse.
+  const gap = 2;
+  const sample = (x: number, y: number): number => {
+    const cx = Math.min(size - 1, Math.max(0, x));
+    const cy = Math.min(size - 1, Math.max(0, y));
+    return height[(cy * size + cx) * 4]!;
+  };
+  // Cuánto relieve aparente. Por material: la arena ondula suave, la roca
+  // partida y la piedra tallada marcan mucho más.
+  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3 }[style];
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const dx = (sample(x + gap, y) - sample(x - gap, y)) / 255;
+      const dy = (sample(x, y + gap) - sample(x, y - gap)) / 255;
+      const rawX = -dx * strength;
+      const rawY = -dy * strength;
+      const length = Math.hypot(rawX, rawY, 1);
+      const nx = rawX / length;
+      const ny = rawY / length;
+      const nz = 1 / length;
+      const index = (y * size + x) * 4;
+      out.data[index] = Math.round((nx * 0.5 + 0.5) * 255);
+      // El verde va con el signo cambiado: la V de la textura crece hacia
+      // arriba y la Y del canvas hacia abajo. Sin invertirlo, el relieve se
+      // ilumina por el lado contrario y las juntas se leen como crestas.
+      out.data[index + 1] = Math.round((-ny * 0.5 + 0.5) * 255);
+      out.data[index + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+      out.data[index + 3] = 255;
+    }
+  }
+  context.putImageData(out, 0, 0);
+  const texture = finishTexture(key, canvas);
+  // Un mapa de normales son datos, no color: en sRGB Three.js le aplicaría
+  // gamma y el relieve saldría deformado. Mismo caso que la rugosidad.
+  texture.colorSpace = NoColorSpace;
+  // El tablero se mira desde unos 35°, un ángulo muy rasante: aquí es donde
+  // el filtrado anisotrópico se nota de verdad (con 4 la piedra lejana se
+  // emborrona). Se sube solo en las texturas del suelo jugable.
+  texture.anisotropy = 16;
+  return texture;
+};
+
+/**
  * Mapa de rugosidad de la losa: blanco = mate, negro = brillante. Es lo que
  * hace que dos materiales con la misma geometría se lean como sustancias
  * distintas — sin esto, el basalto vitrificado y la arena seca reflejan la
