@@ -93,23 +93,28 @@ function AuroraVeils({ reducedMotion }: { reducedMotion: boolean }) {
     if (first.current) {
       first.current.position.x = Math.sin(t * 0.06) * 5
       const material = first.current.material as MeshStandardMaterial
-      material.opacity = 0.2 + Math.sin(t * 0.17) * 0.08
+      material.opacity = 0.34 + Math.sin(t * 0.17) * 0.1
     }
     if (second.current) {
       second.current.position.x = Math.cos(t * 0.045) * 7
       const material = second.current.material as MeshStandardMaterial
-      material.opacity = 0.15 + Math.cos(t * 0.13) * 0.07
+      material.opacity = 0.26 + Math.cos(t * 0.13) * 0.09
     }
   })
   return (
     <group>
-      <mesh ref={first} position={[0, 15, -30]} rotation={[0.16, 0, 0.06]}>
-        <planeGeometry args={[46, 20]} />
-        <meshBasicMaterial color="#6bf0b4" transparent opacity={0.2} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} fog={false} />
+      {/* Estaban a 15 y 19 de altura: desde la camara eso cae unos 12 grados
+          POR ENCIMA de la horizontal, y el encuadre mira en picado, asi que
+          del cielo solo se ve una franja fina justo sobre el horizonte. La
+          aurora quedaba entera fuera de cuadro — se dibujaba y no la veia
+          nadie. Bajadas a esa franja, y con mas cuerpo para que se noten. */}
+      <mesh ref={first} position={[0, 7.5, -27]} rotation={[0.16, 0, 0.06]}>
+        <planeGeometry args={[52, 16]} />
+        <meshBasicMaterial color="#6bf0b4" transparent opacity={0.34} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} fog={false} />
       </mesh>
-      <mesh ref={second} position={[6, 19, -38]} rotation={[0.1, 0, -0.1]}>
-        <planeGeometry args={[38, 24]} />
-        <meshBasicMaterial color="#a880ff" transparent opacity={0.15} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} fog={false} />
+      <mesh ref={second} position={[6, 10.5, -34]} rotation={[0.1, 0, -0.1]}>
+        <planeGeometry args={[44, 18]} />
+        <meshBasicMaterial color="#a880ff" transparent opacity={0.26} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} fog={false} />
       </mesh>
     </group>
   )
@@ -240,7 +245,7 @@ function Treeline({ quality }: { quality: GraphicsQuality }) {
     const total = quality === 'low' ? 24 : 54
     return Array.from({ length: total }, (_, index) => {
       const angle = (index / total) * Math.PI * 2
-      const radius = 21 + (index % 5) * 2.6
+      const radius = 19 + (index % 5) * 3.1
       const height = 3.2 + (index % 6) * 0.85
       return {
         position: [Math.cos(angle) * radius, height / 2 - 1.1, Math.sin(angle) * radius] as const,
@@ -254,7 +259,7 @@ function Treeline({ quality }: { quality: GraphicsQuality }) {
         <group key={index} position={tree.position}>
           <mesh>
             <coneGeometry args={[tree.height * 0.26, tree.height, 6]} />
-            <meshStandardMaterial color="#1d2b2c" roughness={0.95} metalness={0} flatShading />
+            <meshStandardMaterial color="#2f4746" roughness={0.95} metalness={0} flatShading />
           </mesh>
           {/* Nieve en las ramas: el cono claro encima rompe la silueta negra. */}
           <mesh position={[0, tree.height * 0.16, 0]} scale={0.72}>
@@ -273,12 +278,16 @@ function FjordWalls({ quality }: { quality: GraphicsQuality }) {
     const total = quality === 'low' ? 8 : 16
     return Array.from({ length: total }, (_, index) => {
       const angle = (index / total) * Math.PI * 2 + 0.2
-      const radius = 44 + (index % 3) * 7
-      const height = 15 + (index % 5) * 7
+      // Con la niebla retirada, estos picos dejaron de estar ocultos y con su
+      // altura anterior (hasta 43, a solo 44 de radio) entraban en cuadro como
+      // manchones negros colgando del borde de arriba. Mas lejos y mas bajos:
+      // ahora hacen de horizonte, que es su papel, en vez de tapar el cielo.
+      const radius = 54 + (index % 3) * 8
+      const height = 11 + (index % 5) * 3.6
       return {
         position: [Math.cos(angle) * radius, height / 2 - 4, Math.sin(angle) * radius] as const,
         height,
-        width: 15 + (index % 4) * 8,
+        width: 13 + (index % 4) * 7,
       }
     })
   }, [quality])
@@ -287,7 +296,7 @@ function FjordWalls({ quality }: { quality: GraphicsQuality }) {
       {peaks.map((peak, index) => (
         <mesh key={index} position={peak.position} rotation={[0, index * 0.9, 0]}>
           <coneGeometry args={[peak.width, peak.height, 4]} />
-          <meshStandardMaterial color="#3c4a5c" roughness={0.98} metalness={0} flatShading />
+          <meshStandardMaterial color="#5d7089" roughness={0.98} metalness={0} flatShading />
         </mesh>
       ))}
     </group>
@@ -307,7 +316,12 @@ export function FimbulFjord({ quality, reducedMotion }: FimbulProps) {
       <color attach="background" args={['#06101e']} />
       {/* Niebla helada: empieza pronto y es densa. Es lo que convierte el
           horizonte en una pared de nada y hace que el fiordo no se acabe. */}
-      <fog attach="fog" args={['#16283f', 16, 52]} />
+      {/* La niebla saturaba a 52 y las paredes del fiordo estan entre 44 y
+          58: se las tragaba enteras, y el arbolado de 21 a 31 quedaba tan
+          desvaido que no se distinguia del cielo. El resultado era un disco
+          flotando en un vacio azul. Llevada a 92, el horizonte vuelve a tener
+          montanas y bosque, que es lo que hace que esto parezca un fiordo. */}
+      <fog attach="fog" args={['#16283f', 24, 92]} />
 
       {/* La luz clave es la aurora, que viene de ARRIBA y de un lado, teñida
           de verde. El relleno se mantiene bajo (como en Duna y Caldera) para
