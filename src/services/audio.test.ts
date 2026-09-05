@@ -156,3 +156,46 @@ describe('ambiente del escenario', () => {
     }
   })
 })
+
+describe('capa melódica', () => {
+  it('cada sitio tiene su modo: no son la misma escala transportada', () => {
+    const modos = Object.values(AMBIENCE).map((profile) => profile.motif.scale.join(','))
+    // Siete perfiles, y al menos seis escalas distintas entre ellos.
+    expect(new Set(modos).size).toBeGreaterThanOrEqual(6)
+  })
+
+  it('las frases dejan silencio de sobra entre ellas', () => {
+    for (const [theme, profile] of Object.entries(AMBIENCE)) {
+      const { motif } = profile
+      expect(motif.phrase[0], theme).toBeGreaterThan(0)
+      expect(motif.phrase[0], theme).toBeLessThanOrEqual(motif.phrase[1])
+      expect(motif.rest[0], theme).toBeLessThan(motif.rest[1])
+      // El silencio más corto tiene que superar a la frase más larga: si no,
+      // las frases se encadenarían y esto dejaría de ser música de fondo.
+      expect(motif.rest[0], theme).toBeGreaterThan(motif.phrase[1] * motif.step)
+      expect(motif.gain, theme).toBeLessThan(0.1)
+    }
+  })
+
+  it('el eco nunca se realimenta hasta crecer solo', () => {
+    for (const [theme, profile] of Object.entries(AMBIENCE)) {
+      // Con realimentación >= 1 el eco se suma a sí mismo y satura la mezcla.
+      expect(profile.echo.feedback, theme).toBeLessThan(0.5)
+      expect(profile.echo.mix, theme).toBeLessThanOrEqual(0.4)
+      expect(profile.echo.time, theme).toBeGreaterThan(0)
+      expect(profile.echo.time, theme).toBeLessThanOrEqual(2)
+    }
+  })
+
+  it('la melodía llega sola al cabo de un rato, no al abrir la partida', () => {
+    vi.useFakeTimers()
+    const spy = installFakeAudio()
+    startAmbientMusic('grove')
+    const alArrancar = spy.oscillators
+    // El primer silencio del claro es de 6 a 12 s: al segundo no hay nada aún.
+    vi.advanceTimersByTime(1000)
+    expect(spy.oscillators).toBe(alArrancar)
+    vi.advanceTimersByTime(60_000)
+    expect(spy.oscillators).toBeGreaterThan(alArrancar)
+  })
+})

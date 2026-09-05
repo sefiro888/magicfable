@@ -32,6 +32,7 @@ const node = () => {
     detune: param(),
     gain: param(),
     Q: param(),
+    delayTime: param(),
     type: 'sine',
     loop: false,
     buffer: null as AudioBuffer | null,
@@ -59,6 +60,7 @@ export const installFakeAudio = (): AudioSpy => {
     createOscillator() { spy.oscillators += 1; const n = node(); n.context = this; return n }
     createBufferSource() { spy.bufferSources += 1; const n = node(); n.context = this; return n }
     createBiquadFilter() { return node() }
+    createDelay() { return node() }
     createConvolver() { return node() }
     createDynamicsCompressor() { return node() }
     createBuffer(channels: number, length: number) {

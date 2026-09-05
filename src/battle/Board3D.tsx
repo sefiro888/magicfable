@@ -29,6 +29,8 @@ import {
 import { impulsesForEvent, type Impulse } from './combatImpulse'
 import { BOARD_TILE_VARIANTS, boardTileNormal, boardTileRoughness, boardTileTexture, contactShadowTexture, glowTexture, masonryTexture, type BoardTileStyle } from './textures'
 import styles from './Board3D.module.css'
+import { BoardDrift } from './BoardDrift'
+import { TerrainMarks } from './terrain/TerrainMarks'
 
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
@@ -378,34 +380,6 @@ const ScorchMarks = memo(function ScorchMarks({ position, reducedMotion }: { pos
 })
 
 /**
- * Aspecto del terreno según la escena. Antes ruinas y cobertura eran los
- * mismos bloques de mampostería parda en las cinco: un escombro de ladrillo
- * en mitad de un lago helado, o piedra caliza en una cueva de lava, delataba
- * que el terreno estaba pegado encima y no pertenecía al sitio.
- */
-const TERRAIN_LOOK: Readonly<Record<BoardTileStyle, {
-  readonly rubble: string
-  readonly cover: string
-  readonly coverTop: string
-  readonly emissive: string
-  readonly rough: number
-  readonly metal: number
-}>> = {
-  // Sillares desprendidos de la propia plaza.
-  stone: { rubble: '#a3947f', cover: '#b7a373', coverTop: '#cbb583', emissive: '#3a332a', rough: 0.95, metal: 0.04 },
-  // Roca volcánica partida, con el rescoldo aún dentro.
-  basalt: { rubble: '#57433f', cover: '#6b4f42', coverTop: '#7d5e4c', emissive: '#4a1c08', rough: 0.92, metal: 0.06 },
-  // Piedra del santuario tomada por el musgo.
-  moss: { rubble: '#7d8478', cover: '#6f7a63', coverTop: '#899471', emissive: '#26301f', rough: 0.96, metal: 0.03 },
-  // Adobe y sillar de arenisca, del mismo color que el patio.
-  sand: { rubble: '#c8ad7c', cover: '#c0a473', coverTop: '#d8bd88', emissive: '#4a3a1e', rough: 0.94, metal: 0.03 },
-  // Bloques de hielo partido: claros, muy poco rugosos y sin emisivo cálido.
-  ice: { rubble: '#a6c2d6', cover: '#9ab6cc', coverTop: '#c2d8e8', emissive: '#1e3242', rough: 0.28, metal: 0.02 },
-  // Piedra del claro comida por el musgo, y madera de rama para la empalizada.
-  forest: { rubble: '#8a8a66', cover: '#6f5a3c', coverTop: '#87704b', emissive: '#22301c', rough: 0.97, metal: 0.02 },
-}
-
-/**
  * Piedra del pedestal del Nexo, por escena. Era el ÚLTIMO elemento genérico
  * del tablero: el mismo granito azulado en las seis, mientras el suelo, los
  * obstáculos, la costura y la atmósfera ya eran propios de cada sitio. Un
@@ -422,86 +396,6 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   forest: { base: '#2a3022', shaft: '#39412d', crown: '#4b543a' },
 }
 
-const TerrainMarks = memo(function TerrainMarks({ rubble, cover, position, terrainStyle }: { rubble: boolean; cover: boolean; position: Position; terrainStyle: BoardTileStyle }) {
-  const look = TERRAIN_LOOK[terrainStyle]
-  if (rubble) {
-    const semilla = position.x * 7 + position.y * 13
-    return (
-      <group position={[0, 0.06, 0]}>
-        {[0, 1, 2, 3].map((index) => {
-          const angulo = ((semilla + index * 5) % 12) / 12 * Math.PI * 2
-          const radio = 0.12 + ((semilla + index) % 3) * 0.07
-          const alto = 0.16 + ((semilla + index * 3) % 4) * 0.06
-          return (
-            <mesh
-              key={index}
-              position={[Math.cos(angulo) * radio, alto / 2, Math.sin(angulo) * radio]}
-              rotation={[angulo * 0.4, angulo, angulo * 0.25]}
-              // Escala no uniforme sobre un poliedro: cada bloque sale con una
-              // proporción distinta sin necesidad de más geometría.
-              scale={[0.62 + (index % 2) * 0.2, alto * 3.4, 0.56 + (index % 3) * 0.16]}
-              castShadow
-              receiveShadow
-            >
-              {/* Icosaedro de bajo detalle con sombreado plano, no un cubo: un
-                  escombro es una piedra partida con caras irregulares, y con el
-                  suelo ya detallado los cubos cantaban como lo más tosco del
-                  tablero. Mismo coste de dibujo, forma mucho más creíble. */}
-              <icosahedronGeometry args={[0.16, 0]} />
-              {/* Textura de mampostería real en vez de color plano: antes el
-                  bloque era una silueta lisa y necesitaba mucho emisivo
-                  forzado para no leerse como una mancha negra. Con relieve
-                  propio (map+bumpMap) la piedra se sostiene sola y el
-                  emisivo baja a un simple relleno de sombra, no la luz
-                  principal del objeto. El COLOR sale de la escena. */}
-              <meshStandardMaterial map={masonryTexture()} bumpMap={masonryTexture()} bumpScale={3} color={look.rubble} roughness={look.rough} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.35} flatShading />
-            </mesh>
-          )
-        })}
-      </group>
-    )
-  }
-  if (cover) {
-    const wood = masonryTexture()
-    const semillaCover = position.x * 5 + position.y * 11
-    return (
-      <group position={[0, 0.06, 0]}>
-        {/* Empalizada de cinco estacas CLAVADAS y apuntadas, no tres cajas
-            rectangulares alineadas: un parapeto de campaña se hace hincando
-            troncos afilados, y con los escombros ya convertidos en piedra
-            irregular esto se había quedado como lo más tosco del tablero.
-            Cada estaca varía de alto y de inclinación con la posición de la
-            casilla, así que dos parapetos nunca salen calcados. */}
-        {[-0.34, -0.17, 0, 0.17, 0.34].map((offset, index) => {
-          const alto = 0.26 + ((semillaCover + index * 3) % 4) * 0.045
-          const ladeo = 0.1 + ((semillaCover + index) % 3) * 0.06
-          return (
-            <group key={offset} position={[offset, 0, -TILE_SIZE * 0.3]} rotation={[ladeo, index * 0.7, ((index % 3) - 1) * 0.07]}>
-              <mesh position={[0, alto / 2, 0]} castShadow receiveShadow>
-                <cylinderGeometry args={[0.045, 0.055, alto, 6]} />
-                <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color={look.cover} roughness={look.rough * 0.9} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
-              </mesh>
-              {/* Punta afilada: es lo que lo hace leerse como estaca. */}
-              <mesh position={[0, alto + 0.045, 0]} castShadow>
-                <coneGeometry args={[0.045, 0.11, 6]} />
-                <meshStandardMaterial map={wood} color={look.coverTop} roughness={look.rough * 0.85} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
-              </mesh>
-            </group>
-          )
-        })}
-        {/* Travesaño que ata las estacas, algo por debajo de las puntas. El
-            giro de PI/2 en Z es imprescindible: un cilindro nace VERTICAL en
-            Three.js, así que sin tumbarlo el travesaño saldría de pie en
-            medio del parapeto en vez de atravesarlo. */}
-        <mesh position={[0, 0.2, -TILE_SIZE * 0.3]} rotation={[0.1, 0, Math.PI / 2]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.032, 0.032, 0.84, 6]} />
-          <meshStandardMaterial map={wood} bumpMap={wood} bumpScale={2} color={look.coverTop} roughness={look.rough * 0.85} metalness={look.metal} emissive={look.emissive} emissiveIntensity={0.3} />
-        </mesh>
-      </group>
-    )
-  }
-  return null
-})
 
 /**
  * Atmósfera a ras del tablero: lo que hace que el suelo esté VIVO y no sea
@@ -1502,6 +1396,10 @@ function Scene(props: Board3DProps) {
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} />}
       <Midline terrainStyle={terrainStyle} />
       <BoardAtmosphere terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
+      {/* Y encima, lo que se mueve con dirección: la brasa sube, la nieve cae
+          de lado, la hoja baja dando tumbos. `BoardAtmosphere` solo titila en
+          el sitio; esto es lo que hace que el aire del sitio se note. */}
+      <BoardDrift terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
       <Suspense fallback={null}>
         {props.state.board.map((piece) => (
           <BoardCard
