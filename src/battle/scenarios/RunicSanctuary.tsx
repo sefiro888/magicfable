@@ -17,7 +17,12 @@ interface SanctuaryProps {
 }
 
 /** Radio de la isla de piedra: deja un anillo de suelo alrededor del tablero. */
-const ISLAND_RADIUS = BOARD_WORLD_HALF + 1.25
+// La isla daba 4,93 de radio (media huella 3,68 + 1,25) y el circulo de
+// monolitos caia entre 4,38 y 4,98. Pero el tablero es CUADRADO: su media
+// diagonal mide 3,68 x raiz de 2 = 5,20, o sea que por las esquinas llegaba
+// mas lejos que las piedras y estas se plantaban encima de la zona de juego.
+// Con 2,6 de margen el anillo queda en 5,58-6,14 y libra la diagonal.
+const ISLAND_RADIUS = BOARD_WORLD_HALF + 2.6
 
 /** Piedra del santuario: granito frío, apagado, nada de latón dorado. */
 const STONE = { color: '#5d6673', roughness: 0.92, metalness: 0.05 } as const
@@ -325,8 +330,8 @@ export function RunicSanctuary({ quality, reducedMotion, event }: SanctuaryProps
       const nearCamera = Math.sin(angle) > 0.12
       return {
         angle,
-        radius: ISLAND_RADIUS - 0.55 + (index % 3) * 0.3,
-        height: nearCamera ? 0.75 + (index % 3) * 0.28 : 2.1 + (index % 5) * 0.75,
+        radius: ISLAND_RADIUS - 0.7 + (index % 3) * 0.28,
+        height: nearCamera ? 1.05 + (index % 3) * 0.3 : 2.1 + (index % 5) * 0.75,
         width: 0.42 + (index % 3) * 0.1,
         tilt: ((index % 4) - 1.5) * 0.045,
         broken: index % 3 === 1,
