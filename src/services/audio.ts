@@ -321,7 +321,7 @@ export function playSynthCue(cue: SoundCue): void {
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────
 
-export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'menu'
+export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'menu'
 
 /**
  * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
@@ -483,6 +483,19 @@ export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
     motif: { root: 349.23, scale: [0, 2, 4, 7, 9, 12], wave: 'triangle', tone: 1900, note: 1.3, step: 0.6, phrase: [3, 6], rest: [6, 12], gain: 0.048, harmony: 4 },
     // La hojarasca absorbe: casi no hay cola, y la poca que hay es corta.
     echo: { time: 0.34, feedback: 0.18, mix: 0.14 },
+  },
+  // Rompiente: el oleaje es lo que más suena y va MUY despacio (la
+  // respiración más lenta de las siete), porque una ola tarda en romper. El
+  // tono es menor con la sexta, que es el color melancólico del atardecer
+  // sobre el agua, y el detalle son gotas: lo que escurre de la roca cuando el
+  // agua se retira.
+  shore: {
+    air: { color: 'brown', cutoff: 620, sweep: 460, breath: 0.022, gain: 0.24 },
+    drone: { root: 73.4, intervals: [0, 3, 8], wave: 'sine', gain: 0.055, detune: 5 },
+    detail: { kind: 'drip', everyMin: 3, everyMax: 9, gain: 0.12 },
+    motif: { root: 293.66, scale: [0, 2, 3, 5, 7, 8, 12], wave: 'sine', tone: 1500, note: 1.9, step: 0.85, phrase: [3, 5], rest: [8, 16], gain: 0.05, harmony: 7 },
+    // Costa abierta con acantilados: vuelve algo, pero tarda y llega deshecho.
+    echo: { time: 0.74, feedback: 0.24, mix: 0.2 },
   },
   // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
   menu: {

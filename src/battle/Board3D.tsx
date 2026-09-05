@@ -47,6 +47,9 @@ const DunaNecropolis = lazy(() =>
 const FimbulFjord = lazy(() =>
   import('./scenarios/FimbulFjord').then((m) => ({ default: m.FimbulFjord })),
 )
+const TidalShore = lazy(() =>
+  import('./scenarios/TidalShore').then((m) => ({ default: m.TidalShore })),
+)
 const VerdantGrove = lazy(() =>
   import('./scenarios/VerdantGrove').then((m) => ({ default: m.VerdantGrove })),
 )
@@ -165,6 +168,13 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#f2ecd2', '#e8e2c4', '#ded9bb'],
     enemy: ['#cbdaea', '#bfcfe2', '#b6c6da'],
   },
+  // Sobre roca mojada el bando propio se marca con el ámbar cálido de la
+  // lámpara del faro, y el rival con el azul del mar abierto: los dos tienen
+  // que seguir leyéndose como piedra empapada, no como plástico de color.
+  tide: {
+    own: ['#f2ddb8', '#e8d2ac', '#dcc79f'],
+    enemy: ['#a8c4d8', '#9cb8cd', '#93aec4'],
+  },
   // El tablero de Duna quedaba EXACTAMENTE del mismo tono que la arena del
   // patio, asi que la zona de juego no se separaba del fondo. Los tintes bajan
   // un escalon: sigue siendo arena, pero pisada y algo mas oscura que el
@@ -226,6 +236,7 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   duna: 'sand',
   fimbul: 'ice',
   grove: 'forest',
+  shore: 'tide',
 }
 
 /**
@@ -394,6 +405,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   sand: { base: '#4a3d28', shaft: '#5d4d33', crown: '#75603f' },
   ice: { base: '#2b3a48', shaft: '#3a4d5e', crown: '#4d6376' },
   forest: { base: '#2a3022', shaft: '#39412d', crown: '#4b543a' },
+  tide: { base: '#22343c', shaft: '#2e454f', crown: '#3e5c68' },
 }
 
 
@@ -426,6 +438,8 @@ const BoardAtmosphere = memo(function BoardAtmosphere({ terrainStyle, quality, r
     stone: { count: 24, color: '#ffe6b0', size: 2.8, speed: 0.2, opacity: 0.42, height: 1.3, y: 0.5 },
     // Polen y bichillos subiendo por los haces de luz del claro.
     forest: { count: 34, color: '#f2ffc4', size: 2.6, speed: 0.19, opacity: 0.5, height: 1.4, y: 0.5 },
+    // Salpicadura en suspensión sobre la roca mojada.
+    tide: { count: 30, color: '#bff0ea', size: 2.4, speed: 0.24, opacity: 0.44, height: 1.2, y: 0.42 },
   }[terrainStyle]
   return (
     <Sparkles
@@ -457,6 +471,7 @@ function Midline({ terrainStyle }: { terrainStyle: BoardTileStyle }) {
     sand: '#f0d9a0',
     ice: '#b6e4ff',
     forest: '#cbe89a',
+    tide: '#7fe3d4',
   }[terrainStyle]
   return (
     <group position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1364,6 +1379,8 @@ function Scene(props: Board3DProps) {
           <DunaNecropolis quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'fimbul' ? (
           <FimbulFjord quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'shore' ? (
+          <TidalShore quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'grove' ? (
           <VerdantGrove quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : (

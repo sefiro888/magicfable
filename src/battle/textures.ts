@@ -1348,6 +1348,119 @@ export const auroraSkyTexture = (): CanvasTexture => {
  * luz de la aurora, no la textura — una nieve ya teñida de azul se pelearía
  * con cada cambio de iluminación de la escena.
  */
+/**
+ * Cielo de costa al final de la tarde, para el Rompiente de Nerith.
+ *
+ * Cuidado con el encuadre: la cámara mira 37 grados en picado, así que del
+ * cielo solo se ve una franja fina justo encima del horizonte. Por eso el
+ * degradado carga TODO el interés en el tercio inferior de la textura — lo de
+ * arriba se dibuja y no lo ve nadie, y repartir el color a partes iguales
+ * dejaría en pantalla la parte más sosa.
+ */
+export const coastSkyTexture = (): CanvasTexture => {
+  const cached = cache.get('coast-sky');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x434f4153);
+
+  // Cénit frío arriba, ámbar abajo: la luz rasante del sol poniéndose sobre el
+  // agua. La franja visible es la de abajo, así que ahí va lo cálido.
+  // OJO con dónde va lo cálido. En una cúpula esférica la coordenada v=0 es el
+  // cénit y v=1 el NADIR: el horizonte cae en la mitad, no abajo. En el primer
+  // intento puse el ámbar entre 0,82 y 1, o sea por debajo del mar, y el
+  // atardecer entero quedó enterrado bajo el agua sin que se viera nada.
+  const sky = context.createLinearGradient(0, 0, 0, size);
+  sky.addColorStop(0, '#12283f');
+  sky.addColorStop(0.3, '#2f5c78');
+  sky.addColorStop(0.43, '#7c9fae');
+  sky.addColorStop(0.49, '#e8b98a');
+  sky.addColorStop(0.53, '#ffdcae');
+  sky.addColorStop(0.58, '#f2c496');
+  sky.addColorStop(0.72, '#8aa8b4');
+  sky.addColorStop(1, '#31586a');
+  context.fillStyle = sky;
+  context.fillRect(0, 0, size, size);
+
+  // Nubes en bandas horizontales largas, no en bolas: en la costa el viento
+  // las estira, y unas nubes redondas parecerían de dibujo animado.
+  for (let band = 0; band < 22; band += 1) {
+    // Las nubes se quedan en la franja visible: por encima del horizonte y sin
+    // subir tanto que el encuadre las deje fuera.
+    const y = size * (0.3 + random() * 0.22);
+    const height = 3 + random() * 13;
+    const width = size * (0.3 + random() * 0.8);
+    const x = random() * size - width * 0.3;
+    const warm = y > size * 0.42;
+    context.fillStyle = warm
+      ? `rgba(${240 + random() * 15}, ${186 + random() * 40}, ${142 + random() * 40}, ${0.16 + random() * 0.22})`
+      : `rgba(${150 + random() * 60}, ${168 + random() * 50}, ${186 + random() * 40}, ${0.1 + random() * 0.16})`;
+    context.beginPath();
+    context.ellipse(x + width / 2, y, width / 2, height, 0, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // El sol, muy bajo y muy ancho: aplastado por la refracción, como se ve de
+  // verdad cuando toca el agua.
+  // El sol, justo en el horizonte (mitad de la esfera), no en el nadir.
+  const sunY = size * 0.5;
+  const halo = context.createRadialGradient(size * 0.5, sunY, 0, size * 0.5, sunY, size * 0.42);
+  halo.addColorStop(0, 'rgba(255, 246, 222, 0.95)');
+  halo.addColorStop(0.22, 'rgba(255, 218, 164, 0.62)');
+  halo.addColorStop(0.55, 'rgba(255, 196, 136, 0.26)');
+  halo.addColorStop(1, 'rgba(255, 186, 126, 0)');
+  context.fillStyle = halo;
+  context.fillRect(0, sunY - size * 0.42, size, size * 0.84);
+
+  return finishTexture('coast-sky', canvas);
+};
+
+/**
+ * Arena mojada de la orilla: clara, con ondas de resaca y restos de espuma
+ * seca. Es el suelo que rodea la plataforma del tablero.
+ */
+export const wetSandTexture = (): CanvasTexture => {
+  const cached = cache.get('wet-sand');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x57455453);
+
+  const base = context.createLinearGradient(0, 0, size, size);
+  base.addColorStop(0, '#9d9578');
+  base.addColorStop(0.5, '#8d8570');
+  base.addColorStop(1, '#7d7666');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+
+  // Ondas de resaca: las crestas que deja el agua al retirarse. Van todas en
+  // la misma dirección porque las hace la misma ola, no el viento.
+  for (let ripple = 0; ripple < 46; ripple += 1) {
+    const y = random() * size;
+    context.strokeStyle = `rgba(${178 + random() * 40}, ${170 + random() * 36}, ${150 + random() * 30}, ${0.12 + random() * 0.2})`;
+    context.lineWidth = 1 + random() * 3.4;
+    context.beginPath();
+    context.moveTo(0, y);
+    for (let x = 0; x <= size; x += 18) context.lineTo(x, y + Math.sin((x / size) * Math.PI * 4 + ripple) * 6);
+    context.stroke();
+  }
+
+  // Grano y conchitas rotas.
+  for (let grain = 0; grain < 3200; grain += 1) {
+    const l = 120 + random() * 90;
+    context.fillStyle = `rgba(${l + 8}, ${l}, ${l - 18}, ${0.05 + random() * 0.14})`;
+    context.fillRect(random() * size, random() * size, 1 + random() * 2, 1 + random() * 2);
+  }
+  for (let shell = 0; shell < 40; shell += 1) {
+    context.fillStyle = `rgba(238, 232, 216, ${0.2 + random() * 0.35})`;
+    context.beginPath();
+    context.arc(random() * size, random() * size, 0.8 + random() * 2, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  return finishTexture('wet-sand', canvas);
+};
+
 export const packedSnowTexture = (): CanvasTexture => {
   const cached = cache.get('packed-snow');
   if (cached) return cached;
@@ -1416,14 +1529,14 @@ export const packedSnowTexture = (): CanvasTexture => {
 //     brilla en ninguna parte — tres materiales que se leen distintos aunque
 //     compartan la misma geometría.
 
-export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest';
+export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest' | 'tide';
 
 /** Cuántos dibujos distintos hay por estilo. Seis bastan para que el ojo no encuentre el patrón. */
 export const BOARD_TILE_VARIANTS = 6;
 
 /** Semilla estable por estilo+variante: el mismo mapa se ve siempre igual. */
 const tileSeed = (style: BoardTileStyle, variant: number): number => {
-  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245 }[style];
+  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245, tide: 0x54494445 }[style];
   return (base + variant * 7919) >>> 0;
 };
 
@@ -1681,6 +1794,134 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
     }
     drawTileGroove(context, size, 0.46);
     bakeEdgeShade(context, size, 0.34);
+  } else if (style === 'tide') {
+    // Plataforma de marea: la roca que el mar descubre y vuelve a tapar dos
+    // veces al día. Es la losa con MÁS capas del juego, y a propósito: es el
+    // suelo de la facción que se llama como ella, así que tiene que aguantar
+    // que la mires toda la partida.
+    //
+    // El orden de las capas no es decorativo, es el orden en que la playa las
+    // deposita: primero la roca mojada, luego la arena que el agua arrastra a
+    // los rincones, encima el alga que se agarra a lo que no se mueve, después
+    // los percebes y las conchas, y al final la lámina de agua metida en las
+    // juntas, que es lo único que va POR ENCIMA de todo lo demás.
+    // Aclarada respecto al primer intento (#5e7480 → #42545e): con aquellos
+    // tonos el tablero se leía a rgb(25,27,25), casi negro y sin color. La roca
+    // mojada de verdad ES oscura, pero un tablero de juego tiene que aguantar
+    // media hora de partida siendo legible, así que gana la legibilidad.
+    const base = context.createLinearGradient(0, 0, size, size);
+    base.addColorStop(0, '#93a7b0');
+    base.addColorStop(0.5, '#7e939d');
+    base.addColorStop(1, '#6d838d');
+    context.fillStyle = base;
+    context.fillRect(0, 0, size, size);
+
+    // Grano de la roca: pizarra mojada, con el moteado muy fino.
+    for (let grain = 0; grain < 2600; grain += 1) {
+      const l = 104 + random() * 84;
+      context.fillStyle = `rgba(${l - 8}, ${l + 4}, ${l + 12}, ${0.06 + random() * 0.16})`;
+      context.fillRect(random() * size, random() * size, 1 + random() * 2.2, 1 + random() * 2.2);
+    }
+
+    // Estratos: la roca de costa se parte en capas paralelas, y es lo que la
+    // distingue de un adoquín cualquiera.
+    for (let strata = 0; strata < 4; strata += 1) {
+      const y = (strata + 0.5) * (size / 4) + (random() - 0.5) * 22;
+      context.strokeStyle = `rgba(38, 50, 58, ${0.2 + random() * 0.22})`;
+      context.lineWidth = 1.4 + random() * 3;
+      context.beginPath();
+      context.moveTo(0, y);
+      for (let x = 0; x <= size; x += 22) context.lineTo(x, y + (random() - 0.5) * 9);
+      context.stroke();
+    }
+
+    // Arena arrastrada a los rincones: pálida y siempre pegada a un borde.
+    for (let pocket = 0; pocket < 5; pocket += 1) {
+      const edge = (variant + pocket) % 4;
+      const along = random() * size;
+      const depth = random() * size * 0.3;
+      const sx = edge === 0 ? along : edge === 1 ? size - depth : edge === 2 ? along : depth;
+      const sy = edge === 0 ? depth : edge === 1 ? along : edge === 2 ? size - depth : along;
+      const radius = 20 + random() * 44;
+      const gradient = context.createRadialGradient(sx, sy, 0, sx, sy, radius);
+      gradient.addColorStop(0, `rgba(198, 182, 148, ${0.34 + random() * 0.24})`);
+      gradient.addColorStop(0.65, `rgba(176, 162, 132, ${0.14 + random() * 0.12})`);
+      gradient.addColorStop(1, 'rgba(170, 156, 128, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    }
+
+    // Alga parda: tiras largas, no manchas. El alga se tumba en la dirección
+    // en que se retiró el agua, así que todas van casi paralelas.
+    const drift = random() * Math.PI;
+    for (let weed = 0; weed < 7; weed += 1) {
+      context.save();
+      context.translate(random() * size, random() * size);
+      context.rotate(drift + (random() - 0.5) * 0.5);
+      context.fillStyle = `rgba(${58 + random() * 36}, ${74 + random() * 34}, ${44 + random() * 24}, ${0.28 + random() * 0.28})`;
+      context.beginPath();
+      context.ellipse(0, 0, 16 + random() * 30, 2.4 + random() * 3.4, 0, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    // Percebes: anillos claros con el centro oscuro, apiñados en grupos.
+    for (let cluster = 0; cluster < 4; cluster += 1) {
+      const cx = random() * size;
+      const cy = random() * size;
+      for (let shell = 0; shell < 9 + random() * 12; shell += 1) {
+        const bx = cx + (random() - 0.5) * 46;
+        const by = cy + (random() - 0.5) * 46;
+        const r = 1.6 + random() * 2.8;
+        context.fillStyle = `rgba(214, 208, 192, ${0.36 + random() * 0.34})`;
+        context.beginPath();
+        context.arc(bx, by, r, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = `rgba(64, 72, 74, ${0.4 + random() * 0.3})`;
+        context.beginPath();
+        context.arc(bx, by, r * 0.42, 0, Math.PI * 2);
+        context.fill();
+      }
+    }
+
+    // Conchas sueltas: arcos finos, nacarados.
+    for (let shell = 0; shell < 5; shell += 1) {
+      context.save();
+      context.translate(random() * size, random() * size);
+      context.rotate(random() * Math.PI * 2);
+      context.strokeStyle = `rgba(232, 226, 212, ${0.3 + random() * 0.3})`;
+      context.lineWidth = 1 + random() * 1.6;
+      context.beginPath();
+      context.arc(0, 0, 3 + random() * 5, 0.2, Math.PI - 0.2);
+      context.stroke();
+      context.restore();
+    }
+
+    // La lámina de agua: charcos turquesa que se quedan en las depresiones y,
+    // sobre todo, en las juntas. Es la firma del material — sin esto la losa
+    // sería roca gris cualquiera, y con esto se lee mojada de un vistazo.
+    for (let pool = 0; pool < 3; pool += 1) {
+      const px = random() * size;
+      const py = random() * size;
+      const radius = 22 + random() * 50;
+      const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+      gradient.addColorStop(0, `rgba(58, 168, 168, ${0.3 + random() * 0.2})`);
+      gradient.addColorStop(0.7, `rgba(44, 128, 138, ${0.16 + random() * 0.12})`);
+      gradient.addColorStop(1, 'rgba(40, 116, 128, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+    }
+    // Agua encajada en las juntas: un marco turquesa por dentro del borde.
+    context.strokeStyle = 'rgba(62, 176, 176, 0.3)';
+    context.lineWidth = 9;
+    context.strokeRect(5, 5, size - 10, size - 10);
+    // Y el brillo del reflejo justo encima de esa agua.
+    context.strokeStyle = 'rgba(178, 240, 236, 0.22)';
+    context.lineWidth = 2.2;
+    context.strokeRect(9, 9, size - 18, size - 18);
+
+    drawTileGroove(context, size, 0.5);
+    bakeEdgeShade(context, size, 0.3);
   } else if (style === 'ice') {
     // Losa helada: piedra gris azulada bajo una capa de hielo, con la nieve
     // apelmazada en las juntas y flores de escarcha creciendo desde los
@@ -2031,7 +2272,7 @@ export const boardTileNormal = (style: BoardTileStyle, variant: number): CanvasT
   };
   // Cuánto relieve aparente. Por material: la arena ondula suave, la roca
   // partida y la piedra tallada marcan mucho más.
-  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3 }[style];
+  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2 }[style];
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const dx = (sample(x + gap, y) - sample(x - gap, y)) / 255;
@@ -2079,7 +2320,7 @@ export const boardTileRoughness = (style: BoardTileStyle, variant: number): Canv
   const random = seededRandom((tileSeed(style, variant) ^ 0x5a5a5a5a) >>> 0);
 
   // Nivel base de mate por material. El hielo es el más brillante del juego.
-  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226 }[style];
+  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226, tide: 96 }[style];
   context.fillStyle = `rgb(${baseLevel}, ${baseLevel}, ${baseLevel})`;
   context.fillRect(0, 0, size, size);
 

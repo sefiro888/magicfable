@@ -66,6 +66,10 @@ const DRIFT: Readonly<Record<BoardTileStyle, DriftLook>> = {
   moss: { count: 20, color: '#9fc4d8', size: 0.11, vx: 0.09, vy: 0.02, vz: 0.05, height: 1, y: 0.18, opacity: 0.3, glowing: true, tint: 'arcane', wobble: 0.6 },
   // Motas al amanecer: suben flotando, sin prisa, por los haces de luz.
   stone: { count: 28, color: '#ffe6b0', size: 0.045, vx: 0.05, vy: 0.14, vz: 0.03, height: 1.8, y: 0.2, opacity: 0.5, glowing: true, tint: 'gold', wobble: 0.7 },
+  // Espuma: viene del mar, o sea de la fila del fondo hacia la cámara, y sube
+  // un poco al avanzar. Es la única deriva del juego que va hacia el jugador,
+  // y eso basta para que el sitio se lea como una orilla y no como un patio.
+  tide: { count: 38, color: '#dff7f2', size: 0.045, vx: 0.18, vy: 0.06, vz: 0.42, height: 1.3, y: 0.12, opacity: 0.5, glowing: false, tint: 'arcane', wobble: 0.45 },
   // Hojas: bajan dando tumbos. Son las más lentas y las que más se bambolean.
   forest: { count: 30, color: '#cbe89a', size: 0.06, vx: 0.22, vy: -0.16, vz: 0.08, height: 2.2, y: 0.2, opacity: 0.6, glowing: false, tint: 'nature', wobble: 1.1 },
 }

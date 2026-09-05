@@ -67,6 +67,8 @@ export const TERRAIN_LOOK: Readonly<
   sand: { rubble: '#c8ad7c', cover: '#c0a473', coverTop: '#d8bd88', emissive: '#4a3a1e', rough: 0.94, metal: 0.03 },
   // Bloques de hielo partido: claros, muy poco rugosos y sin emisivo cálido.
   ice: { rubble: '#a6c2d6', cover: '#9ab6cc', coverTop: '#c2d8e8', emissive: '#1e3242', rough: 0.28, metal: 0.02 },
+  // Roca de costa: empapada, con percebes claros y alga parda encima.
+  tide: { rubble: '#7f9199', cover: '#6d818b', coverTop: '#9fb2b8', emissive: '#1c2c33', rough: 0.4, metal: 0.03 },
   // Piedra del claro comida por el musgo, y madera de rama para el tronco.
   forest: { rubble: '#8a8a66', cover: '#6f5a3c', coverTop: '#87704b', emissive: '#22301c', rough: 0.97, metal: 0.02 },
 }
@@ -311,6 +313,52 @@ function MossyBoulders({ position, look }: { position: Position; look: Look }) {
           </group>
         )
       })}
+    </>
+  )
+}
+
+/** Orilla: roca de costa partida, con percebes y un charco entre las piezas. */
+function TidalRocks({ position, look }: { position: Position; look: Look }) {
+  const stone = mossStoneTexture()
+  return (
+    <>
+      {[0, 1, 2, 3].map((index) => {
+        const alto = 0.1 + vary(position, index) * 0.1
+        const ancho = 0.11 + vary(position, index + 20) * 0.07
+        const angulo = vary(position, index + 60) * Math.PI * 2
+        const dist = 0.09 + vary(position, index + 100) * 0.12
+        return (
+          <mesh
+            key={index}
+            position={[Math.cos(angulo) * dist, alto / 2, Math.sin(angulo) * dist]}
+            rotation={[(vary(position, index + 140) - 0.5) * 0.4, angulo, (vary(position, index + 180) - 0.5) * 0.3]}
+            castShadow
+            receiveShadow
+          >
+            {/* Poliedro achatado: la roca de costa está desgastada por el
+                oleaje, así que no tiene aristas vivas como el basalto. */}
+            <dodecahedronGeometry args={[ancho, 0]} />
+            <meshStandardMaterial
+              map={stone}
+              bumpMap={stone}
+              bumpScale={2.6}
+              color={look.rubble}
+              // Rugosidad baja: la piedra está MOJADA, y ese brillo es lo que
+              // la distingue de la misma roca en el Santuario.
+              roughness={look.rough}
+              metalness={look.metal}
+              emissive={look.emissive}
+              emissiveIntensity={0.3}
+              flatShading
+            />
+          </mesh>
+        )
+      })}
+      {/* El charco que queda entre las rocas cuando baja el agua. */}
+      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.2, 16]} />
+        <meshStandardMaterial color="#2f8f9d" roughness={0.08} metalness={0.02} transparent opacity={0.7} />
+      </mesh>
     </>
   )
 }
@@ -582,6 +630,46 @@ function FallenLog({ position, look }: { position: Position; look: Look }) {
 
 // ---------------------------------------------------------------------------
 
+/** Orilla: rompeolas de bloques encajados, con el alga marcando la marea. */
+function Breakwater({ position, look }: { position: Position; look: Look }) {
+  const stone = mossStoneTexture()
+  return (
+    <group position={[0, 0, COVER_Z]}>
+      {[-0.28, -0.06, 0.18].map((x, index) => {
+        const alto = 0.2 + vary(position, index) * 0.09
+        return (
+          <mesh
+            key={x}
+            position={[x, alto / 2, (vary(position, index + 30) - 0.5) * 0.05]}
+            rotation={[0, (vary(position, index + 70) - 0.5) * 0.6, (vary(position, index + 110) - 0.5) * 0.2]}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[0.26, alto, 0.14]} />
+            <meshStandardMaterial
+              map={stone}
+              bumpMap={stone}
+              bumpScale={2.4}
+              color={index === 1 ? look.coverTop : look.cover}
+              roughness={look.rough}
+              metalness={look.metal}
+              emissive={look.emissive}
+              emissiveIntensity={0.3}
+              flatShading
+            />
+          </mesh>
+        )
+      })}
+      {/* La línea de alga: marca hasta dónde llegó el agua la última vez, y es
+          el detalle que convierte tres bloques en un rompeolas de verdad. */}
+      <mesh position={[0, 0.075, 0.075]} rotation={[-0.2, 0, 0]}>
+        <planeGeometry args={[0.78, 0.05]} />
+        <meshStandardMaterial color="#4a5c38" roughness={0.9} metalness={0} transparent opacity={0.85} />
+      </mesh>
+    </group>
+  )
+}
+
 /**
  * Marca del terreno de una casilla. El `memo` importa: hay varias de estas en
  * pantalla toda la partida y ninguna cambia salvo que cambie la escena.
@@ -611,6 +699,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <SandstoneBlocks position={position} look={look} />
         ) : terrainStyle === 'ice' ? (
           <IceShards position={position} look={look} />
+        ) : terrainStyle === 'tide' ? (
+          <TidalRocks position={position} look={look} />
         ) : (
           <MossyBoulders position={position} look={look} />
         )}
@@ -630,6 +720,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <AdobeWall position={position} look={look} />
         ) : terrainStyle === 'ice' ? (
           <PressureRidge position={position} look={look} />
+        ) : terrainStyle === 'tide' ? (
+          <Breakwater position={position} look={look} />
         ) : (
           <FallenLog position={position} look={look} />
         )}
