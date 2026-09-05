@@ -47,6 +47,9 @@ const DunaNecropolis = lazy(() =>
 const FimbulFjord = lazy(() =>
   import('./scenarios/FimbulFjord').then((m) => ({ default: m.FimbulFjord })),
 )
+const WheelGhat = lazy(() =>
+  import('./scenarios/WheelGhat').then((m) => ({ default: m.WheelGhat })),
+)
 const JadeCourt = lazy(() =>
   import('./scenarios/JadeCourt').then((m) => ({ default: m.JadeCourt })),
 )
@@ -174,6 +177,13 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#f2ecd2', '#e8e2c4', '#ded9bb'],
     enemy: ['#cbdaea', '#bfcfe2', '#b6c6da'],
   },
+  // Sobre arenisca rosada el propio tira al azafrán y el rival al índigo del
+  // monzón, que son los dos colores que ya viven en esta facción. El índigo va
+  // saturado a conciencia: la piedra es cálida y se come los azules flojos.
+  sandstone: {
+    own: ['#ffd9a0', '#f7cd94', '#eec089'],
+    enemy: ['#9aa4d8', '#8d97ce', '#828cc4'],
+  },
   // Sobre celadón el reto es que los dos bandos se sigan leyendo como esmalte
   // verde. El propio tira al oro de la greca y el rival al azul de la
   // porcelana: son los dos colores que ya viven en esta cerámica, así que
@@ -262,6 +272,7 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   shore: 'tide',
   foundry: 'forge',
   'jade-court': 'glaze',
+  'wheel-ghat': 'sandstone',
 }
 
 /**
@@ -433,6 +444,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   tide: { base: '#22343c', shaft: '#2e454f', crown: '#3e5c68' },
   forge: { base: '#2b241c', shaft: '#3d3327', crown: '#544634' },
   glaze: { base: '#2f2420', shaft: '#4a2b26', crown: '#6b3a30' },
+  sandstone: { base: '#3a2a20', shaft: '#54402e', crown: '#6e563c' },
 }
 
 
@@ -471,6 +483,8 @@ const BoardAtmosphere = memo(function BoardAtmosphere({ terrainStyle, quality, r
     forge: { count: 32, color: '#ffc069', size: 2.6, speed: 0.42, opacity: 0.6, height: 1.6, y: 0.45 },
     // Pavesas de incienso: pocas, lentas y doradas.
     glaze: { count: 22, color: '#ffe0a0', size: 2.2, speed: 0.16, opacity: 0.42, height: 1.5, y: 0.5 },
+    // Ceniza sagrada y polvo dorado del templo.
+    sandstone: { count: 26, color: '#ffd08a', size: 2.4, speed: 0.18, opacity: 0.44, height: 1.4, y: 0.46 },
   }[terrainStyle]
   return (
     <Sparkles
@@ -505,6 +519,7 @@ function Midline({ terrainStyle }: { terrainStyle: BoardTileStyle }) {
     tide: '#7fe3d4',
     forge: '#ffb347',
     glaze: '#f2c14e',
+    sandstone: '#ffb454',
   }[terrainStyle]
   return (
     <group position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1412,6 +1427,8 @@ function Scene(props: Board3DProps) {
           <DunaNecropolis quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'fimbul' ? (
           <FimbulFjord quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'wheel-ghat' ? (
+          <WheelGhat quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'jade-court' ? (
           <JadeCourt quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'foundry' ? (

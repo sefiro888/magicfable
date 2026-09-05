@@ -68,6 +68,8 @@ export const TERRAIN_LOOK: Readonly<
   sand: { rubble: '#c8ad7c', cover: '#c0a473', coverTop: '#d8bd88', emissive: '#4a3a1e', rough: 0.94, metal: 0.03 },
   // Bloques de hielo partido: claros, muy poco rugosos y sin emisivo cálido.
   ice: { rubble: '#a6c2d6', cover: '#9ab6cc', coverTop: '#c2d8e8', emissive: '#1e3242', rough: 0.28, metal: 0.02 },
+  // Arenisca rosada y bronce de templo, con el azafrán de relleno.
+  sandstone: { rubble: '#c99a76', cover: '#b98a68', coverTop: '#e2be82', emissive: '#4a2c14', rough: 0.9, metal: 0.03 },
   // Laca roja, oro y teja vidriada: los materiales de la corte.
   glaze: { rubble: '#8fb8a4', cover: '#b8322c', coverTop: '#e2be60', emissive: '#3a2418', rough: 0.35, metal: 0.04 },
   // Acero y bronce viejo, con el rescoldo del horno de relleno.
@@ -318,6 +320,65 @@ function MossyBoulders({ position, look }: { position: Position; look: Look }) {
           </group>
         )
       })}
+    </>
+  )
+}
+
+/**
+ * Samsara: sillares tallados desprendidos de un templo.
+ *
+ * No son cantos rodados: son piezas LABRADAS, y lo que hace que se lean como
+ * tales es que cada una conserva su moldura —una banda saliente que la recorre
+ * por el medio— y que están apiladas planas, como cae la sillería, no
+ * desparramadas como la roca partida.
+ */
+function TempleRubble({ position, look }: { position: Position; look: Look }) {
+  const stone = sandstoneTexture()
+  return (
+    <>
+      {[0, 1, 2].map((index) => {
+        const ancho = 0.15 + vary(position, index) * 0.07
+        const alto = 0.07 + vary(position, index + 20) * 0.05
+        const angulo = vary(position, index + 60) * Math.PI * 2
+        const dist = 0.07 + vary(position, index + 100) * 0.11
+        return (
+          <group
+            key={index}
+            position={[Math.cos(angulo) * dist, alto / 2 + index * 0.012, Math.sin(angulo) * dist]}
+            rotation={[0, angulo, (vary(position, index + 140) - 0.5) * 0.18]}
+          >
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[ancho, alto, ancho * 0.66]} />
+              <meshStandardMaterial
+                map={stone}
+                bumpMap={stone}
+                bumpScale={2.2}
+                color={look.rubble}
+                roughness={look.rough}
+                metalness={look.metal}
+                emissive={look.emissive}
+                emissiveIntensity={0.28}
+              />
+            </mesh>
+            {/* La moldura: el vuelo que delata que la piedra está labrada. */}
+            <mesh position={[0, 0, 0]} castShadow>
+              <boxGeometry args={[ancho * 1.1, alto * 0.3, ancho * 0.76]} />
+              <meshStandardMaterial map={stone} color={look.coverTop} roughness={0.86} metalness={0.03} />
+            </mesh>
+          </group>
+        )
+      })}
+      {/* Un loto de piedra roto entre los sillares. */}
+      <mesh position={[0.07, 0.03, 0.08]} rotation={[-Math.PI / 2 + 0.3, 0, vary(position, 8) * 2]} castShadow>
+        <circleGeometry args={[0.085, 8]} />
+        <meshStandardMaterial
+          map={stone}
+          color={look.coverTop}
+          roughness={0.88}
+          metalness={0.03}
+          side={DoubleSide}
+        />
+      </mesh>
     </>
   )
 }
@@ -727,6 +788,63 @@ function FallenLog({ position, look }: { position: Position; look: Look }) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Samsara: balaustrada de naga — la serpiente de piedra que flanquea la
+ * escalinata de todo templo.
+ *
+ * El cuerpo se hace con cinco tramos que suben y bajan alternándose: eso da la
+ * ONDULACIÓN, que es lo único que convierte un tubo de piedra en una serpiente.
+ * Y la cabeza va levantada en un extremo, con su capucha abierta — si los dos
+ * extremos fueran iguales quedaría un pasamanos.
+ */
+function NagaRail({ position, look }: { position: Position; look: Look }) {
+  const stone = sandstoneTexture()
+  const tramos = [-0.32, -0.16, 0, 0.16, 0.32]
+  // La onda arranca arriba o abajo según la casilla: dos nagas seguidas no
+  // pueden ondular en fase o se leen como una sola pieza repetida.
+  const faseArriba = seedOf(position, 3) % 2 === 0
+  return (
+    <group position={[0, 0, COVER_Z]}>
+      {/* Zócalo sobre el que se enrosca. */}
+      <mesh position={[0, 0.035, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.82, 0.07, 0.13]} />
+        <meshStandardMaterial map={stone} color={look.cover} roughness={look.rough} metalness={look.metal} />
+      </mesh>
+      {tramos.map((x, index) => {
+        // Alterna arriba y abajo: la onda del cuerpo.
+        const y = 0.13 + ((index % 2 === 0) === faseArriba ? 0.055 : 0)
+        return (
+          <mesh key={x} position={[x, y, 0]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} />
+            <meshStandardMaterial
+              map={stone}
+              bumpMap={stone}
+              bumpScale={2}
+              color={look.cover}
+              roughness={look.rough}
+              metalness={look.metal}
+              emissive={look.emissive}
+              emissiveIntensity={0.26}
+            />
+          </mesh>
+        )
+      })}
+      {/* Cabeza alzada con la capucha abierta, en el extremo que mira al rival. */}
+      <group position={[0.42, 0.2, 0]} rotation={[0, 0, -0.5]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.045, 0.055, 0.16, 8]} />
+          <meshStandardMaterial map={stone} color={look.cover} roughness={look.rough} metalness={look.metal} />
+        </mesh>
+        {/* La capucha: un abanico plano, que es la silueta de la cobra. */}
+        <mesh position={[0, 0.1, 0]} castShadow>
+          <cylinderGeometry args={[0.11, 0.05, 0.03, 10, 1, false, -Math.PI / 2, Math.PI]} />
+          <meshStandardMaterial map={stone} color={look.coverTop} roughness={0.86} metalness={0.03} side={DoubleSide} />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
+/**
  * Corte de Jade: un biombo de laca plegado.
  *
  * Tres hojas unidas por bisagras y plegadas en ACORDEÓN — la del medio de
@@ -899,6 +1017,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <ScrapHeap position={position} look={look} />
         ) : terrainStyle === 'glaze' ? (
           <FallenTiles position={position} look={look} />
+        ) : terrainStyle === 'sandstone' ? (
+          <TempleRubble position={position} look={look} />
         ) : (
           <MossyBoulders position={position} look={look} />
         )}
@@ -924,6 +1044,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <BoilerPlate position={position} look={look} />
         ) : terrainStyle === 'glaze' ? (
           <LacquerScreen position={position} look={look} />
+        ) : terrainStyle === 'sandstone' ? (
+          <NagaRail position={position} look={look} />
         ) : (
           <FallenLog position={position} look={look} />
         )}

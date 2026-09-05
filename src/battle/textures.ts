@@ -1694,14 +1694,14 @@ export const packedSnowTexture = (): CanvasTexture => {
 //     brilla en ninguna parte — tres materiales que se leen distintos aunque
 //     compartan la misma geometría.
 
-export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest' | 'tide' | 'forge' | 'glaze';
+export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest' | 'tide' | 'forge' | 'glaze' | 'sandstone';
 
 /** Cuántos dibujos distintos hay por estilo. Seis bastan para que el ojo no encuentre el patrón. */
 export const BOARD_TILE_VARIANTS = 6;
 
 /** Semilla estable por estilo+variante: el mismo mapa se ve siempre igual. */
 const tileSeed = (style: BoardTileStyle, variant: number): number => {
-  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245, tide: 0x54494445, forge: 0x464f5247, glaze: 0x474c415a }[style];
+  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245, tide: 0x54494445, forge: 0x464f5247, glaze: 0x474c415a, sandstone: 0x53414e53 }[style];
   return (base + variant * 7919) >>> 0;
 };
 
@@ -1957,6 +1957,138 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       context.fill();
       context.restore();
     }
+    drawTileGroove(context, size, 0.46);
+    bakeEdgeShade(context, size, 0.34);
+  } else if (style === 'sandstone') {
+    // Losa de arenisca rosada de un templo, con el MANDALA tallado.
+    //
+    // Es la única losa del juego con simetría RADIAL. Las otras nueve se
+    // apoyan en vetas, grietas, hileras o remaches, que son formas alargadas o
+    // en rejilla; esta se organiza alrededor de un centro. Basta eso para que
+    // el tablero se reconozca de un vistazo sin haber visto el resto de la
+    // escena, que es justo lo que tiene que hacer un suelo propio.
+    //
+    // El mandala va TALLADO, no pintado: cada trazo lleva su surco oscuro y,
+    // pegado encima, un filo claro. Ese par sombra-luz es lo único que
+    // distingue algo hundido en la piedra de algo dibujado sobre ella, y sin
+    // él el motivo flotaría como una calcomanía.
+
+    // Arenisca rosada. Ni el ocre pálido de Duna ni el gris del Santuario: la
+    // piedra de estos templos tira a salmón.
+    const base = context.createLinearGradient(0, 0, size, size);
+    base.addColorStop(0, '#c99a76');
+    base.addColorStop(0.5, '#b98a68');
+    base.addColorStop(1, '#a97a5c');
+    context.fillStyle = base;
+    context.fillRect(0, 0, size, size);
+
+    // Estratos de sedimento: la arenisca se deposita en capas, y esas bandas
+    // suaves son lo que la separa de un estuco liso.
+    for (let strata = 0; strata < 6; strata += 1) {
+      const y = (strata / 6) * size + (random() - 0.5) * 20;
+      const alto = 10 + random() * 26;
+      context.fillStyle = `rgba(${168 + random() * 40}, ${120 + random() * 30}, ${92 + random() * 26}, ${0.1 + random() * 0.14})`;
+      context.fillRect(0, y, size, alto);
+    }
+    for (let grain = 0; grain < 2800; grain += 1) {
+      const l = 150 + random() * 80;
+      context.fillStyle = `rgba(${l}, ${l - 34}, ${l - 56}, ${0.05 + random() * 0.13})`;
+      context.fillRect(random() * size, random() * size, 1 + random() * 2.2, 1 + random() * 2.2);
+    }
+
+    // EL MANDALA. Se dibuja dos veces: primero el surco (oscuro, ancho y
+    // desplazado hacia abajo-derecha) y encima el filo (claro, fino y
+    // desplazado hacia arriba-izquierda). La luz de la escena viene de arriba,
+    // así que ese es el orden que hace que se vea hundido.
+    const cx = size / 2;
+    const cy = size / 2;
+    const radios = variant % 2 === 0 ? [34, 58, 84] : [30, 52, 76, 98];
+    const petalos = 8 + (variant % 3) * 4;
+    for (const capa of [
+      { color: 'rgba(96, 62, 42, 0.62)', width: 4.6, dx: 1.4, dy: 1.8 },
+      { color: 'rgba(232, 200, 172, 0.5)', width: 1.7, dx: -0.8, dy: -1.1 },
+    ]) {
+      context.strokeStyle = capa.color;
+      context.lineWidth = capa.width;
+      context.save();
+      context.translate(cx + capa.dx, cy + capa.dy);
+
+      // Anillos concéntricos.
+      for (const r of radios) {
+        context.beginPath();
+        context.arc(0, 0, r, 0, Math.PI * 2);
+        context.stroke();
+      }
+      // Corona de pétalos de loto entre los dos anillos exteriores.
+      const rInterior = radios[radios.length - 2]!;
+      const rExterior = radios[radios.length - 1]!;
+      for (let petalo = 0; petalo < petalos; petalo += 1) {
+        const a0 = (petalo / petalos) * Math.PI * 2;
+        const a1 = ((petalo + 1) / petalos) * Math.PI * 2;
+        const am = (a0 + a1) / 2;
+        context.beginPath();
+        context.moveTo(Math.cos(a0) * rInterior, Math.sin(a0) * rInterior);
+        // Un pétalo de loto es una ojiva: sube en punta y vuelve a bajar.
+        context.quadraticCurveTo(
+          Math.cos(am) * (rExterior + 8),
+          Math.sin(am) * (rExterior + 8),
+          Math.cos(a1) * rInterior,
+          Math.sin(a1) * rInterior,
+        );
+        context.stroke();
+      }
+      // Radios cortos del anillo interior: el eje del mandala.
+      for (let rayo = 0; rayo < petalos / 2; rayo += 1) {
+        const a = (rayo / (petalos / 2)) * Math.PI * 2;
+        context.beginPath();
+        context.moveTo(Math.cos(a) * radios[0]!, Math.sin(a) * radios[0]!);
+        context.lineTo(Math.cos(a) * radios[1]!, Math.sin(a) * radios[1]!);
+        context.stroke();
+      }
+      // Bindu: el punto del centro.
+      context.beginPath();
+      context.arc(0, 0, 7, 0, Math.PI * 2);
+      context.stroke();
+      context.restore();
+    }
+
+    // Rangoli: el polvo blanco de arroz con el que se redibuja el motivo cada
+    // mañana. Va ENCIMA del tallado y desbordándolo un poco, porque se echa a
+    // mano y nunca cae justo en el surco.
+    context.fillStyle = 'rgba(246, 240, 228, 0.5)';
+    for (let punto = 0; punto < petalos * 2; punto += 1) {
+      const a = (punto / (petalos * 2)) * Math.PI * 2;
+      const r = radios[radios.length - 1]! + 12;
+      context.beginPath();
+      context.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 2.2 + random() * 1.6, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    // Pétalos de caléndula: naranjas, pequeños y siempre desparramados. Es lo
+    // que le quita la rigidez al mandala y lo hace parecer un sitio en uso.
+    for (let petalo = 0; petalo < 16; petalo += 1) {
+      context.save();
+      context.translate(random() * size, random() * size);
+      context.rotate(random() * Math.PI * 2);
+      context.fillStyle = `rgba(${226 + random() * 26}, ${128 + random() * 44}, ${28 + random() * 30}, ${0.42 + random() * 0.3})`;
+      context.beginPath();
+      context.ellipse(0, 0, 3.4 + random() * 3, 1.8 + random() * 1.4, 0, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    // Tizne de las lámparas de ghee: manchas oscuras y suaves.
+    for (let hollin = 0; hollin < 3; hollin += 1) {
+      const hx = random() * size;
+      const hy = random() * size;
+      const radius = 18 + random() * 36;
+      const gradient = context.createRadialGradient(hx, hy, 0, hx, hy, radius);
+      gradient.addColorStop(0, `rgba(52, 38, 30, ${0.2 + random() * 0.2})`);
+      gradient.addColorStop(1, 'rgba(52, 38, 30, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(hx - radius, hy - radius, radius * 2, radius * 2);
+    }
+
     drawTileGroove(context, size, 0.46);
     bakeEdgeShade(context, size, 0.34);
   } else if (style === 'glaze') {
@@ -2763,7 +2895,7 @@ export const boardTileNormal = (style: BoardTileStyle, variant: number): CanvasT
   };
   // Cuánto relieve aparente. Por material: la arena ondula suave, la roca
   // partida y la piedra tallada marcan mucho más.
-  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2, forge: 3.6, glaze: 2.2 }[style];
+  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2, forge: 3.6, glaze: 2.2, sandstone: 3 }[style];
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const dx = (sample(x + gap, y) - sample(x - gap, y)) / 255;
@@ -2811,7 +2943,7 @@ export const boardTileRoughness = (style: BoardTileStyle, variant: number): Canv
   const random = seededRandom((tileSeed(style, variant) ^ 0x5a5a5a5a) >>> 0);
 
   // Nivel base de mate por material. El hielo es el más brillante del juego.
-  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226, tide: 96, forge: 104, glaze: 58 }[style];
+  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226, tide: 96, forge: 104, glaze: 58, sandstone: 232 }[style];
   context.fillStyle = `rgb(${baseLevel}, ${baseLevel}, ${baseLevel})`;
   context.fillRect(0, 0, size, size);
 

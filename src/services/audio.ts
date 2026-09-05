@@ -321,7 +321,7 @@ export function playSynthCue(cue: SoundCue): void {
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────
 
-export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'foundry' | 'jade-court' | 'menu'
+export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'foundry' | 'jade-court' | 'wheel-ghat' | 'menu'
 
 /**
  * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
@@ -525,6 +525,20 @@ export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
     motif: { root: 261.63, scale: [0, 2, 4, 7, 9, 12], wave: 'triangle', tone: 2000, note: 1.6, step: 0.72, phrase: [3, 5], rest: [7, 15], gain: 0.05, harmony: 12 },
     // Patio con muros y galerías: devuelve claro y con cola corta.
     echo: { time: 0.4, feedback: 0.3, mix: 0.24 },
+  },
+  // Escalinata de la Rueda: el único ambiente con el tono grave SIN MOVERSE
+  // nunca (una sola fundamental con su quinta y su octava, como el bordón de
+  // una tambura), que es lo que sostiene esta música. Encima, una escala con
+  // la segunda menor y la séptima mayor —el color del raga Bhairav, el del
+  // amanecer— y notas largas y muy espaciadas. El detalle es goteo: el agua
+  // del ghat.
+  'wheel-ghat': {
+    air: { color: 'brown', cutoff: 400, sweep: 180, breath: 0.026, gain: 0.18 },
+    drone: { root: 73.4, intervals: [0, 7, 12], wave: 'sawtooth', gain: 0.05, detune: 3 },
+    detail: { kind: 'drip', everyMin: 3.5, everyMax: 10, gain: 0.12 },
+    motif: { root: 293.66, scale: [0, 1, 4, 5, 7, 8, 11], wave: 'triangle', tone: 1600, note: 2.1, step: 0.95, phrase: [3, 5], rest: [8, 17], gain: 0.05, harmony: 7 },
+    // Escalinata de piedra abierta al río: devuelve poco y se va enseguida.
+    echo: { time: 0.52, feedback: 0.22, mix: 0.18 },
   },
   // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
   menu: {

@@ -60,6 +60,7 @@ const SCENARIOS: readonly { value: ScenarioId; label: string; hint: string }[] =
   { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Plataforma de hierro sobre un lago de lava.' },
   { value: 'duna', label: 'Necrópolis de Duna', hint: 'Patio de arenisca abierto al desierto, a mediodía.' },
   { value: 'fimbul', label: 'Fiordo de Fimbul', hint: 'Lago helado bajo la aurora, en plena noche polar.' },
+  { value: 'wheel-ghat', label: 'Escalinata de la Rueda', hint: 'El ghat de un templo al amanecer, con la gran rueda de piedra y las lámparas bajando por el agua.' },
   { value: 'jade-court', label: 'Corte de Jade', hint: 'El patio de una corte celestial al amanecer, con la puerta de la luna y los aleros curvos.' },
   { value: 'foundry', label: 'Patio del Gremio', hint: 'La explanada de una fundición al anochecer, con el horno encendido y el metal corriendo por su canal.' },
   { value: 'shore', label: 'Rompiente de Nerith', hint: 'La roca que el mar descubre al bajar la marea, con el faro barriendo al fondo.' },

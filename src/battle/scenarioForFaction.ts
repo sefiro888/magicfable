@@ -19,7 +19,9 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   void: 'sanctuary',
   duna: 'duna',
   fimbul: 'fimbul',
-  samsara: 'duna',
+  // Cosmología india en un patio funerario egipcio: Duna entierra, esto
+  // corre. Ya tiene su ghat.
+  samsara: 'wheel-ghat',
   // Corte celestial china en una plaza de mármol grecolatina: era el sitio
   // más equivocado posible. Ya tiene el suyo.
   jade: 'jade-court',

@@ -66,6 +66,10 @@ const DRIFT: Readonly<Record<BoardTileStyle, DriftLook>> = {
   moss: { count: 20, color: '#9fc4d8', size: 0.11, vx: 0.09, vy: 0.02, vz: 0.05, height: 1, y: 0.18, opacity: 0.3, glowing: true, tint: 'arcane', wobble: 0.6 },
   // Motas al amanecer: suben flotando, sin prisa, por los haces de luz.
   stone: { count: 28, color: '#ffe6b0', size: 0.045, vx: 0.05, vy: 0.14, vz: 0.03, height: 1.8, y: 0.2, opacity: 0.5, glowing: true, tint: 'gold', wobble: 0.7 },
+  // Pétalos de caléndula: caen de las guirnaldas, bajan despacio y dan muchas
+  // vueltas. Son lo que más se bambolea del juego (por encima incluso de las
+  // hojas del Claro), porque un pétalo suelto pesa casi nada.
+  sandstone: { count: 30, color: '#ff9e3c', size: 0.055, vx: 0.16, vy: -0.13, vz: 0.06, height: 2, y: 0.18, opacity: 0.6, glowing: false, tint: 'ember', wobble: 1.3 },
   // Humo de incienso: es lo más lento del juego. Sube casi recto y apenas se
   // desvía, porque en un patio cerrado no corre el aire — justo lo contrario
   // de la nieve del Fiordo, que va casi horizontal.
