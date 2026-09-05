@@ -1517,6 +1517,115 @@ export const forgeSkyTexture = (): CanvasTexture => {
   return finishTexture('forge-sky', canvas);
 };
 
+/**
+ * Tejado vidriado: las hileras de tejas de cana que cubren un alero chino.
+ *
+ * Es la textura que hace que un tejado se lea como tejado. Sin ella, la malla
+ * curva del alero es una superficie lisa y podria ser cualquier cosa; con las
+ * hileras marcadas, la curva se entiende de un vistazo porque las lineas la
+ * siguen. Se dibujan como bandas VERTICALES porque la geometria del alero se
+ * genera por revolucion y su coordenada U corre a lo ancho.
+ */
+export const roofTileTexture = (): CanvasTexture => {
+  const cached = cache.get('roof-tile');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x524f4f46);
+
+  context.fillStyle = '#3f6a56';
+  context.fillRect(0, 0, size, size);
+
+  // Cada hilera: una teja de media cana con su lomo iluminado y su valle en
+  // sombra. El degradado de tres paradas es lo que le da el volumen redondo.
+  const hileras = 26;
+  const ancho = size / hileras;
+  for (let fila = 0; fila < hileras; fila += 1) {
+    const x = fila * ancho;
+    const tono = 0.9 + random() * 0.2;
+    const g = context.createLinearGradient(x, 0, x + ancho, 0);
+    g.addColorStop(0, `rgba(${Math.round(28 * tono)}, ${Math.round(58 * tono)}, ${Math.round(46 * tono)}, 1)`);
+    g.addColorStop(0.42, `rgba(${Math.round(112 * tono)}, ${Math.round(168 * tono)}, ${Math.round(140 * tono)}, 1)`);
+    g.addColorStop(0.62, `rgba(${Math.round(150 * tono)}, ${Math.round(206 * tono)}, ${Math.round(176 * tono)}, 1)`);
+    g.addColorStop(1, `rgba(${Math.round(34 * tono)}, ${Math.round(66 * tono)}, ${Math.round(54 * tono)}, 1)`);
+    context.fillStyle = g;
+    context.fillRect(x, 0, ancho + 0.6, size);
+  }
+
+  // Juntas horizontales: donde acaba una teja y empieza la siguiente ladera
+  // abajo. Sin ellas el tejado parece de una pieza.
+  for (let junta = 1; junta < 7; junta += 1) {
+    const y = (junta / 7) * size + (random() - 0.5) * 6;
+    context.fillStyle = 'rgba(18, 38, 30, 0.5)';
+    context.fillRect(0, y, size, 2.6);
+    context.fillStyle = 'rgba(168, 220, 190, 0.22)';
+    context.fillRect(0, y + 2.6, size, 1.2);
+  }
+
+  // Brillo del vidriado: manchas alargadas y muy claras, como el reflejo del
+  // cielo sobre el esmalte mojado.
+  for (let brillo = 0; brillo < 30; brillo += 1) {
+    context.fillStyle = `rgba(214, 245, 226, ${0.05 + random() * 0.12})`;
+    context.beginPath();
+    context.ellipse(random() * size, random() * size, 2 + random() * 4, 12 + random() * 40, 0, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  return finishTexture('roof-tile', canvas);
+};
+
+/**
+ * Laca roja de corte: cinabrio profundo, con la veta de la madera de debajo
+ * apenas insinuada y motas de oro. Va en columnas, biombos y barandillas.
+ */
+export const lacquerTexture = (): CanvasTexture => {
+  const cached = cache.get('lacquer');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x4c414351);
+
+  const base = context.createLinearGradient(0, 0, size, size);
+  base.addColorStop(0, '#a8342c');
+  base.addColorStop(0.5, '#93281f');
+  base.addColorStop(1, '#7d1f18');
+  context.fillStyle = base;
+  context.fillRect(0, 0, size, size);
+
+  // La veta: la laca se aplica sobre madera y la deja adivinar, no la tapa.
+  for (let veta = 0; veta < 120; veta += 1) {
+    const y = random() * size;
+    context.strokeStyle = `rgba(${58 + random() * 40}, ${18 + random() * 16}, ${14 + random() * 12}, ${0.1 + random() * 0.16})`;
+    context.lineWidth = 0.7 + random() * 2.4;
+    context.beginPath();
+    context.moveTo(0, y);
+    for (let x = 0; x <= size; x += 40) context.lineTo(x, y + (random() - 0.5) * 7);
+    context.stroke();
+  }
+
+  // Capas de laca: la pieza lleva muchas manos, y cada una deja su onda.
+  for (let capa = 0; capa < 9; capa += 1) {
+    const px = random() * size;
+    const py = random() * size;
+    const radius = 50 + random() * 120;
+    const g = context.createRadialGradient(px, py, 0, px, py, radius);
+    g.addColorStop(0, `rgba(196, 74, 58, ${0.07 + random() * 0.1})`);
+    g.addColorStop(1, 'rgba(196, 74, 58, 0)');
+    context.fillStyle = g;
+    context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+  }
+
+  // Motas de oro espolvoreadas.
+  for (let mota = 0; mota < 200; mota += 1) {
+    context.fillStyle = `rgba(230, 194, 108, ${0.1 + random() * 0.3})`;
+    context.beginPath();
+    context.arc(random() * size, random() * size, 0.5 + random() * 1.5, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  return finishTexture('lacquer', canvas);
+};
+
 export const packedSnowTexture = (): CanvasTexture => {
   const cached = cache.get('packed-snow');
   if (cached) return cached;
@@ -1585,14 +1694,14 @@ export const packedSnowTexture = (): CanvasTexture => {
 //     brilla en ninguna parte — tres materiales que se leen distintos aunque
 //     compartan la misma geometría.
 
-export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest' | 'tide' | 'forge';
+export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest' | 'tide' | 'forge' | 'glaze';
 
 /** Cuántos dibujos distintos hay por estilo. Seis bastan para que el ojo no encuentre el patrón. */
 export const BOARD_TILE_VARIANTS = 6;
 
 /** Semilla estable por estilo+variante: el mismo mapa se ve siempre igual. */
 const tileSeed = (style: BoardTileStyle, variant: number): number => {
-  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245, tide: 0x54494445, forge: 0x464f5247 }[style];
+  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245, tide: 0x54494445, forge: 0x464f5247, glaze: 0x474c415a }[style];
   return (base + variant * 7919) >>> 0;
 };
 
@@ -1850,6 +1959,194 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
     }
     drawTileGroove(context, size, 0.46);
     bakeEdgeShade(context, size, 0.34);
+  } else if (style === 'glaze') {
+    // Loseta vidriada de la Corte de Jade. Es la unica del juego que no imita
+    // un material NATURAL ni uno FABRICADO EN BRUTO, sino una pieza de
+    // ceramica de horno: por eso es la unica con motivo dibujado a mano y con
+    // simetria de taller, y la unica que brilla como esmalte.
+    //
+    // Las cuatro capas son las de una pieza real, en su orden:
+    //   1. el bizcocho (la arcilla cruda, que asoma por los desconchones),
+    //   2. el vidriado de celadon, que se acumula y oscurece en las
+    //      depresiones — eso es lo que le da profundidad de esmalte,
+    //   3. el CRAQUELADO, la red de grietas finas que el vidriado hace al
+    //      enfriar mas despacio que la arcilla. Es la firma de esta loseta,
+    //      como el agua en la de marea o la rejilla en la de forja,
+    //   4. el oro: la greca de meandros del borde y el motivo del centro.
+    //
+    // La greca (el patron 回, cuadrados enroscados) va dibujada segmento a
+    // segmento y no con una textura repetida a lo bruto: es geometria exacta y
+    // es justo lo que hace que se lea como taller imperial y no como estampado.
+
+    // 1. Bizcocho.
+    context.fillStyle = '#c9bda6';
+    context.fillRect(0, 0, size, size);
+
+    // 2. Vidriado de celadon, con la veta del pincel y el charco de los bordes.
+    const glaze = context.createLinearGradient(0, 0, size, size);
+    glaze.addColorStop(0, '#8fb8a4');
+    glaze.addColorStop(0.45, '#79a591');
+    glaze.addColorStop(1, '#66907e');
+    context.fillStyle = glaze;
+    context.fillRect(0, 0, size, size);
+    for (let pool = 0; pool < 7; pool += 1) {
+      const px = random() * size;
+      const py = random() * size;
+      const radius = 30 + random() * 70;
+      const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
+      gradient.addColorStop(0, `rgba(70, 118, 100, ${0.16 + random() * 0.2})`);
+      gradient.addColorStop(1, 'rgba(70, 118, 100, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+    }
+
+    // 3. Craquelado. Se siembran puntos y se une cada uno con los que tiene
+    //    cerca: eso aproxima las aristas de un diagrama de Voronoi, que es la
+    //    forma que toma de verdad una grieta de esmalte. Dos pasadas: la ancha
+    //    y oscura del fondo de la grieta, y encima la fina y clara del filo,
+    //    que es lo que la hace parecer hundida y no pintada.
+    const nodos = Array.from({ length: 26 }, () => ({ x: random() * size, y: random() * size }));
+    for (const capa of [
+      { color: 'rgba(48, 82, 70, 0.5)', width: 1.9 },
+      { color: 'rgba(196, 214, 200, 0.32)', width: 0.7 },
+    ]) {
+      context.strokeStyle = capa.color;
+      context.lineWidth = capa.width;
+      for (let i = 0; i < nodos.length; i += 1) {
+        for (let j = i + 1; j < nodos.length; j += 1) {
+          const a = nodos[i]!;
+          const b = nodos[j]!;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > size * 0.26) continue;
+          // La grieta no va recta: quiebra una vez a mitad de camino.
+          const mx = (a.x + b.x) / 2 + (random() - 0.5) * 14;
+          const my = (a.y + b.y) / 2 + (random() - 0.5) * 14;
+          context.beginPath();
+          context.moveTo(a.x, a.y);
+          context.lineTo(mx, my);
+          context.lineTo(b.x, b.y);
+          context.stroke();
+        }
+      }
+    }
+
+    // 4a. La greca de meandros del borde. Cada eslabon es una espiral cuadrada
+    //     abierta; se dibuja una vez y se repite girada en los cuatro lados.
+    const inset = 20;
+    const paso = (size - inset * 2) / 6;
+    const eslabon = (ox: number, oy: number, giro: number) => {
+      context.save();
+      context.translate(ox, oy);
+      context.rotate(giro);
+      context.beginPath();
+      context.moveTo(-paso * 0.36, paso * 0.3);
+      context.lineTo(-paso * 0.36, -paso * 0.3);
+      context.lineTo(paso * 0.3, -paso * 0.3);
+      context.lineTo(paso * 0.3, paso * 0.1);
+      context.lineTo(-paso * 0.08, paso * 0.1);
+      context.lineTo(-paso * 0.08, -paso * 0.08);
+      context.stroke();
+      context.restore();
+    };
+    for (const oro of [
+      { color: 'rgba(92, 68, 20, 0.55)', width: 4.2, dx: 1, dy: 1.4 },
+      { color: 'rgba(226, 190, 96, 0.92)', width: 3, dx: 0, dy: 0 },
+      { color: 'rgba(255, 238, 178, 0.5)', width: 1.1, dx: -0.5, dy: -0.7 },
+    ]) {
+      context.strokeStyle = oro.color;
+      context.lineWidth = oro.width;
+      context.lineJoin = 'miter';
+      context.save();
+      context.translate(oro.dx, oro.dy);
+      for (let k = 0; k < 6; k += 1) {
+        const t = inset + paso * (k + 0.5);
+        eslabon(t, inset, 0);
+        eslabon(size - inset, t, Math.PI / 2);
+        eslabon(size - t, size - inset, Math.PI);
+        eslabon(inset, size - t, -Math.PI / 2);
+      }
+      context.restore();
+    }
+
+    // 4b. El motivo del centro, distinto por variante. Son los tres que se
+    //     repiten en la ceramica de corte: la nube enroscada (ruyi), el sello
+    //     cuadrado y la flor de cuatro petalos.
+    const cx = size / 2;
+    const cy = size / 2;
+    const motivo = variant % 3;
+    for (const oro of [
+      { color: 'rgba(92, 68, 20, 0.5)', width: 5, dx: 1.2, dy: 1.6 },
+      { color: 'rgba(226, 190, 96, 0.88)', width: 3.4, dx: 0, dy: 0 },
+    ]) {
+      context.strokeStyle = oro.color;
+      context.lineWidth = oro.width;
+      context.save();
+      context.translate(cx + oro.dx, cy + oro.dy);
+      if (motivo === 0) {
+        // Nube enroscada: dos volutas encaradas colgando de un arco.
+        for (const lado of [-1, 1]) {
+          context.beginPath();
+          context.arc(lado * 17, 0, 13, lado > 0 ? -0.4 : Math.PI + 0.4, lado > 0 ? Math.PI * 1.5 : Math.PI * 0.5, lado < 0);
+          context.stroke();
+          context.beginPath();
+          context.arc(lado * 17, 0, 5.5, 0, Math.PI * 2);
+          context.stroke();
+        }
+        context.beginPath();
+        context.moveTo(-30, 6);
+        context.quadraticCurveTo(0, -22, 30, 6);
+        context.stroke();
+      } else if (motivo === 1) {
+        // Sello cuadrado: marco doble con una marca dentro.
+        context.strokeRect(-22, -22, 44, 44);
+        context.strokeRect(-15, -15, 30, 30);
+        context.beginPath();
+        context.moveTo(-8, -6);
+        context.lineTo(8, -6);
+        context.moveTo(0, -10);
+        context.lineTo(0, 10);
+        context.moveTo(-8, 8);
+        context.lineTo(8, 8);
+        context.stroke();
+      } else {
+        // Flor de cuatro petalos, la roseta de las tejas vidriadas.
+        for (let petalo = 0; petalo < 4; petalo += 1) {
+          context.save();
+          context.rotate((petalo / 4) * Math.PI * 2);
+          context.beginPath();
+          context.moveTo(0, 0);
+          context.quadraticCurveTo(13, -13, 0, -26);
+          context.quadraticCurveTo(-13, -13, 0, 0);
+          context.stroke();
+          context.restore();
+        }
+        context.beginPath();
+        context.arc(0, 0, 5, 0, Math.PI * 2);
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    // Desconchones: por donde el vidriado ha saltado y asoma el bizcocho. Van
+    // SIEMPRE en las esquinas, que es donde una loseta se descascarilla.
+    for (let chip = 0; chip < 3; chip += 1) {
+      const corner = (variant + chip) % 4;
+      const ox = corner === 0 || corner === 3 ? 0 : size;
+      const oy = corner < 2 ? 0 : size;
+      context.fillStyle = `rgba(201, 189, 166, ${0.5 + random() * 0.3})`;
+      context.beginPath();
+      context.moveTo(ox, oy);
+      context.lineTo(ox + (ox === 0 ? 1 : -1) * (10 + random() * 20), oy);
+      context.lineTo(ox + (ox === 0 ? 1 : -1) * (6 + random() * 10), oy + (oy === 0 ? 1 : -1) * (10 + random() * 16));
+      context.lineTo(ox, oy + (oy === 0 ? 1 : -1) * (8 + random() * 18));
+      context.closePath();
+      context.fill();
+    }
+
+    drawTileGroove(context, size, 0.42);
+    bakeEdgeShade(context, size, 0.3);
   } else if (style === 'forge') {
     // Plancha de fundición: acero remachado, con una banda de rejilla por la
     // que se ve el metal al rojo de abajo. Es el único suelo FABRICADO del
@@ -2466,7 +2763,7 @@ export const boardTileNormal = (style: BoardTileStyle, variant: number): CanvasT
   };
   // Cuánto relieve aparente. Por material: la arena ondula suave, la roca
   // partida y la piedra tallada marcan mucho más.
-  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2, forge: 3.6 }[style];
+  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2, forge: 3.6, glaze: 2.2 }[style];
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const dx = (sample(x + gap, y) - sample(x - gap, y)) / 255;
@@ -2514,7 +2811,7 @@ export const boardTileRoughness = (style: BoardTileStyle, variant: number): Canv
   const random = seededRandom((tileSeed(style, variant) ^ 0x5a5a5a5a) >>> 0);
 
   // Nivel base de mate por material. El hielo es el más brillante del juego.
-  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226, tide: 96, forge: 104 }[style];
+  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226, tide: 96, forge: 104, glaze: 58 }[style];
   context.fillStyle = `rgb(${baseLevel}, ${baseLevel}, ${baseLevel})`;
   context.fillRect(0, 0, size, size);
 

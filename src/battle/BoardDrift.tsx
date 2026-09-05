@@ -66,6 +66,10 @@ const DRIFT: Readonly<Record<BoardTileStyle, DriftLook>> = {
   moss: { count: 20, color: '#9fc4d8', size: 0.11, vx: 0.09, vy: 0.02, vz: 0.05, height: 1, y: 0.18, opacity: 0.3, glowing: true, tint: 'arcane', wobble: 0.6 },
   // Motas al amanecer: suben flotando, sin prisa, por los haces de luz.
   stone: { count: 28, color: '#ffe6b0', size: 0.045, vx: 0.05, vy: 0.14, vz: 0.03, height: 1.8, y: 0.2, opacity: 0.5, glowing: true, tint: 'gold', wobble: 0.7 },
+  // Humo de incienso: es lo más lento del juego. Sube casi recto y apenas se
+  // desvía, porque en un patio cerrado no corre el aire — justo lo contrario
+  // de la nieve del Fiordo, que va casi horizontal.
+  glaze: { count: 24, color: '#ffe4b0', size: 0.05, vx: 0.05, vy: 0.2, vz: 0.02, height: 2, y: 0.15, opacity: 0.4, glowing: true, tint: 'gold', wobble: 0.85 },
   // Pavesas de fundición: suben rápido y rectas por la corriente del horno.
   // Van más deprisa que las de la Caldera porque aquí el tiro es forzado, no
   // natural: esto es una fábrica, no un volcán.

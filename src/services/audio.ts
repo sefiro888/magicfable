@@ -321,7 +321,7 @@ export function playSynthCue(cue: SoundCue): void {
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────
 
-export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'foundry' | 'menu'
+export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'foundry' | 'jade-court' | 'menu'
 
 /**
  * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
@@ -511,6 +511,20 @@ export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
     motif: { root: 220, scale: [0, 2, 3, 5, 7, 8, 10], wave: 'triangle', tone: 900, note: 0.85, step: 0.4, phrase: [4, 7], rest: [5, 11], gain: 0.042, harmony: 12 },
     // Nave cerrada con paredes de chapa: devuelve mucho y devuelve pronto.
     echo: { time: 0.36, feedback: 0.4, mix: 0.3 },
+  },
+  // Corte de Jade: el único ambiente en escala PENTATÓNICA del juego (los
+  // cinco grados sin semitonos), que es lo que suena a música china de
+  // inmediato, y con las notas muy separadas porque una corte ceremoniosa no
+  // atropella. El detalle son campanillas: las de los aleros, que suenan
+  // cuando corre el aire. El aire va alto y suave — un patio cerrado al
+  // amanecer, sin el vendaval del Fiordo ni el tiro del horno.
+  'jade-court': {
+    air: { color: 'pink', cutoff: 880, sweep: 300, breath: 0.03, gain: 0.13 },
+    drone: { root: 98, intervals: [0, 7, 12], wave: 'triangle', gain: 0.05, detune: 4 },
+    detail: { kind: 'chime', everyMin: 5, everyMax: 13, gain: 0.15 },
+    motif: { root: 261.63, scale: [0, 2, 4, 7, 9, 12], wave: 'triangle', tone: 2000, note: 1.6, step: 0.72, phrase: [3, 5], rest: [7, 15], gain: 0.05, harmony: 12 },
+    // Patio con muros y galerías: devuelve claro y con cola corta.
+    echo: { time: 0.4, feedback: 0.3, mix: 0.24 },
   },
   // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
   menu: {

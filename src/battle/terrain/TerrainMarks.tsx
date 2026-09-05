@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { DoubleSide } from 'three'
 
 import {
   barkTexture,
@@ -67,6 +68,8 @@ export const TERRAIN_LOOK: Readonly<
   sand: { rubble: '#c8ad7c', cover: '#c0a473', coverTop: '#d8bd88', emissive: '#4a3a1e', rough: 0.94, metal: 0.03 },
   // Bloques de hielo partido: claros, muy poco rugosos y sin emisivo cálido.
   ice: { rubble: '#a6c2d6', cover: '#9ab6cc', coverTop: '#c2d8e8', emissive: '#1e3242', rough: 0.28, metal: 0.02 },
+  // Laca roja, oro y teja vidriada: los materiales de la corte.
+  glaze: { rubble: '#8fb8a4', cover: '#b8322c', coverTop: '#e2be60', emissive: '#3a2418', rough: 0.35, metal: 0.04 },
   // Acero y bronce viejo, con el rescoldo del horno de relleno.
   forge: { rubble: '#8a8272', cover: '#7d7566', coverTop: '#a89c86', emissive: '#5a2a0c', rough: 0.45, metal: 0.05 },
   // Roca de costa: empapada, con percebes claros y alga parda encima.
@@ -315,6 +318,54 @@ function MossyBoulders({ position, look }: { position: Position; look: Look }) {
           </group>
         )
       })}
+    </>
+  )
+}
+
+/**
+ * Corte de Jade: tejas vidriadas caídas del alero.
+ *
+ * Una teja china es un CANAL, media caña, no una placa plana: por eso son
+ * medios cilindros abiertos y no cajas. Boca arriba unas y boca abajo otras,
+ * como caen de verdad, y un remate circular de alero entre ellas — que es la
+ * pieza que hace que el montón se lea como un tejado roto y no como escombro.
+ */
+function FallenTiles({ position, look }: { position: Position; look: Look }) {
+  const glaze = mossStoneTexture()
+  return (
+    <>
+      {[0, 1, 2, 3].map((index) => {
+        const largo = 0.16 + vary(position, index) * 0.1
+        const angulo = vary(position, index + 30) * Math.PI * 2
+        const dist = 0.08 + vary(position, index + 70) * 0.12
+        const bocaAbajo = index % 2 === 0
+        return (
+          <mesh
+            key={index}
+            position={[Math.cos(angulo) * dist, 0.035, Math.sin(angulo) * dist]}
+            rotation={[bocaAbajo ? 0 : Math.PI, angulo, Math.PI / 2]}
+            castShadow
+            receiveShadow
+          >
+            {/* Media caña: cilindro abierto y recortado a 180 grados. */}
+            <cylinderGeometry args={[0.055, 0.055, largo, 10, 1, true, 0, Math.PI]} />
+            <meshStandardMaterial
+              map={glaze}
+              color={look.rubble}
+              roughness={look.rough}
+              metalness={look.metal}
+              emissive={look.emissive}
+              emissiveIntensity={0.26}
+              side={DoubleSide}
+            />
+          </mesh>
+        )
+      })}
+      {/* Remate de alero: el disco con el que termina cada hilera de tejas. */}
+      <mesh position={[0.05, 0.055, 0.06]} rotation={[Math.PI / 2 - 0.5, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.06, 0.06, 0.02, 12]} />
+        <meshStandardMaterial color={look.coverTop} roughness={0.4} metalness={0.04} emissive="#4a3208" emissiveIntensity={0.4} />
+      </mesh>
     </>
   )
 }
@@ -675,6 +726,59 @@ function FallenLog({ position, look }: { position: Position; look: Look }) {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * Corte de Jade: un biombo de laca plegado.
+ *
+ * Tres hojas unidas por bisagras y plegadas en ACORDEÓN — la del medio de
+ * frente y las de los lados abiertas hacia el rival. Ese plegado es lo que lo
+ * sostiene de pie y lo que hace que se lea como biombo y no como tres tablas
+ * clavadas: un biombo plano se caería, y se nota aunque no se sepa por qué.
+ */
+function LacquerScreen({ position, look }: { position: Position; look: Look }) {
+  const seda = mossStoneTexture()
+  const alto = 0.32 + vary(position, 6) * 0.05
+  const hojas = [
+    { x: -0.28, giro: 0.7 },
+    { x: 0, giro: 0 },
+    { x: 0.28, giro: -0.7 },
+  ]
+  return (
+    <group position={[0, 0, COVER_Z]}>
+      {hojas.map((hoja) => (
+        <group key={hoja.x} position={[hoja.x, 0, 0]} rotation={[0, hoja.giro, 0]}>
+          {/* La hoja: laca roja. */}
+          <mesh position={[0, alto / 2, 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.27, alto, 0.022]} />
+            <meshStandardMaterial
+              map={seda}
+              color={look.cover}
+              roughness={look.rough}
+              metalness={look.metal}
+              emissive="#3a0e0a"
+              emissiveIntensity={0.34}
+            />
+          </mesh>
+          {/* Marco dorado: dos montantes y dos travesaños. El vuelo respecto a
+              la hoja es lo que da la sombra que separa uno de otra. */}
+          {[[-0.135, 0, 0.022, alto], [0.135, 0, 0.022, alto], [0, alto / 2, 0.29, 0.026], [0, -alto / 2, 0.29, 0.026]].map(
+            ([ox, oy, ancho, altura], index) => (
+              <mesh key={index} position={[ox as number, alto / 2 + (oy as number), 0.016]} castShadow>
+                <boxGeometry args={[ancho as number, altura as number, 0.016]} />
+                <meshStandardMaterial color={look.coverTop} roughness={0.34} metalness={0.05} emissive="#4a3208" emissiveIntensity={0.45} />
+              </mesh>
+            ),
+          )}
+          {/* Pie: sin él el biombo flotaría sobre la loseta. */}
+          <mesh position={[0, 0.016, 0.02]} castShadow receiveShadow>
+            <boxGeometry args={[0.2, 0.032, 0.07]} />
+            <meshStandardMaterial color="#2f1a14" roughness={0.7} metalness={0.03} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
 /** Fundición: mampara de chapa atornillada, con la base al rojo. */
 function BoilerPlate({ position, look }: { position: Position; look: Look }) {
   const iron = forgeIronTexture()
@@ -793,6 +897,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <TidalRocks position={position} look={look} />
         ) : terrainStyle === 'forge' ? (
           <ScrapHeap position={position} look={look} />
+        ) : terrainStyle === 'glaze' ? (
+          <FallenTiles position={position} look={look} />
         ) : (
           <MossyBoulders position={position} look={look} />
         )}
@@ -816,6 +922,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <Breakwater position={position} look={look} />
         ) : terrainStyle === 'forge' ? (
           <BoilerPlate position={position} look={look} />
+        ) : terrainStyle === 'glaze' ? (
+          <LacquerScreen position={position} look={look} />
         ) : (
           <FallenLog position={position} look={look} />
         )}

@@ -20,8 +20,13 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   duna: 'duna',
   fimbul: 'fimbul',
   samsara: 'duna',
-  jade: 'aether-citadel',
-  olimpo: 'sanctuary',
+  // Corte celestial china en una plaza de mármol grecolatina: era el sitio
+  // más equivocado posible. Ya tiene el suyo.
+  jade: 'jade-court',
+  // Olimpo es mármol pentélico, columnas acanaladas y azul egeo, y estaba en
+  // una isla nórdica de noche. La Ciudadela ya era su sitio, solo faltaba
+  // mudarlo: no ha hecho falta escenario nuevo.
+  olimpo: 'aether-citadel',
   sol: 'caldera',
   // Bestias de ventisca y bosque helado: el fiordo les pega más que el
   // Santuario, que además cargaba con seis facciones muy distintas.

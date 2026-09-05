@@ -47,6 +47,9 @@ const DunaNecropolis = lazy(() =>
 const FimbulFjord = lazy(() =>
   import('./scenarios/FimbulFjord').then((m) => ({ default: m.FimbulFjord })),
 )
+const JadeCourt = lazy(() =>
+  import('./scenarios/JadeCourt').then((m) => ({ default: m.JadeCourt })),
+)
 const ForgeYard = lazy(() =>
   import('./scenarios/ForgeYard').then((m) => ({ default: m.ForgeYard })),
 )
@@ -171,6 +174,16 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#f2ecd2', '#e8e2c4', '#ded9bb'],
     enemy: ['#cbdaea', '#bfcfe2', '#b6c6da'],
   },
+  // Sobre celadón el reto es que los dos bandos se sigan leyendo como esmalte
+  // verde. El propio tira al oro de la greca y el rival al azul de la
+  // porcelana: son los dos colores que ya viven en esta cerámica, así que
+  // ninguno de los dos parece un filtro puesto encima.
+  glaze: {
+    own: ['#ffe0ac', '#f7d49f', '#eac894'],
+    // Azul de porcelana, un punto más saturado que en las otras escenas: la
+    // luz de este patio es de amanecer y se come los tintes fríos suaves.
+    enemy: ['#9db6e2', '#90a9d8', '#859ecd'],
+  },
   // Sobre acero, el bando propio va con el ámbar del metal caliente y el rival
   // con un acero azulado, frío. Los dos tienen que seguir leyéndose como
   // plancha, no como pintura de color.
@@ -248,6 +261,7 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   grove: 'forest',
   shore: 'tide',
   foundry: 'forge',
+  'jade-court': 'glaze',
 }
 
 /**
@@ -418,6 +432,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   forest: { base: '#2a3022', shaft: '#39412d', crown: '#4b543a' },
   tide: { base: '#22343c', shaft: '#2e454f', crown: '#3e5c68' },
   forge: { base: '#2b241c', shaft: '#3d3327', crown: '#544634' },
+  glaze: { base: '#2f2420', shaft: '#4a2b26', crown: '#6b3a30' },
 }
 
 
@@ -454,6 +469,8 @@ const BoardAtmosphere = memo(function BoardAtmosphere({ terrainStyle, quality, r
     tide: { count: 30, color: '#bff0ea', size: 2.4, speed: 0.24, opacity: 0.44, height: 1.2, y: 0.42 },
     // Chispas de la fragua, cortas y vivas.
     forge: { count: 32, color: '#ffc069', size: 2.6, speed: 0.42, opacity: 0.6, height: 1.6, y: 0.45 },
+    // Pavesas de incienso: pocas, lentas y doradas.
+    glaze: { count: 22, color: '#ffe0a0', size: 2.2, speed: 0.16, opacity: 0.42, height: 1.5, y: 0.5 },
   }[terrainStyle]
   return (
     <Sparkles
@@ -487,6 +504,7 @@ function Midline({ terrainStyle }: { terrainStyle: BoardTileStyle }) {
     forest: '#cbe89a',
     tide: '#7fe3d4',
     forge: '#ffb347',
+    glaze: '#f2c14e',
   }[terrainStyle]
   return (
     <group position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1394,6 +1412,8 @@ function Scene(props: Board3DProps) {
           <DunaNecropolis quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'fimbul' ? (
           <FimbulFjord quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'jade-court' ? (
+          <JadeCourt quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'foundry' ? (
           <ForgeYard quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'shore' ? (
