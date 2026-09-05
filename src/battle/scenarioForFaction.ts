@@ -29,6 +29,8 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   plaga: 'duna',
   // Agua y frío costero: el Fiordo es el único escenario con mar de verdad.
   marea: 'fimbul',
+  // Hierro, horno y metal al rojo: la Fragua es literalmente su sitio.
+  forja: 'caldera',
 }
 
 /**

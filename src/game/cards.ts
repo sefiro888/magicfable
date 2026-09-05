@@ -4058,6 +4058,326 @@ const mareaCards: readonly CardDefinition[] = [
   }),
 ];
 
+
+const FORJA_SET = 'NEX-12 · El Gremio de los Engranajes';
+
+/**
+ * Forja, «El Gremio de los Engranajes». Es la pareja de Marea y está diseñada
+ * para no parecerse a ella en nada: Marea controla el ESPACIO, Forja controla
+ * el TIEMPO. Empieza floja y se vuelve temible si la dejas trabajar (ver
+ * `forja.ts` para el motor y el Ensamblaje).
+ *
+ * Cuatro cartas se apartan del dosier porque pedían sistemas que el motor no
+ * tiene, y queda escrito para que no parezca un descuido:
+ *  - `chatarrero` abarataba tu siguiente estructura al matar; eso necesita un
+ *    contador de descuento pendiente por jugador. Aquí crece él mismo, que
+ *    mantiene la idea de que se queda con lo que destroza.
+ *  - `fundicion` abarataba «la primera unidad de cada turno»; sin llevar esa
+ *    cuenta, abarata a los autómatas siempre, que además es más suyo.
+ *  - `desguace` destruía UNA estructura y curaba por su Resistencia; el motor
+ *    solo sabe barrerlas todas, así que barre y cura una cantidad fija.
+ *  - `linea-de-montaje` se abarataba con dos estructuras; como el descuento
+ *    condicional no existe, roba una carta más en su lugar.
+ */
+const forjaCards: readonly CardDefinition[] = [
+  defineCard({
+    id: 'fuente-forja', name: 'Fuente de Forja', faction: 'forja', type: 'mana', subtype: 'Fuente',
+    rarity: 'common', cost: factionCost('forja', 0),
+    rules: 'Agota esta fuente: genera 1 de Esencia Ámbar.',
+    flavor: 'El fuelle no descansa; por eso el gremio tampoco.',
+    keywords: [], collectorNumber: 394, aiTags: ['resource'], unique: false, effects: [],
+    vfx: { persistentEffect: 'forja-source-bellows' }, sfx: { play: 'resource-forja' },
+    set: FORJA_SET,
+  }),
+
+  // --- Unidades ---
+  defineCard({
+    id: 'automata-de-taller', name: 'Autómata de Taller', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'common', cost: factionCost('forja', 1, 0), attack: 1, health: 3, range: 1, movement: 1,
+    rules: 'Ensamblaje 2: al entrar en juego gana +1/+1 por cada estructura aliada, hasta 2.',
+    flavor: 'Barato, obediente y sorprendentemente rencoroso.',
+    keywords: [], collectorNumber: 395, aiTags: ['assembly'], unique: false,
+    effects: [{ kind: 'passive', id: 'assembly', value: 2 }],
+    vfx: { summonEffect: 'forja-assemble' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'remachadora', name: 'Remachadora', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'common', cost: factionCost('forja', 1, 1), attack: 2, health: 3, range: 1, movement: 1,
+    rules: 'Al entrar en juego, una estructura aliada recupera 2 de Resistencia.',
+    flavor: 'Repara más rápido de lo que el enemigo rompe. Casi siempre.',
+    keywords: [], collectorNumber: 396, aiTags: ['support'], unique: false,
+    effects: [{ kind: 'passive', id: 'entry-heal-structure', value: 2 }],
+    vfx: { summonEffect: 'forja-rivet' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'capataz-del-gremio', name: 'Capataz del Gremio', faction: 'forja', type: 'unit', subtype: 'Humanoide',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 1), attack: 2, health: 4, range: 1, movement: 1,
+    rules: 'Cuando ataca, tus otras unidades adyacentes ganan +1 de Ataque.',
+    flavor: 'No fabrica nada. Consigue que los demás fabriquen mejor.',
+    keywords: [], collectorNumber: 397, aiTags: ['support'], unique: false,
+    effects: [{ kind: 'passive', id: 'attack-buff-nearby-allies', value: 1 }],
+    vfx: { summonEffect: 'forja-foreman' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'carguero-oxidado', name: 'Carguero Oxidado', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'common', cost: factionCost('forja', 1, 1), attack: 1, health: 6, range: 1, movement: 1,
+    rules: 'Guardia: las unidades enemigas adyacentes solo pueden atacarle a él.',
+    flavor: 'Lleva cuarenta años cargando y aún no se ha quejado.',
+    keywords: ['guard'], collectorNumber: 398, aiTags: ['defender'], unique: false, effects: [],
+    vfx: { summonEffect: 'forja-hauler' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'perforadora-de-vapor', name: 'Perforadora de Vapor', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 2), attack: 4, health: 3, range: 1, movement: 1,
+    rules: 'Perforar: el daño sobrante al destruir a la defensora golpea el Nexo rival.',
+    flavor: 'Diseñada para roca. Sirve igual para lo demás.',
+    keywords: ['pierce'], collectorNumber: 399, aiTags: ['aggro'], unique: false, effects: [],
+    vfx: { summonEffect: 'forja-drill' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'ingeniera-de-campo', name: 'Ingeniera de Campo', faction: 'forja', type: 'unit', subtype: 'Humanoide',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 1), attack: 2, health: 3, range: 2, movement: 2,
+    rules: 'Al entrar en juego, escruta 1. Si controlas una estructura, roba 1 carta.',
+    flavor: 'Los planos siempre estaban bien. Era el mundo el que venía torcido.',
+    keywords: [], collectorNumber: 400, aiTags: ['value'], unique: false,
+    effects: [{ kind: 'scry', amount: 1 }, { kind: 'has-structure' }, { kind: 'draw', amount: 1 }],
+    vfx: { summonEffect: 'forja-engineer' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'centinela-de-engranaje', name: 'Centinela de Engranaje', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 2), attack: 3, health: 4, range: 1, movement: 1,
+    rules: 'Guardia. Ensamblaje 2: al entrar en juego gana +1/+1 por cada estructura aliada, hasta 2.',
+    flavor: 'Gira despacio y siempre en la misma dirección: hacia ti.',
+    keywords: ['guard'], collectorNumber: 401, aiTags: ['defender', 'assembly'], unique: false,
+    effects: [{ kind: 'passive', id: 'assembly', value: 2 }],
+    vfx: { summonEffect: 'forja-sentinel' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'martillo-automata', name: 'Martillo Autómata', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'rare', cost: factionCost('forja', 1, 2), attack: 4, health: 4, range: 1, movement: 1,
+    rules: 'Cuando ataca a una estructura, inflige 3 de daño adicional.',
+    flavor: 'El gremio también sabe desmontar.',
+    keywords: [], collectorNumber: 402, aiTags: ['siege'], unique: false,
+    effects: [{ kind: 'passive', id: 'structure-bonus-damage', value: 3 }],
+    vfx: { summonEffect: 'forja-hammer' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'chatarrero', name: 'Chatarrero', faction: 'forja', type: 'unit', subtype: 'Humanoide',
+    rarity: 'common', cost: factionCost('forja', 1, 0), attack: 2, health: 2, range: 1, movement: 2,
+    rules: 'Cuando destruye una unidad, gana +1 de Ataque permanente.',
+    flavor: 'Todo lo que cae vuelve al taller.',
+    keywords: [], collectorNumber: 403, aiTags: ['aggro', 'growth'], unique: false,
+    effects: [{ kind: 'passive', id: 'on-kill-self-attack-buff', value: 1 }],
+    vfx: { summonEffect: 'forja-scrapper' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'titan-de-cuerda', name: 'Titán de Cuerda', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'rare', cost: factionCost('forja', 1, 3), attack: 4, health: 7, range: 1, movement: 1,
+    rules: 'Ensamblaje 3: al entrar en juego gana +1/+1 por cada estructura aliada, hasta 3.',
+    flavor: 'Le dan cuerda entre seis. Luego se apartan.',
+    keywords: [], collectorNumber: 404, aiTags: ['assembly', 'finisher'], unique: false,
+    effects: [{ kind: 'passive', id: 'assembly', value: 3 }],
+    vfx: { summonEffect: 'forja-titan' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'artillera-de-riel', name: 'Artillera de Riel', faction: 'forja', type: 'unit', subtype: 'Humanoide',
+    rarity: 'rare', cost: factionCost('forja', 1, 2), attack: 3, health: 3, range: 3, movement: 1,
+    rules: 'No puede atacar a unidades adyacentes.',
+    flavor: 'Tres casillas o nada. Es cuestión de principios y de calibre.',
+    keywords: [], collectorNumber: 405, aiTags: ['ranged'], unique: false,
+    effects: [{ kind: 'passive', id: 'min-range', value: 2 }],
+    vfx: { summonEffect: 'forja-railgun' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'coloso-de-la-fundicion', name: 'Coloso de la Fundición', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'mythic', cost: factionCost('forja', 2, 4), attack: 6, health: 8, range: 1, movement: 1,
+    rules: 'Guardia. Ensamblaje 4: al entrar en juego gana +1/+1 por cada estructura aliada, hasta 4.',
+    flavor: 'Se tarda un mes en montarlo y una tarde en lamentarlo.',
+    keywords: ['guard'], collectorNumber: 406, aiTags: ['finisher', 'assembly'], unique: true,
+    effects: [{ kind: 'passive', id: 'assembly', value: 4 }],
+    vfx: { summonEffect: 'forja-colossus' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'cronista-de-laton', name: 'Cronista de Latón', faction: 'forja', type: 'unit', subtype: 'Autómata',
+    rarity: 'mythic', cost: factionCost('forja', 2, 3), attack: 4, health: 6, range: 2, movement: 1,
+    rules: 'Al comienzo de tu turno, si controlas dos estructuras o más, roba 1 carta.',
+    flavor: 'Lo apunta todo. Algún día alguien lo leerá.',
+    keywords: [], collectorNumber: 407, aiTags: ['value'], unique: true,
+    effects: [{ kind: 'passive', id: 'upkeep-draw-if-structures', value: 2 }],
+    vfx: { summonEffect: 'forja-chronicler' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'soldadora-veterana', name: 'Soldadora Veterana', faction: 'forja', type: 'unit', subtype: 'Humanoide',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 1), attack: 2, health: 4, range: 1, movement: 1,
+    rules: 'Al entrar en juego, una unidad aliada gana un escudo de 2.',
+    flavor: 'Ha reparado más grietas que años tienes.',
+    keywords: [], collectorNumber: 408, aiTags: ['support'], unique: false,
+    effects: [{ kind: 'passive', id: 'entry-shield-ally', value: 2 }],
+    vfx: { summonEffect: 'forja-welder' }, set: FORJA_SET,
+  }),
+
+  // --- Hechizos ---
+  defineCard({
+    id: 'dar-cuerda', name: 'Dar Cuerda', faction: 'forja', type: 'instant', subtype: 'Conjuro',
+    rarity: 'common', cost: factionCost('forja', 1, 0),
+    rules: 'Una unidad aliada gana +2 de Ataque hasta el final del turno y puede volver a moverse.',
+    flavor: 'Media vuelta más de llave. Solo media.',
+    keywords: [], collectorNumber: 409, aiTags: ['tempo'], unique: false,
+    effects: [{ kind: 'passive', id: 'target-attack-until-end', value: 2 }, { kind: 'refresh-move' }],
+    vfx: { impactEffect: 'forja-windup' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'sobrecarga', name: 'Sobrecarga', faction: 'forja', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 1),
+    rules: 'Inflige 4 de daño a una unidad enemiga. Si controlas una estructura, inflige 6.',
+    flavor: 'El manual desaconseja esto en la página uno.',
+    keywords: [], collectorNumber: 410, aiTags: ['removal'], unique: false,
+    effects: [
+      { kind: 'damage', amount: 4, target: 'enemy-piece' },
+      { kind: 'has-structure' },
+      { kind: 'damage', amount: 2, target: 'enemy-piece' },
+    ],
+    vfx: { impactEffect: 'forja-overload' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'linea-de-montaje', name: 'Línea de Montaje', faction: 'forja', type: 'instant', subtype: 'Ritual',
+    rarity: 'rare', cost: factionCost('forja', 1, 1),
+    rules: 'Roba 2 cartas. Si controlas dos estructuras o más, roba 1 más.',
+    flavor: 'Producción antes que inspiración.',
+    keywords: [], collectorNumber: 411, aiTags: ['draw'], unique: false,
+    effects: [
+      { kind: 'draw', amount: 2 },
+      { kind: 'has-structure', count: 2 },
+      { kind: 'draw', amount: 1 },
+    ],
+    vfx: { impactEffect: 'forja-assembly-line' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'desguace', name: 'Desguace', faction: 'forja', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 1),
+    rules: 'Destruye todas las estructuras enemigas y cura 6 a tu Nexo.',
+    flavor: 'Nada se tira. Todo se reaprovecha.',
+    keywords: [], collectorNumber: 412, aiTags: ['removal'], unique: false,
+    effects: [
+      { kind: 'destroy-all-enemy-structures', gainEssencePerResistance: false },
+      { kind: 'heal-nexus', amount: 6 },
+    ],
+    vfx: { impactEffect: 'forja-scrapyard' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'temple', name: 'Temple', faction: 'forja', type: 'instant', subtype: 'Conjuro',
+    rarity: 'common', cost: factionCost('forja', 1, 0),
+    rules: 'Una unidad aliada gana un escudo de 3.',
+    flavor: 'Agua fría en el momento exacto. Ni antes ni después.',
+    keywords: [], collectorNumber: 413, aiTags: ['protect'], unique: false,
+    effects: [{ kind: 'passive', id: 'target-shield', value: 3 }],
+    vfx: { impactEffect: 'forja-quench' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'plano-maestro', name: 'Plano Maestro', faction: 'forja', type: 'instant', subtype: 'Ritual',
+    rarity: 'rare', cost: factionCost('forja', 1, 2),
+    rules: 'Tus estructuras recuperan toda su Resistencia y tus autómatas ganan +1 de Ataque permanente.',
+    flavor: 'Estaba en el cajón desde el principio.',
+    keywords: [], collectorNumber: 414, aiTags: ['support'], unique: false,
+    effects: [{ kind: 'restore-structures' }, { kind: 'buff-automata', attack: 1 }],
+    vfx: { impactEffect: 'forja-blueprint' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'martillo-de-precision', name: 'Martillo de Precisión', faction: 'forja', type: 'instant', subtype: 'Conjuro',
+    rarity: 'common', cost: factionCost('forja', 1, 1),
+    rules: 'Inflige 2 de daño a una unidad enemiga y la aturde.',
+    flavor: 'El golpe correcto pesa menos que el golpe fuerte.',
+    keywords: [], collectorNumber: 415, aiTags: ['control'], unique: false,
+    effects: [{ kind: 'damage', amount: 2, target: 'enemy-piece' }, { kind: 'stun' }],
+    vfx: { impactEffect: 'forja-precision' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'horno-a-plena-carga', name: 'Horno a Plena Carga', faction: 'forja', type: 'instant', subtype: 'Cataclismo',
+    rarity: 'mythic', cost: factionCost('forja', 2, 3),
+    rules: 'Inflige 3 de daño a todas las unidades enemigas. Tus autómatas ganan +1/+1 permanente.',
+    flavor: 'El gremio decidió que hoy no se ahorraba carbón.',
+    keywords: [], collectorNumber: 416, aiTags: ['sweeper'], unique: true,
+    effects: [
+      { kind: 'damage-all-enemies', amount: 3 },
+      { kind: 'buff-automata', attack: 1, health: 1 },
+    ],
+    vfx: { impactEffect: 'forja-furnace' }, set: FORJA_SET,
+  }),
+
+  // --- Estructuras ---
+  defineCard({
+    id: 'yunque-del-gremio', name: 'Yunque del Gremio', faction: 'forja', type: 'structure', subtype: 'Yunque',
+    rarity: 'common', cost: factionCost('forja', 1, 1), resistance: 4,
+    rules: 'Tus autómatas tienen +1 de Ataque.',
+    flavor: 'Todo lo que sirve pasó por aquí encima.',
+    keywords: [], collectorNumber: 417, aiTags: ['support'], unique: false,
+    effects: [{ kind: 'passive', id: 'automata-attack-bonus', value: 1 }],
+    vfx: { persistentEffect: 'forja-anvil' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'torre-de-vapor', name: 'Torre de Vapor', faction: 'forja', type: 'structure', subtype: 'Torre',
+    rarity: 'common', cost: factionCost('forja', 1, 1), resistance: 5,
+    rules: 'Al comienzo de tu turno, inflige 1 de daño a la unidad enemiga más cercana.',
+    flavor: 'Suelta presión cada minuto, tenga o no a quién.',
+    keywords: [], collectorNumber: 418, aiTags: ['control'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-damage-nearest', value: 1 }],
+    vfx: { persistentEffect: 'forja-steam-tower' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'taller-ambulante', name: 'Taller Ambulante', faction: 'forja', type: 'structure', subtype: 'Taller',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 1), resistance: 4,
+    rules: 'Al comienzo de tu turno, una unidad aliada dañada recupera 1 de Vida.',
+    flavor: 'Llega hasta donde está el problema.',
+    keywords: [], collectorNumber: 419, aiTags: ['sustain'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-heal-wounded-ally', value: 1 }],
+    vfx: { persistentEffect: 'forja-workshop' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'fundicion', name: 'Fundición', faction: 'forja', type: 'structure', subtype: 'Fundición',
+    rarity: 'rare', cost: factionCost('forja', 1, 2), resistance: 6,
+    rules: 'Tus autómatas cuestan 1 genérico menos.',
+    flavor: 'El fuego nunca se apaga; solo cambia de turno.',
+    keywords: [], collectorNumber: 420, aiTags: ['ramp'], unique: false,
+    effects: [{ kind: 'passive', id: 'automata-cost-discount', value: 1 }],
+    vfx: { persistentEffect: 'forja-foundry' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'deposito-de-piezas', name: 'Depósito de Piezas', faction: 'forja', type: 'structure', subtype: 'Depósito',
+    rarity: 'uncommon', cost: factionCost('forja', 1, 1), resistance: 5,
+    rules: 'Al comienzo de tu turno, escruta 1.',
+    flavor: 'Ordenado por tamaño, por uso y por rencor.',
+    keywords: [], collectorNumber: 421, aiTags: ['value'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-scry', value: 1 }],
+    vfx: { persistentEffect: 'forja-depot' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'muralla-remachada', name: 'Muralla Remachada', faction: 'forja', type: 'structure', subtype: 'Fortaleza',
+    rarity: 'rare', cost: factionCost('forja', 1, 2), resistance: 9,
+    rules: 'Guardia: las unidades enemigas adyacentes solo pueden atacarle a ella.',
+    flavor: 'No es bonita. Es que no hace falta que lo sea.',
+    keywords: ['guard'], collectorNumber: 422, aiTags: ['defender'], unique: false, effects: [],
+    vfx: { persistentEffect: 'forja-rampart' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'reloj-del-gremio', name: 'Reloj del Gremio', faction: 'forja', type: 'structure', subtype: 'Reloj',
+    rarity: 'mythic', cost: factionCost('forja', 2, 2), resistance: 6,
+    rules: 'Al comienzo de tu turno, tus autómatas ganan +1 de Ataque permanente.',
+    flavor: 'Marca la hora a la que todo estará listo.',
+    keywords: [], collectorNumber: 423, aiTags: ['growth'], unique: true,
+    effects: [{ kind: 'passive', id: 'upkeep-buff-automata', value: 1 }],
+    vfx: { persistentEffect: 'forja-clock' }, set: FORJA_SET,
+  }),
+  defineCard({
+    id: 'cadena-de-montaje', name: 'Cadena de Montaje', faction: 'forja', type: 'structure', subtype: 'Cadena',
+    rarity: 'rare', cost: factionCost('forja', 1, 2), resistance: 5,
+    rules: 'Tus otras estructuras entran en juego con +2 de Resistencia.',
+    flavor: 'Una máquina sola es un capricho. Dos son una industria.',
+    keywords: [], collectorNumber: 424, aiTags: ['support'], unique: false,
+    effects: [{ kind: 'passive', id: 'structures-enter-with-resistance', value: 2 }],
+    vfx: { persistentEffect: 'forja-conveyor' }, set: FORJA_SET,
+  }),
+];
+
 export const CARDS = Object.freeze([
   ...furyCards, ...arcaneCards, ...natureCards, ...orderCards, ...shadowCards, ...voidCards,
   ...secondWaveCards,
@@ -4070,10 +4390,11 @@ export const CARDS = Object.freeze([
   ...bestiarioCards,
   ...plagaCards,
   ...mareaCards,
+  ...forjaCards,
 ]) as readonly CardDefinition[];
 
-if (CARDS.length !== 393 || new Set(CARDS.map((card) => card.id)).size !== 393) {
-  throw new Error('El catálogo debe contener 393 cartas (90 de NEX-01, 24 de NEX-02 y 31 por cada uno de NEX-03 a NEX-11) con identificadores únicos.');
+if (CARDS.length !== 424 || new Set(CARDS.map((card) => card.id)).size !== 424) {
+  throw new Error('El catálogo debe contener 424 cartas (90 de NEX-01, 24 de NEX-02 y 31 por cada uno de NEX-03 a NEX-12) con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(

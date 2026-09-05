@@ -3,6 +3,7 @@ import { CARD_BY_ID } from './cards';
 import { COMMANDER_BY_ID, expandDeck } from './decks';
 import { activeEffects, canPayOffering, isUnderJudgement, offeringCost, offeringOf } from './duna';
 import { pushAll, pushOne, tidePhase } from './marea';
+import { assemblyBonus, countStructures, isAutomaton, isForgeStructure, structureEntryBonus, windUpAutomata } from './forja';
 import { isChallenge, isFurious } from './fimbul';
 import { payMana, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
@@ -384,6 +385,12 @@ const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: Board
   if (guards.size > 0 && !guards.has(defender.instanceId) && !ignoresGuards(definition)) return false;
   const range = definition.range ?? 1;
   const targetDistance = distance(attacker.position, defender.position);
+  // Forja — la Artillera de Riel no dispara a bocajarro: tiene alcance MÍNIMO
+  // además de máximo, que es lo que la obliga a mantener las distancias.
+  const minRange = definition.effects.find(
+    (effect) => effect.kind === 'passive' && effect.id === 'min-range',
+  );
+  if (minRange?.kind === 'passive' && targetDistance < (minRange.value ?? 2)) return false;
   return targetDistance > 0 && targetDistance <= range && pathIsClear(state, attacker.position, defender.position, attacker.instanceId);
 };
 
@@ -900,7 +907,7 @@ const resolveSpell = (
   let damageDealt = 0;
   // Duna: las ramas de Ofrenda y Juicio se podan aquí, así que el bucle no se
   // entera de que existen.
-  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster), hasMandate: next.mandate === caster, tide: tidePhase(next) })) {
+  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster), hasMandate: next.mandate === caster, tide: tidePhase(next), structures: countStructures(next, caster) })) {
     const targetPiece = requireTargetPiece(next, target);
     if (effect.kind === 'damage' && targetPiece) {
       const bonus = frozenAtCast
@@ -965,6 +972,30 @@ const resolveSpell = (
       )) {
         next = addStatus(next, enemy.instanceId, duration);
       }
+    } else if (effect.kind === 'buff-automata') {
+      next = windUpAutomata(next, caster, effect.attack);
+      if (effect.health) {
+        // Mismo criterio que la Hybris de Olimpo: la Vida permanente se suma a
+        // la actual. No hay campo de «Vida máxima» en la pieza, así que subir
+        // el tope sin curar no se podría representar.
+        const extra = effect.health;
+        for (const piece of next.board.filter((candidate) => candidate.owner === caster && isAutomaton(candidate))) {
+          next = updatePiece(next, piece.instanceId, (target) => ({
+            ...target,
+            currentHealth: target.currentHealth + extra,
+          }));
+        }
+      }
+    } else if (effect.kind === 'restore-structures') {
+      next = {
+        ...next,
+        board: next.board.map((piece) => {
+          if (piece.owner !== caster) return piece;
+          const definition = CARD_BY_ID[piece.cardId];
+          if (definition?.type !== 'structure') return piece;
+          return { ...piece, currentHealth: definition.resistance ?? piece.currentHealth };
+        }),
+      };
     } else if (effect.kind === 'push-target' && targetPiece) {
       next = pushOne(next, caster, targetPiece.instanceId, effect.amount, effect.toward ?? 'away');
     } else if (effect.kind === 'push-all-enemies') {
@@ -1328,7 +1359,7 @@ const resolveEntryEffects = (
   offered = false,
 ): MatchState => {
   let next = state;
-  const resolvedEffects = activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner), hasMandate: next.mandate === piece.owner, tide: tidePhase(next) });
+  const resolvedEffects = activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner), hasMandate: next.mandate === piece.owner, tide: tidePhase(next), structures: countStructures(next, piece.owner) });
   for (const effect of resolvedEffects) {
     if (effect.kind === 'adjacent-damage') {
       if (effect.trigger === 'attack') continue;
@@ -1714,6 +1745,16 @@ export const effectiveCost = (
       if (discount?.kind === 'passive') generic = Math.max(0, generic - (discount.value ?? 1));
     }
   }
+  // Forja — la Fundición abarata a los autómatas mientras siga en pie.
+  if (card.type === 'unit' && card.subtype === 'Autómata') {
+    for (const piece of state.board) {
+      if (piece.owner !== playerId) continue;
+      const discount = CARD_BY_ID[piece.cardId]?.effects.find(
+        (effect) => effect.kind === 'passive' && effect.id === 'automata-cost-discount',
+      );
+      if (discount?.kind === 'passive') generic = Math.max(0, generic - (discount.value ?? 1));
+    }
+  }
   if (card.type === 'unit' && state.players[playerId].unitDiscountPending) {
     generic = Math.max(0, generic - 1);
   }
@@ -1898,13 +1939,29 @@ export const playCard = (
             ),
         ).length
       : 0;
-    const permanentBonus = renacerBonusAttack + elementBonus + hordaPermanentBonus;
+    // Forja — Ensamblaje N: +1/+1 por estructura aliada, con tope. Se calcula
+    // ANTES de meter la pieza en el tablero, así que una estructura no se
+    // cuenta a sí misma si lo que entra es una estructura.
+    const forjaAssembly = card.type === 'unit' ? assemblyBonus(state, playerId, card) : 0;
+    // Forja — la Cadena de Montaje y Torvald engordan lo que se levanta.
+    const forjaAnvilBonus = card.type === 'unit' && card.subtype === 'Autómata'
+      ? state.board.filter(
+          (ally) => ally.owner === playerId
+            && pieceDefinition(ally)?.effects.some(
+              (effect) => effect.kind === 'passive' && effect.id === 'automata-attack-bonus',
+            ),
+        ).length
+      : 0;
+    const forjaStructureBonus = card.type === 'structure'
+      ? structureEntryBonus(state, playerId, player.commanderId)
+      : 0;
+    const permanentBonus = renacerBonusAttack + elementBonus + hordaPermanentBonus + forjaAssembly + forjaAnvilBonus;
     const piece: BoardPiece = {
       instanceId: instance.instanceId,
       cardId: card.id,
       owner: playerId,
       position,
-      currentHealth: maximumHealth + verdaniaBonus + nemesisBonus + vaelithBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus + hordaPermanentBonus,
+      currentHealth: maximumHealth + verdaniaBonus + nemesisBonus + vaelithBonus + alliedAuraBonus + borranReinforcement + renacerBonusHealth + elementBonus + hordaPermanentBonus + forjaAssembly + forjaStructureBonus,
       attackModifier: (receivesForgeBuff ? 1 : 0) + permanentBonus,
       movedThisTurn: false,
       attackedThisTurn: false,
@@ -1914,6 +1971,55 @@ export const playCard = (
       ...(instance.renacerSpent ? { renacerSpent: true } : {}),
     };
     next = { ...next, board: [...next.board, piece] };
+    // Forja — la Remachadora repara al entrar: la estructura aliada más
+    // maltrecha recupera Resistencia.
+    const rivetHeal = card.effects.find(
+      (effect) => effect.kind === 'passive' && effect.id === 'entry-heal-structure',
+    );
+    if (rivetHeal?.kind === 'passive') {
+      const cantidad = rivetHeal.value ?? 1;
+      const maltrecha = next.board
+        .filter((item) => {
+          if (item.owner !== playerId) return false;
+          const definition = pieceDefinition(item);
+          return definition?.type === 'structure' && item.currentHealth < (definition.resistance ?? 0);
+        })
+        .slice()
+        .sort((a, b) => a.currentHealth - b.currentHealth)[0];
+      if (maltrecha) {
+        const tope = pieceDefinition(maltrecha)?.resistance ?? maltrecha.currentHealth;
+        next = updatePiece(next, maltrecha.instanceId, (item) => ({
+          ...item,
+          currentHealth: Math.min(tope, item.currentHealth + cantidad),
+        }));
+      }
+    }
+    // Forja — la Soldadora Veterana escuda a otra unidad aliada al entrar.
+    const welderShield = card.effects.find(
+      (effect) => effect.kind === 'passive' && effect.id === 'entry-shield-ally',
+    );
+    if (welderShield?.kind === 'passive') {
+      const cantidad = welderShield.value ?? 1;
+      const compañera = next.board.find(
+        (item) => item.owner === playerId
+          && item.instanceId !== piece.instanceId
+          && pieceDefinition(item)?.type === 'unit'
+          && !item.statuses.some((status) => status.kind === 'shielded'),
+      );
+      if (compañera) {
+        next = updatePiece(next, compañera.instanceId, (item) => ({
+          ...item,
+          statuses: [...item.statuses.filter((status) => status.kind !== 'shielded'), { kind: 'shielded', amount: cantidad }],
+        }));
+      }
+    }
+    // Forja — el motor de la facción: cada estructura suya que entra da +1 de
+    // Ataque PERMANENTE a todos tus autómatas. Va después de meter la pieza en
+    // el tablero, pero eso da igual: una estructura no es un autómata, así que
+    // no se beneficia de su propia entrada.
+    if (isForgeStructure(card)) {
+      next = windUpAutomata(next, playerId, 1);
+    }
     if (card.type === 'unit') {
       next = withPlayer(next, playerId, { ...next.players[playerId], firstUnitDeployedThisTurn: true });
     }
@@ -2340,6 +2446,17 @@ export const attackPiece = (
   // primer disparador de «cuando destruye» del juego, así que se comprueba
   // aquí, donde ya se sabe si la defensora sigue en el tablero.
   const defensoraCayo = !next.board.some((piece) => piece.instanceId === defenderId);
+  const scrapper = card.effects.find(
+    (effect) => effect.kind === 'passive' && effect.id === 'on-kill-self-attack-buff',
+  );
+  if (scrapper?.kind === 'passive' && defensoraCayo) {
+    const ganancia = scrapper.value ?? 1;
+    next = updatePiece(next, attackerId, (piece) => ({
+      ...piece,
+      attackModifier: piece.attackModifier + ganancia,
+      permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + ganancia,
+    }));
+  }
   const killReward = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'on-kill-heal-nexus');
   if (killReward?.kind === 'passive' && defensoraCayo) {
     next = healNexus(next, playerId, killReward.value ?? 1);
@@ -2748,11 +2865,46 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
     if (card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'claim-mandate-if-missing') && next.mandate !== playerId) {
       next = { ...next, mandate: playerId };
     }
-    for (const effect of activeEffects(card, { offered: false, judged: isUnderJudgement(next, playerId), hasMandate: next.mandate === playerId, tide: tidePhase(next) })) {
+    for (const effect of activeEffects(card, { offered: false, judged: isUnderJudgement(next, playerId), hasMandate: next.mandate === playerId, tide: tidePhase(next), structures: countStructures(next, playerId) })) {
       if (effect.kind !== 'passive') continue;
       const value = effect.value ?? 1;
       if (effect.id === 'upkeep-heal-nexus') {
         next = healNexus(next, playerId, value);
+      } else if (effect.id === 'upkeep-buff-automata') {
+        // Forja — el Reloj del Gremio: la facción que acumula, acumulando.
+        next = windUpAutomata(next, playerId, value);
+      } else if (effect.id === 'upkeep-draw-if-structures') {
+        if (countStructures(next, playerId) >= value) {
+          next = resolveDrawAndDiscard(next, playerId, 1, 0);
+        }
+      } else if (effect.id === 'upkeep-damage-nearest') {
+        // Forja — la Torre de Vapor suelta presión sobre lo que tenga más cerca.
+        const source = next.board.find((piece) => piece.instanceId === structure.instanceId);
+        const objetivo = source
+          ? next.board
+              .filter((piece) => piece.owner === enemyId && pieceDefinition(piece)?.type === 'unit')
+              .slice()
+              .sort((a, b) => distance(a.position, source.position) - distance(b.position, source.position))[0]
+          : undefined;
+        if (objetivo) {
+          next = damagePiece(next, objetivo.instanceId, value, playerId, card.vfx.impactEffect);
+        }
+      } else if (effect.id === 'upkeep-heal-wounded-ally') {
+        // Forja — el Taller Ambulante repara a la más maltrecha.
+        const herida = next.board
+          .filter((piece) => {
+            if (piece.owner !== playerId) return false;
+            const definition = pieceDefinition(piece);
+            return definition?.type === 'unit' && piece.currentHealth < (definition.health ?? 0);
+          })
+          .slice()
+          .sort((a, b) => a.currentHealth - b.currentHealth)[0];
+        if (herida) {
+          next = updatePiece(next, herida.instanceId, (piece) => ({
+            ...piece,
+            currentHealth: piece.currentHealth + value,
+          }));
+        }
       } else if (effect.id === 'upkeep-heal-if-high-tide') {
         // Marea — el Dique de Nácar solo devuelve algo con el agua alta.
         if (tidePhase(next) === 'high') next = healNexus(next, playerId, value);

@@ -24,6 +24,7 @@ const showcase: Record<string, readonly string[]> = {
   bestiario: ['behemot', 'kraken-del-abismo', 'bakunawa'],
   plaga: ['titan-de-la-plaga', 'zombi-contagiado', 'golem-de-carne-cosida'],
   marea: ['leviatan-de-las-simas', 'coloso-de-marea', 'oraculo-de-las-mareas'],
+  forja: ['coloso-de-la-fundicion', 'titan-de-cuerda', 'reloj-del-gremio'],
 }
 
 const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
@@ -41,6 +42,7 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   sol: 'Sacrifica a tus propias unidades para pagar cartas más fuertes y alimentar la Cuenta del Sol.',
   bestiario: 'Sin trucos: los cuerpos más grandes y directos del juego, coste por coste.',
   plaga: 'Infecta al ejército rival y quédate con lo que caiga: la horda crece de ambos lados del tablero.',
+  forja: 'Empieza floja y se vuelve temible: cada fábrica que levantas da cuerda a tus autómatas. Si sobrevive al turno seis, gana.',
   marea: 'No mata: descoloca. Empuja al rival donde no quiere estar y cambia de plan según suba o baje el agua.',
 }
 

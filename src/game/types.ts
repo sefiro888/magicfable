@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga', 'marea'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga', 'marea', 'forja'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -170,6 +170,15 @@ export type CardEffect =
       readonly toward: 'away' | 'pusher';
       readonly stunIfBlocked?: boolean;
     }
+  /**
+   * Forja — abre una rama que solo cuenta si controlas al menos `count`
+   * estructuras (una por defecto). Mismo patrón que el Juicio de Duna.
+   */
+  | { readonly kind: 'has-structure'; readonly count?: number }
+  /** Forja — da cuerda: +N de Ataque (y opcionalmente Vida) permanente a tus autómatas. */
+  | { readonly kind: 'buff-automata'; readonly attack: number; readonly health?: number }
+  /** Forja — el Plano Maestro: tus estructuras recuperan toda su Resistencia. */
+  | { readonly kind: 'restore-structures' }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 /** Jade — los cinco elementos: cada uno genera al siguiente en el ciclo fijo. */

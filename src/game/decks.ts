@@ -487,6 +487,32 @@ export const COMMANDERS = [
       effectId: 'commander-marea-power',
     },
   }) as CommanderDefinition,
+  // --- Forja (NEX-12 «El Gremio de los Engranajes») ---
+  CommanderDefinitionSchema.parse({
+    id: 'torvald-maestro-del-yunque',
+    name: 'Torvald',
+    title: 'Maestro del Yunque',
+    faction: 'forja',
+    nexusHealth: 35,
+    rules: 'Tus estructuras entran en juego con +1 de Resistencia.',
+    flavor: 'Una pieza bien hecha no necesita que la animen. Solo que la dejen girar.',
+    art: {
+      webp: '/assets/cards/art/torvald-maestro-del-yunque.webp',
+      fallback: '/assets/cards/art/torvald-maestro-del-yunque.svg',
+      alt: 'Torvald, artesano corpulento con brazo mecánico de latón, en su taller',
+    },
+    vfx: { persistentEffect: 'commander-forja-aura', impactEffect: 'commander-forja-hit' },
+    power: {
+      name: 'Dar cuerda',
+      description: 'Todas tus unidades ganan +2 de Ataque hasta el final del turno y pueden volver a moverse.',
+      cost: { generic: 2, colored: { forja: 1 } },
+      effects: [
+        { kind: 'buff-all-allies-attack', amount: 2 },
+        { kind: 'refresh-move' },
+      ],
+      effectId: 'commander-forja-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -1034,9 +1060,46 @@ const mareaDeck = DeckDefinitionSchema.parse({
   ],
 });
 
+
+/**
+ * Forja: la lista carga en estructuras baratas por delante, porque cada una da
+ * cuerda a los autómatas y sube el Ensamblaje de lo que venga después. Los dos
+ * autómatas de coste cero están a cuatro copias a propósito: son el relleno que
+ * hace de suelo mientras se monta la máquina, y sin ellos la facción se pasa
+ * los tres primeros turnos sin poder hacer nada.
+ */
+const forjaDeck = DeckDefinitionSchema.parse({
+  id: 'gremio-forja',
+  name: 'El Gremio de los Engranajes',
+  faction: 'forja',
+  commanderId: 'torvald-maestro-del-yunque',
+  cards: [
+    { cardId: 'fuente-forja', count: 20 },
+    { cardId: 'automata-de-taller', count: 4 },
+    { cardId: 'chatarrero', count: 2 },
+    { cardId: 'remachadora', count: 2 },
+    { cardId: 'carguero-oxidado', count: 2 },
+    { cardId: 'capataz-del-gremio', count: 2 },
+    { cardId: 'ingeniera-de-campo', count: 1 },
+    { cardId: 'soldadora-veterana', count: 1 },
+    { cardId: 'centinela-de-engranaje', count: 2 },
+    { cardId: 'perforadora-de-vapor', count: 1 },
+    { cardId: 'martillo-automata', count: 1 },
+    { cardId: 'titan-de-cuerda', count: 1 },
+    { cardId: 'coloso-de-la-fundicion', count: 1 },
+    { cardId: 'yunque-del-gremio', count: 3 },
+    { cardId: 'torre-de-vapor', count: 2 },
+    { cardId: 'deposito-de-piezas', count: 1 },
+    { cardId: 'muralla-remachada', count: 1 },
+    { cardId: 'dar-cuerda', count: 1 },
+    { cardId: 'sobrecarga', count: 1 },
+    { cardId: 'martillo-de-precision', count: 1 },
+  ],
+});
+
 export const STARTER_DECKS = Object.freeze([
   furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck,
-  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck, plagaDeck, mareaDeck,
+  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck, plagaDeck, mareaDeck, forjaDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(

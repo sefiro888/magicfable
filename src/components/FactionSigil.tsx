@@ -20,6 +20,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   bestiario: 'Bestiario',
   plaga: 'Plaga',
   marea: 'Marea',
+  forja: 'Forja',
 };
 
 /**
@@ -100,6 +101,25 @@ const CUSTOM_GLYPHS: Partial<Record<FactionId, (color: string) => ReactNode>> = 
       <path d="M10 34 C18 26 24 42 32 34 C40 26 46 42 54 34" />
       <path d="M10 46 C18 38 24 54 32 46 C40 38 46 54 54 46" />
     </g>
+  ),
+  // Forja: un engranaje. Los ocho dientes van como rectángulos girados desde
+  // el centro, que es más barato y más limpio que dibujar el perfil dentado.
+  forja: (color) => (
+    <>
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => (
+        <rect
+          key={index}
+          x="29"
+          y="6"
+          width="6"
+          height="11"
+          fill={color}
+          transform={`rotate(${index * 45} 32 32)`}
+        />
+      ))}
+      <circle cx="32" cy="32" r="17" fill={color} />
+      <circle cx="32" cy="32" r="7" fill="#1a1512" />
+    </>
   ),
 };
 

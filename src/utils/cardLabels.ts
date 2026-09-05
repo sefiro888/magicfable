@@ -16,6 +16,7 @@ export const FACTION_LABELS: Record<FactionId, string> = {
   bestiario: 'Bestiario',
   plaga: 'Plaga',
   marea: 'Marea',
+  forja: 'Forja',
 }
 
 export const TYPE_LABELS: Record<CardType, string> = {

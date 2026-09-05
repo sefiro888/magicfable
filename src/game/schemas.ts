@@ -21,6 +21,7 @@ export const ManaCostSchema = z
         bestiario: z.number().int().nonnegative().optional(),
         plaga: z.number().int().nonnegative().optional(),
         marea: z.number().int().nonnegative().optional(),
+        forja: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -83,6 +84,14 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('slow-all-enemies'), amount: z.number().int().positive() }),
   // Marea — la rama del ciclo y los dos empujes.
   z.object({ kind: z.literal('tide'), phase: z.enum(['high', 'low']) }),
+  // Forja — la rama por estructuras y los dos efectos de taller.
+  z.object({ kind: z.literal('has-structure'), count: z.number().int().positive().optional() }),
+  z.object({
+    kind: z.literal('buff-automata'),
+    attack: z.number().int(),
+    health: z.number().int().optional(),
+  }),
+  z.object({ kind: z.literal('restore-structures') }),
   z.object({
     kind: z.literal('push-target'),
     amount: z.number().int().positive(),

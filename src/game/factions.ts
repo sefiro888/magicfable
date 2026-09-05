@@ -151,6 +151,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['pleamar', 'empuje', 'ciclo'],
   },
+  {
+    id: 'forja',
+    name: 'Forja',
+    description: 'El Gremio de los Engranajes: empieza floja y se vuelve temible si la dejas trabajar.',
+    color: '#7a5a2e',
+    accentColor: '#ffb347',
+    icon: 'gear',
+    unlocked: true,
+    themes: ['ensamblaje', 'estructuras', 'acumular'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -169,6 +179,7 @@ export const FACTION_BY_ID = Object.freeze({
   bestiario: FACTIONS[12],
   plaga: FACTIONS[13],
   marea: FACTIONS[14],
+  forja: FACTIONS[15],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

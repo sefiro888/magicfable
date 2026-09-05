@@ -27,6 +27,7 @@ const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonl
   bestiario: { color: '#c9932e', glow: 'ember' },
   plaga: { color: '#b8481f', glow: 'ember' },
   marea: { color: '#2f8f9d', glow: 'arcane' },
+  forja: { color: '#ffb347', glow: 'ember' },
 }
 
 /**

@@ -83,6 +83,8 @@ export const activeEffects = (
     readonly hasMandate?: boolean;
     /** Marea — la fase del ciclo en la que se resuelve la carta. */
     readonly tide?: 'high' | 'low';
+    /** Forja — cuántas estructuras controla quien juega la carta. */
+    readonly structures?: number;
   },
 ): readonly CardEffect[] => {
   const active: CardEffect[] = [];
@@ -110,6 +112,12 @@ export const activeEffects = (
     // carta pueda decir «En Pleamar, …» sin tocar a quien resuelve efectos.
     if (effect.kind === 'tide') {
       lastConditionMet = options.tide === effect.phase;
+      skipping = !lastConditionMet;
+      continue;
+    }
+    // Forja — «Si controlas una estructura…»: misma forma de rama.
+    if (effect.kind === 'has-structure') {
+      lastConditionMet = (options.structures ?? 0) >= (effect.count ?? 1);
       skipping = !lastConditionMet;
       continue;
     }
