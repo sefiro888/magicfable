@@ -27,6 +27,8 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   // Santuario, que además cargaba con seis facciones muy distintas.
   bestiario: 'fimbul',
   plaga: 'duna',
+  // Agua y frío costero: el Fiordo es el único escenario con mar de verdad.
+  marea: 'fimbul',
 }
 
 /**

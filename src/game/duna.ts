@@ -77,7 +77,13 @@ export const canPayOffering = (state: MatchState, playerId: PlayerId, base: numb
  */
 export const activeEffects = (
   card: CardDefinition,
-  options: { readonly offered: boolean; readonly judged: boolean; readonly hasMandate?: boolean },
+  options: {
+    readonly offered: boolean;
+    readonly judged: boolean;
+    readonly hasMandate?: boolean;
+    /** Marea — la fase del ciclo en la que se resuelve la carta. */
+    readonly tide?: 'high' | 'low';
+  },
 ): readonly CardEffect[] => {
   const active: CardEffect[] = [];
   let skipping = false;
@@ -97,6 +103,13 @@ export const activeEffects = (
     // combinar «Mandato: …» con lo que ya sabe resolver este podador.
     if (effect.kind === 'mandate') {
       lastConditionMet = options.hasMandate ?? false;
+      skipping = !lastConditionMet;
+      continue;
+    }
+    // Marea — el ciclo: misma forma de rama que las anteriores, para que una
+    // carta pueda decir «En Pleamar, …» sin tocar a quien resuelve efectos.
+    if (effect.kind === 'tide') {
+      lastConditionMet = options.tide === effect.phase;
       skipping = !lastConditionMet;
       continue;
     }

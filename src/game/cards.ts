@@ -3731,6 +3731,333 @@ const plagaCards: readonly CardDefinition[] = [
   }),
 ];
 
+
+const MAREA_SET = 'NEX-11 · El Ciclo de las Aguas';
+
+/**
+ * Marea, «El Ciclo de las Aguas». Su gracia no está en matar sino en MOVER: el
+ * rival encuentra sus unidades donde no las dejó, y media facción cambia de
+ * comportamiento según la fase del ciclo (ver `marea.ts`).
+ *
+ * Tres cartas se apartan del dosier por lo que costaría la interfaz que
+ * pedirían, y conviene saberlo antes de tocarlas:
+ *  - `canto-de-la-sirena` movía la unidad «en la dirección que elijas»; eso
+ *    necesita un selector de dirección que el juego no tiene. Aquí ATRAE dos
+ *    casillas hacia quien lanza, que es lo que hace una sirena de todos modos.
+ *  - `tejedora-de-algas` frenaba a UNA unidad enemiga al entrar; las unidades
+ *    no eligen objetivo al desplegarse, así que frena a todas.
+ *  - `naufragio` destruía UNA estructura; el motor solo sabe barrerlas todas,
+ *    y para una rara de tipo Cataclismo encaja igual.
+ */
+const mareaCards: readonly CardDefinition[] = [
+  defineCard({
+    id: 'fuente-marea', name: 'Fuente de Marea', faction: 'marea', type: 'mana', subtype: 'Fuente',
+    rarity: 'common', cost: factionCost('marea', 0),
+    rules: 'Agota esta fuente: genera 1 de Esencia Turquesa.',
+    flavor: 'Cada pozo del arrecife recuerda dónde estuvo el mar.',
+    keywords: [], collectorNumber: 363, aiTags: ['resource'], unique: false, effects: [],
+    vfx: { persistentEffect: 'marea-source-tide' }, sfx: { play: 'resource-marea' },
+    set: MAREA_SET,
+  }),
+
+  // --- Unidades ---
+  defineCard({
+    id: 'pez-linterna', name: 'Pez Linterna', faction: 'marea', type: 'unit', subtype: 'Bestia',
+    rarity: 'common', cost: factionCost('marea', 1, 0), attack: 1, health: 2, range: 1, movement: 3,
+    rules: 'En Bajamar, al entrar en juego escruta 1.',
+    flavor: 'Alumbra el camino de cosas mucho peores.',
+    keywords: [], collectorNumber: 364, aiTags: ['scout', 'tide'], unique: false,
+    effects: [{ kind: 'tide', phase: 'low' }, { kind: 'scry', amount: 1 }],
+    vfx: { summonEffect: 'marea-lantern' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'nadadora-de-arrecife', name: 'Nadadora de Arrecife', faction: 'marea', type: 'unit', subtype: 'Humanoide',
+    rarity: 'common', cost: factionCost('marea', 1, 1), attack: 2, health: 3, range: 1, movement: 2,
+    rules: 'Impulso: puede atacar el turno en que entra en juego.',
+    flavor: 'Llega antes que la ola que la empuja.',
+    keywords: ['impulse'], collectorNumber: 365, aiTags: ['aggro'], unique: false, effects: [],
+    vfx: { summonEffect: 'marea-swim' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'centinela-de-coral', name: 'Centinela de Coral', faction: 'marea', type: 'unit', subtype: 'Constructo',
+    rarity: 'common', cost: factionCost('marea', 1, 1), attack: 1, health: 5, range: 1, movement: 1,
+    rules: 'Guardia: las unidades enemigas adyacentes solo pueden atacarle a él.',
+    flavor: 'Creció durante siglos justo donde hacía falta.',
+    keywords: ['guard'], collectorNumber: 366, aiTags: ['defender'], unique: false, effects: [],
+    vfx: { summonEffect: 'marea-coral' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'lanzarredes', name: 'Lanzarredes', faction: 'marea', type: 'unit', subtype: 'Humanoide',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 1), attack: 2, health: 3, range: 2, movement: 1,
+    rules: 'Cuando ataca, empuja 1 casilla hacia atrás a la unidad objetivo.',
+    flavor: 'No hace falta matarlo. Basta con que esté en otro sitio.',
+    keywords: [], collectorNumber: 367, aiTags: ['ranged', 'control'], unique: false,
+    effects: [{ kind: 'passive', id: 'push-on-attack', value: 1 }],
+    vfx: { summonEffect: 'marea-net' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'remora-oportunista', name: 'Rémora Oportunista', faction: 'marea', type: 'unit', subtype: 'Bestia',
+    rarity: 'common', cost: factionCost('marea', 1, 0), attack: 2, health: 1, range: 1, movement: 3,
+    rules: 'Golpe veloz: hiere antes que su objetivo cuando ataca.',
+    flavor: 'Come de lo que otros matan y nunca da las gracias.',
+    keywords: ['swift-strike'], collectorNumber: 368, aiTags: ['aggro'], unique: false, effects: [],
+    vfx: { summonEffect: 'marea-remora' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'crustaceo-acorazado', name: 'Crustáceo Acorazado', faction: 'marea', type: 'unit', subtype: 'Bestia',
+    rarity: 'common', cost: factionCost('marea', 1, 1), attack: 2, health: 4, range: 1, movement: 1,
+    rules: 'Guardia. No puede ser empujado.',
+    flavor: 'Se agarra al fondo y deja que el mar se canse primero.',
+    keywords: ['guard'], collectorNumber: 369, aiTags: ['defender'], unique: false,
+    effects: [{ kind: 'passive', id: 'push-immune' }],
+    vfx: { summonEffect: 'marea-shell' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'heraldo-de-la-corriente', name: 'Heraldo de la Corriente', faction: 'marea', type: 'unit', subtype: 'Espíritu',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 2), attack: 3, health: 3, range: 1, movement: 2,
+    rules: 'En Pleamar, esta unidad tiene Vínculo vital.',
+    flavor: 'Anuncia lo que ya viene de camino.',
+    keywords: [], collectorNumber: 370, aiTags: ['tide', 'sustain'], unique: false,
+    effects: [{ kind: 'passive', id: 'lifelink-if-high-tide' }],
+    vfx: { summonEffect: 'marea-herald' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'tejedora-de-algas', name: 'Tejedora de Algas', faction: 'marea', type: 'unit', subtype: 'Hechicera',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 1), attack: 1, health: 4, range: 2, movement: 1,
+    rules: 'Al entrar en juego, las unidades enemigas pierden 1 de Movimiento hasta el final del turno.',
+    flavor: 'Cada nudo es una decisión que el enemigo ya no puede tomar.',
+    keywords: [], collectorNumber: 371, aiTags: ['control'], unique: false,
+    effects: [{ kind: 'slow-all-enemies', amount: 1 }],
+    vfx: { summonEffect: 'marea-weave' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'nautilo-blindado', name: 'Nautilo Blindado', faction: 'marea', type: 'unit', subtype: 'Bestia',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 2), attack: 2, health: 6, range: 1, movement: 1,
+    rules: 'Guardia. La primera vez que recibe daño cada turno, lo reduce en 1.',
+    flavor: 'La espiral es la forma que el mar aprueba.',
+    keywords: ['guard'], collectorNumber: 372, aiTags: ['defender'], unique: false,
+    effects: [{ kind: 'passive', id: 'first-damage-reduction', value: 1 }],
+    vfx: { summonEffect: 'marea-nautilus' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'ahogado-rencoroso', name: 'Ahogado Rencoroso', faction: 'marea', type: 'unit', subtype: 'No muerto',
+    rarity: 'common', cost: factionCost('marea', 1, 1), attack: 3, health: 2, range: 1, movement: 2,
+    rules: 'En Bajamar, entra en juego con Impulso.',
+    flavor: 'La marea baja siempre devuelve lo que se llevó.',
+    keywords: [], collectorNumber: 373, aiTags: ['aggro', 'tide'], unique: false,
+    effects: [{ kind: 'passive', id: 'entry-impulse-if-low-tide' }],
+    vfx: { summonEffect: 'marea-drowned' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'mensajera-de-espuma', name: 'Mensajera de Espuma', faction: 'marea', type: 'unit', subtype: 'Ave',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 1), attack: 2, health: 2, range: 1, movement: 3,
+    rules: 'Volador. Cuando ataca, si es Bajamar robas 1 carta.',
+    flavor: 'Trae noticias que nadie pidió.',
+    keywords: ['flying'], collectorNumber: 374, aiTags: ['tempo', 'tide'], unique: false,
+    effects: [{ kind: 'passive', id: 'draw-on-attack-if-low-tide', value: 1 }],
+    vfx: { summonEffect: 'marea-foam' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'arponera-de-la-fosa', name: 'Arponera de la Fosa', faction: 'marea', type: 'unit', subtype: 'Guerrera',
+    rarity: 'rare', cost: factionCost('marea', 1, 2), attack: 3, health: 4, range: 2, movement: 1,
+    rules: 'Sus ataques a distancia infligen 1 de daño adicional.',
+    flavor: 'Aprendió a apuntar donde el agua deforma.',
+    keywords: [], collectorNumber: 375, aiTags: ['ranged'], unique: false,
+    effects: [{ kind: 'passive', id: 'ranged-attack-bonus', value: 1 }],
+    vfx: { summonEffect: 'marea-harpoon' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'coloso-de-marea', name: 'Coloso de Marea', faction: 'marea', type: 'unit', subtype: 'Gigante',
+    rarity: 'rare', cost: factionCost('marea', 2, 3), attack: 5, health: 6, range: 1, movement: 1,
+    rules: 'Cuando ataca, empuja 1 casilla hacia atrás a las unidades enemigas adyacentes al objetivo.',
+    flavor: 'Camina despacio porque el mar lo acompaña.',
+    keywords: [], collectorNumber: 376, aiTags: ['finisher', 'control'], unique: false,
+    effects: [{ kind: 'passive', id: 'push-adjacent-enemies-on-attack' }],
+    vfx: { summonEffect: 'marea-colossus' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'guardiana-del-faro', name: 'Guardiana del Faro', faction: 'marea', type: 'unit', subtype: 'Humanoide',
+    rarity: 'rare', cost: factionCost('marea', 1, 2), attack: 2, health: 5, range: 1, movement: 1,
+    rules: 'Guardia. Tus otras unidades adyacentes tienen +1 de Vida.',
+    flavor: 'Mientras la lámpara aguante, nadie se pierde.',
+    keywords: ['guard'], collectorNumber: 377, aiTags: ['defender', 'support'], unique: false,
+    effects: [{ kind: 'passive', id: 'buff-allied-units-health', value: 1 }],
+    vfx: { summonEffect: 'marea-lighthouse' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'leviatan-de-las-simas', name: 'Leviatán de las Simas', faction: 'marea', type: 'unit', subtype: 'Bestia',
+    rarity: 'mythic', cost: factionCost('marea', 2, 4), attack: 7, health: 7, range: 1, movement: 2,
+    rules: 'Al entrar en juego, empuja 2 casillas hacia atrás a todas las unidades enemigas. En Pleamar, además inflige 1 de daño a cada una.',
+    flavor: 'Sube una vez por generación, y nadie cuenta lo mismo.',
+    keywords: [], collectorNumber: 378, aiTags: ['finisher', 'control', 'tide'], unique: true,
+    effects: [
+      { kind: 'push-all-enemies', amount: 2, toward: 'away' },
+      { kind: 'tide', phase: 'high' },
+      { kind: 'damage-all-enemies', amount: 1 },
+    ],
+    vfx: { summonEffect: 'marea-leviathan' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'oraculo-de-las-mareas', name: 'Oráculo de las Mareas', faction: 'marea', type: 'unit', subtype: 'Místico',
+    rarity: 'mythic', cost: factionCost('marea', 2, 3), attack: 4, health: 6, range: 2, movement: 1,
+    rules: 'Al comienzo de tu turno, escruta 1. En Pleamar, además cura 2 a tu Nexo.',
+    flavor: 'Leyó la próxima marea en la anterior.',
+    keywords: [], collectorNumber: 379, aiTags: ['value', 'tide'], unique: true,
+    effects: [
+      { kind: 'passive', id: 'upkeep-scry', value: 1 },
+      { kind: 'passive', id: 'upkeep-heal-if-high-tide', value: 2 },
+    ],
+    vfx: { summonEffect: 'marea-oracle' }, set: MAREA_SET,
+  }),
+
+  // --- Hechizos ---
+  defineCard({
+    id: 'resaca-subita', name: 'Resaca Súbita', faction: 'marea', type: 'instant', subtype: 'Conjuro',
+    rarity: 'common', cost: factionCost('marea', 1, 0),
+    rules: 'Empuja 2 casillas hacia atrás a una unidad enemiga.',
+    flavor: 'Un paso atrás en el momento justo vale más que una espada.',
+    keywords: [], collectorNumber: 380, aiTags: ['control'], unique: false,
+    effects: [{ kind: 'push-target', amount: 2 }],
+    vfx: { impactEffect: 'marea-undertow' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'corriente-de-fondo', name: 'Corriente de Fondo', faction: 'marea', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 1),
+    rules: 'Una unidad aliada puede volver a moverse. Si es Bajamar, roba 1 carta.',
+    flavor: 'Por debajo, el mar va en otra dirección.',
+    keywords: [], collectorNumber: 381, aiTags: ['tempo', 'tide'], unique: false,
+    effects: [{ kind: 'refresh-move' }, { kind: 'tide', phase: 'low' }, { kind: 'draw', amount: 1 }],
+    vfx: { impactEffect: 'marea-current' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'abrazo-del-abismo', name: 'Abrazo del Abismo', faction: 'marea', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 1),
+    rules: 'Inflige 3 de daño a una unidad enemiga. Si es Pleamar, cura 2 a tu Nexo.',
+    flavor: 'Abajo no hay luz que discuta.',
+    keywords: [], collectorNumber: 382, aiTags: ['removal', 'tide'], unique: false,
+    effects: [
+      { kind: 'damage', amount: 3, target: 'enemy-piece' },
+      { kind: 'tide', phase: 'high' },
+      { kind: 'heal-nexus', amount: 2 },
+    ],
+    vfx: { impactEffect: 'marea-abyss' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'marea-viva', name: 'Marea Viva', faction: 'marea', type: 'instant', subtype: 'Conjuro',
+    rarity: 'rare', cost: factionCost('marea', 1, 2),
+    rules: 'Inflige 2 de daño a todas las unidades enemigas y empújalas 1 casilla hacia atrás.',
+    flavor: 'La luna tira y el mar obedece.',
+    keywords: [], collectorNumber: 383, aiTags: ['sweeper', 'control'], unique: false,
+    effects: [
+      { kind: 'damage-all-enemies', amount: 2 },
+      { kind: 'push-all-enemies', amount: 1, toward: 'away' },
+    ],
+    vfx: { impactEffect: 'marea-spring-tide' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'sal-en-la-herida', name: 'Sal en la Herida', faction: 'marea', type: 'instant', subtype: 'Ritual',
+    rarity: 'common', cost: factionCost('marea', 1, 0),
+    rules: 'Inflige 2 de daño a una unidad enemiga. Si ya estaba herida, inflige 4.',
+    flavor: 'El mar limpia y escuece a la vez.',
+    keywords: [], collectorNumber: 384, aiTags: ['removal'], unique: false,
+    effects: [
+      { kind: 'damage', amount: 2, target: 'enemy-piece' },
+      { kind: 'passive', id: 'bonus-damage-wounded-target', value: 2 },
+    ],
+    vfx: { impactEffect: 'marea-salt' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'canto-de-la-sirena', name: 'Canto de la Sirena', faction: 'marea', type: 'instant', subtype: 'Encantamiento',
+    rarity: 'rare', cost: factionCost('marea', 1, 1),
+    rules: 'Atrae 2 casillas hacia tu Nexo a una unidad enemiga.',
+    flavor: 'No la obligó. Solo le dijo dónde estaba más bonito.',
+    keywords: [], collectorNumber: 385, aiTags: ['control'], unique: false,
+    effects: [{ kind: 'push-target', amount: 2, toward: 'pusher' }],
+    vfx: { impactEffect: 'marea-song' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'naufragio', name: 'Naufragio', faction: 'marea', type: 'instant', subtype: 'Cataclismo',
+    rarity: 'rare', cost: factionCost('marea', 1, 2),
+    rules: 'Destruye todas las estructuras enemigas. Roba 1 carta.',
+    flavor: 'Todo lo que se construye junto al mar es un préstamo.',
+    keywords: [], collectorNumber: 386, aiTags: ['removal'], unique: false,
+    effects: [
+      { kind: 'destroy-all-enemy-structures', gainEssencePerResistance: false },
+      { kind: 'draw', amount: 1 },
+    ],
+    vfx: { impactEffect: 'marea-wreck' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'bendicion-de-la-luna', name: 'Bendición de la Luna', faction: 'marea', type: 'instant', subtype: 'Conjuro',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 1),
+    rules: 'Cura 5 de Vida a tu Nexo. Si es Pleamar, cura 8.',
+    flavor: 'Manda la luna; el mar solo firma.',
+    keywords: [], collectorNumber: 387, aiTags: ['heal', 'tide'], unique: false,
+    effects: [
+      { kind: 'heal-nexus', amount: 5 },
+      { kind: 'tide', phase: 'high' },
+      { kind: 'heal-nexus', amount: 3 },
+    ],
+    vfx: { impactEffect: 'marea-moon' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'voragine', name: 'Vorágine', faction: 'marea', type: 'instant', subtype: 'Conjuro',
+    rarity: 'mythic', cost: factionCost('marea', 2, 3),
+    rules: 'Atrae 2 casillas hacia tu Nexo a todas las unidades enemigas y aturde a las que no puedan moverse.',
+    flavor: 'El agujero que el mar hace cuando decide tragar.',
+    keywords: [], collectorNumber: 388, aiTags: ['control', 'sweeper'], unique: true,
+    effects: [{ kind: 'push-all-enemies', amount: 2, toward: 'pusher', stunIfBlocked: true }],
+    vfx: { impactEffect: 'marea-maelstrom' }, set: MAREA_SET,
+  }),
+
+  // --- Estructuras ---
+  defineCard({
+    id: 'arrecife-vivo', name: 'Arrecife Vivo', faction: 'marea', type: 'structure', subtype: 'Arrecife',
+    rarity: 'common', cost: factionCost('marea', 1, 1), resistance: 5,
+    rules: 'Guardia. Tus unidades adyacentes tienen +1 de Vida.',
+    flavor: 'Un edificio que crece mientras te defiende.',
+    keywords: ['guard'], collectorNumber: 389, aiTags: ['defender', 'support'], unique: false,
+    effects: [{ kind: 'passive', id: 'buff-allied-units-health', value: 1 }],
+    vfx: { persistentEffect: 'marea-reef' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'pozo-de-sal', name: 'Pozo de Sal', faction: 'marea', type: 'structure', subtype: 'Pozo',
+    rarity: 'uncommon', cost: factionCost('marea', 1, 1), resistance: 4,
+    rules: 'Al comienzo de tu turno, escruta 1.',
+    flavor: 'El agua se va, la sal se queda, la verdad también.',
+    keywords: [], collectorNumber: 390, aiTags: ['value'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-scry', value: 1 }],
+    vfx: { persistentEffect: 'marea-saltwell' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'faro-de-hueso', name: 'Faro de Hueso', faction: 'marea', type: 'structure', subtype: 'Faro',
+    rarity: 'rare', cost: factionCost('marea', 1, 2), resistance: 6,
+    rules: 'Tus unidades a distancia infligen 1 de daño adicional.',
+    flavor: 'Lo levantaron con lo que el mar dejó de una ballena.',
+    keywords: [], collectorNumber: 391, aiTags: ['support', 'ranged'], unique: false,
+    effects: [{ kind: 'passive', id: 'ranged-attack-bonus', value: 1 }],
+    vfx: { persistentEffect: 'marea-beacon' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'dique-de-nacar', name: 'Dique de Nácar', faction: 'marea', type: 'structure', subtype: 'Dique',
+    rarity: 'rare', cost: factionCost('marea', 1, 2), resistance: 8,
+    rules: 'Guardia. En Pleamar, al comienzo de tu turno cura 2 a tu Nexo.',
+    flavor: 'Contiene el mar por acuerdo, no por fuerza.',
+    keywords: ['guard'], collectorNumber: 392, aiTags: ['defender', 'tide'], unique: false,
+    effects: [{ kind: 'passive', id: 'upkeep-heal-if-high-tide', value: 2 }],
+    vfx: { persistentEffect: 'marea-seawall' }, set: MAREA_SET,
+  }),
+  defineCard({
+    id: 'altar-de-la-resaca', name: 'Altar de la Resaca', faction: 'marea', type: 'structure', subtype: 'Altar',
+    rarity: 'mythic', cost: factionCost('marea', 2, 2), resistance: 6,
+    rules: 'Al comienzo de tu turno, empuja 1 casilla hacia atrás a la unidad enemiga más cercana a tu Nexo.',
+    flavor: 'Se le ofrece lo que ya se había llevado.',
+    keywords: [], collectorNumber: 393, aiTags: ['control'], unique: true,
+    effects: [{ kind: 'passive', id: 'upkeep-push-nearest', value: 1 }],
+    vfx: { persistentEffect: 'marea-undertow-altar' }, set: MAREA_SET,
+  }),
+];
+
 export const CARDS = Object.freeze([
   ...furyCards, ...arcaneCards, ...natureCards, ...orderCards, ...shadowCards, ...voidCards,
   ...secondWaveCards,
@@ -3742,10 +4069,11 @@ export const CARDS = Object.freeze([
   ...solCards,
   ...bestiarioCards,
   ...plagaCards,
+  ...mareaCards,
 ]) as readonly CardDefinition[];
 
-if (CARDS.length !== 362 || new Set(CARDS.map((card) => card.id)).size !== 362) {
-  throw new Error('El catálogo debe contener 362 cartas (90 de NEX-01, 24 de NEX-02, 31 de NEX-03, 31 de NEX-04, 31 de NEX-05, 31 de NEX-06, 31 de NEX-07, 31 de NEX-08, 31 de NEX-09 y 31 de NEX-10) con identificadores únicos.');
+if (CARDS.length !== 393 || new Set(CARDS.map((card) => card.id)).size !== 393) {
+  throw new Error('El catálogo debe contener 393 cartas (90 de NEX-01, 24 de NEX-02 y 31 por cada uno de NEX-03 a NEX-11) con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(

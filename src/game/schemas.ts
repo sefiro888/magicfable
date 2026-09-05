@@ -20,6 +20,7 @@ export const ManaCostSchema = z
         sol: z.number().int().nonnegative().optional(),
         bestiario: z.number().int().nonnegative().optional(),
         plaga: z.number().int().nonnegative().optional(),
+        marea: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -80,6 +81,19 @@ export const CardEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('otherwise') }),
   z.object({ kind: z.literal('always') }),
   z.object({ kind: z.literal('slow-all-enemies'), amount: z.number().int().positive() }),
+  // Marea — la rama del ciclo y los dos empujes.
+  z.object({ kind: z.literal('tide'), phase: z.enum(['high', 'low']) }),
+  z.object({
+    kind: z.literal('push-target'),
+    amount: z.number().int().positive(),
+    toward: z.enum(['away', 'pusher']).optional(),
+  }),
+  z.object({
+    kind: z.literal('push-all-enemies'),
+    amount: z.number().int().positive(),
+    toward: z.enum(['away', 'pusher']),
+    stunIfBlocked: z.boolean().optional(),
+  }),
   z.object({ kind: z.literal('destroy-strongest-enemy') }),
   z.object({ kind: z.literal('destroy-low-health-all'), threshold: z.number().int().positive() }),
   z.object({

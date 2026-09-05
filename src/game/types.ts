@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga', 'marea'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -145,6 +145,31 @@ export type CardEffect =
    * de los Días).
    */
   | { readonly kind: 'damage-all-enemies-by-sun-count'; readonly cap?: number }
+  /**
+   * Marea — el ciclo: abre una rama que solo cuenta si estamos en esa fase.
+   * Pleamar en los turnos pares, bajamar en los impares. Mismo patrón de rama
+   * que la Ofrenda de Duna o el Mandato de Jade.
+   */
+  | { readonly kind: 'tide'; readonly phase: 'high' | 'low' }
+  /**
+   * Marea — mueve la unidad señalada `amount` casillas: hacia atrás por
+   * defecto, o hacia quien lanza con `toward: 'pusher'` (el Canto de la
+   * Sirena, que atrae en vez de rechazar).
+   */
+  | { readonly kind: 'push-target'; readonly amount: number; readonly toward?: 'away' | 'pusher' }
+  /**
+   * Marea — empuja a TODAS las unidades enemigas. `toward` decide si retroceden
+   * ('away') o si las arrastra hacia quien lanza ('pusher', la Vorágine).
+   * Con `stunIfBlocked`, las que no tienen hueco donde ir quedan aturdidas: es
+   * lo que convierte un tablero saturado en una trampa en vez de en un efecto
+   * desperdiciado.
+   */
+  | {
+      readonly kind: 'push-all-enemies';
+      readonly amount: number;
+      readonly toward: 'away' | 'pusher';
+      readonly stunIfBlocked?: boolean;
+    }
   | { readonly kind: 'passive'; readonly id: string; readonly value?: number };
 
 /** Jade — los cinco elementos: cada uno genera al siguiente en el ciclo fijo. */

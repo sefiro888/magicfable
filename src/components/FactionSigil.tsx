@@ -19,6 +19,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   sol: 'Quinto Sol',
   bestiario: 'Bestiario',
   plaga: 'Plaga',
+  marea: 'Marea',
 };
 
 /**
@@ -90,6 +91,15 @@ const CUSTOM_GLYPHS: Partial<Record<FactionId, (color: string) => ReactNode>> = 
       <path d="M32 8 C19 12 12 26 19 39 C23 47 29 51 32 55 C35 51 41 47 45 39 C52 26 45 12 32 8 Z" fill={color} />
       <circle cx="32" cy="27" r="4.5" fill="#1a1710" />
     </>
+  ),
+  // Marea: tres olas encajadas, la de arriba rompiendo. Sin relleno, porque el
+  // agua se lee por la línea del oleaje y no por la silueta.
+  marea: (color) => (
+    <g fill="none" stroke={color} strokeWidth="4.5" strokeLinecap="round">
+      <path d="M10 22 C18 14 24 30 32 22 C40 14 46 30 54 22" />
+      <path d="M10 34 C18 26 24 42 32 34 C40 26 46 42 54 34" />
+      <path d="M10 46 C18 38 24 54 32 46 C40 38 46 54 54 46" />
+    </g>
   ),
 };
 

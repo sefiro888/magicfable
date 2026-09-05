@@ -141,6 +141,16 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['contagio', 'horda', 'no muertos'],
   },
+  {
+    id: 'marea',
+    name: 'Marea',
+    description: 'El Ciclo de las Aguas: mueve al rival de sitio y cambia de plan cada turno.',
+    color: '#2f8f9d',
+    accentColor: '#7fe3d4',
+    icon: 'wave',
+    unlocked: true,
+    themes: ['pleamar', 'empuje', 'ciclo'],
+  },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -158,6 +168,7 @@ export const FACTION_BY_ID = Object.freeze({
   sol: FACTIONS[11],
   bestiario: FACTIONS[12],
   plaga: FACTIONS[13],
+  marea: FACTIONS[14],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

@@ -2,6 +2,7 @@ import { BOARD_SIZE, deploymentRow, isInsideBoard, nexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import { COMMANDER_BY_ID, expandDeck } from './decks';
 import { activeEffects, canPayOffering, isUnderJudgement, offeringCost, offeringOf } from './duna';
+import { pushAll, pushOne, tidePhase } from './marea';
 import { isChallenge, isFurious } from './fimbul';
 import { payMana, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
@@ -292,7 +293,12 @@ const isStunImmune = (state: MatchState, pieceId: string): boolean => {
 
 const hasLifelink = (state: MatchState, piece: BoardPiece, ownerId: PlayerId): boolean =>
   hasKeyword(piece, 'lifelink')
-  || (state.players[ownerId].commanderId === 'veyra-espada-consagrada' && hasKeyword(piece, 'flying'));
+  || (state.players[ownerId].commanderId === 'veyra-espada-consagrada' && hasKeyword(piece, 'flying'))
+  // Marea — el Heraldo de la Corriente solo drena con el agua alta.
+  || (tidePhase(state) === 'high'
+    && (pieceDefinition(piece)?.effects.some(
+      (effect) => effect.kind === 'passive' && effect.id === 'lifelink-if-high-tide',
+    ) ?? false));
 
 /**
  * Guardia: mientras una unidad enemiga esté adyacente a un Guardia, solo puede
@@ -334,7 +340,11 @@ const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boole
   if (piece.movedThisTurn || isFrozen(state, piece) || !isInsideBoard(to) || pieceAt(state, to)) return false;
   // Ni siquiera los voladores aterrizan sobre escombros.
   if (isBlocked(state, to)) return false;
-  if (piece.enteredOnTurn === state.turn && !definition.keywords.includes('impulse')) return false;
+  // Marea — el Ahogado Rencoroso vuelve con la marea baja: en Bajamar entra
+  // con Impulso, así que puede atacar el mismo turno en que se despliega.
+  const tideImpulse = tidePhase(state) === 'low'
+    && definition.effects.some((effect) => effect.kind === 'passive' && effect.id === 'entry-impulse-if-low-tide');
+  if (piece.enteredOnTurn === state.turn && !definition.keywords.includes('impulse') && !tideImpulse) return false;
   // Horror Abisal: ralentiza a los enemigos que atacó, sin bajar de 0.
   const movement = Math.max(0, (definition.movement ?? 1) - (piece.movementModifier ?? 0));
   const travel = distance(piece.position, to);
@@ -890,13 +900,21 @@ const resolveSpell = (
   let damageDealt = 0;
   // Duna: las ramas de Ofrenda y Juicio se podan aquí, así que el bucle no se
   // entera de que existen.
-  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster), hasMandate: next.mandate === caster })) {
+  for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster), hasMandate: next.mandate === caster, tide: tidePhase(next) })) {
     const targetPiece = requireTargetPiece(next, target);
     if (effect.kind === 'damage' && targetPiece) {
       const bonus = frozenAtCast
         ? card.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'frozen-bonus-damage')
         : undefined;
-      const bonusDamage = bonus?.kind === 'passive' ? bonus.value ?? 0 : 0;
+      // Marea — la sal escuece sobre lo ya abierto: si el objetivo llega herido
+      // (menos Vida de la que tiene la carta), el daño sube.
+      const targetDefinition = pieceDefinition(targetPiece);
+      const alreadyWounded = targetDefinition ? targetPiece.currentHealth < (targetDefinition.health ?? targetDefinition.resistance ?? 0) : false;
+      const woundBonus = alreadyWounded
+        ? card.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'bonus-damage-wounded-target')
+        : undefined;
+      const bonusDamage = (bonus?.kind === 'passive' ? bonus.value ?? 0 : 0)
+        + (woundBonus?.kind === 'passive' ? woundBonus.value ?? 0 : 0);
       const before = targetPiece.currentHealth;
       next = damagePiece(next, targetPiece.instanceId, effect.amount + bonusDamage, caster, card.vfx.impactEffect);
       damageDealt += Math.min(effect.amount + bonusDamage, before);
@@ -946,6 +964,25 @@ const resolveSpell = (
         (piece) => piece.owner !== caster && pieceDefinition(piece)?.type === 'unit',
       )) {
         next = addStatus(next, enemy.instanceId, duration);
+      }
+    } else if (effect.kind === 'push-target' && targetPiece) {
+      next = pushOne(next, caster, targetPiece.instanceId, effect.amount, effect.toward ?? 'away');
+    } else if (effect.kind === 'push-all-enemies') {
+      const pushed = pushAll(next, caster, effect.amount, effect.toward);
+      next = pushed.state;
+      if (effect.stunIfBlocked) {
+        // Las que no tuvieron hueco donde ir quedan aturdidas: el remolino no
+        // las mueve, pero tampoco las deja atacar.
+        for (const blockedId of pushed.blocked) {
+          if (isStunImmune(next, blockedId)) continue;
+          next = updatePiece(next, blockedId, (piece) => ({
+            ...piece,
+            statuses: [
+              ...piece.statuses.filter((status) => status.kind !== 'stunned'),
+              { kind: 'stunned', expiresOnTurn: state.turn + 2 },
+            ],
+          }));
+        }
       }
     } else if (effect.kind === 'stun' && targetPiece && !isStunImmune(next, targetPiece.instanceId)) {
       // Mismo cálculo que el aturdir de combate: turno + 2 cubre exactamente
@@ -1291,7 +1328,7 @@ const resolveEntryEffects = (
   offered = false,
 ): MatchState => {
   let next = state;
-  const resolvedEffects = activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner), hasMandate: next.mandate === piece.owner });
+  const resolvedEffects = activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner), hasMandate: next.mandate === piece.owner, tide: tidePhase(next) });
   for (const effect of resolvedEffects) {
     if (effect.kind === 'adjacent-damage') {
       if (effect.trigger === 'attack') continue;
@@ -2091,6 +2128,18 @@ const applyOnAttackExtras = (
   if (attackDiscard?.kind === 'passive') {
     next = resolveDrawAndDiscard(next, opponentOf(playerId), 0, attackDiscard.value ?? 1);
   }
+  // Marea — el Lanzarredes aparta a quien golpea en vez de rematarlo.
+  const netPush = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'push-on-attack');
+  if (netPush?.kind === 'passive' && defenderId) {
+    next = pushOne(next, playerId, defenderId, netPush.value ?? 1);
+  }
+  // Marea — la Mensajera de Espuma solo trae noticias con el agua baja.
+  const foamDraw = card.effects.find(
+    (effect) => effect.kind === 'passive' && effect.id === 'draw-on-attack-if-low-tide',
+  );
+  if (foamDraw?.kind === 'passive' && tidePhase(next) === 'low') {
+    next = resolveDrawAndDiscard(next, playerId, foamDraw.value ?? 1, 0);
+  }
   const drainLife = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'drain-life-on-attack');
   if (drainLife?.kind === 'passive') {
     next = applyNexusDrain(next, playerId, drainLife.value ?? 1, `${card.faction}-lifedrain`);
@@ -2699,11 +2748,24 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
     if (card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'claim-mandate-if-missing') && next.mandate !== playerId) {
       next = { ...next, mandate: playerId };
     }
-    for (const effect of activeEffects(card, { offered: false, judged: isUnderJudgement(next, playerId), hasMandate: next.mandate === playerId })) {
+    for (const effect of activeEffects(card, { offered: false, judged: isUnderJudgement(next, playerId), hasMandate: next.mandate === playerId, tide: tidePhase(next) })) {
       if (effect.kind !== 'passive') continue;
       const value = effect.value ?? 1;
       if (effect.id === 'upkeep-heal-nexus') {
         next = healNexus(next, playerId, value);
+      } else if (effect.id === 'upkeep-heal-if-high-tide') {
+        // Marea — el Dique de Nácar solo devuelve algo con el agua alta.
+        if (tidePhase(next) === 'high') next = healNexus(next, playerId, value);
+      } else if (effect.id === 'upkeep-push-nearest') {
+        // Marea — el Altar de la Resaca aparta a quien más se ha acercado al
+        // Nexo propio. «Más cercana» se mide por distancia a la fila del Nexo,
+        // que es exactamente la amenaza que la carta quiere quitarse de encima.
+        const ownNexusRow = nexusRow(playerId);
+        const closest = next.board
+          .filter((piece) => piece.owner === enemyId && pieceDefinition(piece)?.type === 'unit')
+          .slice()
+          .sort((a, b) => Math.abs(a.position.y - ownNexusRow) - Math.abs(b.position.y - ownNexusRow))[0];
+        if (closest) next = pushOne(next, playerId, closest.instanceId, value);
       } else if (effect.id === 'upkeep-drain-nexus') {
         // Drena y cura en el mismo gesto, como la pasiva de Malachar.
         const result = damageNexus(next, enemyId, value, playerId, structure.instanceId, card);

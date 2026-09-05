@@ -461,6 +461,32 @@ export const COMMANDERS = [
       effectId: 'commander-plaga-power',
     },
   }) as CommanderDefinition,
+  // --- Marea (NEX-11 «El Ciclo de las Aguas») ---
+  CommanderDefinitionSchema.parse({
+    id: 'nerith-voz-de-la-resaca',
+    name: 'Nerith',
+    title: 'Voz de la Resaca',
+    faction: 'marea',
+    nexusHealth: 35,
+    rules: 'En Pleamar, la primera unidad que juegues cada turno entra con un escudo de 2.',
+    flavor: 'El mar no discute. Vuelve.',
+    art: {
+      webp: '/assets/cards/art/nerith-voz-de-la-resaca.webp',
+      fallback: '/assets/cards/art/nerith-voz-de-la-resaca.svg',
+      alt: 'Nerith cubierta por una segunda piel de agua, con corona de coral',
+    },
+    vfx: { persistentEffect: 'commander-marea-aura', impactEffect: 'commander-marea-hit' },
+    power: {
+      name: 'Resaca',
+      description: 'Empuja 1 casilla hacia atrás a todas las unidades enemigas y cura 3 a tu Nexo.',
+      cost: { generic: 2, colored: { marea: 1 } },
+      effects: [
+        { kind: 'push-all-enemies', amount: 1, toward: 'away' },
+        { kind: 'heal-nexus', amount: 3 },
+      ],
+      effectId: 'commander-marea-power',
+    },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -970,9 +996,47 @@ const plagaDeck = DeckDefinitionSchema.parse({
   ],
 }) as DeckDefinition;
 
+
+/**
+ * Marea: no gana matando, gana descolocando. La lista carga en lo barato que
+ * empuja (Lanzarredes, Resaca Súbita) para que el rival nunca llegue a tocar
+ * el Nexo, y remata con Coloso y Leviatán cuando ya tiene el tablero medido.
+ * Las cartas de Bajamar están duplicadas por delante de las de Pleamar porque
+ * el primer turno de la partida es impar, y una facción que solo despierta en
+ * los turnos pares empezaría siempre en desventaja.
+ */
+const mareaDeck = DeckDefinitionSchema.parse({
+  id: 'ciclo-marea',
+  name: 'El Ciclo de las Aguas',
+  faction: 'marea',
+  commanderId: 'nerith-voz-de-la-resaca',
+  cards: [
+    { cardId: 'fuente-marea', count: 20 },
+    { cardId: 'nadadora-de-arrecife', count: 2 },
+    { cardId: 'centinela-de-coral', count: 2 },
+    { cardId: 'lanzarredes', count: 3 },
+    { cardId: 'remora-oportunista', count: 2 },
+    { cardId: 'crustaceo-acorazado', count: 2 },
+    { cardId: 'pez-linterna', count: 2 },
+    { cardId: 'ahogado-rencoroso', count: 2 },
+    { cardId: 'heraldo-de-la-corriente', count: 2 },
+    { cardId: 'tejedora-de-algas', count: 1 },
+    { cardId: 'nautilo-blindado', count: 1 },
+    { cardId: 'mensajera-de-espuma', count: 2 },
+    { cardId: 'arponera-de-la-fosa', count: 1 },
+    { cardId: 'guardiana-del-faro', count: 1 },
+    { cardId: 'coloso-de-marea', count: 1 },
+    { cardId: 'leviatan-de-las-simas', count: 1 },
+    { cardId: 'resaca-subita', count: 2 },
+    { cardId: 'abrazo-del-abismo', count: 1 },
+    { cardId: 'sal-en-la-herida', count: 1 },
+    { cardId: 'arrecife-vivo', count: 1 },
+  ],
+});
+
 export const STARTER_DECKS = Object.freeze([
   furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck,
-  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck, plagaDeck,
+  dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck, plagaDeck, mareaDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(
