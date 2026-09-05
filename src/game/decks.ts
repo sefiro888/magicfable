@@ -1024,12 +1024,37 @@ const plagaDeck = DeckDefinitionSchema.parse({
 
 
 /**
- * Marea: no gana matando, gana descolocando. La lista carga en lo barato que
- * empuja (Lanzarredes, Resaca Súbita) para que el rival nunca llegue a tocar
- * el Nexo, y remata con Coloso y Leviatán cuando ya tiene el tablero medido.
- * Las cartas de Bajamar están duplicadas por delante de las de Pleamar porque
- * el primer turno de la partida es impar, y una facción que solo despierta en
- * los turnos pares empezaría siempre en desventaja.
+ * Marea. La primera lista que escribí para esta facción sacó un 16% de
+ * victorias en la simulación, la peor de las dieciséis, con derrotas de 0% a
+ * 100% contra Orden, Samsara y Bestiario. No era un fallo del motor —el empuje
+ * y el ciclo funcionaban— sino de construcción: había cargado en lo defensivo
+ * y en lo barato hasta dejar un mazo de control SIN NADA CON QUÉ CONTROLAR y
+ * sin forma de cerrar. Cuatro cartas de 1 de Ataque, la carta con más copias
+ * era un 2/3 de movimiento 1, y los Nexos se quedaban a 35 y 35 durante veinte
+ * turnos hasta que Marea se quedaba sin cartas.
+ *
+ * Rehecha en torno a lo que la facción hace de verdad: presionar barato y
+ * pronto, y usar el empuje para que el rival no pueda devolver el golpe. Fuera
+ * el Centinela de Coral, el Pez Linterna y la Tejedora (los tres de 1 de
+ * Ataque); dentro más Ahogado y más Rémora, que son las que corren. El
+ * Lanzarredes baja de tres copias a dos: su empuje aparta al objetivo FUERA de
+ * su propio alcance, así que acumularlo estorba en vez de sumar.
+ *
+ * Y SIN ESTRUCTURAS, que fue el cambio que más movió la aguja (de 22% a 28%).
+ * En la traza se veía a la IA gastando los turnos tres y cuatro en levantar el
+ * Arrecife y el Faro mientras el rival desplegaba; con dos estructuras de cero
+ * ataque en la mesa, Marea llegaba al turno doce con una sola unidad. Marea no
+ * es una facción que construya: es una que empuja y corre.
+ *
+ * Queda en el 28%, que sigue siendo parte baja. Es previsible y conviene no
+ * sobreajustarlo: el valor de esta facción es POSICIONAL, y la IA valora
+ * presencia y daño pero no reposicionamiento, así que su plan le resulta
+ * invisible. Le pasa lo mismo que a Duna (29%) y al Quinto Sol (20%). Antes de
+ * seguir tocando números hace falta jugarla a mano.
+ *
+ * Las cartas de Bajamar van por delante de las de Pleamar porque el primer
+ * turno de la partida es impar, y una facción que solo despertara en los pares
+ * empezaría siempre por detrás.
  */
 const mareaDeck = DeckDefinitionSchema.parse({
   id: 'ciclo-marea',
@@ -1038,25 +1063,22 @@ const mareaDeck = DeckDefinitionSchema.parse({
   commanderId: 'nerith-voz-de-la-resaca',
   cards: [
     { cardId: 'fuente-marea', count: 20 },
-    { cardId: 'nadadora-de-arrecife', count: 2 },
-    { cardId: 'centinela-de-coral', count: 2 },
-    { cardId: 'lanzarredes', count: 3 },
-    { cardId: 'remora-oportunista', count: 2 },
-    { cardId: 'crustaceo-acorazado', count: 2 },
-    { cardId: 'pez-linterna', count: 2 },
-    { cardId: 'ahogado-rencoroso', count: 2 },
-    { cardId: 'heraldo-de-la-corriente', count: 2 },
-    { cardId: 'tejedora-de-algas', count: 1 },
-    { cardId: 'nautilo-blindado', count: 1 },
+    { cardId: 'ahogado-rencoroso', count: 3 },
+    { cardId: 'remora-oportunista', count: 3 },
+    { cardId: 'nadadora-de-arrecife', count: 3 },
     { cardId: 'mensajera-de-espuma', count: 2 },
-    { cardId: 'arponera-de-la-fosa', count: 1 },
+    { cardId: 'heraldo-de-la-corriente', count: 2 },
+    { cardId: 'lanzarredes', count: 2 },
+    { cardId: 'crustaceo-acorazado', count: 2 },
+    { cardId: 'arponera-de-la-fosa', count: 2 },
     { cardId: 'guardiana-del-faro', count: 1 },
     { cardId: 'coloso-de-marea', count: 1 },
     { cardId: 'leviatan-de-las-simas', count: 1 },
-    { cardId: 'resaca-subita', count: 2 },
-    { cardId: 'abrazo-del-abismo', count: 1 },
-    { cardId: 'sal-en-la-herida', count: 1 },
-    { cardId: 'arrecife-vivo', count: 1 },
+    { cardId: 'abrazo-del-abismo', count: 2 },
+    { cardId: 'sal-en-la-herida', count: 2 },
+    { cardId: 'marea-viva', count: 1 },
+    { cardId: 'nautilo-blindado', count: 2 },
+    { cardId: 'resaca-subita', count: 1 },
   ],
 });
 
