@@ -66,6 +66,10 @@ const DRIFT: Readonly<Record<BoardTileStyle, DriftLook>> = {
   moss: { count: 20, color: '#9fc4d8', size: 0.11, vx: 0.09, vy: 0.02, vz: 0.05, height: 1, y: 0.18, opacity: 0.3, glowing: true, tint: 'arcane', wobble: 0.6 },
   // Motas al amanecer: suben flotando, sin prisa, por los haces de luz.
   stone: { count: 28, color: '#ffe6b0', size: 0.045, vx: 0.05, vy: 0.14, vz: 0.03, height: 1.8, y: 0.2, opacity: 0.5, glowing: true, tint: 'gold', wobble: 0.7 },
+  // Pavesas de fundición: suben rápido y rectas por la corriente del horno.
+  // Van más deprisa que las de la Caldera porque aquí el tiro es forzado, no
+  // natural: esto es una fábrica, no un volcán.
+  forge: { count: 36, color: '#ffb347', size: 0.042, vx: 0.1, vy: 0.78, vz: -0.04, height: 2.4, y: 0.1, opacity: 0.72, glowing: true, tint: 'ember', wobble: 0.28 },
   // Espuma: viene del mar, o sea de la fila del fondo hacia la cámara, y sube
   // un poco al avanzar. Es la única deriva del juego que va hacia el jugador,
   // y eso basta para que el sitio se lea como una orilla y no como un patio.

@@ -321,7 +321,7 @@ export function playSynthCue(cue: SoundCue): void {
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────
 
-export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'menu'
+export type MusicTheme = 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'foundry' | 'menu'
 
 /**
  * Perfil sonoro de cada sitio. No es música: es el AMBIENTE del lugar, tres
@@ -496,6 +496,21 @@ export const AMBIENCE: Record<MusicTheme, AmbienceProfile> = {
     motif: { root: 293.66, scale: [0, 2, 3, 5, 7, 8, 12], wave: 'sine', tone: 1500, note: 1.9, step: 0.85, phrase: [3, 5], rest: [8, 16], gain: 0.05, harmony: 7 },
     // Costa abierta con acantilados: vuelve algo, pero tarda y llega deshecho.
     echo: { time: 0.74, feedback: 0.24, mix: 0.2 },
+  },
+  // Patio del Gremio: una fábrica no susurra, MACHACA. El lecho es grave y
+  // constante (el tiro del horno), el tono lleva la segunda menor que da la
+  // sensación de máquina desafinada, y el detalle son chispas frecuentes: es
+  // el ambiente con los sucesos más seguidos de los ocho, porque en un taller
+  // siempre está sonando algo. La melodía va en menor natural y con notas
+  // cortas y regulares, casi a compás: aquí el ritmo es el que marca la
+  // máquina, no el que marca la naturaleza.
+  foundry: {
+    air: { color: 'brown', cutoff: 230, sweep: 130, breath: 0.11, gain: 0.23 },
+    drone: { root: 61.7, intervals: [0, 1, 12], wave: 'sawtooth', gain: 0.05, detune: 8 },
+    detail: { kind: 'ember', everyMin: 1.4, everyMax: 4.2, gain: 0.11 },
+    motif: { root: 220, scale: [0, 2, 3, 5, 7, 8, 10], wave: 'triangle', tone: 900, note: 0.85, step: 0.4, phrase: [4, 7], rest: [5, 11], gain: 0.042, harmony: 12 },
+    // Nave cerrada con paredes de chapa: devuelve mucho y devuelve pronto.
+    echo: { time: 0.36, feedback: 0.4, mix: 0.3 },
   },
   // Portada y menús: lo más discreto posible, solo tono y alguna campanilla.
   menu: {

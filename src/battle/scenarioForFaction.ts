@@ -28,8 +28,10 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   bestiario: 'fimbul',
   plaga: 'duna',
   marea: 'shore',
-  // Hierro, horno y metal al rojo: la Fragua es literalmente su sitio.
-  forja: 'caldera',
+  // Compartía la Caldera con Furia, y su propio dosier avisaba del choque:
+  // Furia es volcánica (el fuego manda) y Forja industrial (el fuego lo
+  // mandan). Ahora tiene su patio.
+  forja: 'foundry',
 }
 
 /**

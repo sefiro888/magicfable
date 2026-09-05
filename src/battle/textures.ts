@@ -1461,6 +1461,62 @@ export const wetSandTexture = (): CanvasTexture => {
   return finishTexture('wet-sand', canvas);
 };
 
+/**
+ * Cielo del Patio de Fundición: anochecer cargado de humo, con el resplandor
+ * del horno tiñendo la panza de las nubes desde abajo.
+ *
+ * Igual que en el cielo de costa, lo cálido va en la MITAD de la textura y no
+ * al final: en una cúpula esférica v=0 es el cénit y v=1 el nadir, así que el
+ * horizonte —lo único que se ve con el picado de la cámara— cae en v=0,5.
+ */
+export const forgeSkyTexture = (): CanvasTexture => {
+  const cached = cache.get('forge-sky');
+  if (cached) return cached;
+  const size = 512;
+  const [canvas, context] = makeCanvas(size);
+  const random = seededRandom(0x464f5247);
+
+  const sky = context.createLinearGradient(0, 0, 0, size);
+  sky.addColorStop(0, '#0e1218');
+  sky.addColorStop(0.3, '#1e222a');
+  sky.addColorStop(0.44, '#4a3a30');
+  sky.addColorStop(0.5, '#9a5a28');
+  sky.addColorStop(0.55, '#c4762e');
+  sky.addColorStop(0.62, '#6d4630');
+  sky.addColorStop(0.78, '#2a2620');
+  sky.addColorStop(1, '#16130f');
+  context.fillStyle = sky;
+  context.fillRect(0, 0, size, size);
+
+  // Humo: bancos anchos y bajos. Los de la franja caliente llevan la panza
+  // naranja, que es lo que delata que la luz viene del suelo y no del cielo.
+  for (let bank = 0; bank < 26; bank += 1) {
+    const y = size * (0.26 + random() * 0.26);
+    const height = 6 + random() * 20;
+    const width = size * (0.3 + random() * 0.8);
+    const x = random() * size - width * 0.3;
+    const lit = y > size * 0.4;
+    context.fillStyle = lit
+      ? `rgba(${186 + random() * 50}, ${112 + random() * 44}, ${56 + random() * 30}, ${0.14 + random() * 0.2})`
+      : `rgba(${58 + random() * 34}, ${56 + random() * 28}, ${58 + random() * 26}, ${0.16 + random() * 0.22})`;
+    context.beginPath();
+    context.ellipse(x + width / 2, y, width / 2, height, 0, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // El resplandor del horno subiendo desde el horizonte: no es un sol, es una
+  // mancha ancha y sin borde, porque lo que ilumina está en el suelo.
+  const glowY = size * 0.52;
+  const glow = context.createRadialGradient(size * 0.36, glowY, 0, size * 0.36, glowY, size * 0.44);
+  glow.addColorStop(0, 'rgba(255, 168, 78, 0.55)');
+  glow.addColorStop(0.4, 'rgba(226, 118, 44, 0.26)');
+  glow.addColorStop(1, 'rgba(200, 96, 34, 0)');
+  context.fillStyle = glow;
+  context.fillRect(0, glowY - size * 0.44, size, size * 0.88);
+
+  return finishTexture('forge-sky', canvas);
+};
+
 export const packedSnowTexture = (): CanvasTexture => {
   const cached = cache.get('packed-snow');
   if (cached) return cached;
@@ -1529,14 +1585,14 @@ export const packedSnowTexture = (): CanvasTexture => {
 //     brilla en ninguna parte — tres materiales que se leen distintos aunque
 //     compartan la misma geometría.
 
-export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest' | 'tide';
+export type BoardTileStyle = 'stone' | 'basalt' | 'moss' | 'sand' | 'ice' | 'forest' | 'tide' | 'forge';
 
 /** Cuántos dibujos distintos hay por estilo. Seis bastan para que el ojo no encuentre el patrón. */
 export const BOARD_TILE_VARIANTS = 6;
 
 /** Semilla estable por estilo+variante: el mismo mapa se ve siempre igual. */
 const tileSeed = (style: BoardTileStyle, variant: number): number => {
-  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245, tide: 0x54494445 }[style];
+  const base = { stone: 0x53544f4e, basalt: 0x42415354, moss: 0x4d4f5353, sand: 0x53414e44, ice: 0x49434545, forest: 0x464f5245, tide: 0x54494445, forge: 0x464f5247 }[style];
   return (base + variant * 7919) >>> 0;
 };
 
@@ -1793,6 +1849,144 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       context.restore();
     }
     drawTileGroove(context, size, 0.46);
+    bakeEdgeShade(context, size, 0.34);
+  } else if (style === 'forge') {
+    // Plancha de fundición: acero remachado, con una banda de rejilla por la
+    // que se ve el metal al rojo de abajo. Es el único suelo FABRICADO del
+    // juego — todos los demás son piedra, arena, hielo o tierra — y por eso su
+    // dibujo es el único que tiene simetría y piezas repetidas a propósito.
+    //
+    // AVISO para quien toque el material: aquí NO se sube `metalness`. No hay
+    // mapa de entorno en ninguna escena, y el metal sin entorno que reflejar se
+    // apaga en vez de brillar (ya dejó las losas de basalto como un agujero
+    // negro). El acero se finge con rugosidad baja, arañazos claros y el
+    // rescoldo de las juntas, no con metalness.
+    const base = context.createLinearGradient(0, 0, size, size);
+    base.addColorStop(0, '#8a8272');
+    base.addColorStop(0.5, '#756e60');
+    base.addColorStop(1, '#635d51');
+    context.fillStyle = base;
+    context.fillRect(0, 0, size, size);
+
+    // Cepillado del acero: rayas finas y paralelas, todas en la misma
+    // dirección. Es lo primero que distingue una plancha laminada de una losa.
+    const brushed = variant % 2 === 0;
+    for (let stroke = 0; stroke < 260; stroke += 1) {
+      const along = random() * size;
+      const l = 96 + random() * 92;
+      context.strokeStyle = `rgba(${l + 14}, ${l + 6}, ${l - 6}, ${0.05 + random() * 0.12})`;
+      context.lineWidth = 0.5 + random() * 1.6;
+      context.beginPath();
+      if (brushed) {
+        context.moveTo(0, along);
+        context.lineTo(size, along + (random() - 0.5) * 5);
+      } else {
+        context.moveTo(along, 0);
+        context.lineTo(along + (random() - 0.5) * 5, size);
+      }
+      context.stroke();
+    }
+
+    // Manchas de aceite y hollín: oscuras, irregulares y siempre en las
+    // esquinas o junto a la rejilla, que es donde se acumula la porquería.
+    for (let stain = 0; stain < 5; stain += 1) {
+      const sx = random() * size;
+      const sy = random() * size;
+      const radius = 22 + random() * 52;
+      const gradient = context.createRadialGradient(sx, sy, 0, sx, sy, radius);
+      gradient.addColorStop(0, `rgba(28, 24, 20, ${0.3 + random() * 0.26})`);
+      gradient.addColorStop(1, 'rgba(28, 24, 20, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    }
+
+    // Óxido: naranja pardo, entrando por los bordes.
+    for (let rust = 0; rust < 4; rust += 1) {
+      const edge = (variant + rust) % 4;
+      const along = random() * size;
+      const depth = random() * size * 0.26;
+      const rx = edge === 0 ? along : edge === 1 ? size - depth : edge === 2 ? along : depth;
+      const ry = edge === 0 ? depth : edge === 1 ? along : edge === 2 ? size - depth : along;
+      const radius = 18 + random() * 40;
+      const gradient = context.createRadialGradient(rx, ry, 0, rx, ry, radius);
+      gradient.addColorStop(0, `rgba(146, 88, 44, ${0.26 + random() * 0.24})`);
+      gradient.addColorStop(1, 'rgba(132, 78, 40, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(rx - radius, ry - radius, radius * 2, radius * 2);
+    }
+
+    // LA REJILLA: una banda de barrotes con el metal al rojo debajo. Es la
+    // firma del material, igual que la lámina de agua lo es en la losa de
+    // marea — sin ella esto sería una chapa gris y nada más.
+    //
+    // Pero NO va en todas las variantes. En el primer intento la puse en las
+    // seis y el tablero entero salió a rayas rojas: dejaba de leerse como un
+    // suelo de fundición y pasaba a parecer un estampado. En un patio real la
+    // rejilla es una parte del pavimento, no el pavimento. Dos de cada seis
+    // losas la llevan; el resto es plancha maciza, y el contraste entre unas y
+    // otras es justo lo que hace que la rejilla se note.
+    const hasGrate = variant % 3 === 0;
+    const grateWidth = size * 0.3;
+    const grateX = variant % 2 === 0 ? size * 0.16 : size * 0.54;
+    if (hasGrate) {
+      // Primero el hueco: el rojo del metal fundido que se ve por debajo.
+      const glow = context.createLinearGradient(grateX, 0, grateX + grateWidth, 0);
+      glow.addColorStop(0, 'rgba(104, 30, 6, 0.82)');
+      glow.addColorStop(0.5, 'rgba(196, 76, 14, 0.86)');
+      glow.addColorStop(1, 'rgba(104, 30, 6, 0.82)');
+      context.fillStyle = glow;
+      context.fillRect(grateX, 14, grateWidth, size - 28);
+      // Y encima los barrotes, que son lo que convierte el rojo en rejilla.
+      for (let bar = 0; bar < 9; bar += 1) {
+        const by = 14 + (bar / 9) * (size - 28);
+        context.fillStyle = `rgba(${62 + random() * 26}, ${56 + random() * 22}, ${48 + random() * 18}, 0.94)`;
+        context.fillRect(grateX, by, grateWidth, (size - 28) / 9 * 0.56);
+      }
+      // Marco de la rejilla, para que no parezca pintada encima.
+      context.strokeStyle = 'rgba(48, 43, 37, 0.9)';
+      context.lineWidth = 5;
+      context.strokeRect(grateX, 14, grateWidth, size - 28);
+    }
+
+    // Remaches: dos filas a lo largo de los bordes. Cada uno con su brillo
+    // arriba y su sombra abajo, que es lo que le da el bulto.
+    const rivet = (rx: number, ry: number) => {
+      const r = 4.2;
+      context.fillStyle = 'rgba(40, 36, 31, 0.5)';
+      context.beginPath();
+      context.arc(rx, ry + 1.4, r, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = 'rgba(150, 142, 126, 0.85)';
+      context.beginPath();
+      context.arc(rx, ry, r, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = 'rgba(206, 198, 180, 0.8)';
+      context.beginPath();
+      context.arc(rx - 1.2, ry - 1.4, r * 0.42, 0, Math.PI * 2);
+      context.fill();
+    };
+    for (let index = 0; index < 8; index += 1) {
+      const t = 18 + (index / 7) * (size - 36);
+      rivet(t, 15);
+      rivet(t, size - 15);
+      rivet(15, t);
+      rivet(size - 15, t);
+    }
+
+    // Arañazos: metal limpio asomando bajo el uso. Muy pocos y muy claros —
+    // son lo que hace que la plancha parezca pisada durante años.
+    for (let scratch = 0; scratch < 12; scratch += 1) {
+      context.strokeStyle = `rgba(212, 204, 186, ${0.14 + random() * 0.24})`;
+      context.lineWidth = 0.6 + random() * 1.2;
+      context.beginPath();
+      const sx = random() * size;
+      const sy = random() * size;
+      context.moveTo(sx, sy);
+      context.lineTo(sx + (random() - 0.5) * 70, sy + (random() - 0.5) * 70);
+      context.stroke();
+    }
+
+    drawTileGroove(context, size, 0.55);
     bakeEdgeShade(context, size, 0.34);
   } else if (style === 'tide') {
     // Plataforma de marea: la roca que el mar descubre y vuelve a tapar dos
@@ -2272,7 +2466,7 @@ export const boardTileNormal = (style: BoardTileStyle, variant: number): CanvasT
   };
   // Cuánto relieve aparente. Por material: la arena ondula suave, la roca
   // partida y la piedra tallada marcan mucho más.
-  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2 }[style];
+  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2, forge: 3.6 }[style];
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const dx = (sample(x + gap, y) - sample(x - gap, y)) / 255;
@@ -2320,7 +2514,7 @@ export const boardTileRoughness = (style: BoardTileStyle, variant: number): Canv
   const random = seededRandom((tileSeed(style, variant) ^ 0x5a5a5a5a) >>> 0);
 
   // Nivel base de mate por material. El hielo es el más brillante del juego.
-  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226, tide: 96 }[style];
+  const baseLevel = { stone: 200, basalt: 150, moss: 210, sand: 244, ice: 70, forest: 226, tide: 96, forge: 104 }[style];
   context.fillStyle = `rgb(${baseLevel}, ${baseLevel}, ${baseLevel})`;
   context.fillRect(0, 0, size, size);
 

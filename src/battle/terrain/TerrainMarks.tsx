@@ -67,6 +67,8 @@ export const TERRAIN_LOOK: Readonly<
   sand: { rubble: '#c8ad7c', cover: '#c0a473', coverTop: '#d8bd88', emissive: '#4a3a1e', rough: 0.94, metal: 0.03 },
   // Bloques de hielo partido: claros, muy poco rugosos y sin emisivo cálido.
   ice: { rubble: '#a6c2d6', cover: '#9ab6cc', coverTop: '#c2d8e8', emissive: '#1e3242', rough: 0.28, metal: 0.02 },
+  // Acero y bronce viejo, con el rescoldo del horno de relleno.
+  forge: { rubble: '#8a8272', cover: '#7d7566', coverTop: '#a89c86', emissive: '#5a2a0c', rough: 0.45, metal: 0.05 },
   // Roca de costa: empapada, con percebes claros y alga parda encima.
   tide: { rubble: '#7f9199', cover: '#6d818b', coverTop: '#9fb2b8', emissive: '#1c2c33', rough: 0.4, metal: 0.03 },
   // Piedra del claro comida por el musgo, y madera de rama para el tronco.
@@ -313,6 +315,49 @@ function MossyBoulders({ position, look }: { position: Position; look: Look }) {
           </group>
         )
       })}
+    </>
+  )
+}
+
+/** Fundición: chatarra apilada — piezas rotas de máquina y un engranaje suelto. */
+function ScrapHeap({ position, look }: { position: Position; look: Look }) {
+  const iron = forgeIronTexture()
+  return (
+    <>
+      {[0, 1, 2].map((index) => {
+        const alto = 0.1 + vary(position, index) * 0.09
+        const ancho = 0.13 + vary(position, index + 25) * 0.07
+        const angulo = vary(position, index + 65) * Math.PI * 2
+        const dist = 0.09 + vary(position, index + 105) * 0.11
+        return (
+          <mesh
+            key={index}
+            position={[Math.cos(angulo) * dist, alto / 2, Math.sin(angulo) * dist]}
+            rotation={[(vary(position, index + 145) - 0.5) * 0.7, angulo, (vary(position, index + 185) - 0.5) * 0.6]}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[ancho, alto, ancho * 0.6]} />
+            <meshStandardMaterial
+              map={iron}
+              bumpMap={iron}
+              bumpScale={2.6}
+              color={look.rubble}
+              roughness={look.rough}
+              metalness={look.metal}
+              emissive={look.emissive}
+              emissiveIntensity={0.34}
+              flatShading
+            />
+          </mesh>
+        )
+      })}
+      {/* Un engranaje caído de canto: es la pieza que hace que el montón se
+          lea como chatarra de máquina y no como escombro cualquiera. */}
+      <mesh position={[0.06, 0.09, 0.07]} rotation={[Math.PI / 2 - 0.4, 0, vary(position, 9) * 1.2]} castShadow>
+        <torusGeometry args={[0.085, 0.022, 6, 12]} />
+        <meshStandardMaterial map={iron} color={look.coverTop} roughness={0.42} metalness={0.05} emissive={look.emissive} emissiveIntensity={0.4} />
+      </mesh>
     </>
   )
 }
@@ -630,6 +675,51 @@ function FallenLog({ position, look }: { position: Position; look: Look }) {
 
 // ---------------------------------------------------------------------------
 
+/** Fundición: mampara de chapa atornillada, con la base al rojo. */
+function BoilerPlate({ position, look }: { position: Position; look: Look }) {
+  const iron = forgeIronTexture()
+  const alto = 0.3 + vary(position, 4) * 0.05
+  return (
+    <group position={[0, 0, COVER_Z]}>
+      {/* La chapa, ligeramente curvada hacia el rival (rotación en X): una
+          mampara de caldera se abomba, no es un tablón plano. */}
+      <mesh position={[0, alto / 2, 0]} rotation={[0.1, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.8, alto, 0.06]} />
+        <meshStandardMaterial
+          map={iron}
+          bumpMap={iron}
+          bumpScale={3}
+          color={look.cover}
+          roughness={look.rough}
+          metalness={look.metal}
+          emissive={look.emissive}
+          emissiveIntensity={0.32}
+        />
+      </mesh>
+      {/* Refuerzos en diagonal: dos perfiles cruzados, que es como se rigidiza
+          una chapa de verdad. */}
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[0, alto / 2, 0.045]} rotation={[0, 0, side * 0.62]} castShadow>
+          <boxGeometry args={[0.055, alto * 1.15, 0.03]} />
+          <meshStandardMaterial map={iron} color={look.coverTop} roughness={0.42} metalness={0.05} />
+        </mesh>
+      ))}
+      {/* Pies atornillados al suelo. */}
+      {[-0.34, 0.34].map((x) => (
+        <mesh key={x} position={[x, 0.045, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.04, 0.055, 0.09, 6]} />
+          <meshStandardMaterial map={iron} color={look.coverTop} roughness={0.5} metalness={0.05} />
+        </mesh>
+      ))}
+      {/* La base, todavía caliente: es lo que la ata al suelo de fundición. */}
+      <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.84, 0.14]} />
+        <meshBasicMaterial color="#ff8a2e" transparent opacity={0.34} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
 /** Orilla: rompeolas de bloques encajados, con el alga marcando la marea. */
 function Breakwater({ position, look }: { position: Position; look: Look }) {
   const stone = mossStoneTexture()
@@ -701,6 +791,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <IceShards position={position} look={look} />
         ) : terrainStyle === 'tide' ? (
           <TidalRocks position={position} look={look} />
+        ) : terrainStyle === 'forge' ? (
+          <ScrapHeap position={position} look={look} />
         ) : (
           <MossyBoulders position={position} look={look} />
         )}
@@ -722,6 +814,8 @@ export const TerrainMarks = memo(function TerrainMarks({
           <PressureRidge position={position} look={look} />
         ) : terrainStyle === 'tide' ? (
           <Breakwater position={position} look={look} />
+        ) : terrainStyle === 'forge' ? (
+          <BoilerPlate position={position} look={look} />
         ) : (
           <FallenLog position={position} look={look} />
         )}
