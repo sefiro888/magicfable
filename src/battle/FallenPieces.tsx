@@ -7,6 +7,7 @@ import { CARD_BY_ID, type AnimationEvent, type BoardPiece } from '../game'
 import { CELL_SIZE, gridToWorldX, gridToWorldZ } from './grid/gridCoordinates'
 import { glowTexture } from './textures'
 import { withBase } from '../utils/assets'
+import { useVisualTimers } from './useVisualTimers'
 
 /** Cuánto tarda una ficha derribada en desaparecer del todo, en milisegundos. */
 const FALL_MS = 900
@@ -32,6 +33,7 @@ interface Fallen {
    * nadie.
    */
   readonly fallingSince?: number
+  readonly durationMs?: number
 }
 
 let nextId = 0
@@ -70,58 +72,70 @@ export const piecesDying = (
  */
 const FallenCard = memo(function FallenCard({ fallen, reducedMotion }: { fallen: Fallen; reducedMotion: boolean }) {
   const group = useRef<Group>(null)
+  const facing = useRef<Group>(null)
   const flash = useRef<Mesh>(null)
   const frame = useRef<Mesh>(null)
+  const artwork = useRef<(MeshStandardMaterial | null)[]>([])
   const card = CARD_BY_ID[fallen.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const node = group.current
     if (!node) return
     // En pie hasta que le toca caer: progreso 0 mientras espera su turno.
     const progress = fallen.fallingSince === undefined
       ? 0
-      : Math.min(1, (performance.now() - fallen.fallingSince) / FALL_MS)
+      : Math.min(1, (performance.now() - fallen.fallingSince) / Math.max(1, fallen.durationMs ?? FALL_MS))
     // Se vence hacia atrás y se hunde: el standee cae de espaldas, no se
     // evapora en el sitio.
     const eased = progress * progress
-    node.rotation.x = CARD_STAND_TILT - eased * (CARD_STAND_TILT + 0.25)
-    node.position.y = CARD_STAND_RISE - eased * (CARD_STAND_RISE + 0.14)
-    node.scale.setScalar(MathUtils.lerp(1, 0.86, eased))
+    const ethereal = card?.faction === 'void' || card?.faction === 'shadow' || card?.faction === 'marea'
+    const opacity = ethereal ? 1 - progress : 1 - Math.max(0, (progress - 0.55) / 0.45)
+    for (const material of artwork.current) if (material) material.opacity = opacity
+    node.rotation.x = reducedMotion || ethereal ? CARD_STAND_TILT : CARD_STAND_TILT - eased * (CARD_STAND_TILT + 0.25)
+    node.position.y = 0.15 + CARD_STAND_RISE + (reducedMotion ? 0 : ethereal ? eased * 0.18 : -eased * (CARD_STAND_RISE + 0.29))
+    node.scale.setScalar(reducedMotion ? 1 : MathUtils.lerp(1, 0.86, eased))
 
     if (frame.current) {
       const material = frame.current.material as MeshStandardMaterial
-      material.opacity = 1 - Math.max(0, (progress - 0.55) / 0.45)
+      material.opacity = opacity
       // La ficha se apaga a ceniza mientras cae.
-      material.emissiveIntensity = Math.max(0, 0.5 - progress)
+      material.emissiveIntensity = fallen.fallingSince === undefined ? 0.06 : Math.max(0, 0.5 - progress)
     }
     if (flash.current) {
+      flash.current.visible = fallen.fallingSince !== undefined && progress < 0.35
       const material = flash.current.material as MeshBasicMaterial
       // Fogonazo del golpe: entra de inmediato y se va en el primer tercio.
       material.opacity = Math.max(0, 0.8 - progress * 2.6)
       flash.current.scale.setScalar(1 + progress * 2.4)
+    }
+    if (facing.current?.parent) {
+      const local = facing.current.parent.worldToLocal(camera.position.clone())
+      facing.current.rotation.y = Math.atan2(local.x, local.z)
     }
   })
 
   const tint = fallen.mine ? '#f1c15f' : '#ff6b65'
   return (
     <group position={[fallen.x, 0, fallen.z]}>
-      <group ref={group} position={[0, CARD_STAND_RISE, 0]} scale={CARD_SCALE} rotation={[CARD_STAND_TILT, 0, 0]}>
+      <group ref={facing}>
+      <group ref={group} position={[0, 0.15 + CARD_STAND_RISE, 0]} scale={CARD_SCALE} rotation={[CARD_STAND_TILT, 0, 0]}>
         <mesh ref={frame}>
           <boxGeometry args={[0.83, 0.07, 1.02]} />
-          <meshStandardMaterial color="#2a2118" transparent opacity={1} emissive={tint} emissiveIntensity={0.5} metalness={0.3} roughness={0.6} />
+          <meshStandardMaterial color={fallen.mine ? '#6b4a1e' : '#5a1a1a'} transparent opacity={1} emissive={tint} emissiveIntensity={0.06} metalness={0.04} roughness={0.6} />
         </mesh>
         {/* Arte por las dos caras, igual que la ficha viva: al caer se ve
             precisamente el lado que antes estaba oculto. */}
         {[
           { key: 'front', y: 0.038, spin: 0 },
           { key: 'back', y: -0.038, spin: Math.PI },
-        ].map(({ key, y, spin }) => (
+        ].map(({ key, y, spin }, index) => (
           <mesh key={key} position={[0, y, 0]} rotation={[-Math.PI / 2, spin, 0]}>
             <planeGeometry args={[0.73, 0.9]} />
-            <meshStandardMaterial map={texture} color="#8a8078" transparent opacity={0.9} roughness={0.7} />
+            <meshStandardMaterial ref={(material) => { artwork.current[index] = material }} map={texture} emissiveMap={texture} emissive="#ffffff" emissiveIntensity={0.6} color="#ffffff" transparent opacity={1} roughness={0.62} />
           </mesh>
         ))}
+      </group>
       </group>
       {!reducedMotion && (
         <mesh ref={flash} position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -159,6 +173,7 @@ export const FallenPieces = memo(function FallenPieces({
   reducedMotion: boolean
 }) {
   const [fallen, setFallen] = useState<readonly Fallen[]>([])
+  const schedule = useVisualTimers()
   /** Lo último que se supo de cada pieza: cuando muere ya no está en `board`. */
   const lastKnown = useRef(new Map<string, BoardPiece>())
   /** Piezas que ya se han dado por caídas, para no duplicarlas. */
@@ -187,41 +202,34 @@ export const FallenPieces = memo(function FallenPieces({
     if (nuevas.length === 0) return undefined
     // Diferido con setTimeout(0): mismo patrón que DamageNumbers y RecentHits,
     // para no encadenar renders síncronos desde el cuerpo del efecto.
-    const spawn = window.setTimeout(() => setFallen((current) => [...current, ...nuevas]), 0)
-    return () => window.clearTimeout(spawn)
-  }, [board, event, pendingEvents, localPlayerId])
+    schedule(() => setFallen((current) => [...current, ...nuevas]), 0)
+  }, [board, event, pendingEvents, localPlayerId, schedule])
 
   // 2) Cuando la cola llega a su evento de destrucción, la ficha se derrumba.
   useEffect(() => {
     if (!event || event.type !== 'destroy' || !event.targetId) return undefined
     const objetivo = event.targetId
-    const marcar = window.setTimeout(() => {
+    schedule(() => {
       setFallen((current) => current.map((item) => (
         item.instanceId === objetivo && item.fallingSince === undefined
-          ? { ...item, fallingSince: performance.now() }
+          ? { ...item, fallingSince: performance.now(), durationMs: event.durationMs }
           : item
       )))
     }, 0)
-    const limpiar = window.setTimeout(() => {
+    schedule(() => {
       setFallen((current) => current.filter((item) => item.instanceId !== objetivo))
-      handled.current.delete(objetivo)
-    }, FALL_MS + 60)
-    return () => {
-      window.clearTimeout(marcar)
-      window.clearTimeout(limpiar)
-    }
-  }, [event])
+      lastKnown.current.delete(objetivo)
+    }, event.durationMs + 60)
+  }, [event, schedule])
 
-  // 3) Red de seguridad: si por lo que sea nunca llega el evento (animaciones
-  //    saltadas, partida abandonada), nadie se queda en pie para siempre.
+  // Una espera depende de la cola real, no de cuatro segundos arbitrarios:
+  // los barridos grandes tardan más, y saltarlos debe limpiar de inmediato.
   useEffect(() => {
-    if (fallen.length === 0) return undefined
-    const timer = window.setTimeout(() => {
-      setFallen((current) => current.filter((item) => item.fallingSince !== undefined))
-      handled.current.clear()
-    }, 4000)
-    return () => window.clearTimeout(timer)
-  }, [fallen])
+    const queued = new Set([...(event ? [event] : []), ...pendingEvents]
+      .filter((item) => item.type === 'destroy').map((item) => item.targetId))
+    const empty = !event && pendingEvents.length === 0
+    schedule(() => setFallen((current) => current.filter((item) => !empty && (item.fallingSince !== undefined || queued.has(item.instanceId)))), 0)
+  }, [event, pendingEvents, schedule])
 
   return (
     <>

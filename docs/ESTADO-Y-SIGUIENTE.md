@@ -14,12 +14,12 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 545 en verde, 5 omitidos |
+| Tests | 550 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
 en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegador:
-67 pruebas en verde y 27 omitidas (capturas bajo demanda), con los hechizos
+70 pruebas en verde y 29 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
 

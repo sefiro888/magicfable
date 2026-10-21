@@ -26,12 +26,13 @@
   70% { opacity: 1; transform: translateY(-20px) scale(1); }
   100% { transform: translateY(-44px) scale(1); opacity: 0; }
 }
+@keyframes fadeOnly {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.number[data-reduced-motion] { animation: fadeOnly 1200ms ease-out forwards; }
 @media (prefers-reduced-motion: reduce) {
   .number { animation: fadeOnly 1200ms ease-out forwards; }
-  @keyframes fadeOnly {
-    0%, 70% { opacity: 1; }
-    100% { opacity: 0; }
-  }
 }
 .number[data-color='damage'] {
   color: #ff6b5b;

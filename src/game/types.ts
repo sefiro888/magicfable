@@ -462,13 +462,13 @@ export interface AnimationEvent {
   readonly to?: Position;
   readonly amount?: number;
   readonly effectId?: string;
+  /** Carta asociada: origen del ataque/hechizo, o víctima al destruirse. */
+  readonly cardId?: string;
+  /** Conserva el material de la víctima aunque ya no esté en el tablero. */
+  readonly targetCardId?: string;
   /**
-   * Facción de la carta que origina el evento, cuando aplica (por ahora solo
-   * al invocar). Antes la presentación adivinaba el tono por palabras clave
-   * del `effectId` (p. ej. "azur" → arcano), un heurístico de 4 cubos que
-   * dejaba fuera facciones enteras (Naturaleza, Orden, Sombra, Vacío caían
-   * todas al dorado por defecto); con la facción real, el color del efecto
-   * es exacto para las seis.
+   * La presentación no debe adivinar la facción por palabras inglesas del
+   * effectId: los impactos genéricos se comparten entre cartas muy distintas.
    */
   readonly faction?: FactionId;
   readonly durationMs: number;

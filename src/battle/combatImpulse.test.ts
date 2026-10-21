@@ -24,6 +24,16 @@ const event = (partial: Partial<AnimationEvent> & { type: AnimationEvent['type']
 })
 
 describe('impulso de combate', () => {
+  it('el disparo a distancia mantiene al tirador dentro de su apoyo', () => {
+    const ranged = { ...board[0]!, cardId: 'tejedora-escarcha' }
+    const map = impulsesForEvent(event({ type: 'attack', actorId: ranged.instanceId, to: { x: 3, y: 2 } }), [ranged, board[1]!])
+    expect(map.get(ranged.instanceId)?.kind).toBe('release')
+    for (let step = 0; step <= 100; step += 1) {
+      expect(Math.abs(combatPose('release', step / 100).reach)).toBeLessThan(0.1)
+    }
+    expect(combatPose('release', 1)).toEqual({ reach: 0, lift: 0, lean: 0 })
+  })
+
   it('el ataque carga hacia atrás, alcanza su objetivo y recupera su posición', () => {
     expect(combatPose('lunge', 0.15).reach).toBeLessThan(0)
     expect(combatPose('lunge', 0.46).reach).toBeCloseTo(0.5)

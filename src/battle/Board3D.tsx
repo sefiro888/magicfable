@@ -93,7 +93,7 @@ interface Board3DProps {
   onPiece: (pieceId: string) => void
   onNexus: (playerId: PlayerId) => void
   /** Doble clic en una ficha del tablero: abre su ilustración completa, igual que en la mano. */
-  onInspectPiece?: (cardId: string) => void
+  onInspectPiece?: (cardId: string, pieceId?: string) => void
   /** Casilla bajo el puntero, para saber dónde se suelta una carta arrastrada. */
   onCellHover?: (position?: Position) => void
   /** Ficha/Nexo bajo el cursor: alimenta la vista previa de daño. */
@@ -562,7 +562,7 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; arrival?: AnimationEvent; waiting: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -598,7 +598,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const strike = useRef<Group>(null)
   /** Grupo que encara la ficha hacia la cámara girando solo sobre su eje vertical. */
   const facing = useRef<Group>(null)
-  const impulseRun = useRef<{ start: number; dx: number; dz: number; kind: 'lunge' | 'recoil'; durationMs: number } | null>(null)
+  const impulseRun = useRef<{ start: number; dx: number; dz: number; kind: Impulse['kind']; durationMs: number } | null>(null)
   useEffect(() => {
     if (!impulse || reducedMotion) return
     impulseRun.current = { start: performance.now(), dx: impulse.dx, dz: impulse.dz, kind: impulse.kind, durationMs: impulse.durationMs }
@@ -754,7 +754,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const onClick = () => onPiece(piece.instanceId)
   const onDoubleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
-    onInspect?.(piece.cardId)
+    onInspect?.(piece.cardId, piece.instanceId)
   }
   const maxHealth = card.health ?? card.resistance ?? 1
   const damaged = piece.currentHealth < maxHealth
@@ -1543,7 +1543,7 @@ function Scene(props: Board3DProps) {
         localPlayerId={props.localPlayerId}
         reducedMotion={props.reducedMotion}
       />
-      <DamageNumbers event={props.activeEvent} />
+      <DamageNumbers event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />

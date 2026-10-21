@@ -95,6 +95,7 @@ interface MatchStore {
    */
   viewedPieceId?: string
   inspectedCardId?: string
+  inspectedPieceId?: string
   message?: string
   history: readonly string[]
   /** Registro compacto de toda la partida, para exportar (ver MatchLogEntry). Nunca se recorta. */
@@ -127,7 +128,7 @@ interface MatchStore {
   selectPiece: (instanceId?: string) => void
   /** Consulta (o deja de consultar) una ficha del tablero, propia o rival. */
   viewPiece: (instanceId?: string) => void
-  inspect: (cardId?: string) => void
+  inspect: (cardId?: string, pieceId?: string) => void
   setMessage: (message?: string) => void
   setAiThinking: (thinking: boolean) => void
   /** Registra un error de JS atrapado durante la partida en el registro exportable. */
@@ -302,6 +303,7 @@ export const useMatchStore = create<MatchStore>()(
       selectedPieceId: undefined,
       viewedPieceId: undefined,
       inspectedCardId: undefined,
+      inspectedPieceId: undefined,
       message: undefined,
       startedAtMs: Date.now(),
     })
@@ -317,6 +319,7 @@ export const useMatchStore = create<MatchStore>()(
       selectedPieceId: undefined,
       viewedPieceId: undefined,
       inspectedCardId: undefined,
+      inspectedPieceId: undefined,
       message: undefined,
       startedAtMs: Date.now(),
     })
@@ -379,14 +382,14 @@ export const useMatchStore = create<MatchStore>()(
   selectHand: (selectedHandId) => set({ selectedHandId, selectedPieceId: undefined, viewedPieceId: undefined, message: undefined }),
   selectPiece: (selectedPieceId) => set({ selectedPieceId, selectedHandId: undefined, viewedPieceId: undefined, message: undefined }),
   viewPiece: (viewedPieceId) => set({ viewedPieceId }),
-  inspect: (inspectedCardId) => set({ inspectedCardId }),
+  inspect: (inspectedCardId, inspectedPieceId) => set({ inspectedCardId, inspectedPieceId }),
   setMessage: (message) => set({ message }),
   setAiThinking: (aiThinking) => set({ aiThinking }),
   logError: (message) =>
     set((current) => ({
       matchLog: [...current.matchLog, { turn: current.match?.turn ?? 0, type: 'js-error' as const, ok: false, note: message }],
     })),
-  reset: () => set({ match: undefined, selectedHandId: undefined, selectedPieceId: undefined, viewedPieceId: undefined, inspectedCardId: undefined, message: undefined, ...initialState }),
+  reset: () => set({ match: undefined, selectedHandId: undefined, selectedPieceId: undefined, viewedPieceId: undefined, inspectedCardId: undefined, inspectedPieceId: undefined, message: undefined, ...initialState }),
     }),
     {
       name: 'cronicas-nexo-match',

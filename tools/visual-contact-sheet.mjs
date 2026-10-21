@@ -7,7 +7,8 @@ import { resolve } from 'node:path'
 const prefix = process.argv[2] ?? 'ritual-'
 const captureX = Number(process.argv[3] ?? 780)
 const captureY = Number(process.argv[4] ?? 385)
-const files = readdirSync('e2e/__shots__').filter((name) => name.startsWith(prefix) && name.endsWith('.png')).sort()
+const suffix = process.argv[5] ?? ''
+const files = readdirSync('e2e/__shots__').filter((name) => name.startsWith(prefix) && name.endsWith(`${suffix}.png`)).sort()
 if (files.length === 0) throw new Error('No hay capturas para esa revisión.')
 const escapeHtml = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;')
 const browser = await chromium.launch()

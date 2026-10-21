@@ -47,6 +47,16 @@ El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la p
 
 ### Acabado de las piezas 3D (renovación de octubre de 2026)
 
+El combate conserva carta, víctima y facción en los eventos ya resueltos:
+los impactos compartidos no sirven para adivinar materiales. Los tiradores
+se afianzan en su casilla, mientras el cuerpo a cuerpo mantiene embestida.
+Ocho familias de estela: ascuas, cristal, tendril, luz, velo, arena, agua y
+metal. Su sección se estrecha en filamentos; evitar barras opacas y aditivos
+que vuelvan blancas todas las facciones en escenarios claros. Un destello
+de impacto concentra la luz al principio y deja leer después la ilustración.
+Fragmentos instanciados según material de la víctima, sin gore. Las colas de
+presentación no cancelan el desvanecido ni la limpieza del efecto anterior.
+
 - Metal envejecido con bisel real, remaches geométricos y rugosidad irregular.
   Los filetes usan metalness 0,6 con un entorno de tres paneles de luz propios,
   capturado una sola vez y sin HDR externo. Piedra y papel permanecen en 0,04.

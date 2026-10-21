@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { FACTION_IDS, STARTER_DECKS, createMatch, type AnimationEvent } from '../src/game'
 import type { useMatchStore as MatchStoreHook } from '../src/store/match'
+import { matchStoreUrl } from './helpers/matchStoreUrl'
 
 test.skip(!process.env.RUN_RITUAL_SHOTS, 'revisión de invocaciones bajo demanda')
 
@@ -25,7 +26,9 @@ test('revisión de los sellos de las dieciséis facciones', async ({ page }) => 
       match: saved, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
     }, version: 2 }))
   }, match)
+  const storeRequest = matchStoreUrl(page)
   await page.goto('/battle')
+  const storeUrl = await storeRequest
   await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
   await page.waitForTimeout(2500)
@@ -36,11 +39,10 @@ test('revisión de los sellos de las dieciséis facciones', async ({ page }) => 
     }
     // La sonda usa el mismo store y director que la batalla. Alargar solo
     // este evento permite inspeccionar el trazado sin alterar el juego.
-    await page.evaluate(async (visualEvent) => {
-      const modulePath = '/src/store/match.ts'
-      const module = await import(modulePath) as { useMatchStore: typeof MatchStoreHook }
+    await page.evaluate(async ({ visualEvent, storeUrl }) => {
+      const module = await import(storeUrl) as { useMatchStore: typeof MatchStoreHook }
       module.useMatchStore.setState({ currentEvent: visualEvent, pendingAnimations: [] })
-    }, event)
+    }, { visualEvent: event, storeUrl })
     // La captura por software puede consumir varios segundos: con 5 s de
     // duración acababa fotografiando el fotograma posterior al efecto.
     await page.waitForTimeout(3000)

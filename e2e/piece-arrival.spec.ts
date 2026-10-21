@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { CARD_BY_ID, STARTER_DECKS, createMatch, type AnimationEvent, type BoardPiece } from '../src/game'
 import type { useMatchStore as MatchStoreHook } from '../src/store/match'
+import { matchStoreUrl } from './helpers/matchStoreUrl'
 
 for (const reducedMotion of [false, true]) {
   test(`la entrada respeta la cola y omite movimiento cuando se solicita: ${reducedMotion}`, async ({ page }) => {
@@ -24,32 +25,31 @@ for (const reducedMotion of [false, true]) {
         match: saved, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
       }, version: 2 }))
     }, { saved: match, reducedMotion })
+    const storeRequest = matchStoreUrl(page)
     await page.goto('/battle')
+    const storeUrl = await storeRequest
     const label = page.locator('[class*="cardName"]').filter({ hasText: card.name })
     await expect(label).toBeVisible({ timeout: 25000 })
     const summon: AnimationEvent = { id: 'arrival', type: 'summon', actorId: 'player',
       targetId: piece.instanceId, to: piece.position, faction: card.faction, durationMs: 4000 }
     // Un evento previo mantiene la invocación en espera como en una jugada
     // resuelta con varios efectos; no se simulan reglas dentro del render.
-    await page.evaluate(async (summon) => {
-      const modulePath = '/src/store/match.ts'
-      const module = await import(modulePath) as { useMatchStore: typeof MatchStoreHook }
+    await page.evaluate(async ({ summon, storeUrl }) => {
+      const module = await import(storeUrl) as { useMatchStore: typeof MatchStoreHook }
       module.useMatchStore.setState({ currentEvent: { id: 'hold', type: 'reveal', durationMs: 12000 }, pendingAnimations: [summon] })
-    }, summon)
+    }, { summon, storeUrl })
     if (reducedMotion) await expect(label).toBeVisible()
     else await expect(label).toBeHidden()
-    await page.evaluate(async (summon) => {
-      const modulePath = '/src/store/match.ts'
-      const module = await import(modulePath) as { useMatchStore: typeof MatchStoreHook }
+    await page.evaluate(async ({ summon, storeUrl }) => {
+      const module = await import(storeUrl) as { useMatchStore: typeof MatchStoreHook }
       module.useMatchStore.setState({ currentEvent: summon, pendingAnimations: [] })
-    }, summon)
+    }, { summon, storeUrl })
     await expect(label).toBeVisible({ timeout: 8000 })
     // Saltar la reproducción debe restaurar también la transformación física.
-    await page.evaluate(async () => {
-      const modulePath = '/src/store/match.ts'
-      const module = await import(modulePath) as { useMatchStore: typeof MatchStoreHook }
+    await page.evaluate(async (storeUrl) => {
+      const module = await import(storeUrl) as { useMatchStore: typeof MatchStoreHook }
       module.useMatchStore.getState().skipAnimations()
-    })
+    }, storeUrl)
     await expect(label).toBeVisible()
   })
 }

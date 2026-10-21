@@ -64,10 +64,10 @@ global), **V** terminada y verificada.
 | 39 | Desgaste de piezas dañadas | A |
 | 40 | Solapamiento de nombres y estadísticas | A |
 | 41 | Anticipación, impacto y recuperación | A |
-| 42 | Familias visuales de ataque | P |
-| 43 | Recorrido de hechizos | P |
-| 44 | Impactos por facción y material | P |
-| 45 | Destrucciones por facción | P |
+| 42 | Familias visuales de ataque | A |
+| 43 | Recorrido de hechizos | A |
+| 44 | Impactos por facción y material | A |
+| 45 | Destrucciones por facción | A |
 | 46 | Deterioro de Nexos | A |
 | 47 | Caída del Nexo | P |
 | 48 | Interfaz de batalla | P |
@@ -76,7 +76,67 @@ global), **V** terminada y verificada.
 
 ## Bloque activo
 
-**22 oct, 00:40.** Quinto bloque guardado en `06894eb`. Sexto bloque validado:
+**22 oct, 01:35.** Quinto bloque guardado en `06894eb`; sexto en `8208e5b`.
+Séptimo bloque validado: `AttackTrail` ya integrado (ocho estilos y ataque
+de contacto), `ImpactDebris` con fragmentos instanciados según material,
+metadatos `cardId`/`targetCardId`/facción en eventos resueltos y salida de los
+ataques al Nexo (antes no tenían recorrido). No se modificaron reglas.
+Temporizadores por montaje integrados en números, marcas y caídas; las caídas
+ya respetan duración efectiva, movimiento reducido y cola al saltar eventos.
+La copia caída mantiene arte iluminado; sombras/agua se disuelven en vez de
+volcar como una estructura. Inspector de batalla conectado con id de copia,
+estados reales, foco estable y bloqueo de atajos mientras está abierto.
+
+Prueba real de caducidad de daño en verde (`e2e/combat-effects.spec.ts`).
+Pruebas de metadatos, temporizadores y apoyo del tirador en verde.
+Capturas de ocho familias: las primeras de `50977` no valían (tablero vacío).
+Tras editar el store, Vite añade ?t=… al módulo; importar la ruta desnuda desde
+una sonda creaba otro Zustand distinto. `e2e/helpers/matchStoreUrl.ts` encuentra
+la URL real cargada en la página. Todas las sondas adaptadas. Ya hay cartas
+visibles y se exige comprobarlas antes de fotografiar.
+Primera revisión encontró el recorrido oculto por las cartas en columnas:
+cresta elevada y curva lateral para despejar las siluetas. Además, el readback
+de WebGL por software terminaba fotografiando el final del efecto. La sonda
+de proyectiles ahora carga las imágenes con el reloj en marcha y congela el
+reloj de Playwright a mitad del vuelo, antes de capturar. La detección de URL
+del store usa la respuesta de red real (antes de goto), no Performance, porque
+el reloj simulado no conserva esas entradas. Prueba corta de Furia revisada:
+trayectoria visible, sin errores. Logger temporal retirado.
+Matriz final `7986`: ocho familias y cuatro materiales en ambas resoluciones,
+en verde y revisadas en `tools/captures/ataque-review.png` e `impacto-review.png`.
+Estelas afinadas en filamentos y destello concentrado al comienzo. Tiradores
+con pose `release`, sin embestir medio metro; prueba de apoyo en su casilla.
+Revisión adicional Furia/Forja pasó en ambas resoluciones (`83220`). El metal
+es discreto en la Ciudadela clara a 1366: revisar contraste en el pulido global,
+especialmente tras renovar las luces de escenarios. No marcar 42 como V.
+Inspección de batalla ya pasó en ambas
+resoluciones con capturas, control de foco y dos copias con estados distintos.
+
+Gate actual: **550 unitarias en verde, 5 omitidas; build y lint verdes**.
+E2e completo cerrado: **70 en verde y 29 omitidas** (99 pruebas). Sin procesos
+de verificación pendientes. Guardar checkpoint; después integrar ruptura.
+
+Borrador para después del checkpoint: `NexusRupture.tsx` NO integrado, sectores
+cerrados e instanciados de los tres niveles del Nexo, fragmentos de cristales,
+onda breve y ruina persistente. Falta conectar su ciclo a victoria y revisar.
+Al integrar ruptura, pasar `reducedMotion` al Nexo: su reacción antigua aún
+tiembla sin consultar esa preferencia. `justHit` también conserva un timeout
+ligado al cambio de evento; usar el gestor de temporizadores con identidad de
+golpe para que no se quede encendido al acelerar. La caída debe persistir al
+terminar el evento, ocultar el retrato con transición y resetearse en revancha.
+Después cerrar #38 (maldición/quemadura), #48/50 y pasar a escenarios.
+
+Arte de interfaz preparándose aparte con la habilidad `imagegen`: solo faltan
+cinco sigilos ilustrados (Forja, Marea, Bestiario, Plaga, Quinto Sol); los otros
+once ya existen. Primer Forja original copiado a
+`tools/art-inbox/ui-sigils/forja-metal-v1.png` (ignorado), pero su encuadre es
+demasiado ajustado. Edición para dejar márgenes y creación de Marea en celda
+`302` de functions.exec. Esperar con functions.wait, no lanzar duplicados.
+Resultados en store `forja_sigil_framed` y `marea_sigil_generation` al terminar.
+Son recursos originales, sin archivos ajenos; no se ha sustituido ningún sigilo
+existente ni integrado aún ningún bitmap nuevo en public.
+
+Resumen del sexto bloque validado:
 inspector con ilustración original, alternancia de carta completa,
 respaldo hasta SVG y acento para las 16 facciones. Revisado en 1920×1080,
 1366×768 y 375×812 con arte vertical de Forja. Dos pruebas nuevas de componente
@@ -93,13 +153,7 @@ Una pasada con `RUN_SHOTS=1` se abortó: esa variable activa también
 sondas históricas de coste elevado; usarla solo en el spec visual concreto.
 Servidor propio continúa en sesión `35243` (4173). No iniciar otra copia.
 
-Siguiente: combate (#42–45), caída del Nexo (#47) e interfaz (#48/50).
-Escenarios al final. Borradores NO integrados: `AttackTrail.tsx`,
-`useTransientEntries.ts`, `useVisualTimers.ts` y dos pruebas de caducidad.
-Estas dos pruebas pasan aisladamente; no sumarlas al gate del sexto bloque.
-Corrigen temporizadores cuya limpieza se cancelaba al cambiar de evento en
-DamageNumbers, RecentHits y FallenPieces. La inspección de batalla aún usa
-ArtViewer: conectar el nuevo CardInspector con la copia concreta y sus estados.
+Después del séptimo: caída del Nexo (#47) e interfaz (#48/50), antes de escenarios.
 
 ## Historial de bloques (las notas de borrador siguientes son históricas)
 

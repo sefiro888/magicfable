@@ -493,6 +493,7 @@ const damagePieceDetailed = (
    * la dirección correcta en vez de hacia fuera del tablero.
    */
   origin?: Position,
+  sourceCard?: CardDefinition,
 ): DamageOutcome => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
   if (!target || amount <= 0) return { state, dealt: 0, healthBefore: target?.currentHealth ?? 0 };
@@ -543,7 +544,8 @@ const damagePieceDetailed = (
     });
   }
   next = enqueue(next, {
-    type: 'damage', targetId: pieceId, from: origin, to: target.position, amount: finalAmount, effectId, durationMs: 300,
+    type: 'damage', targetId: pieceId, from: origin, to: target.position, amount: finalAmount, effectId,
+    cardId: sourceCard?.id, faction: sourceCard?.faction, targetCardId: target.cardId, durationMs: 300,
   });
   if (target.currentHealth - finalAmount <= 0) {
     const owner = next.players[target.owner];
@@ -619,7 +621,8 @@ const damagePieceDetailed = (
       );
     }
     next = enqueue(next, {
-      type: 'destroy', targetId: pieceId, to: target.position, effectId: dyingDefinition?.vfx.deathEffect ?? 'card-destroy', durationMs: 420,
+      type: 'destroy', targetId: pieceId, to: target.position, effectId: dyingDefinition?.vfx.deathEffect ?? 'card-destroy',
+      cardId: target.cardId, targetCardId: target.cardId, faction: dyingDefinition?.faction, durationMs: 420,
     });
     // Devorador Entrópico: drena la Resistencia de una estructura enemiga destruida como Vida propia.
     for (const devourer of structureResistanceDrain) {
@@ -702,7 +705,8 @@ const damagePiece = (
   effectId = 'impact',
   /** Casilla de origen del golpe, si la hay: solo la usa la presentación. */
   origin?: Position,
-): MatchState => damagePieceDetailed(state, pieceId, amount, sourceOwner, effectId, origin).state;
+  sourceCard?: CardDefinition,
+): MatchState => damagePieceDetailed(state, pieceId, amount, sourceOwner, effectId, origin, sourceCard).state;
 
 /**
  * Daño al Nexo de un bando, con su contabilidad completa: estadística de daño
@@ -738,6 +742,7 @@ const damageNexus = (
   });
   next = enqueue(next, {
     type: 'nexus-damage', actorId, targetId: `${targetId}-nexus`, amount,
+    cardId: card.id, faction: card.faction,
     effectId: card.vfx.impactEffect ?? `${card.faction}-nexus-impact`, durationMs: 440,
   });
   return { state: next, lethal: target.nexusHealth - amount <= 0 };
@@ -924,7 +929,7 @@ const resolveSpell = (
       const bonusDamage = (bonus?.kind === 'passive' ? bonus.value ?? 0 : 0)
         + (woundBonus?.kind === 'passive' ? woundBonus.value ?? 0 : 0);
       const before = targetPiece.currentHealth;
-      next = damagePiece(next, targetPiece.instanceId, effect.amount + bonusDamage, caster, card.vfx.impactEffect);
+      next = damagePiece(next, targetPiece.instanceId, effect.amount + bonusDamage, caster, card.vfx.impactEffect, undefined, card);
       damageDealt += Math.min(effect.amount + bonusDamage, before);
     } else if (effect.kind === 'damage-all-enemies') {
       const enemy = opponentOf(caster);
@@ -932,7 +937,7 @@ const resolveSpell = (
         (candidate) => (candidate.owner === enemy || effect.includeAllies) && pieceDefinition(candidate)?.type === 'unit',
       )) {
         const before = piece.currentHealth;
-        next = damagePiece(next, piece.instanceId, effect.amount, caster, card.vfx.impactEffect);
+        next = damagePiece(next, piece.instanceId, effect.amount, caster, card.vfx.impactEffect, undefined, card);
         damageDealt += Math.min(effect.amount, before);
         if (effect.scorch) {
           const expiresOnTurn = state.turn + 2;
@@ -951,7 +956,7 @@ const resolveSpell = (
       let gainedEssence = 0;
       for (const structure of structures) {
         gainedEssence += pieceDefinition(structure)?.resistance ?? 0;
-        next = damagePiece(next, structure.instanceId, structure.currentHealth, caster, card.vfx.impactEffect);
+        next = damagePiece(next, structure.instanceId, structure.currentHealth, caster, card.vfx.impactEffect, undefined, card);
       }
       if (effect.gainEssencePerResistance && gainedEssence > 0) {
         const player = next.players[caster];
@@ -1093,7 +1098,7 @@ const resolveSpell = (
           return r - l || left.instanceId.localeCompare(right.instanceId);
         })[0];
       if (victim) {
-        next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, caster, card.vfx.impactEffect);
+        next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, caster, card.vfx.impactEffect, undefined, card);
       }
     } else if (effect.kind === 'damage-all-enemies-by-sun-count') {
       // Cuenta de los Días / poder de Itzpapálotl (Quinto Sol).
@@ -1103,7 +1108,7 @@ const resolveSpell = (
         for (const piece of next.board.filter(
           (candidate) => candidate.owner !== caster && pieceDefinition(candidate)?.type === 'unit',
         )) {
-          next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect);
+          next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect, undefined, card);
         }
       }
     } else if (effect.kind === 'conditional-damage-all-enemies') {
@@ -1112,7 +1117,7 @@ const resolveSpell = (
       for (const piece of next.board.filter(
         (candidate) => candidate.owner !== caster && pieceDefinition(candidate)?.type === 'unit',
       )) {
-        next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect);
+        next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect, undefined, card);
       }
     } else if (effect.kind === 'return-fallen-allies') {
       // Karma (Samsara): recupera TODAS las unidades propias muertas este turno, con bono.
@@ -1169,7 +1174,7 @@ const resolveSpell = (
       for (const piece of next.board.filter(
         (candidate) => candidate.owner !== caster && candidate.statuses.some((status) => status.kind === 'infected'),
       )) {
-        next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect);
+        next = damagePiece(next, piece.instanceId, amount, caster, card.vfx.impactEffect, undefined, card);
       }
     } else if (effect.kind === 'claim-mandate') {
       // Jade: el Mandato Celestial pasa a manos de quien lanza la carta,
@@ -1239,7 +1244,7 @@ const resolveSpell = (
       const weakest = candidates[0];
       if (weakest) {
         const before = weakest.currentHealth;
-        next = damagePiece(next, weakest.instanceId, effect.amount, caster, card.vfx.impactEffect);
+        next = damagePiece(next, weakest.instanceId, effect.amount, caster, card.vfx.impactEffect, undefined, card);
         damageDealt += Math.min(effect.amount, before);
       }
     } else if (effect.kind === 'passive' && effect.id === 'entry-damage-strongest') {
@@ -1252,7 +1257,7 @@ const resolveSpell = (
           const r = (pieceDefinition(right)?.attack ?? 0) + right.attackModifier;
           return r - l || left.instanceId.localeCompare(right.instanceId);
         })[0];
-      if (victim) next = damagePiece(next, victim.instanceId, effect.value ?? 1, caster, card.vfx.impactEffect);
+      if (victim) next = damagePiece(next, victim.instanceId, effect.value ?? 1, caster, card.vfx.impactEffect, undefined, card);
     } else if (effect.kind === 'passive' && effect.id === 'target-attack-until-end' && targetPiece?.owner === caster) {
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece,
@@ -1284,7 +1289,7 @@ const resolveSpell = (
       const bonus = effect.value ?? 1;
       const sacrificedCardId = targetPiece.cardId;
       const sacrificedInstanceId = targetPiece.instanceId;
-      next = damagePiece(next, sacrificedInstanceId, targetPiece.currentHealth + 99, caster, card.vfx.impactEffect);
+      next = damagePiece(next, sacrificedInstanceId, targetPiece.currentHealth + 99, caster, card.vfx.impactEffect, undefined, card);
       next = withPlayer(next, caster, {
         ...next.players[caster],
         hand: [...next.players[caster].hand, {
@@ -1371,13 +1376,13 @@ const resolveEntryEffects = (
           (effect.includeAllies || candidate.owner !== piece.owner),
       );
       for (const target of targets) {
-        next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect);
+        next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect, undefined, card);
       }
     } else if (effect.kind === 'damage-all-enemies') {
       for (const target of next.board.filter(
         (candidate) => (candidate.owner !== piece.owner || effect.includeAllies) && pieceDefinition(candidate)?.type === 'unit',
       )) {
-        next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect);
+        next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect, undefined, card);
       }
     } else if (effect.kind === 'freeze' || effect.kind === 'stun') {
       // Al entrar en juego no hay objetivo señalado por el jugador: se elige
@@ -1440,12 +1445,12 @@ const resolveEntryEffects = (
           const r = (pieceDefinition(right)?.attack ?? 0) + right.attackModifier;
           return r - l || left.instanceId.localeCompare(right.instanceId);
         })[0];
-      if (victim) next = damagePiece(next, victim.instanceId, effect.value ?? 1, piece.owner, card.vfx.impactEffect);
+      if (victim) next = damagePiece(next, victim.instanceId, effect.value ?? 1, piece.owner, card.vfx.impactEffect, undefined, card);
     } else if (effect.kind === 'passive' && effect.id === 'entry-adjacent-enemy-damage') {
       const target = next.board.find(
         (candidate) => candidate.owner !== piece.owner && distance(candidate.position, piece.position) === 1,
       );
-      if (target) next = damagePiece(next, target.instanceId, effect.value ?? 1, piece.owner, card.vfx.impactEffect);
+      if (target) next = damagePiece(next, target.instanceId, effect.value ?? 1, piece.owner, card.vfx.impactEffect, undefined, card);
     } else if (effect.kind === 'passive' && effect.id === 'copy-adjacent-attack') {
       const ally = next.board.find(
         (candidate) =>
@@ -1495,7 +1500,7 @@ const resolveEntryEffects = (
           return r - l || left.instanceId.localeCompare(right.instanceId);
         })[0];
       if (victim) {
-        next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, piece.owner, card.vfx.impactEffect);
+        next = damagePiece(next, victim.instanceId, victim.currentHealth + 99, piece.owner, card.vfx.impactEffect, undefined, card);
       }
     } else if (effect.kind === 'passive' && effect.id === 'entry-self-permanent-buff') {
       // Colibrí del Sur (Quinto Sol): se refuerza a sí mismo al pagar su propio Sacrificio.
@@ -1524,7 +1529,7 @@ const resolveEntryEffects = (
       for (const target of next.board.filter(
         (candidate) => pieceDefinition(candidate)?.type === 'unit' && candidate.currentHealth <= effect.threshold,
       )) {
-        next = damagePiece(next, target.instanceId, target.currentHealth + 99, piece.owner, card.vfx.impactEffect);
+        next = damagePiece(next, target.instanceId, target.currentHealth + 99, piece.owner, card.vfx.impactEffect, undefined, card);
       }
     } else if (effect.kind === 'passive' && effect.id === 'scorch-adjacents') {
       const expiresOnTurn = state.turn + 2;
@@ -1549,7 +1554,7 @@ const resolveEntryEffects = (
       const weaken = card.effects.find((e) => e.kind === 'passive' && e.id === 'discarded-units-weaken');
       const amount = weaken?.kind === 'passive' ? weaken.value ?? 1 : 1;
       for (const enemyUnit of next.board.filter((p) => p.owner === target && pieceDefinition(p)?.type === 'unit')) {
-        next = damagePiece(next, enemyUnit.instanceId, amount, piece.owner, card.vfx.impactEffect);
+        next = damagePiece(next, enemyUnit.instanceId, amount, piece.owner, card.vfx.impactEffect, undefined, card);
       }
     }
   }
@@ -2065,8 +2070,9 @@ export const playCard = (
     });
     const spellTargetPiece = requireTargetPiece(next, target);
     next = enqueue(next, {
-      type: 'spell', actorId: playerId, targetId: target?.kind === 'piece' ? target.pieceId : undefined,
+      type: 'spell', actorId: playerId, targetId: target?.kind === 'piece' ? target.pieceId : target?.kind === 'nexus' ? `${target.playerId}-nexus` : undefined,
       to: spellTargetPiece?.position,
+      cardId: card.id, faction: card.faction,
       effectId: card.vfx.impactEffect ?? card.vfx.persistentEffect, durationMs: 420,
     });
     next = resolveSpell(next, playerId, card, target, paysOffering);
@@ -2205,7 +2211,7 @@ const applyOnAttackExtras = (
     if (destroySurvivor) {
       const survivor = defenderId ? next.board.find((piece) => piece.instanceId === defenderId) : undefined;
       if (survivor) {
-        next = damagePiece(next, survivor.instanceId, survivor.currentHealth + 99, playerId, card.vfx.impactEffect);
+        next = damagePiece(next, survivor.instanceId, survivor.currentHealth + 99, playerId, card.vfx.impactEffect, undefined, card);
       }
     }
   }
@@ -2229,7 +2235,7 @@ const applyOnAttackExtras = (
         (attackAdjacent.includeAllies || piece.owner !== playerId),
     );
     for (const splashed of splashTargets) {
-      next = damagePiece(next, splashed.instanceId, attackAdjacent.amount, playerId, card.vfx.impactEffect);
+      next = damagePiece(next, splashed.instanceId, attackAdjacent.amount, playerId, card.vfx.impactEffect, undefined, card);
     }
   }
   // Devorador de Ecos: cada golpe le arranca al rival una carta de la mano.
@@ -2407,11 +2413,12 @@ export const attackPiece = (
   let next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: defenderId,
+    cardId: card.id, faction: card.faction, targetCardId: defender.cardId,
     from: attacker.position, to: defender.position, effectId: card.vfx.attackEffect, durationMs: 380,
   });
   const defenderPosition = defender.position;
   const defenderCard = pieceDefinition(defender);
-  const hit = damagePieceDetailed(next, defenderId, amount, playerId, card.vfx.impactEffect, attacker.position);
+  const hit = damagePieceDetailed(next, defenderId, amount, playerId, card.vfx.impactEffect, attacker.position, card);
   next = hit.state;
   // Vínculo vital: el Nexo propio se cura por el daño que llegó de verdad, no
   // por el anunciado — escudos y reducciones lo recortan antes.
@@ -2503,7 +2510,7 @@ export const attackPiece = (
   // estructuras (no tienen Ataque).
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
     const retaliation = Math.max(0, defenderCard.attack + defender.attackModifier);
-    next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition);
+    next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition, defenderCard);
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount, defenderId, defenderPosition);
   next = applyMalacharDrain(next, playerId);
@@ -2636,7 +2643,7 @@ const performSacrifice = (state: MatchState, playerId: PlayerId): MatchState => 
     .sort((left, right) => left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId))[0];
   if (!victim) return state;
   const victimCard = pieceDefinition(victim)!;
-  let next = damagePiece(state, victim.instanceId, victim.currentHealth + 99, playerId, victimCard.vfx.impactEffect);
+  let next = damagePiece(state, victim.instanceId, victim.currentHealth + 99, playerId, victimCard.vfx.impactEffect, undefined, victimCard);
   const onSacrificeDraw = victimCard.effects.find((effect) => effect.kind === 'passive' && effect.id === 'on-sacrifice-draw');
   if (onSacrificeDraw?.kind === 'passive') next = resolveDrawAndDiscard(next, playerId, onSacrificeDraw.value ?? 1, 0);
   const onSacrificeHeal = victimCard.effects.find((effect) => effect.kind === 'passive' && effect.id === 'on-sacrifice-heal-nexus');
@@ -2732,6 +2739,7 @@ export const attackNexus = (
   let next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: `${enemyId}-nexus`,
+    from: attacker.position, cardId: card.id, faction: card.faction,
     effectId: card.vfx.attackEffect, durationMs: 380,
   });
   const struck = damageNexus(next, enemyId, amount, playerId, attackerId, card);
@@ -2787,7 +2795,7 @@ export const previewAttackPiece = (
   const defenderCard = pieceDefinition(defender);
   if (!card || card.attack === undefined) return undefined;
   const amount = computeAttackAmount(state, attacker, card, defender);
-  const hit = damagePieceDetailed(state, defenderId, amount, attacker.owner, card.vfx.impactEffect, attacker.position);
+  const hit = damagePieceDetailed(state, defenderId, amount, attacker.owner, card.vfx.impactEffect, attacker.position, card);
   const defenderHealthAfter = Math.max(0, defender.currentHealth - hit.dealt);
   const defenderDies = defenderHealthAfter <= 0;
   const pierceOverkill = hasKeyword(attacker, 'pierce') && defenderDies
@@ -2799,7 +2807,7 @@ export const previewAttackPiece = (
   // cuerpo a cuerpo, incluso si el ataque recibido la mata.
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
     const raw = Math.max(0, defenderCard.attack + defender.attackModifier);
-    const back = damagePieceDetailed(state, attackerId, raw, defender.owner, defenderCard.vfx.impactEffect, defender.position);
+    const back = damagePieceDetailed(state, attackerId, raw, defender.owner, defenderCard.vfx.impactEffect, defender.position, defenderCard);
     retaliationToAttacker = back.dealt;
     attackerHealthAfter = Math.max(0, attacker.currentHealth - back.dealt);
   }
@@ -2892,7 +2900,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
               .sort((a, b) => distance(a.position, source.position) - distance(b.position, source.position))[0]
           : undefined;
         if (objetivo) {
-          next = damagePiece(next, objetivo.instanceId, value, playerId, card.vfx.impactEffect);
+          next = damagePiece(next, objetivo.instanceId, value, playerId, card.vfx.impactEffect, undefined, card);
         }
       } else if (effect.id === 'upkeep-heal-wounded-ally') {
         // Forja — el Taller Ambulante repara a la más maltrecha.
@@ -2942,7 +2950,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
             left.currentHealth - right.currentHealth || left.instanceId.localeCompare(right.instanceId),
           )[0];
         if (weakest) {
-          next = damagePiece(next, weakest.instanceId, value, playerId, card.vfx.impactEffect);
+          next = damagePiece(next, weakest.instanceId, value, playerId, card.vfx.impactEffect, undefined, card);
         }
       } else if (effect.id === 'upkeep-shield-ally') {
         // La unidad aliada más expuesta: la que menos Vida le queda. Escudar a
@@ -3011,7 +3019,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
           for (const target of next.board.filter(
             (piece) => piece.owner === enemyId && pieceDefinition(piece)?.type === 'unit',
           )) {
-            next = damagePiece(next, target.instanceId, value, playerId, card.vfx.impactEffect);
+            next = damagePiece(next, target.instanceId, value, playerId, card.vfx.impactEffect, undefined, card);
           }
         }
       } else if (effect.id === 'upkeep-draw-if-challenged' && next.players[playerId].challengedThisTurn) {
@@ -3060,7 +3068,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
         const victim = next.board.find(
           (piece) => piece.owner === enemyId && piece.statuses.some((status) => status.kind === 'infected'),
         );
-        if (victim) next = damagePiece(next, victim.instanceId, value, playerId, card.vfx.impactEffect);
+        if (victim) next = damagePiece(next, victim.instanceId, value, playerId, card.vfx.impactEffect, undefined, card);
       } else if (effect.id === 'upkeep-draw-and-grow-if-infected-death' && next.players[playerId].infectedEnemyDiedThisTurn) {
         // Monumento a la Plaga (Plaga).
         next = resolveDrawAndDiscard(next, playerId, 1, 0);

@@ -118,7 +118,7 @@
 .exhibit { position: relative; display: grid; place-items: center; min-height: 0; width: 100%; height: min(62vh, 42rem); padding: .8rem; border: 1px solid #bf9c5a75; border-radius: .15rem; background: radial-gradient(ellipse at 50% 45%, #282728, #07090d 80%); box-shadow: 0 1rem 2.5rem #0008, inset 0 0 0 4px #090b0e, inset 0 0 0 5px #bba16925; }
 .exhibit::after { content: ''; position: absolute; inset: -.25rem; pointer-events: none; background: linear-gradient(#d0b277, #d0b277) left top / 1.2rem 1px no-repeat, linear-gradient(#d0b277, #d0b277) right bottom / 1.2rem 1px no-repeat, linear-gradient(#d0b277, #d0b277) left top / 1px 1.2rem no-repeat, linear-gradient(#d0b277, #d0b277) right bottom / 1px 1.2rem no-repeat; }
 .fullArtwork { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: drop-shadow(0 .6rem 1rem #0009); }
-.exhibit[data-view='card'] { overflow: auto; }
+.exhibit[data-view='card'] { overflow: auto; align-items: safe center; }
 .exhibit > article { width: min(100%, 22rem); }
 .shortcutHint { margin: 1.1rem 0 0; color: #989385; font-size: .78rem; letter-spacing: .04em; }
 .shortcutHint kbd { padding: .12rem .38rem; border: 1px solid #5a554d; border-bottom-width: 2px; border-radius: .25rem; color: #d7ccb6; background: #17181e; font: inherit; }

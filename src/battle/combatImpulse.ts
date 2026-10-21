@@ -1,4 +1,5 @@
 import type { AnimationEvent, BoardPiece } from '../game'
+import { CARD_BY_ID } from '../game'
 import { gridToWorldX, gridToWorldZ, nexusWorldZ } from './grid/gridCoordinates'
 
 /**
@@ -10,7 +11,7 @@ import { gridToWorldX, gridToWorldZ, nexusWorldZ } from './grid/gridCoordinates'
 export interface Impulse {
   /** Id del evento que lo provocó: cambiar de id es lo que dispara la animación. */
   readonly key: string
-  readonly kind: 'lunge' | 'recoil'
+  readonly kind: 'lunge' | 'recoil' | 'release'
   /** Dirección normalizada en el plano del tablero. */
   readonly dx: number
   readonly dz: number
@@ -26,6 +27,14 @@ export interface Impulse {
 export const combatPose = (kind: Impulse['kind'], progress: number): { reach: number; lift: number; lean: number } => {
   const t = Math.max(0, Math.min(1, progress))
   if (t === 0 || t === 1) return { reach: 0, lift: 0, lean: 0 }
+  if (kind === 'release') {
+    const smooth = (value: number) => value * value * (3 - 2 * value)
+    // El tirador se afianza en su casilla. La embestida de medio metro lo
+    // adelantaba a su propio proyectil y parecía un ataque cuerpo a cuerpo.
+    const load = t < 0.3 ? smooth(t / 0.3) : 1 - smooth(Math.min(1, (t - 0.3) / 0.4))
+    const kick = Math.sin(Math.PI * Math.max(0, Math.min(1, (t - 0.4) / 0.24)))
+    return { reach: -0.045 * load + 0.02 * kick, lift: 0.008 * load, lean: -0.08 * load + 0.045 * kick }
+  }
   if (kind === 'recoil') {
     const kick = Math.sin(Math.PI * Math.min(1, t / 0.38))
     const settle = t > 0.38 ? Math.sin((t - 0.38) / 0.62 * Math.PI) * 0.035 : 0
@@ -73,7 +82,8 @@ export const impulsesForEvent = (
         ? { x: gridToWorldX(event.to.x), z: gridToWorldZ(event.to.y) }
         : { x: 0, z: nexusWorldZ(attacker.owner === 'player' ? 'ai' : 'player') }
       const { dx, dz } = direction(from.x, from.z, to.x, to.z)
-      map.set(attacker.instanceId, { key: event.id, kind: 'lunge', dx, dz, durationMs: event.durationMs })
+      const kind = (CARD_BY_ID[attacker.cardId]?.range ?? 1) > 1 ? 'release' : 'lunge'
+      map.set(attacker.instanceId, { key: event.id, kind, dx, dz, durationMs: event.durationMs })
     }
   }
 

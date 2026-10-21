@@ -3,6 +3,7 @@ import { useMemo, useRef } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, PointLight, Sprite } from 'three'
 import type { AnimationEvent, FactionId, Position } from '../game'
+import { CARD_BY_ID } from '../game'
 import {
   gridToWorldX as boardX,
   gridToWorldZ as boardZ,
@@ -10,6 +11,8 @@ import {
 } from './grid/gridCoordinates'
 import { glowTexture, type GlowTint } from './textures'
 import { RitualSeal } from './RitualSeal'
+import { AttackTrail } from './AttackTrail'
+import { ImpactDebris } from './ImpactDebris'
 
 /** Color y textura de brillo por facción — a juego con `accentColor` en `factions.ts`. */
 const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonly glow: GlowTint }>> = {
@@ -101,45 +104,6 @@ function SummonRitual({ cell, tone, timing, faction }: { cell: Position; tone: s
   )
 }
 
-/** Proyectil de ataque o hechizo entre dos casillas. */
-function Projectile({ from, to, tone, timing, arc = 0.9 }: { from: readonly [number, number]; to: readonly [number, number]; tone: string; timing: TimedProps; arc?: number }) {
-  const progress = useProgress(timing)
-  const head = useRef<Group>(null)
-  const trail = useRef<Mesh>(null)
-  const texture = useMemo(() => glowFor(tone), [tone])
-  useFrame(() => {
-    const value = MathUtils.clamp(progress.current * 1.15, 0, 1)
-    const x = MathUtils.lerp(from[0], to[0], value)
-    const z = MathUtils.lerp(from[1], to[1], value)
-    const y = 0.35 + Math.sin(value * Math.PI) * arc
-    if (head.current) {
-      head.current.position.set(x, y, z)
-      const fade = value > 0.92 ? (1 - value) / 0.08 : 1
-      head.current.scale.setScalar(0.9 * fade + 0.1)
-    }
-    if (trail.current) {
-      trail.current.position.set(x, y, z)
-      ;(trail.current.material as MeshBasicMaterial).opacity = 0.4 * (1 - value)
-      trail.current.scale.setScalar(1 + value * 2.4)
-    }
-  })
-  if (timing.reducedMotion) return null
-  return (
-    <>
-      <group ref={head}>
-        <sprite scale={[0.62, 0.62, 0.62]}>
-          <spriteMaterial map={texture} transparent blending={AdditiveBlending} depthWrite={false} />
-        </sprite>
-        <pointLight color={tone} intensity={7} distance={3.4} decay={2} />
-      </group>
-      <mesh ref={trail} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.1, 0.2, 24]} />
-        <meshBasicMaterial color={tone} transparent opacity={0.4} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-      </mesh>
-    </>
-  )
-}
-
 /**
  * Estallido de impacto: anillo expansivo, chispas y golpe de luz.
  *
@@ -170,15 +134,18 @@ function ImpactBurst({ cell, tone, timing, power = 0 }: { cell: readonly [number
     const value = progress.current
     const fade = 1 - value
     if (ring.current) {
-      ring.current.scale.setScalar(0.25 + value * (2.4 + power * 1.4))
+      ring.current.scale.setScalar(0.25 + value * (1.6 + power * 0.8))
       ;(ring.current.material as MeshBasicMaterial).opacity = fade * 0.9
     }
-    if (light.current) light.current.intensity = fade * (14 + power * 14)
+    // Un destello largo blanqueaba la ilustración: la energía queda en el
+    // primer instante y después se leen los fragmentos y la recuperación.
+    if (light.current) light.current.intensity = Math.pow(fade, 4) * (3.5 + power * 4)
     sparks.current?.children.forEach((spark, index) => {
       const direction = directions[index]!
       const reach = value * (1 + power * 0.6)
       spark.position.set(direction[0] * reach, direction[1] * reach * 0.8, direction[2] * reach)
-      spark.scale.setScalar(Math.max(0.001, (1 - value) * (0.3 + power * 0.12)))
+      spark.scale.setScalar(Math.max(0.001, (1 - value) * (0.1 + power * 0.06)))
+      ;(spark as Sprite).material.opacity = fade * fade * 0.8
     })
   })
   if (timing.reducedMotion) return null
@@ -195,7 +162,7 @@ function ImpactBurst({ cell, tone, timing, power = 0 }: { cell: readonly [number
           </sprite>
         ))}
       </group>
-      <pointLight ref={light} position={[0, 0.5, 0]} color={tone} intensity={13} distance={4.6} decay={2} />
+      <pointLight ref={light} position={[0, 0.5, 0]} color={tone} intensity={0} distance={3.2} decay={2} />
     </group>
   )
 }
@@ -357,30 +324,36 @@ const powerFor = (amount?: number): number => Math.max(0, Math.min(1, ((amount ?
 export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
   const tone = toneOf(event.effectId, event.faction)
+  const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
   switch (event.type) {
     case 'summon':
       return event.to ? <SummonRitual cell={event.to} tone={tone} timing={timing} faction={event.faction} /> : null
     case 'attack': {
+      if (reducedMotion) return null
       const target = event.targetId ? NEXUS_POSITION[event.targetId] : undefined
       const from: readonly [number, number] | undefined = event.from ? [boardX(event.from.x), boardZ(event.from.y)] : undefined
       const to: readonly [number, number] | undefined = event.to ? [boardX(event.to.x), boardZ(event.to.y)] : target
-      return from && to ? <Projectile from={from} to={to} tone={tone} timing={timing} /> : null
+      const melee = card ? (card.range ?? 1) <= 1 : Boolean(from && to && Math.hypot(to[0] - from[0], to[1] - from[1]) < 1.9)
+      return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={melee} /> : null
     }
     case 'spell': {
-      // Un hechizo siempre lleva un mínimo de fuerza propia (0.5): el daño
-      // real (si lo hay) llega en un evento 'damage' aparte justo después,
-      // así que este destello es el que anuncia "está pasando un hechizo".
-      // El poder de comandante (effectId "commander-<facción>-power") pega
-      // más fuerte que un hechizo cualquiera: solo se usa una vez o dos por
-      // partida, merece notarse más.
-      const isCommanderPower = /^commander-[a-z]+-power$/.test(event.effectId ?? '')
-      return event.to ? (
-        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={isCommanderPower ? 0.85 : 0.5} />
-      ) : null
+      if (reducedMotion) return null
+      const from: readonly [number, number] | undefined = event.from
+        ? [boardX(event.from.x), boardZ(event.from.y)]
+        : event.actorId ? NEXUS_POSITION[`${event.actorId}-nexus`] : undefined
+      const to: readonly [number, number] | undefined = event.to
+        ? [boardX(event.to.x), boardZ(event.to.y)]
+        : event.targetId ? NEXUS_POSITION[event.targetId] : undefined
+      // El viaje anuncia el lanzamiento; el impacto pertenece al evento de
+      // daño ya resuelto, evitando que la víctima estalle antes del proyectil.
+      return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={false} /> : null
     }
     case 'damage':
       return event.to ? (
+        <>
         <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={powerFor(event.amount)} />
+        {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} />}
+        </>
       ) : null
     case 'shield':
       return event.to ? (
@@ -389,7 +362,10 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
     case 'freeze':
       return event.to ? <FreezeBloom cell={event.to} timing={timing} /> : null
     case 'destroy':
-      return event.to ? <DestroyEmbers cell={event.to} tone={tone} timing={timing} /> : null
+      return event.to ? <>
+        <DestroyEmbers cell={event.to} tone={tone} timing={timing} />
+        {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} destruction />}
+      </> : null
     case 'nexus-damage': {
       const at = event.targetId ? NEXUS_POSITION[event.targetId] : undefined
       return at ? <NexusShock at={at} tone={tone} timing={timing} /> : null

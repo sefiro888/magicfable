@@ -1,8 +1,9 @@
 import { useFrame } from '@react-three/fiber'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import type { Mesh, MeshBasicMaterial } from 'three'
 import type { AnimationEvent } from '../game'
 import { gridToWorldX, gridToWorldZ } from './grid/gridCoordinates'
+import { useTransientEntries } from './useTransientEntries'
 
 interface HitMark {
   readonly id: string
@@ -27,7 +28,7 @@ let nextId = 0
  * un efecto que escucha `event`, con temporizadores que la limpian solos.
  */
 export const RecentHits = memo(function RecentHits({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
-  const [marks, setMarks] = useState<readonly HitMark[]>([])
+  const { entries: marks, append } = useTransientEntries<HitMark>(HIT_MARK_MS)
 
   useEffect(() => {
     if (reducedMotion || !event || !event.to) return
@@ -38,19 +39,10 @@ export const RecentHits = memo(function RecentHits({ event, reducedMotion }: { e
       z: gridToWorldZ(event.to.y),
       startTime: performance.now(),
     }
-    // Diferido con setTimeout(0): llamar a setState directamente en el cuerpo
-    // del efecto dispara el aviso de renders en cascada (mismo patrón que ya
-    // usa el director de animaciones de BattlePage.tsx para sus canales laterales).
-    const spawn = window.setTimeout(() => setMarks((current) => [...current, entry]), 0)
-    const remove = window.setTimeout(
-      () => setMarks((current) => current.filter((mark) => mark.id !== entry.id)),
-      HIT_MARK_MS,
-    )
-    return () => {
-      window.clearTimeout(spawn)
-      window.clearTimeout(remove)
-    }
-  }, [event, reducedMotion])
+    append(entry)
+  }, [event, reducedMotion, append])
+
+  if (reducedMotion) return null
 
   return (
     <>
@@ -70,8 +62,8 @@ function HitRing({ mark }: { mark: HitMark }) {
     node.scale.setScalar(0.55 + progress * 0.6)
   })
   return (
-    <mesh ref={mesh} position={[mark.x, 0.03, mark.z]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[0.27, 0.4, 28]} />
+    <mesh ref={mesh} position={[mark.x, 0.105, mark.z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.34, 0.355, 32]} />
       <meshBasicMaterial color="#ff6b5b" transparent opacity={0.5} depthWrite={false} />
     </mesh>
   )

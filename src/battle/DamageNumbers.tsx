@@ -1,9 +1,10 @@
 import { Html } from '@react-three/drei'
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import type { AnimationEvent } from '../game'
 import { gridToWorldX, gridToWorldZ, NEXUS_WORLD } from './grid/gridCoordinates'
 import styles from './DamageNumbers.module.css'
+import { useTransientEntries } from './useTransientEntries'
 
 interface FloatingNumber {
   readonly id: string
@@ -45,8 +46,8 @@ let nextId = 0
  *    cuando React volvía a renderizar por otro motivo. Ahora la subida y el
  *    desvanecido los hace el CSS, que va por su cuenta y no cuesta renders.
  */
-export const DamageNumbers = memo(function DamageNumbers({ event }: { event?: AnimationEvent }) {
-  const [numbers, setNumbers] = useState<readonly FloatingNumber[]>([])
+export const DamageNumbers = memo(function DamageNumbers({ event, reducedMotion = false }: { event?: AnimationEvent; reducedMotion?: boolean }) {
+  const { entries: numbers, append } = useTransientEntries<FloatingNumber>(FLOAT_MS)
 
   useEffect(() => {
     if (!event) return
@@ -70,19 +71,14 @@ export const DamageNumbers = memo(function DamageNumbers({ event }: { event?: An
       color: event.type === 'shield' ? 'shield' : 'damage',
       scale: scaleFor(value),
     }
-    setNumbers((current) => [...current, entry])
-    const timer = window.setTimeout(
-      () => setNumbers((current) => current.filter((item) => item.id !== entry.id)),
-      FLOAT_MS,
-    )
-    return () => window.clearTimeout(timer)
-  }, [event])
+    append(entry)
+  }, [event, append])
 
   return (
     <group>
       {numbers.map((num) => (
         <Html key={num.id} center position={[num.x, SPAWN_HEIGHT, num.z]} distanceFactor={8} zIndexRange={[16, 0]}>
-          <div className={styles.number} data-color={num.color} style={{ '--num-scale': num.scale } as CSSProperties}>
+          <div className={styles.number} data-color={num.color} data-reduced-motion={reducedMotion || undefined} style={{ '--num-scale': num.scale } as CSSProperties}>
             {num.color === 'shield' ? '+' : '−'}{num.value}
           </div>
         </Html>

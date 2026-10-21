@@ -37,7 +37,8 @@ import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../components/GlossaryPanel'
 import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { describePendingActions, pendingTurnActions } from '../battle/ui/pendingTurnActions'
-import { ArtViewer, FactionSigil } from '../components'
+import { CardInspector, FactionSigil } from '../components'
+import { inspectionStatuses } from '../battle/inspectionStatuses'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useSoundtrack } from '../services/useAudioMix'
 import { useMatchStore } from '../store/match'
@@ -285,10 +286,11 @@ export function BattlePage() {
         store.inspect(undefined)
       }
       if (event.key.toLowerCase() === 'i') {
+        if (store.inspectedCardId) return
         const current = store.match
         const hand = current?.players[ME].hand.find((card) => card.instanceId === store.selectedHandId)
         const piece = current?.board.find((card) => card.instanceId === store.selectedPieceId)
-        store.inspect(hand?.cardId ?? piece?.cardId)
+        store.inspect(hand?.cardId ?? piece?.cardId, hand ? undefined : piece?.instanceId)
       }
     }
     window.addEventListener('keydown', cancel)
@@ -364,6 +366,7 @@ export function BattlePage() {
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
   const rivalCommander = rival ? COMMANDER_BY_ID[rival.commanderId] : undefined
   const inspected = store.inspectedCardId ? CARD_BY_ID[store.inspectedCardId] : undefined
+  const inspectedPiece = match?.board.find((piece) => piece.instanceId === store.inspectedPieceId)
   const storedRecords = useRecords((state) => state.records)
   const tally = useMemo(() => summarizeRecords(storedRecords), [storedRecords])
   const daily = useMemo(() => evaluateDailyChallenge(storedRecords), [storedRecords])
@@ -500,7 +503,8 @@ export function BattlePage() {
     useMatchStore.getState().selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
   }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection, ME, consumeDragged])
 
-  const inspectCard = useCallback((cardId?: string) => useMatchStore.getState().inspect(cardId), [])
+  const inspectCard = useCallback((cardId?: string, pieceId?: string) => useMatchStore.getState().inspect(cardId, pieceId), [])
+  const closeInspection = useCallback(() => useMatchStore.getState().inspect(undefined), [])
 
   /**
    * Poder del comandante. Los que piden objetivo entran en un modo de
@@ -577,7 +581,7 @@ export function BattlePage() {
   // ── Cursor de teclado sobre el tablero ────────────────────────────────────
   // Se apaga solo mientras haya un modal por encima (mulligan, escrutinio,
   // guía) o en modo foto: ahí las flechas pertenecen a esa otra interfaz.
-  const cursorEnabled = Boolean(match) && !match?.winner && !photoMode && !scryOpen && !howToOpen
+  const cursorEnabled = Boolean(match) && !match?.winner && !photoMode && !scryOpen && !howToOpen && !inspected
     && !(match && canTakeMulligan(match, ME))
   const cursorHome = useMemo(() => {
     const own = match?.board.filter((piece) => piece.owner === ME) ?? []
@@ -621,6 +625,7 @@ export function BattlePage() {
   // van aparte porque necesitan `endTurn`, definido después de aquel.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (inspected) return
       if (event.altKey || event.ctrlKey || event.metaKey) return
       const key = event.key.toLowerCase()
       if (key === 'e' && match?.activePlayer === ME && !match.winner && !queueBusy) {
@@ -635,7 +640,7 @@ export function BattlePage() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [match?.activePlayer, match?.winner, queueBusy, ME, endTurn])
+  }, [match?.activePlayer, match?.winner, queueBusy, ME, endTurn, inspected])
 
   const closeHowTo = useCallback(() => {
     const firstTime = !hasSeenHowTo()
@@ -1197,13 +1202,7 @@ export function BattlePage() {
         />
       )}
 
-      {/* Antes esto era un modal casero propio con el arte SIEMPRE recortado
-          en cuadrado (el mismo problema que ya se arregló en la Galería) y
-          sin coste/estadísticas/palabras clave — mucho más pobre que lo que
-          ya existía para la Galería. Reutiliza ArtViewer: ilustración
-          completa sin recortar y toda la ficha bien explicada, igual que al
-          consultar una carta fuera de partida. */}
-      {inspected && <ArtViewer card={inspected} onClose={() => store.inspect(undefined)} />}
+      {inspected && <CardInspector card={inspected} statusEffects={inspectionStatuses(inspectedPiece)} onClose={closeInspection} />}
 
       {match.winner && !queueBusy && (
         <MatchResultDialog
