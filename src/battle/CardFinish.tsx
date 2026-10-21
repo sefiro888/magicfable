@@ -53,7 +53,9 @@ const frameMaterial = (mine: boolean, structure: boolean) => {
   let material = frameMaterials.get(key)
   if (!material) {
     material = new MeshStandardMaterial({
-      color: mine ? '#bc995f' : '#a36e60', metalness: 0.04,
+      // El entorno de paneles ya aporta reflexión: el metal puede recuperar
+      // respuesta física sin ennegrecerse ni depender de un brillo emisivo.
+      color: mine ? '#bc995f' : '#a36e60', metalness: 0.6,
       roughness: structure ? 0.66 : 0.42, roughnessMap: boardTileRoughness('forge', 0),
     })
     frameMaterials.set(key, material)

@@ -34,6 +34,7 @@ import { TerrainMarks } from './terrain/TerrainMarks'
 import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFinish'
 import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
+import { MaterialEnvironment } from './MaterialEnvironment'
 
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
@@ -1400,6 +1401,7 @@ function Scene(props: Board3DProps) {
           escena: así su propio Nexo queda cerca de la cámara, igual que le
           pasa al anfitrión con el suyo. La cámara y sus controles no son
           hijos de este grupo, así que el punto de vista real no se mueve. */}
+      <MaterialEnvironment quality={props.quality} />
       <group rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
       <RitualSeal cell={{ x: 3, y: 4 }} tone="#ffffff" durationMs={1} reducedMotion={false} warmup />
       <Suspense fallback={<LoadingStage />}>

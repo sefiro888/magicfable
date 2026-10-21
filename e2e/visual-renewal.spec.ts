@@ -7,8 +7,10 @@ const piece = (instanceId: string, cardId: string, x: number, y: number, extra: 
   attackModifier: 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [], ...extra,
 })
 
+const scenarios = process.env.RUN_MATERIAL_SHOTS ? ['aether-citadel', 'caldera', 'fimbul'] as const : ['aether-citadel'] as const
+for (const scenario of scenarios) {
 for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
-  test(`acabados y estados de las piezas a ${width} × ${height}`, async ({ page }) => {
+  test(`acabados y estados de las piezas en ${scenario} a ${width} × ${height}`, async ({ page }) => {
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (error) => errors.push(error.message))
@@ -27,16 +29,16 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       ],
     }
     await page.setViewportSize({ width, height })
-    await page.addInitScript((saved) => {
+    await page.addInitScript(({ saved, scenario }) => {
       localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: {
         match: saved, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
       }, version: 2 }))
       localStorage.setItem('cronicas-nexo-howto-visto', '1')
       localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: {
-        selectedDeckId: 'furia-caldera', scenario: 'aether-citadel', muted: true,
+        selectedDeckId: 'furia-caldera', scenario, muted: true,
         graphicsQuality: 'high', reducedMotion: true,
       }, version: 7 }))
-    }, match)
+    }, { saved: match, scenario })
     await page.goto('/battle')
     await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
     await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
@@ -46,20 +48,21 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     // al tablero HTML no detectaba errores de GLSL que aparecían después.
     await page.waitForTimeout(1800)
     if (process.env.RUN_SHOTS) {
-      await page.screenshot({ path: `e2e/__shots__/renovacion-piezas-${width}x${height}.png` })
+      await page.screenshot({ path: `e2e/__shots__/renovacion-piezas-${scenario}-${width}x${height}.png` })
       const board = (await page.getByTestId('battle-board').boundingBox())!
       await page.mouse.move(board.x + board.width / 2, board.y + board.height * 0.65)
       await page.mouse.wheel(0, -750)
       await page.waitForTimeout(700)
-      await page.screenshot({ path: `e2e/__shots__/renovacion-detalle-${width}x${height}.png` })
+      await page.screenshot({ path: `e2e/__shots__/renovacion-detalle-${scenario}-${width}x${height}.png` })
     }
     await page.keyboard.press('ArrowUp')
     await page.keyboard.press('Enter')
     await expect(page.locator('[data-selected] [data-mine]').filter({ hasText: 'Sabueso de Brasa' })).toBeVisible()
     if (process.env.RUN_SHOTS) {
       await page.waitForTimeout(400)
-      await page.screenshot({ path: `e2e/__shots__/renovacion-seleccion-${width}x${height}.png` })
+      await page.screenshot({ path: `e2e/__shots__/renovacion-seleccion-${scenario}-${width}x${height}.png` })
     }
     expect(errors).toEqual([])
   })
+}
 }

@@ -153,8 +153,11 @@ resoluciones. Capturas `nexo-critico-*` y `nexo-curado-*` revisadas.
 Tests 543, build y lint verdes. E2e completo cerrado: 62 en verde y 25 omitidas.
 Sin verificaciones pendientes. Tercer bloque guardado en `cb53e19`.
 
-Preparado, sin integrar: `MaterialEnvironment.tsx`, reflexión de paneles propios
-sin HDR externo. Ver API local de Drei ya inspeccionada. Evaluar un entorno
-contenido antes de subir metalness de los marcos: evita el aspecto negro del
-metal sin reflexión. Comparar Ciudadela, Caldera y Fiordo en ambas resoluciones.
-La luz direccional del escenario debe seguir mandando; no lavar texturas.
+Quinto bloque cerrado: `MaterialEnvironment.tsx` integrado, reflexión de tres
+paneles propios sin HDR externo, capturada una vez. Filetes metálicos a 0,6;
+piedra y papel sin cambio. Capturas de Ciudadela, Caldera y Fiordo revisadas
+a ambas resoluciones (6 pruebas opcionales en verde). El entorno no sustituye
+las luces de escenario ni refleja las piezas sobre el suelo: esa tarea sigue
+pendiente. Tests 543, build y lint verdes; 62 e2e en verde y 25 omitidas.
+Sin verificaciones pendientes. Siguiente: inspección con ilustración original
+sin recorte, manteniendo accesibles reglas, estados y vista de carta completa.
