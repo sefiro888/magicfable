@@ -27,6 +27,7 @@ import { useAiTurn } from '../battle/hooks/useAiTurn'
 import { useCardDrag } from '../battle/hooks/useCardDrag'
 import { useBoardCursor } from '../battle/hooks/useBoardCursor'
 import { useEventDirector } from '../battle/hooks/useEventDirector'
+import { eventDuration } from '../battle/eventTiming'
 import { useMatchRecorder } from '../battle/hooks/useMatchRecorder'
 import { downloadMatchLog } from '../battle/matchLog'
 import { HandFan } from '../battle/ui/HandFan'
@@ -140,6 +141,11 @@ export function BattlePage() {
 
   const match = store.match
   const currentEvent = store.currentEvent
+  const visualEvent = useMemo(() => currentEvent ? {
+    ...currentEvent, durationMs: eventDuration(currentEvent, {
+      animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
+    }),
+  } : undefined, [currentEvent, preferences.animationSpeed, preferences.reducedMotion])
   const pendingCount = store.pendingAnimations.length
   const queueBusy = Boolean(currentEvent) || pendingCount > 0
 
@@ -848,7 +854,7 @@ export function BattlePage() {
             reducedMotion={preferences.reducedMotion}
             quality={preferences.graphicsQuality}
             scenario={scenario}
-            activeEvent={currentEvent}
+            activeEvent={visualEvent}
             pendingEvents={store.pendingAnimations}
             cursorCell={boardCursor.cell}
           />

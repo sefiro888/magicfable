@@ -14,7 +14,7 @@ continuar sin preguntar nada. Última actualización: **21 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 540 en verde, 5 omitidos |
+| Tests | 543 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada

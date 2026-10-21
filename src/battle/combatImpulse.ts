@@ -14,6 +14,7 @@ export interface Impulse {
   /** Dirección normalizada en el plano del tablero. */
   readonly dx: number
   readonly dz: number
+  readonly durationMs: number
 }
 
 /**
@@ -72,7 +73,7 @@ export const impulsesForEvent = (
         ? { x: gridToWorldX(event.to.x), z: gridToWorldZ(event.to.y) }
         : { x: 0, z: nexusWorldZ(attacker.owner === 'player' ? 'ai' : 'player') }
       const { dx, dz } = direction(from.x, from.z, to.x, to.z)
-      map.set(attacker.instanceId, { key: event.id, kind: 'lunge', dx, dz })
+      map.set(attacker.instanceId, { key: event.id, kind: 'lunge', dx, dz, durationMs: event.durationMs })
     }
   }
 
@@ -84,7 +85,7 @@ export const impulsesForEvent = (
         ? { x: gridToWorldX(event.from.x), z: gridToWorldZ(event.from.y) }
         : { x: 0, z: 0 }
       const { dx, dz } = direction(from.x, from.z, to.x, to.z)
-      map.set(defender.instanceId, { key: event.id, kind: 'recoil', dx, dz })
+      map.set(defender.instanceId, { key: event.id, kind: 'recoil', dx, dz, durationMs: event.durationMs })
     }
   }
 

@@ -108,3 +108,23 @@ Hallazgo para el siguiente bloque: `useEventDirector` acorta los eventos según
 `animationSpeed`, pero el render recibe la duración original. Los efectos
 se cortan a media trayectoria al acelerar. Unificar el cálculo de duración
 entre director y render antes de elaborar las invocaciones.
+
+Segundo bloque validado (23:38): cálculo compartido implementado en
+`eventTiming.ts`, consumido por director y evento visual memoizado de batalla;
+embestida/retroceso reciben su duración real. 543 pruebas, build y lint verdes.
+60 e2e en verde y 24 omitidas. Una ejecución se interrumpió porque se cerró el servidor
+reutilizado durante su limpieza, no por un fallo de juego. Servidor propio
+ahora en sesión `35243`, puerto 4173: reutilizarlo, no duplicarlo.
+Sin verificaciones pendientes. El primer bloque está en el commit `65cb37a`.
+Borrador de sellos ampliado con 16 vocabularios geométricos y sonda visual
+`e2e/ritual-shots.spec.ts` (`RUN_RITUAL_SHOTS=1`), ambos todavía sin integrar
+ni validar visualmente. No lanzar esa sonda hasta conectar el sello en EventEffects.
+
+## Siguiente acción concreta
+
+Integrar `RitualSeal` en la invocación de `EventEffects`, sustituyendo la columna
+genérica, y revisar las dieciséis formas con `RUN_RITUAL_SHOTS=1 npx playwright
+test e2e/ritual-shots.spec.ts --workers=1`. El test de sonda es nuevo y optativo.
+Después revisar llegadas de las cartas y deterioro de los Nexos. No saltar a
+escenarios todavía. Mantener vivas las 50 tareas; solo la sombra de contacto
+está marcada como terminada, el resto de los cambios son avances parciales.

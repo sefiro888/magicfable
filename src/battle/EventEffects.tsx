@@ -63,7 +63,7 @@ const useProgress = ({ durationMs, reducedMotion }: TimedProps) => {
   useFrame(() => {
     if (reducedMotion) return
     if (start.current === null) start.current = performance.now()
-    progress.current = MathUtils.clamp((performance.now() - start.current) / Math.max(120, durationMs), 0, 1)
+    progress.current = MathUtils.clamp((performance.now() - start.current) / Math.max(1, durationMs), 0, 1)
   })
   return progress
 }

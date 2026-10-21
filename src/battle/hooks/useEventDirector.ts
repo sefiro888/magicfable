@@ -3,6 +3,7 @@ import type { AnimationEvent, PlayerId } from '../../game'
 import { playSynthCue, type SoundCue } from '../../services/audio'
 import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
+import { eventDuration } from '../eventTiming'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
 const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
@@ -31,13 +32,6 @@ const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined 
  * flujo de maná) corre más deprisa que los golpes para que los turnos fluyan
  * sin perder la lectura de las acciones importantes.
  */
-const EVENT_PACE: Readonly<Partial<Record<AnimationEvent['type'], number>>> = {
-  draw: 0.6,
-  resource: 0.6,
-  'mana-flow': 0.5,
-  reveal: 0.85,
-  turn: 0.9,
-}
 
 /**
  * Categoría visual del aviso central, para colorearlo y darle un icono según
@@ -140,10 +134,9 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
         setNexusFlash(currentEvent.targetId === `${me}-nexus` ? 'self' : 'rival')
       }
     }, 0)
-    const pace = EVENT_PACE[currentEvent.type] ?? 1
-    const duration = preferences.reducedMotion
-      ? 40
-      : Math.max(70, (currentEvent.durationMs * pace) / preferences.animationSpeed)
+    const duration = eventDuration(currentEvent, {
+      animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
+    })
     const timer = window.setTimeout(() => useMatchStore.getState().finishEvent(), duration)
     return () => {
       window.clearTimeout(sideChannel)

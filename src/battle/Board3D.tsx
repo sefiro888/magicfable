@@ -550,9 +550,6 @@ const HOP_STEP_MS = 190
 /** Altura del arco de cada salto: sutil, solo para separar visualmente cada casilla cruzada. */
 const HOP_HEIGHT = 0.16
 
-/** Duración de la embestida y del retroceso, en milisegundos. */
-const IMPULSE_MS = 300
-
 interface HopPath {
   /** Casillas cruzadas, incluida la de salida y la de llegada. Siempre en línea recta: el motor nunca permite mover en diagonal. */
   readonly cells: readonly Position[]
@@ -588,10 +585,10 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const strike = useRef<Group>(null)
   /** Grupo que encara la ficha hacia la cámara girando solo sobre su eje vertical. */
   const facing = useRef<Group>(null)
-  const impulseRun = useRef<{ start: number; dx: number; dz: number; kind: 'lunge' | 'recoil' } | null>(null)
+  const impulseRun = useRef<{ start: number; dx: number; dz: number; kind: 'lunge' | 'recoil'; durationMs: number } | null>(null)
   useEffect(() => {
     if (!impulse || reducedMotion) return
-    impulseRun.current = { start: performance.now(), dx: impulse.dx, dz: impulse.dz, kind: impulse.kind }
+    impulseRun.current = { start: performance.now(), dx: impulse.dx, dz: impulse.dz, kind: impulse.kind, durationMs: impulse.durationMs }
   }, [impulse, reducedMotion])
   useEffect(() => {
     const prev = prevGridPos.current
@@ -708,7 +705,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
     if (strikeNode) {
       const run = impulseRun.current
       if (run) {
-        const progress = Math.min(1, (performance.now() - run.start) / IMPULSE_MS)
+        const progress = Math.min(1, (performance.now() - run.start) / Math.max(1, run.durationMs))
         const pose = combatPose(run.kind, progress)
         strikeNode.position.set(run.dx * pose.reach, pose.lift, run.dz * pose.reach)
         strikeNode.rotation.set(run.dz * pose.lean, 0, -run.dx * pose.lean)
