@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { CARDS } from '../src/game/cards'
 
 test('recorre la galería y comienza una partida contra la IA', async ({ page }) => {
   test.setTimeout(90_000)
@@ -31,7 +32,7 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
 
   await page.getByRole('link', { name: 'Explorar cartas' }).click()
   await expect(page).toHaveURL(/\/gallery$/)
-  await expect(page.locator('[data-card-id]')).toHaveCount(362)
+  await expect(page.locator('[data-card-id]')).toHaveCount(CARDS.length)
 
   await page.getByRole('button', { name: /Sabueso de Brasa\. Unidad/ }).click()
   await expect(page.getByRole('dialog', { name: 'Sabueso de Brasa' })).toBeVisible()

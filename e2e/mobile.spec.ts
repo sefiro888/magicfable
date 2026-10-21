@@ -266,9 +266,12 @@ test('en móvil la galería va a dos columnas, no a una tira infinita', async ({
   expect(Math.abs(primera.y - segunda.y)).toBeLessThan(8)
   expect(segunda.x).toBeGreaterThan(primera.x + primera.width - 1)
 
-  // Y el catálogo entero cabe en un scroll manejable.
+  // El catálogo crece con cada facción: el límite fijo para 145 cartas
+  // fallaba con 424 aunque siguieran en dos columnas y con el mismo tamaño.
+  // Se limita la altura por fila para detectar huecos o cartas desmesuradas.
   const alto = await page.evaluate(() => document.documentElement.scrollHeight)
-  expect(alto, 'la galería se ha vuelto a estirar').toBeLessThan(26_000)
+  const filas = Math.ceil(await page.locator('[data-card-id]').count() / 2)
+  expect(alto, 'la galería se ha vuelto a estirar por fila').toBeLessThan(filas * 300 + 2000)
 })
 
 /**

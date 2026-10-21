@@ -866,6 +866,7 @@ export const spellNeedsPiece = (card: CardDefinition): boolean =>
       effect.kind === 'refresh-move' ||
       effect.kind === 'refresh-attack' ||
       effect.kind === 'stun' ||
+      effect.kind === 'push-target' ||
       effect.kind === 'grant-keyword' ||
       (effect.kind === 'passive' && effect.id === 'curse-drain-health') ||
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end') ||
@@ -1643,6 +1644,10 @@ const cardTargetRejectionReason = (
   if (!spellNeedsPiece(card)) return undefined;
   const piece = requireTargetPiece(state, target);
   if (!piece) return 'Selecciona una ficha del tablero como objetivo.';
+  const pushes = card.effects.some((effect) => effect.kind === 'push-target');
+  if (pushes && (piece.owner === playerId || pieceDefinition(piece)?.type !== 'unit')) {
+    return 'Solo puede apuntar a una unidad enemiga.';
+  }
   const damage = card.effects.find((effect) => effect.kind === 'damage');
   if (damage?.kind === 'damage' && damage.target === 'enemy-piece' && piece.owner === playerId) {
     return 'Solo puede apuntar a una ficha enemiga.';

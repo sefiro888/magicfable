@@ -14,10 +14,14 @@ continuar sin preguntar nada. Última actualización: **21 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 524 en verde, 5 omitidos |
+| Tests | 537 en verde, 5 omitidos |
 
-Todo está desplegado y verde en GitHub Pages. El gate (`npm run test`,
-`npm run build`, `npm run lint`) pasa limpio.
+El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
+La mejora de reposicionamiento de la IA descrita en el punto 10 está validada
+en local, pendiente de commit y despliegue. Verificación de navegador:
+58 pruebas en verde y 24 omitidas (capturas bajo demanda), con los hechizos
+dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
+antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
 
 ### Las 16 facciones
 
@@ -353,9 +357,18 @@ contrastarlas con el dueño antes de meterse en las grandes.
    control rindan por debajo. Mejorarla levantaría a Arcano, Marea, Duna y
    Quinto Sol de golpe, sin tocar una sola carta — probablemente el cambio con
    más efecto por línea escrita de todo el proyecto.
-10. **La IA no valora el reposicionamiento.** Si se le enseña a puntuar
-    «alejar una amenaza del Nexo propio», Marea pasa de facción rota a facción
-    con plan.
+10. **La IA ya valora los hechizos de reposicionamiento** (21 oct 2026).
+    Resaca Súbita, Canto de la Sirena, Marea Viva y Vorágine se simulan con
+    `applyAction`: se compara material, intercambios habilitados y amenaza al
+    Nexo en la siguiente respuesta rival, incluyendo mover antes de atacar.
+    Conserva empujes inútiles y evita atracciones peligrosas. Se corrigió
+    además la integración de `push-target`: faltaba en `spellNeedsPiece`, por
+    lo que Resaca y Canto se podían gastar sin objetivo y sin mover nada.
+    Las pruebas de `ai-positioning.test.ts` cubren los efectos reales en ambos
+    asientos, inmunidad, bloqueo, remate, atracción y aturdimiento.
+    **Pendiente:** valorar el empuje de ataques y despliegues, planear varios
+    turnos y medir de nuevo el balance. La amenaza prevista es conservadora:
+    prueba cada atacante por separado, sin combinaciones ni mano rival.
 11. **`Esqueleto Guerrero`** sigue sin arreglar a propósito: resucitar es una
     acción de jugador con coste y UI propia, una feature de verdad y no un
     bugfix. No la emprendas sin que lo pidan.

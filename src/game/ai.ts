@@ -203,6 +203,7 @@ const actionForCard = (state: MatchState, instance: CardInstance, me: PlayerId):
 
 const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>, me: PlayerId): GameAction | undefined => {
   const faction = seatFaction(state, me);
+  let baseline: number | undefined;
   const candidates = state.players[me].hand
     .filter((instance) => !skipped.has(instance.instanceId))
     .map((instance) => ({ instance, card: CARD_BY_ID[instance.cardId] }))
@@ -212,11 +213,22 @@ const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>, me: P
       stableTieBreaker(left.instance.instanceId, state.seed + state.turn) -
         stableTieBreaker(right.instance.instanceId, state.seed + state.turn),
     );
+  const plans: { action: GameAction; score: number }[] = [];
   for (const candidate of candidates) {
+    const displaces = candidate.card.type === 'instant' && candidate.card.effects.some(
+      (effect) => effect.kind === 'push-target' || effect.kind === 'push-all-enemies',
+    );
+    if (displaces) {
+      if (!planManaPayment(state.players[me].resources, effectiveCost(state, me, candidate.card)).payable) continue;
+      baseline ??= positionalValue(state, me);
+      const plan = chooseDisplacement(state, candidate.instance, candidate.card, me, baseline);
+      if (plan) plans.push({ action: plan.action, score: cardScore(candidate.card, faction) + plan.value });
+      continue;
+    }
     const action = actionForCard(state, candidate.instance, me);
-    if (action) return action;
+    if (action) plans.push({ action, score: cardScore(candidate.card, faction) });
   }
-  return undefined;
+  return plans.sort((left, right) => right.score - left.score)[0]?.action;
 };
 
 const targetScore = (state: MatchState, pieceId: string): number => {
@@ -270,6 +282,89 @@ const tradeValue = (attacker: BoardPiece, defender: BoardPiece): number => {
     value += Math.max(0, damage - defender.currentHealth) * NEXUS_DAMAGE_WEIGHT;
   }
   return value;
+};
+
+/**
+ * La distancia por sí sola engaña: un Sabueso empujado aún puede volver y
+ * golpear. Se cede el turno con el motor para respetar mantenimiento, estados
+ * y modificadores, y se prueba también cada movimiento legal antes del golpe.
+ * Es una cota conservadora: las amenazas se miran por separado, sin planear
+ * combinaciones de varias unidades ni las cartas de la mano rival.
+ */
+const nextNexusThreat = (state: MatchState, me: PlayerId): number => {
+  const ended = applyAction(state, { type: 'end-turn', playerId: me });
+  if (!ended.ok) return 0;
+  const next = ended.state;
+  if (next.phase === 'finished') return next.winner === me ? -1000 : 1000;
+  let damage = 0;
+  for (const piece of next.board) {
+    if (piece.owner === me || CARD_BY_ID[piece.cardId]?.type !== 'unit') continue;
+    const nexusDamage = (positioned: MatchState): number => {
+      if (!getValidAttacks(positioned, piece.instanceId).canAttackNexus) return 0;
+      const hit = applyAction(positioned, {
+        type: 'attack-nexus', playerId: piece.owner, attackerId: piece.instanceId,
+      });
+      return hit.ok ? Math.max(0, positioned.players[me].nexusHealth - hit.state.players[me].nexusHealth) : 0;
+    };
+    let best = nexusDamage(next);
+    for (const to of getValidMoves(next, piece.instanceId)) {
+      const moved = applyAction(next, { type: 'move', playerId: piece.owner, pieceId: piece.instanceId, to });
+      if (moved.ok) best = Math.max(best, nexusDamage(moved.state));
+    }
+    damage += best;
+  }
+  // Evitar un remate pesa más que todo el material; con Vida de sobra se
+  // conserva el tempo de desplegar en vez de gastar todo en empujes menores.
+  return damage * 4 + (damage >= next.players[me].nexusHealth ? 1000 : 0);
+};
+
+const positionalValue = (state: MatchState, me: PlayerId): number => {
+  if (state.phase === 'finished') return state.winner === me ? 10000 : -10000;
+  let value = (state.players[me].nexusHealth - state.players[rivalOf(me)].nexusHealth) * 4;
+  for (const piece of state.board) {
+    value += pieceValue(piece) * (piece.owner === me ? 1 : -1);
+    if (piece.owner !== me) {
+      // Un empuje que aún no evita daño compra distancia para turnos futuros,
+      // pero ese valor pequeño no debe imponerse a una defensa inmediata.
+      if (CARD_BY_ID[piece.cardId]?.type === 'unit') {
+        value += distanceToEnemyNexusRow(piece.owner, piece.position.y) * 0.5;
+      }
+      continue;
+    }
+    const attacks = getValidAttacks(state, piece.instanceId);
+    let best = attacks.canAttackNexus ? attackPower(piece) * NEXUS_DAMAGE_WEIGHT : 0;
+    for (const defenderId of attacks.pieceIds) {
+      const defender = state.board.find((candidate) => candidate.instanceId === defenderId);
+      if (defender) best = Math.max(best, tradeValue(piece, defender));
+    }
+    value += best;
+  }
+  return value - nextNexusThreat(state, me);
+};
+
+const chooseDisplacement = (
+  state: MatchState,
+  instance: CardInstance,
+  card: CardDefinition,
+  me: PlayerId,
+  baseline: number,
+): { action: GameAction; value: number } | undefined => {
+  const targets: SpellTarget[] = spellNeedsPiece(card)
+    ? validSpellTargets(state, me, card)
+      .slice().sort((left, right) => left.instanceId.localeCompare(right.instanceId))
+      .map((piece) => ({ kind: 'piece', pieceId: piece.instanceId }))
+    : [{ kind: 'none' }];
+  let best: { action: GameAction; value: number } | undefined;
+  for (const target of targets) {
+    const action: GameAction = { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, target };
+    const result = applyAction(state, action);
+    if (!result.ok) continue;
+    const value = positionalValue(result.state, me) - baseline;
+    // No gastar una carta contra un inmune, un borde o una atracción que
+    // solo acerca al rival al Nexo. El motor sigue permitiendo esas jugadas.
+    if (value > 0 && (!best || value > best.value)) best = { action, value };
+  }
+  return best;
 };
 
 /**
