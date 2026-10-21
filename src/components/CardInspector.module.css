@@ -38,14 +38,14 @@
   z-index: 1;
   isolation: isolate;
   display: grid;
-  width: min(72rem, 100%);
+  width: min(80rem, 100%);
   max-height: calc(100vh - clamp(2rem, 6vw, 6rem));
-  grid-template-columns: minmax(20rem, 0.82fr) minmax(26rem, 1.18fr);
+  grid-template-columns: minmax(20rem, 1.05fr) minmax(26rem, 1fr);
   gap: clamp(1.4rem, 3vw, 3.2rem);
   padding: clamp(1.25rem, 2.4vw, 2.4rem);
   overflow: hidden;
   border: 1px solid rgba(228, 193, 113, 0.5);
-  border-radius: 1.5rem;
+  border-radius: .35rem;
   background:
     linear-gradient(135deg, rgba(31, 29, 35, 0.98), rgba(9, 11, 18, 0.98) 58%),
     #0c0e15;
@@ -59,7 +59,7 @@
   z-index: -1;
   inset: 0.5rem;
   border: 1px solid rgba(209, 177, 103, 0.12);
-  border-radius: 1.15rem;
+  border-radius: .15rem;
   pointer-events: none;
 }
 
@@ -72,15 +72,10 @@
   aspect-ratio: 1;
   border-radius: 50%;
   opacity: .22;
-  background: #ed6a36;
+  background: var(--inspection-accent);
   filter: blur(5rem);
   pointer-events: none;
 }
-.ambientGlow[data-faction='arcane'] { background: #3aaeea; }
-.ambientGlow[data-faction='nature'] { background: #65b44f; }
-.ambientGlow[data-faction='order'] { background: #e4bf5a; }
-.ambientGlow[data-faction='shadow'] { background: #714088; }
-.ambientGlow[data-faction='void'] { background: #a84ced; }
 
 .close {
   position: absolute;
@@ -108,11 +103,23 @@
 .cardStage {
   display: grid;
   min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: .8rem;
   align-content: center;
   justify-items: center;
   padding-top: .8rem;
 }
-.cardStage > article { width: min(100%, 24rem); }
+.viewControls { display: flex; gap: .25rem; padding: .25rem; border-block: 1px solid #a38a5140; }
+.viewControls button { min-height: 2.75rem; padding: .45rem 1rem; border: 1px solid transparent; border-radius: .15rem; background: transparent; color: #a99e8a; font: inherit; font-size: .75rem; letter-spacing: .05em; cursor: pointer; }
+.viewControls button[aria-pressed='true'] { border-color: #c4a56466; color: #f2dfb3; background: linear-gradient(180deg, #bf9b5329, #9f7f3810); box-shadow: inset 0 1px #eed3a020; }
+.viewControls button:hover { color: #fff3d6; background-color: #ffffff08; }
+.viewControls button:focus-visible { outline: 2px solid var(--inspection-accent); outline-offset: 2px; }
+.exhibit { position: relative; display: grid; place-items: center; min-height: 0; width: 100%; height: min(62vh, 42rem); padding: .8rem; border: 1px solid #bf9c5a75; border-radius: .15rem; background: radial-gradient(ellipse at 50% 45%, #282728, #07090d 80%); box-shadow: 0 1rem 2.5rem #0008, inset 0 0 0 4px #090b0e, inset 0 0 0 5px #bba16925; }
+.exhibit::after { content: ''; position: absolute; inset: -.25rem; pointer-events: none; background: linear-gradient(#d0b277, #d0b277) left top / 1.2rem 1px no-repeat, linear-gradient(#d0b277, #d0b277) right bottom / 1.2rem 1px no-repeat, linear-gradient(#d0b277, #d0b277) left top / 1px 1.2rem no-repeat, linear-gradient(#d0b277, #d0b277) right bottom / 1px 1.2rem no-repeat; }
+.fullArtwork { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: drop-shadow(0 .6rem 1rem #0009); }
+.exhibit[data-view='card'] { overflow: auto; }
+.exhibit > article { width: min(100%, 22rem); }
 .shortcutHint { margin: 1.1rem 0 0; color: #989385; font-size: .78rem; letter-spacing: .04em; }
 .shortcutHint kbd { padding: .12rem .38rem; border: 1px solid #5a554d; border-bottom-width: 2px; border-radius: .25rem; color: #d7ccb6; background: #17181e; font: inherit; }
 
@@ -151,7 +158,7 @@
 @media (max-height: 800px) {
   .backdrop { padding-block: 1rem; }
   .dialog { max-height: calc(100vh - 2rem); }
-  .cardStage > article { width: min(90%, 21rem); }
+  .exhibit > article { width: min(90%, 21rem); }
   .shortcutHint { margin-top: .5rem; }
 }
 
@@ -163,9 +170,11 @@
 /* Móvil: los mínimos de la rejilla de dos columnas (18rem + 23rem = 41rem,
    656px) siguen sin caber en un teléfono — se apila en una sola columna. */
 @media (max-width: 700px) {
-  .dialog { grid-template-columns: 1fr; width: min(26rem, 100%); gap: 1rem; padding: 1.1rem; }
-  .cardStage > article { width: min(70%, 18rem); }
-  .details { padding: 0; max-height: 55vh; }
+  .dialog { grid-template-columns: 1fr; width: min(30rem, 100%); gap: 1rem; padding: 1.1rem; overflow: auto; }
+  .exhibit { height: auto; }
+  .fullArtwork { height: auto; max-height: 50vh; }
+  .exhibit > article { width: min(100%, 18rem); }
+  .details { padding: 0; overflow: visible; }
   .identity h2 { font-size: 1.5rem; }
 }
 

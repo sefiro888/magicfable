@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef } from 'react';
-import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent } from 'react';
 
 import type { CardDefinition } from '../game/types';
 import { Card, CARD_TYPE_LABELS, formatManaCost } from './Card';
@@ -9,6 +9,8 @@ import { GlossaryText } from './GlossaryText';
 import { RarityGem, RARITY_LABELS } from './RarityGem';
 import { KEYWORD_LABELS } from '../utils/cardLabels';
 import { withBase } from '../utils/assets';
+import { FACTION_BY_ID } from '../game/factions';
+import { FullArtwork } from './FullArtwork';
 import styles from './CardInspector.module.css';
 
 export interface CardInspectorProps {
@@ -54,6 +56,7 @@ export function CardInspector({
   const closeRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  const [view, setView] = useState<'art' | 'card'>('art');
 
   useEffect(() => {
     if (!visible) return;
@@ -107,7 +110,8 @@ export function CardInspector({
   };
 
   return (
-    <div className={styles.backdrop} onMouseDown={closeFromBackdrop}>
+    <div className={styles.backdrop} onMouseDown={closeFromBackdrop}
+      style={{ '--inspection-accent': FACTION_BY_ID[card.faction].accentColor } as CSSProperties}>
       <div
         className={styles.artHaze}
         data-faction={card.faction}
@@ -129,12 +133,17 @@ export function CardInspector({
         </button>
 
         <div className={styles.cardStage}>
-          <Card
-            card={card}
-            size="inspect"
-            playable={playable}
-            statusEffects={statusEffects}
-          />
+          <div className={styles.viewControls} role="group" aria-label="Vista de la carta">
+            <button type="button" aria-pressed={view === 'art'} onClick={() => setView('art')}>Ilustración</button>
+            <button type="button" aria-pressed={view === 'card'} onClick={() => setView('card')}>Carta completa</button>
+          </div>
+          <div className={styles.exhibit} data-view={view}>
+            {view === 'art' ? (
+              <FullArtwork key={card.id} card={card} className={styles.fullArtwork} />
+            ) : (
+              <Card card={card} size="inspect" playable={playable} statusEffects={statusEffects} />
+            )}
+          </div>
           <p className={styles.shortcutHint}>Pulsa <kbd>Esc</kbd> para cerrar</p>
         </div>
 
@@ -184,7 +193,8 @@ export function CardInspector({
 
           {statusEffects.length > 0 && (
             <p className={styles.stateNote}>
-              Esta copia tiene {statusEffects.length} {statusEffects.length === 1 ? 'estado activo' : 'estados activos'}; se muestran sobre la carta.
+              Esta copia tiene {statusEffects.length} {statusEffects.length === 1 ? 'estado activo' : 'estados activos'}.
+              {view === 'art' ? ' Abre «Carta completa» para consultarlos.' : ' Se muestran sobre la carta.'}
             </p>
           )}
         </section>

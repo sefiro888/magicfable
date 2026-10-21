@@ -35,6 +35,8 @@ import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFini
 import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
 import { MaterialEnvironment } from './MaterialEnvironment'
+import { arrivalMotion } from './arrivalMotion'
+import { FACTION_BY_ID } from '../game/factions'
 
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
@@ -560,10 +562,17 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
+  const presentation = useRef<Group>(null)
+  const arrivalGroup = useRef<Group>(null)
+  const label = useRef<HTMLDivElement>(null)
+  const arrivingSince = useRef<number | null>(null)
+  useEffect(() => {
+    arrivingSince.current = arrival && !reducedMotion ? performance.now() : null
+  }, [arrival, reducedMotion])
   const frame = useRef<Mesh>(null)
   const readyRing = useRef<Mesh>(null)
   const stunOrbit = useRef<Group>(null)
@@ -627,6 +636,23 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   useFrame(({ clock, camera }, delta) => {
     const node = group.current
     if (!node) return
+    const pose = arrival && arrivingSince.current !== null && !reducedMotion && card
+      ? arrivalMotion(card.faction, Math.min(1, (performance.now() - arrivingSince.current) / Math.max(1, arrival.durationMs)), card.type === 'structure')
+      : undefined
+    const visible = reducedMotion || (!waiting && (pose?.visible ?? !arrival))
+    if (presentation.current) presentation.current.visible = visible
+    // Html tiene su propia capa DOM y no hereda Group.visible de Three.
+    if (label.current) {
+      const visibility = visible ? 'visible' : 'hidden'
+      const opacity = String(pose?.labelOpacity ?? 1)
+      if (label.current.style.visibility !== visibility) label.current.style.visibility = visibility
+      if (label.current.style.opacity !== opacity) label.current.style.opacity = opacity
+    }
+    if (arrivalGroup.current) {
+      arrivalGroup.current.position.y = pose?.height ?? 0
+      arrivalGroup.current.scale.setScalar(pose?.scale ?? 1)
+      arrivalGroup.current.rotation.set(pose?.lean ?? 0, pose?.turn ?? 0, 0)
+    }
     const speed = reducedMotion ? 100 : 8
     const lift = selected ? 0.3 : hovered ? 0.22 : 0.15
     const path = hop.current
@@ -672,7 +698,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       // La sombra vive en el mundo, fuera del giro y la elevación de la carta:
       // así tampoco se inclina al agotarse ni acompaña la embestida.
       contactShadow.current.position.set(node.position.x, 0.103, node.position.z + 0.04)
-      const height = Math.max(0, node.position.y - 0.15)
+      const height = Math.max(0, node.position.y - 0.15 + (pose?.height ?? 0))
       contactShadow.current.scale.setScalar(1 + height * 0.6)
       ;(contactShadow.current.material as MeshBasicMaterial).opacity = 0.72 / (1 + height * 2)
     }
@@ -743,7 +769,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   // así se distingue mío/rival incluso en reposo, sin esperar a interactuar.
   const ownershipGlow = mine ? '#caa04a' : '#ff5a4d'
   return (
-    <>
+    <group ref={presentation} visible={reducedMotion || (!waiting && !arrival)}>
       {card.type === 'structure' && <group ref={plinth} position={[target.x, 0.15, target.z]}><CardPlinth mine={mine} /></group>}
       <mesh ref={contactShadow} rotation={[-Math.PI / 2, 0, 0]} position={[target.x, 0.103, target.z + 0.04]}>
         <planeGeometry args={[0.92, 0.92]} />
@@ -758,6 +784,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
       <group ref={strike}>
+      <group ref={arrivalGroup}>
       <group ref={facing}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
           Se eleva CARD_STAND_RISE para que, al girar desde su centro, el borde
@@ -773,7 +800,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             emissiveIntensity={glow ? 0.4 : frozen ? 0.2 : 0.06}
           />
         </mesh>
-        <CardFrameTrim mine={mine} unique={card.unique} structure={card.type === 'structure'} />
+        <CardFrameTrim mine={mine} unique={card.unique} structure={card.type === 'structure'} accent={FACTION_BY_ID[card.faction].accentColor} />
         {/* El arte NUNCA se gira según el dueño de la pieza: sin rotación del
             grupo exterior (partida en solitario, o el anfitrión en PvP), la
             orientación de este plano es independiente de dónde esté en el
@@ -862,6 +889,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       )}
       </group>
       </group>
+      </group>
       {/* Anillos de selección/disponibilidad: se quedan tumbados en la casilla
           aunque la carta se incline — y tampoco acompañan a la embestida: son
           marcas del tablero, no parte de la ficha. */}
@@ -887,7 +915,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
             propaga los data-* al div que crea, así que el atributo tiene que
             vivir aquí dentro para que el CSS pueda usarlo. */}
-        <div className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined}>
+        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats}>
           {card.attack !== undefined && <span className={styles.attackStat}>⚔ {Math.max(0, card.attack + piece.attackModifier)}</span>}
@@ -918,7 +946,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         </Html>
       )}
     </group>
-    </>
+    </group>
   )
 })
 
@@ -1395,6 +1423,8 @@ function Scene(props: Board3DProps) {
     () => impulsesForEvent(props.activeEvent, props.state.board),
     [props.activeEvent, props.state.board],
   )
+  const waitingSummons = useMemo(() => new Set((props.pendingEvents ?? EMPTY_EVENTS)
+    .filter((event) => event.type === 'summon').map((event) => event.targetId)), [props.pendingEvents])
   return (
     <>
       {/* Todo el contenido jugable gira 180° cuando el invitado ('ai') mira la
@@ -1474,6 +1504,8 @@ function Scene(props: Board3DProps) {
             previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.lines : undefined}
             reducedMotion={props.reducedMotion}
             impulse={impulses.get(piece.instanceId)}
+            arrival={props.activeEvent?.type === 'summon' && props.activeEvent.targetId === piece.instanceId ? props.activeEvent : undefined}
+            waiting={waitingSummons.has(piece.instanceId)}
           />
         ))}
       </Suspense>

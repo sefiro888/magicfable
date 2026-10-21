@@ -56,7 +56,7 @@ global), **V** terminada y verificada.
 | 31 | Marcos de las cartas desplegadas | A |
 | 32 | Integración de iluminación de las piezas | A |
 | 33 | Diferenciación de unidades y estructuras | A |
-| 34 | Presencia de cartas únicas | P |
+| 34 | Presencia de cartas únicas | A |
 | 35 | Entradas por facción | A |
 | 36 | Congelación sobre las piezas | A |
 | 37 | Escudos y protecciones | A |
@@ -71,10 +71,37 @@ global), **V** terminada y verificada.
 | 46 | Deterioro de Nexos | A |
 | 47 | Caída del Nexo | P |
 | 48 | Interfaz de batalla | P |
-| 49 | Inspección de cartas | P |
+| 49 | Inspección de cartas | A |
 | 50 | Presentación de escenario y comandantes | P |
 
 ## Bloque activo
+
+**22 oct, 00:40.** Quinto bloque guardado en `06894eb`. Sexto bloque validado:
+inspector con ilustración original, alternancia de carta completa,
+respaldo hasta SVG y acento para las 16 facciones. Revisado en 1920×1080,
+1366×768 y 375×812 con arte vertical de Forja. Dos pruebas nuevas de componente
+(545 unitarias en verde en total) y tres e2e del visor en verde.
+
+También integradas entradas físicas según cuatro familias de movimiento,
+respetando la cola: las piezas pendientes no se adelantan al sello. Al saltar
+animaciones vuelven a su pose normal; movimiento reducido muestra estado
+inmediato. Dos e2e específicos en verde. Cartas únicas con crestería biselada
+y gemas de facción; mantener distinción de dueño y centro del arte limpio.
+Build/lint en verde. Diez capturas de entradas y capturas de los marcos únicos
+revisadas en ambas resoluciones. E2e completo: **67 en verde, 27 omitidas**.
+Una pasada con `RUN_SHOTS=1` se abortó: esa variable activa también
+sondas históricas de coste elevado; usarla solo en el spec visual concreto.
+Servidor propio continúa en sesión `35243` (4173). No iniciar otra copia.
+
+Siguiente: combate (#42–45), caída del Nexo (#47) e interfaz (#48/50).
+Escenarios al final. Borradores NO integrados: `AttackTrail.tsx`,
+`useTransientEntries.ts`, `useVisualTimers.ts` y dos pruebas de caducidad.
+Estas dos pruebas pasan aisladamente; no sumarlas al gate del sexto bloque.
+Corrigen temporizadores cuya limpieza se cancelaba al cambiar de evento en
+DamageNumbers, RecentHits y FallenPieces. La inspección de batalla aún usa
+ArtViewer: conectar el nuevo CardInspector con la copia concreta y sus estados.
+
+## Historial de bloques (las notas de borrador siguientes son históricas)
 
 Primer bloque implementado:
 

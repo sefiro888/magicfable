@@ -34,4 +34,24 @@ describe('CardInspector', () => {
     render(<CardInspector card={source} open={false} onClose={vi.fn()} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('permite ver el original y consultar después los estados de esta copia', async () => {
+    const user = userEvent.setup();
+    render(<CardInspector card={source} statusEffects={['frozen']} onClose={vi.fn()} />);
+    expect(screen.getByRole('img', { name: source.art.alt })).toHaveAttribute('src', expect.stringContaining('/art-full/'));
+    await user.click(screen.getByRole('button', { name: 'Carta completa' }));
+    expect(screen.getByLabelText('Estados activos')).toHaveTextContent('Congelada');
+    await user.click(screen.getByRole('button', { name: 'Ilustración' }));
+    expect(screen.queryByLabelText('Estados activos')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ilustración' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('respalda las ilustraciones antiguas hasta el SVG cuando faltan ambos WebP', () => {
+    render(<CardInspector card={source} onClose={vi.fn()} />);
+    const art = screen.getByRole('img', { name: source.art.alt });
+    fireEvent.error(art);
+    expect(art).toHaveAttribute('src', expect.stringContaining('/cards/art/'));
+    fireEvent.error(art);
+    expect(art).toHaveAttribute('src', expect.stringContaining(source.art.fallback));
+  });
 });

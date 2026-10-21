@@ -32,6 +32,19 @@ El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la p
 
 ## Marco de carta
 
+### Inspección y presencia
+
+- La inspección prioriza el original `art-full`, sin recortar ni ampliar por
+  encima de su composición. Alternar con la carta completa conserva reglas
+  y estados. El respaldo debe llegar hasta el SVG en importaciones antiguas.
+- Vitrina oscura, filetes finos y esquinas contenidas; el acento procede de
+  la facción real, también en las diez facciones añadidas después del set base.
+- Las únicas incorporan crestería biselada y gemas pequeñas de facción.
+  La ornamentación no crece sobre el centro del arte ni cambia la casilla.
+- La invocación reserva primero un breve tiempo al sello. Peso, crecimiento,
+  velo y oleaje comparten un asentamiento preciso y discreto. Los zócalos
+  permanecen en el suelo; con movimiento reducido las piezas aparecen listas.
+
 ### Acabado de las piezas 3D (renovación de octubre de 2026)
 
 - Metal envejecido con bisel real, remaches geométricos y rugosidad irregular.

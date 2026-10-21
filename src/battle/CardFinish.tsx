@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { BoxGeometry, Color, DoubleSide, ExtrudeGeometry, MeshStandardMaterial, Path, Shape, Vector2, type ShaderMaterial } from 'three'
+import { BoxGeometry, Color, DoubleSide, ExtrudeGeometry, MeshStandardMaterial, OctahedronGeometry, Path, Shape, Vector2, type ShaderMaterial } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { boardTileRoughness, masonryTexture } from './textures'
 
@@ -40,33 +40,58 @@ const assembledFrame = (unique: boolean) => {
     return new BoxGeometry(width, width, 0.012).toNonIndexed()
       .rotateZ(Math.PI / 4).translate(x * 0.389, y * 0.477, 0.013)
   }))
-  const merged = mergeGeometries([trimGeometry, ...corners])!
+  const ornaments = unique ? [-1, 1].map((side) => {
+    const shape = new Shape([
+      new Vector2(-0.17, 0.49), new Vector2(-0.12, 0.55), new Vector2(-0.065, 0.525),
+      new Vector2(0, 0.59), new Vector2(0.065, 0.525), new Vector2(0.12, 0.55),
+      new Vector2(0.17, 0.49),
+    ])
+    const geometry = new ExtrudeGeometry(shape, {
+      depth: 0.008, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.003, bevelSegments: 2, steps: 1,
+    })
+    if (side < 0) geometry.rotateZ(Math.PI)
+    return geometry
+  }) : []
+  const merged = mergeGeometries([trimGeometry, ...corners, ...ornaments])!
   corners.forEach((geometry) => geometry.dispose())
+  ornaments.forEach((geometry) => geometry.dispose())
   return merged
 }
 const regularFrame = assembledFrame(false)
 const uniqueFrame = assembledFrame(true)
 const frameMaterials = new Map<string, MeshStandardMaterial>()
 
-const frameMaterial = (mine: boolean, structure: boolean) => {
-  const key = `${mine}-${structure}`
+const frameMaterial = (mine: boolean, structure: boolean, unique = false) => {
+  const key = `${mine}-${structure}-${unique}`
   let material = frameMaterials.get(key)
   if (!material) {
     material = new MeshStandardMaterial({
       // El entorno de paneles ya aporta reflexión: el metal puede recuperar
       // respuesta física sin ennegrecerse ni depender de un brillo emisivo.
-      color: mine ? '#bc995f' : '#a36e60', metalness: 0.6,
-      roughness: structure ? 0.66 : 0.42, roughnessMap: boardTileRoughness('forge', 0),
+      color: mine ? unique ? '#d9b66b' : '#bc995f' : unique ? '#c58c77' : '#a36e60', metalness: 0.6,
+      roughness: unique ? 0.3 : structure ? 0.66 : 0.42, roughnessMap: boardTileRoughness('forge', 0),
     })
     frameMaterials.set(key, material)
   }
   return material
 }
 
-export function CardFrameTrim({ mine, unique, structure }: { mine: boolean; unique: boolean; structure: boolean }) {
+const gemGeometry = new OctahedronGeometry(0.038).scale(0.75, 1, 0.45)
+const gemMaterials = new Map<string, MeshStandardMaterial>()
+const gemMaterial = (color: string) => {
+  let material = gemMaterials.get(color)
+  if (!material) {
+    material = new MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.12, metalness: 0.35, roughness: 0.22 })
+    gemMaterials.set(color, material)
+  }
+  return material
+}
+
+export function CardFrameTrim({ mine, unique, structure, accent = '#b5d5cb' }: { mine: boolean; unique: boolean; structure: boolean; accent?: string }) {
   return <group dispose={null}>
     {[1, -1].map((side) => <group key={side} position={[0, side * 0.037, 0]} rotation={[-side * Math.PI / 2, 0, 0]}>
-      <mesh geometry={unique ? uniqueFrame : regularFrame} material={frameMaterial(mine, structure)} castShadow receiveShadow />
+      <mesh geometry={unique ? uniqueFrame : regularFrame} material={frameMaterial(mine, structure, unique)} castShadow receiveShadow />
+      {unique && [-1, 1].map((tip) => <mesh key={tip} geometry={gemGeometry} material={gemMaterial(accent)} position={[0, tip * 0.538, 0.026]} />)}
     </group>)}
   </group>
 }
