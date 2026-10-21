@@ -32,6 +32,24 @@ El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la p
 
 ## Marco de carta
 
+### Acabado de las piezas 3D (renovación de octubre de 2026)
+
+- Metal envejecido con bisel real, remaches geométricos y rugosidad irregular.
+  Sin mapa de entorno, metalness se mantiene en 0,04: subirlo ennegrece el
+  marco en vez de darle un acabado metálico.
+- El marco recibe luz del escenario; el arte conserva su componente emisiva
+  para no perder identidad en escenarios oscuros. No teñir toda la ilustración.
+- Daño: muescas y fractura localizada; escarcha: crecimiento irregular desde
+  el borde; contagio: venas orgánicas. El centro narrativo permanece abierto.
+- Escudos con Fresnel, borde luminoso y superficie segmentada casi transparente
+  en el centro. Con movimiento reducido no se anima el barrido de luz.
+- La sombra de contacto pertenece al suelo y se suaviza al elevar la carta.
+  Nunca rota con el estado de agotada ni salta con la embestida.
+- Las filas densas priorizan ataque y vida; nombre al señalar, seleccionar o
+  apuntar, con una placa oscura que mantiene contraste sobre cualquier fondo.
+- Compartir geometrías y texturas entre piezas. La decoración del marco se
+  fusiona en una geometría para no multiplicar draw calls por remache.
+
 - Silueta vertical original con esquinas biseladas, borde exterior de piedra oscura y filete interior de metal envejecido.
 - Banda de nombre horizontal y estable. La facción se expresa en el filete, el cristal de coste y una filigrana secundaria; nunca mediante un baño de color que reduzca la legibilidad del arte.
 - El arte ocupa aproximadamente el 48 % superior. La ventana tiene un arco muy leve y un corte inferior recto para no recordar marcos comerciales concretos.

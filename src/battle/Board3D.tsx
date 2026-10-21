@@ -26,11 +26,12 @@ import {
   TILE_SIZE,
   worldToGrid,
 } from './grid/gridCoordinates'
-import { impulsesForEvent, type Impulse } from './combatImpulse'
+import { combatPose, impulsesForEvent, type Impulse } from './combatImpulse'
 import { BOARD_TILE_VARIANTS, boardTileNormal, boardTileRoughness, boardTileTexture, contactShadowTexture, glowTexture, masonryTexture, type BoardTileStyle } from './textures'
 import styles from './Board3D.module.css'
 import { BoardDrift } from './BoardDrift'
 import { TerrainMarks } from './terrain/TerrainMarks'
+import { CardFrameTrim, CardSurfaceWear, CardWard } from './CardFinish'
 
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
@@ -559,15 +560,15 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
   const frame = useRef<Mesh>(null)
   const readyRing = useRef<Mesh>(null)
-  const shieldDome = useRef<Mesh>(null)
   const stunOrbit = useRef<Group>(null)
   const curseAura = useRef<Mesh>(null)
+  const contactShadow = useRef<Mesh>(null)
   const [hovered, setHovered] = useState(false)
   useCursor(hovered)
   const target = useMemo(() => ({ x: boardX(piece.position.x), z: boardZ(piece.position.y) }), [piece.position.x, piece.position.y])
@@ -619,6 +620,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const frozen = piece.statuses.some((status) => status.kind === 'frozen')
   const stunned = piece.statuses.some((status) => status.kind === 'stunned')
   const cursed = piece.statuses.some((status) => status.kind === 'cursed')
+  const infected = piece.statuses.some((status) => status.kind === 'infected')
   const shielded = piece.statuses.reduce((total, status) => total + (status.kind === 'shielded' ? status.amount : 0), 0)
   const spent = active && piece.attackedThisTurn
   useFrame(({ clock, camera }, delta) => {
@@ -665,6 +667,14 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
     }
     // Agotada: la carta descansa ligeramente girada, como una carta «tapeada».
     node.rotation.z = MathUtils.damp(node.rotation.z, spent ? 0.16 : 0, speed, delta)
+    if (contactShadow.current) {
+      // La sombra vive en el mundo, fuera del giro y la elevación de la carta:
+      // así tampoco se inclina al agotarse ni acompaña la embestida.
+      contactShadow.current.position.set(node.position.x, 0.103, node.position.z + 0.04)
+      const height = Math.max(0, node.position.y - 0.15)
+      contactShadow.current.scale.setScalar(1 + height * 0.6)
+      ;(contactShadow.current.material as MeshBasicMaterial).opacity = 0.72 / (1 + height * 2)
+    }
     if (frame.current && !reducedMotion) {
       const material = frame.current.material as MeshStandardMaterial
       if (targetable) material.emissiveIntensity = 0.55 + Math.sin(clock.elapsedTime * 5.2) * 0.28
@@ -692,14 +702,6 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       const material = curseAura.current.material as MeshBasicMaterial
       material.opacity = 0.55 + Math.sin(clock.elapsedTime * 2.4) * 0.2
     }
-    // El escudo respira despacio: lo justo para que se lea como energía
-    // activa y no como una burbuja de cristal pegada a la ficha.
-    if (shieldDome.current && !reducedMotion) {
-      const material = shieldDome.current.material as MeshStandardMaterial
-      material.emissiveIntensity = 0.35 + Math.sin(clock.elapsedTime * 1.7) * 0.18
-      const breath = 1 + Math.sin(clock.elapsedTime * 1.7) * 0.025
-      shieldDome.current.scale.setScalar(CARD_SCALE * breath)
-    }
     // Embestida / retroceso: ida y vuelta con seno, para que salga y regrese
     // en el mismo gesto sin dejar la ficha descolocada si se corta a medias.
     const strikeNode = strike.current
@@ -707,15 +709,13 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       const run = impulseRun.current
       if (run) {
         const progress = Math.min(1, (performance.now() - run.start) / IMPULSE_MS)
-        // La embestida sale disparada y vuelve; el retroceso es más corto.
-        const reach = run.kind === 'lunge' ? 0.5 : -0.26
-        const wave = Math.sin(progress * Math.PI)
-        strikeNode.position.x = run.dx * reach * wave
-        strikeNode.position.z = run.dz * reach * wave
-        strikeNode.position.y = (run.kind === 'lunge' ? 0.1 : 0.04) * wave
+        const pose = combatPose(run.kind, progress)
+        strikeNode.position.set(run.dx * pose.reach, pose.lift, run.dz * pose.reach)
+        strikeNode.rotation.set(run.dz * pose.lean, 0, -run.dx * pose.lean)
         if (progress >= 1) impulseRun.current = null
       } else if (strikeNode.position.lengthSq() > 0.00001) {
         strikeNode.position.set(0, 0, 0)
+        strikeNode.rotation.set(0, 0, 0)
       }
     }
   })
@@ -738,6 +738,11 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   // así se distingue mío/rival incluso en reposo, sin esperar a interactuar.
   const ownershipGlow = mine ? '#caa04a' : '#ff5a4d'
   return (
+    <>
+      <mesh ref={contactShadow} rotation={[-Math.PI / 2, 0, 0]} position={[target.x, 0.103, target.z + 0.04]}>
+        <planeGeometry args={[0.92, 0.92]} />
+        <meshBasicMaterial map={contactShadowTexture()} transparent depthWrite={false} opacity={0.72} />
+      </mesh>
     <group
       ref={group}
       position={[target.x, 0.15, target.z]}
@@ -746,19 +751,6 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      {/* Sombra de contacto: va FUERA del grupo de la embestida a propósito.
-          Si acompañara al golpe, la mancha saldría disparada con la ficha y
-          se vería despegarse del suelo — justo lo contrario de lo que hace
-          aquí. Se queda quieta en la casilla, como la sombra de algo que se
-          levanta un poco pero no deja de apoyarse. */}
-      {/* Altura: el grupo está a y=0.15 y la losa llega como mucho a y=0.08
-          (las casillas resaltadas son más altas que las normales, 0.16 frente
-          a 0.11). A -0.085 la mancha quedaba ENTERRADA dentro de la losa justo
-          en las casillas iluminadas, que son las que más se miran. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.048, 0.04]} renderOrder={-1}>
-        <planeGeometry args={[0.92, 0.92]} />
-        <meshBasicMaterial map={contactShadowTexture()} transparent depthWrite={false} opacity={0.85} />
-      </mesh>
       <group ref={strike}>
       <group ref={facing}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
@@ -769,12 +761,13 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
           <boxGeometry args={[0.83, 0.07, 1.02]} />
           <meshStandardMaterial
             color={frozen ? '#2b4a63' : frameColor}
-            metalness={0.35}
-            roughness={0.42}
+            metalness={0.04}
+            roughness={card.type === 'structure' ? 0.72 : 0.58}
             emissive={glow ? glowColor : frozen ? '#79e7ff' : ownershipGlow}
-            emissiveIntensity={glow ? 0.55 : frozen ? 0.35 : 0.16}
+            emissiveIntensity={glow ? 0.4 : frozen ? 0.2 : 0.06}
           />
         </mesh>
+        <CardFrameTrim mine={mine} unique={card.unique} structure={card.type === 'structure'} />
         {/* El arte NUNCA se gira según el dueño de la pieza: sin rotación del
             grupo exterior (partida en solitario, o el anfitrión en PvP), la
             orientación de este plano es independiente de dónde esté en el
@@ -824,12 +817,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             />
           </mesh>
         ))}
-        {frozen && [0.075, -0.075].map((y) => (
-          <mesh key={y} position={[0, y, 0]} rotation={[-Math.PI / 2, y > 0 ? 0 : Math.PI, 0]}>
-            <planeGeometry args={[0.83, 1.02]} />
-            <meshStandardMaterial color="#bdeaff" transparent opacity={0.32} roughness={0.2} metalness={0.4} emissive="#9fd8ff" emissiveIntensity={0.5} />
-          </mesh>
-        ))}
+        <CardSurfaceWear damage={Math.max(0, 1 - piece.currentHealth / maxHealth)} frozen={frozen} infected={infected} reducedMotion={reducedMotion} />
       </group>
       {/* Escudo: cúpula traslúcida alrededor de la ficha.
 
@@ -841,26 +829,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
 
           Va fuera del grupo del arte y con `depthWrite={false}` para no
           tapar la ilustración ni pelearse con ella por la profundidad. */}
-      {shielded > 0 && (
-        <mesh ref={shieldDome} position={[0, 0.16, 0]} scale={CARD_SCALE}>
-          <sphereGeometry args={[0.72, 20, 14]} />
-          <meshStandardMaterial
-            color="#8fd4ff"
-            transparent
-            // Primer intento: 0,10 + 0,035 por punto. A la distancia real de
-            // la cámara la cúpula era literalmente invisible en captura —
-            // había que fiarse de la insignia otra vez. Subida a valores que
-            // sí se leen sin llegar a tapar la ilustración de la ficha.
-            opacity={0.2 + Math.min(shielded, 4) * 0.055}
-            roughness={0.15}
-            metalness={0.5}
-            emissive="#5fbcff"
-            emissiveIntensity={0.45}
-            depthWrite={false}
-            side={DoubleSide}
-          />
-        </mesh>
-      )}
+      {shielded > 0 && <CardWard strength={shielded} scale={CARD_SCALE} reducedMotion={reducedMotion} />}
       {/* Aturdida: chispas orbitando por encima de la ficha. */}
       {stunned && !reducedMotion && (
         <group ref={stunOrbit} position={[0, 0.78, 0]} scale={CARD_SCALE}>
@@ -912,7 +881,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
             propaga los data-* al div que crea, así que el atributo tiene que
             vivir aquí dentro para que el CSS pueda usarlo. */}
-        <div className={styles.labelInner} data-selected={selected || targetable || undefined}>
+        <div className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats}>
           {card.attack !== undefined && <span className={styles.attackStat}>⚔ {Math.max(0, card.attack + piece.attackModifier)}</span>}
@@ -921,12 +890,13 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         {/* Estados: solo aparecen cuando los hay, en su propia fila para que no
             empujen a las estadísticas. «Aturdida» faltaba desde que se añadió
             la palabra clave: la unidad no podía atacar y nada lo indicaba. */}
-        {(frozen || stunned || shielded > 0 || cursed || spent) && (
+        {(frozen || stunned || shielded > 0 || cursed || infected || spent) && (
           <div className={styles.cardStatuses}>
             {frozen && <span className={styles.frozenStat} title="Congelada: no puede mover ni atacar">❄</span>}
             {stunned && <span className={styles.stunnedStat} title="Aturdida: no puede atacar este turno (sí moverse)">✷</span>}
             {shielded > 0 && <span className={styles.shieldStat} title={`Escudo: absorbe ${shielded} de daño`}>⛨ {shielded}</span>}
             {cursed && <span className={styles.cursedStat} title="Maldita: pierde Vida al final de cada turno">☠</span>}
+            {infected && <span className={styles.infectedStat} title="Infectada: pierde Vida al final de cada turno y puede convertirse al morir">☣</span>}
             {spent && <span className={styles.spentStat} title="Ya ha actuado este turno">◒</span>}
           </div>
         )}
@@ -942,6 +912,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         </Html>
       )}
     </group>
+    </>
   )
 })
 
@@ -1481,6 +1452,7 @@ function Scene(props: Board3DProps) {
             ready={props.readyPieceIds.has(piece.instanceId)}
             active={piece.owner === props.state.activePlayer}
             mine={piece.owner === props.localPlayerId}
+            crowded={props.state.board.some((other) => other.instanceId !== piece.instanceId && Math.abs(other.position.x - piece.position.x) <= 2 && Math.abs(other.position.y - piece.position.y) <= 1)}
             onPiece={props.onPiece}
             onInspect={props.onInspectPiece}
             onHover={props.onHoverPiece}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { impulsesForEvent } from './combatImpulse'
+import { combatPose, impulsesForEvent } from './combatImpulse'
 import type { AnimationEvent, BoardPiece } from '../game'
 
 const piece = (instanceId: string, x: number, y: number, owner: 'player' | 'ai' = 'player'): BoardPiece => ({
@@ -24,6 +24,25 @@ const event = (partial: Partial<AnimationEvent> & { type: AnimationEvent['type']
 })
 
 describe('impulso de combate', () => {
+  it('el ataque carga hacia atrás, alcanza su objetivo y recupera su posición', () => {
+    expect(combatPose('lunge', 0.15).reach).toBeLessThan(0)
+    expect(combatPose('lunge', 0.46).reach).toBeCloseTo(0.5)
+    expect(combatPose('lunge', 0)).toEqual({ reach: 0, lift: 0, lean: 0 })
+    expect(combatPose('lunge', 1)).toEqual({ reach: 0, lift: 0, lean: 0 })
+  })
+
+  it('la defensora retrocede en el sentido de alejamiento, sin deslizarse hacia el atacante', () => {
+    for (let step = 0; step <= 100; step += 1) {
+      expect(combatPose('recoil', step / 100).reach).toBeGreaterThanOrEqual(0)
+    }
+    expect(combatPose('recoil', 1)).toEqual({ reach: 0, lift: 0, lean: 0 })
+  })
+
+  it('no hay saltos de posición al pasar de preparación a impacto y recuperación', () => {
+    for (const t of [0.2, 0.46]) {
+      expect(Math.abs(combatPose('lunge', t - 0.0001).reach - combatPose('lunge', t + 0.0001).reach)).toBeLessThan(0.001)
+    }
+  })
   it('el atacante embiste en la dirección de su objetivo', () => {
     const map = impulsesForEvent(
       event({ type: 'attack', actorId: 'att', targetId: 'def', from: { x: 3, y: 4 }, to: { x: 3, y: 2 } }),

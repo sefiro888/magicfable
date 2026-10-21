@@ -29,6 +29,18 @@
 .cardName[data-mine] { color: #f7d99a; }
 .cardName[data-frozen] { color: #bdeaff; }
 .cardName[data-spent] { color: #a9a497; }
+/* Con filas densas los nombres invadían la carta vecina incluso en escritorio.
+   Se conservan las cifras; pasar el puntero, seleccionar o apuntar recupera
+   el nombre completo con fondo propio, sin reducir el tamaño accesible. */
+.labelInner[data-compact] .cardName { display: none; }
+.labelInner[data-selected] .cardName {
+  position: relative;
+  z-index: 1;
+  padding: 3px 6px;
+  background: linear-gradient(110deg, rgba(16, 19, 24, 0.98), rgba(30, 27, 22, 0.96));
+  border: 1px solid rgba(188, 153, 95, 0.65);
+  border-radius: 2px;
+}
 .cardStats { display: flex; justify-content: center; gap: 5px; margin-top: 3px; }
 .cardStats span {
   min-width: 26px;
@@ -57,6 +69,7 @@
 .stunnedStat { color: #ffd166; border-color: rgba(255, 209, 102, 0.6) !important; }
 .shieldStat { color: #cfe3ff; border-color: rgba(190, 215, 255, 0.6) !important; }
 .cursedStat { color: #d59cff; border-color: rgba(196, 140, 255, 0.55) !important; }
+.infectedStat { color: #b6cf79; border-color: rgba(164, 193, 92, 0.65) !important; }
 .spentStat { color: #a9a497; }
 /* Vista previa de daño: aparece al pasar el cursor sobre un objetivo válido
    con una ficha atacante seleccionada, antes de confirmar el ataque. */

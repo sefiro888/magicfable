@@ -16,6 +16,29 @@ export interface Impulse {
   readonly dz: number
 }
 
+/**
+ * Un seno simétrico parecía una oscilación sin peso. El ataque reserva un
+ * tramo corto para cargar, acelera al impacto y vuelve más despacio. El
+ * retroceso usa SIEMPRE la dirección de alejamiento calculada por el evento:
+ * el alcance negativo anterior devolvía la defensora hacia quien la golpeó.
+ */
+export const combatPose = (kind: Impulse['kind'], progress: number): { reach: number; lift: number; lean: number } => {
+  const t = Math.max(0, Math.min(1, progress))
+  if (t === 0 || t === 1) return { reach: 0, lift: 0, lean: 0 }
+  if (kind === 'recoil') {
+    const kick = Math.sin(Math.PI * Math.min(1, t / 0.38))
+    const settle = t > 0.38 ? Math.sin((t - 0.38) / 0.62 * Math.PI) * 0.035 : 0
+    return { reach: kick * 0.23 + settle, lift: kick * 0.025, lean: kick * 0.11 }
+  }
+  const smooth = (value: number) => value * value * (3 - 2 * value)
+  const reach = t < 0.2
+    ? -0.055 * smooth(t / 0.2)
+    : t < 0.46
+      ? -0.055 + 0.555 * Math.pow((t - 0.2) / 0.26, 2)
+      : 0.5 * (1 - smooth((t - 0.46) / 0.54))
+  return { reach, lift: Math.max(0, reach) * 0.16, lean: reach * 0.18 }
+}
+
 /** Dirección unitaria de un punto a otro; hacia el fondo si coinciden. */
 const direction = (fromX: number, fromZ: number, toX: number, toZ: number) => {
   const dx = toX - fromX

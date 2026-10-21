@@ -14,14 +14,19 @@ continuar sin preguntar nada. Última actualización: **21 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 537 en verde, 5 omitidos |
+| Tests | 540 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
-La mejora de reposicionamiento de la IA descrita en el punto 10 está validada
-en local, pendiente de commit y despliegue. Verificación de navegador:
-58 pruebas en verde y 24 omitidas (capturas bajo demanda), con los hechizos
+La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
+en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegador:
+60 pruebas en verde y 24 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
+
+**Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**
+Leer también `docs/RENOVACION-VISUAL.md`: contiene las 50 tareas autorizadas,
+el estado individual, capturas, verificaciones y el siguiente bloque. Primero
+cartas/tablero, combate e interfaz; escenarios después. No publicar automáticamente.
 
 ### Las 16 facciones
 
