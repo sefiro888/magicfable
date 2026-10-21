@@ -19,7 +19,7 @@ continuar sin preguntar nada. Última actualización: **21 de octubre de 2026**.
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
 en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegador:
-60 pruebas en verde y 24 omitidas (capturas bajo demanda), con los hechizos
+60 pruebas en verde y 25 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
 

@@ -55,9 +55,9 @@ global), **V** terminada y verificada.
 | 30 | Evolución ambiental durante la partida | P |
 | 31 | Marcos de las cartas desplegadas | A |
 | 32 | Integración de iluminación de las piezas | A |
-| 33 | Diferenciación de unidades y estructuras | P |
+| 33 | Diferenciación de unidades y estructuras | A |
 | 34 | Presencia de cartas únicas | P |
-| 35 | Entradas por facción | P |
+| 35 | Entradas por facción | A |
 | 36 | Congelación sobre las piezas | A |
 | 37 | Escudos y protecciones | A |
 | 38 | Contagio, maldición y quemaduras | C |
@@ -122,9 +122,24 @@ ni validar visualmente. No lanzar esa sonda hasta conectar el sello en EventEffe
 
 ## Siguiente acción concreta
 
-Integrar `RitualSeal` en la invocación de `EventEffects`, sustituyendo la columna
-genérica, y revisar las dieciséis formas con `RUN_RITUAL_SHOTS=1 npx playwright
-test e2e/ritual-shots.spec.ts --workers=1`. El test de sonda es nuevo y optativo.
-Después revisar llegadas de las cartas y deterioro de los Nexos. No saltar a
+Tercer bloque en curso: `RitualSeal` ya integrado en `EventEffects`, sustituye
+la columna genérica por un trazado por capas y motas. Tiene 16 perfiles de forma
+según facción y prepara el shader al cargar para reducir el coste de la primera
+invocación. La sonda de capturas alarga el evento a 12 s: capturar por software
+con 5 s de evento fotografiaba a veces el fotograma posterior al efecto.
+Primera pasada de 16 facciones sin errores de render; repetición de capturas
+actual en sesión `91970`. Furia ya visible y revisada tras corregir la captura.
+Pasada cerrada: 16 capturas y sonda en verde. Revisión conjunta en
+`tools/captures/ritual-review.png` generada con `tools/visual-contact-sheet.mjs`.
+Los sellos mantienen un estilo común con variación geométrica; la llegada de
+las cartas todavía no se ha renovado, así que la tarea 35 sigue parcial.
+Además, estructuras sobre zócalo octogonal biselado y orla metálica, anclado
+al suelo al seleccionar. Capturas de piezas a ambas resoluciones revisadas.
+Build/lint verdes. Tests 543 en verde. E2e normal cerrado: 60 en verde,
+25 omitidas (incluye la nueva sonda opcional). Sin verificaciones pendientes.
+Borrador siguiente, sin integrar:
+`NexusFractures.tsx`, fisuras de los tres niveles del pedestal según daño.
+
+Después integrar deterioro de Nexos y revisar llegadas de las cartas. No saltar a
 escenarios todavía. Mantener vivas las 50 tareas; solo la sombra de contacto
 está marcada como terminada, el resto de los cambios son avances parciales.

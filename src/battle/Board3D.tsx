@@ -31,7 +31,8 @@ import { BOARD_TILE_VARIANTS, boardTileNormal, boardTileRoughness, boardTileText
 import styles from './Board3D.module.css'
 import { BoardDrift } from './BoardDrift'
 import { TerrainMarks } from './terrain/TerrainMarks'
-import { CardFrameTrim, CardSurfaceWear, CardWard } from './CardFinish'
+import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFinish'
+import { RitualSeal } from './RitualSeal'
 
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
@@ -566,6 +567,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const stunOrbit = useRef<Group>(null)
   const curseAura = useRef<Mesh>(null)
   const contactShadow = useRef<Mesh>(null)
+  const plinth = useRef<Group>(null)
   const [hovered, setHovered] = useState(false)
   useCursor(hovered)
   const target = useMemo(() => ({ x: boardX(piece.position.x), z: boardZ(piece.position.y) }), [piece.position.x, piece.position.y])
@@ -672,6 +674,10 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       contactShadow.current.scale.setScalar(1 + height * 0.6)
       ;(contactShadow.current.material as MeshBasicMaterial).opacity = 0.72 / (1 + height * 2)
     }
+    if (plinth.current) {
+      plinth.current.position.set(node.position.x, 0.15, node.position.z)
+      plinth.current.rotation.y = node.rotation.y + (facing.current?.rotation.y ?? 0)
+    }
     if (frame.current && !reducedMotion) {
       const material = frame.current.material as MeshStandardMaterial
       if (targetable) material.emissiveIntensity = 0.55 + Math.sin(clock.elapsedTime * 5.2) * 0.28
@@ -736,6 +742,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const ownershipGlow = mine ? '#caa04a' : '#ff5a4d'
   return (
     <>
+      {card.type === 'structure' && <group ref={plinth} position={[target.x, 0.15, target.z]}><CardPlinth mine={mine} /></group>}
       <mesh ref={contactShadow} rotation={[-Math.PI / 2, 0, 0]} position={[target.x, 0.103, target.z + 0.04]}>
         <planeGeometry args={[0.92, 0.92]} />
         <meshBasicMaterial map={contactShadowTexture()} transparent depthWrite={false} opacity={0.72} />
@@ -1386,6 +1393,7 @@ function Scene(props: Board3DProps) {
           pasa al anfitrión con el suyo. La cámara y sus controles no son
           hijos de este grupo, así que el punto de vista real no se mueve. */}
       <group rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
+      <RitualSeal cell={{ x: 3, y: 4 }} tone="#ffffff" durationMs={1} reducedMotion={false} warmup />
       <Suspense fallback={<LoadingStage />}>
         {props.scenario === 'aether-citadel' ? (
           <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />

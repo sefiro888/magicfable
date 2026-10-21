@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils } from 'three'
-import type { Group, Mesh, MeshBasicMaterial, PointLight } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, PointLight, Sprite } from 'three'
 import type { AnimationEvent, FactionId, Position } from '../game'
 import {
   gridToWorldX as boardX,
@@ -9,6 +9,7 @@ import {
   NEXUS_WORLD as NEXUS_POSITION,
 } from './grid/gridCoordinates'
 import { glowTexture, type GlowTint } from './textures'
+import { RitualSeal } from './RitualSeal'
 
 /** Color y textura de brillo por facción — a juego con `accentColor` en `factions.ts`. */
 const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonly glow: GlowTint }>> = {
@@ -68,36 +69,35 @@ const useProgress = ({ durationMs, reducedMotion }: TimedProps) => {
   return progress
 }
 
-/** Columna de luz de invocación: la carta llega al Santuario. */
-function SummonColumn({ cell, tone, timing }: { cell: Position; tone: string; timing: TimedProps }) {
+/** El trazado aparece en el suelo y levanta motas: el arte queda despejado. */
+function SummonRitual({ cell, tone, timing, faction }: { cell: Position; tone: string; timing: TimedProps; faction?: FactionId }) {
   const progress = useProgress(timing)
-  const column = useRef<Mesh>(null)
-  const halo = useRef<Mesh>(null)
+  const particles = useRef<Group>(null)
+  const light = useRef<PointLight>(null)
+  const texture = useMemo(() => glowFor(tone), [tone])
   useFrame(() => {
     const value = progress.current
     const fade = Math.sin(value * Math.PI)
-    if (column.current) {
-      column.current.scale.set(1, 0.2 + value * 1.6, 1)
-      ;(column.current.material as MeshBasicMaterial).opacity = fade * 0.55
-    }
-    if (halo.current) {
-      halo.current.scale.setScalar(0.4 + value * 1.7)
-      ;(halo.current.material as MeshBasicMaterial).opacity = fade * 0.8
-    }
+    if (light.current) light.current.intensity = fade * 2.5
+    particles.current?.children.forEach((particle, index) => {
+      const angle = index * 2.39996 + value * 0.28
+      const radius = 0.32 + (index % 3) * 0.12
+      particle.position.set(Math.cos(angle) * radius, value * (0.7 + (index % 4) * 0.16), Math.sin(angle) * radius)
+      particle.scale.setScalar((0.045 + (index % 3) * 0.012) * fade)
+      ;(particle as Sprite).material.opacity = fade * 0.8
+    })
   })
   if (timing.reducedMotion) return null
   return (
+    <>
+    <RitualSeal cell={cell} tone={tone} faction={faction} durationMs={timing.durationMs} reducedMotion={timing.reducedMotion} />
     <group position={[boardX(cell.x), 0, boardZ(cell.y)]}>
-      <mesh ref={column} position={[0, 0.85, 0]}>
-        <cylinderGeometry args={[0.34, 0.5, 1.7, 14, 1, true]} />
-        <meshBasicMaterial color={tone} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-      </mesh>
-      <mesh ref={halo} position={[0, 0.07, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.3, 0.52, 36]} />
-        <meshBasicMaterial color={tone} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-      </mesh>
-      <pointLight position={[0, 0.9, 0]} color={tone} intensity={9} distance={4} decay={2} />
+      <group ref={particles}>{Array.from({ length: 12 }, (_, index) => <sprite key={index}>
+        <spriteMaterial map={texture} color={tone} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} />
+      </sprite>)}</group>
+      <pointLight ref={light} position={[0, 0.6, 0]} color={tone} intensity={0} distance={2.5} decay={2} />
     </group>
+    </>
   )
 }
 
@@ -359,7 +359,7 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
   const tone = toneOf(event.effectId, event.faction)
   switch (event.type) {
     case 'summon':
-      return event.to ? <SummonColumn cell={event.to} tone={tone} timing={timing} /> : null
+      return event.to ? <SummonRitual cell={event.to} tone={tone} timing={timing} faction={event.faction} /> : null
     case 'attack': {
       const target = event.targetId ? NEXUS_POSITION[event.targetId] : undefined
       const from: readonly [number, number] | undefined = event.from ? [boardX(event.from.x), boardZ(event.from.y)] : undefined

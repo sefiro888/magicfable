@@ -1,8 +1,8 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { BoxGeometry, Color, DoubleSide, ExtrudeGeometry, MeshStandardMaterial, Path, Shape, type ShaderMaterial } from 'three'
+import { BoxGeometry, Color, DoubleSide, ExtrudeGeometry, MeshStandardMaterial, Path, Shape, Vector2, type ShaderMaterial } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
-import { boardTileRoughness } from './textures'
+import { boardTileRoughness, masonryTexture } from './textures'
 
 // La ventana queda abierta: una placa completa con brillo sobre el arte
 // lavaba las ilustraciones y hacía indistinguibles cartas de facciones distintas.
@@ -66,6 +66,37 @@ export function CardFrameTrim({ mine, unique, structure }: { mine: boolean; uniq
     {[1, -1].map((side) => <group key={side} position={[0, side * 0.037, 0]} rotation={[-side * Math.PI / 2, 0, 0]}>
       <mesh geometry={unique ? uniqueFrame : regularFrame} material={frameMaterial(mine, structure)} castShadow receiveShadow />
     </group>)}
+  </group>
+}
+
+const plinthPoints = [
+  [-0.4, -0.2], [0.4, -0.2], [0.46, -0.14], [0.46, 0.14],
+  [0.4, 0.2], [-0.4, 0.2], [-0.46, 0.14], [-0.46, -0.14],
+] as const
+const plinthShape = (rim: boolean) => {
+  const shape = new Shape(plinthPoints.map(([x, y]) => new Vector2(x, y)))
+  if (rim) shape.holes.push(new Path(plinthPoints.map(([x, y]) => new Vector2(x * 0.9, y * 0.73)).reverse()))
+  return shape
+}
+const plinthBody = new ExtrudeGeometry(plinthShape(false), {
+  depth: 0.075, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.01, bevelSegments: 2, steps: 1,
+})
+const plinthRim = new ExtrudeGeometry(plinthShape(true), {
+  depth: 0.009, bevelEnabled: true, bevelSize: 0.003, bevelThickness: 0.003, bevelSegments: 1, steps: 1,
+})
+
+/** Una estructura queda anclada a un zócalo tallado; conserva su carta entera. */
+export function CardPlinth({ mine }: { mine: boolean }) {
+  const key = `plinth-${mine}`
+  let material = frameMaterials.get(key)
+  if (!material) {
+    material = new MeshStandardMaterial({ color: mine ? '#554938' : '#393d48', map: masonryTexture(), roughness: 0.88, metalness: 0.03 })
+    frameMaterials.set(key, material)
+  }
+  return <group position={[0, -0.075, 0.15]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh geometry={plinthBody} material={material} castShadow receiveShadow dispose={null} />
+    <mesh geometry={plinthRim} position={[0, 0, 0.082]} castShadow receiveShadow dispose={null}
+      material={frameMaterial(mine, true)} />
   </group>
 }
 

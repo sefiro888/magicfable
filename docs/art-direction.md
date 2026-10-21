@@ -49,6 +49,18 @@ El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la p
   apuntar, con una placa oscura que mantiene contraste sobre cualquier fondo.
 - Compartir geometrías y texturas entre piezas. La decoración del marco se
   fusiona en una geometría para no multiplicar draw calls por remache.
+- Las estructuras se asientan en un zócalo octogonal de piedra con orla
+  metálica biselada. Se queda sobre el suelo al elevar la carta seleccionada.
+
+### Invocaciones
+
+El sello aparece trazado por capas sobre la losa y levanta motas pequeñas.
+La geometría central distingue familias (prismas, simetría, crecimiento,
+torsión, discontinuidad, dientes de forja) y el tono procede de la facción.
+Las 16 variantes se comparan a escala real, además de comprobarlas dentro
+de la batalla. No tapar la ilustración con columnas opacas ni iluminar todo
+el tablero de blanco: la luz local acompaña el trazado y se desvanece.
+Director y render usan la misma duración al cambiar velocidad.
 
 - Silueta vertical original con esquinas biseladas, borde exterior de piedra oscura y filete interior de metal envejecido.
 - Banda de nombre horizontal y estable. La facción se expresa en el filete, el cristal de coste y una filigrana secundaria; nunca mediante un baño de color que reduzca la legibilidad del arte.
