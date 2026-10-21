@@ -62,6 +62,14 @@ de la batalla. No tapar la ilustración con columnas opacas ni iluminar todo
 el tablero de blanco: la luz local acompaña el trazado y se desvanece.
 Director y render usan la misma duración al cambiar velocidad.
 
+### Integridad del Nexo
+
+Las fisuras siguen los tres cuerpos del pedestal. Son oscuras al principio y
+dejan ver energía cálida al aproximarse al colapso; el color del dueño permanece
+en sus cristales y en la identidad del comandante. Los cristales pierden energía
+y alineación con el desgaste. La curación repara la representación usando la
+Vida máxima del comandante, sin guardar un segundo estado visual de salud.
+
 - Silueta vertical original con esquinas biseladas, borde exterior de piedra oscura y filete interior de metal envejecido.
 - Banda de nombre horizontal y estable. La facción se expresa en el filete, el cristal de coste y una filigrana secundaria; nunca mediante un baño de color que reduzca la legibilidad del arte.
 - El arte ocupa aproximadamente el 48 % superior. La ventana tiene un arco muy leve y un corte inferior recto para no recordar marcos comerciales concretos.

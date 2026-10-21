@@ -68,7 +68,7 @@ global), **V** terminada y verificada.
 | 43 | Recorrido de hechizos | P |
 | 44 | Impactos por facción y material | P |
 | 45 | Destrucciones por facción | P |
-| 46 | Deterioro de Nexos | P |
+| 46 | Deterioro de Nexos | A |
 | 47 | Caída del Nexo | P |
 | 48 | Interfaz de batalla | P |
 | 49 | Inspección de cartas | P |
@@ -143,3 +143,18 @@ Borrador siguiente, sin integrar:
 Después integrar deterioro de Nexos y revisar llegadas de las cartas. No saltar a
 escenarios todavía. Mantener vivas las 50 tareas; solo la sombra de contacto
 está marcada como terminada, el resto de los cambios son avances parciales.
+
+Cuarto bloque en curso: `NexusFractures` integrado. Fisuras en tres superficies
+del pedestal, pérdida de energía/desalineación de cristales según integridad,
+marco crítico que respeta selección e impacto. Vida máxima del comandante real.
+Material de piedra con relieve 0,035 y metalness 0,04 (antes bump 3 y metal alto).
+Dos e2e nuevos comprueban crítico → herido al lanzar una curación real en ambas
+resoluciones. Capturas `nexo-critico-*` y `nexo-curado-*` revisadas.
+Tests 543, build y lint verdes. E2e completo cerrado: 62 en verde y 25 omitidas.
+Sin verificaciones pendientes. Tercer bloque guardado en `cb53e19`.
+
+Preparado, sin integrar: `MaterialEnvironment.tsx`, reflexión de paneles propios
+sin HDR externo. Ver API local de Drei ya inspeccionada. Evaluar un entorno
+contenido antes de subir metalness de los marcos: evita el aspecto negro del
+metal sin reflexión. Comparar Ciudadela, Caldera y Fiordo en ambas resoluciones.
+La luz direccional del escenario debe seguir mandando; no lavar texturas.

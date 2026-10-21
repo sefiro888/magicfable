@@ -33,6 +33,7 @@ import { BoardDrift } from './BoardDrift'
 import { TerrainMarks } from './terrain/TerrainMarks'
 import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFinish'
 import { RitualSeal } from './RitualSeal'
+import { NexusFractures } from './NexusFractures'
 
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
@@ -934,6 +935,7 @@ function Nexus({
   playerId,
   mine,
   health,
+  maxHealth,
   targetable,
   onClick,
   onHover,
@@ -946,6 +948,7 @@ function Nexus({
   /** Si este Nexo es el de quien mira la pantalla (no siempre coincide con el bando 'player' del motor: en multijugador el invitado es 'ai'). */
   mine: boolean
   health: number
+  maxHealth: number
   targetable: boolean
   onClick: () => void
   onHover?: (playerId?: PlayerId) => void
@@ -990,6 +993,8 @@ function Nexus({
   const stoneMap = masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
+  const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
+  const damage = 1 - integrity
   /** Cuánto dura la reacción al golpe, en milisegundos. */
   const HIT_MS = 620
 
@@ -1005,9 +1010,11 @@ function Nexus({
       node.position.x = Math.sin(since * 0.09) * 0.06 * golpe
     }
     if (crystals.current) {
-      for (const shard of crystals.current.children) {
+      for (const [index, shard] of crystals.current.children.entries()) {
         const material = (shard as Mesh).material as MeshStandardMaterial
-        material.emissiveIntensity = 0.85 + golpe * 3.2
+        material.emissiveIntensity = 0.25 + integrity * 0.6 + golpe * 3.2
+        shard.rotation.z = 0.16 + Math.sin(index * 2.4) * damage * 0.25
+        shard.position.y = 0.56 - (index % 3) * damage * 0.04
       }
     }
     if (shock.current) {
@@ -1030,16 +1037,17 @@ function Nexus({
       {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
       <mesh position={[0, 0.04, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[0.98, 1.2, 0.22, 8]} />
-        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={3} color={stone.base} roughness={0.9} metalness={0.12} emissive="#0a0e18" emissiveIntensity={0.4} />
+        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={0.035} color={stone.base} roughness={0.9} metalness={0.04} emissive="#0a0e18" emissiveIntensity={0.15} />
       </mesh>
       <mesh position={[0, 0.26, 0]} castShadow>
         <cylinderGeometry args={[0.62, 0.82, 0.3, 8]} />
-        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={3} color={stone.shaft} roughness={0.82} metalness={0.16} emissive="#0c1120" emissiveIntensity={0.45} />
+        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={0.035} color={stone.shaft} roughness={0.82} metalness={0.04} emissive="#0c1120" emissiveIntensity={0.15} />
       </mesh>
       <mesh position={[0, 0.46, 0]} castShadow>
         <cylinderGeometry args={[0.74, 0.6, 0.12, 8]} />
-        <meshStandardMaterial map={stoneMap} color={stone.crown} roughness={0.7} metalness={0.25} emissive={ringEmissive} emissiveIntensity={0.35} />
+        <meshStandardMaterial map={stoneMap} color={stone.crown} roughness={0.7} metalness={0.04} emissive={ringEmissive} emissiveIntensity={0.15 + integrity * 0.2} />
       </mesh>
+      <NexusFractures damage={damage} />
       {/* Corona de esquirlas de cristal alrededor del borde del pedestal. */}
       <group ref={crystals}>
       {[...Array(8).keys()].map((index) => {
@@ -1047,7 +1055,7 @@ function Nexus({
         return (
           <mesh key={index} position={[Math.cos(angle) * 0.66, 0.56, Math.sin(angle) * 0.66]} rotation={[0, -angle, 0.16]}>
             <coneGeometry args={[0.07, 0.24, 4]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.85} roughness={0.3} metalness={0.3} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.85} roughness={0.3} metalness={0.04} />
           </mesh>
         )
       })}
@@ -1064,7 +1072,7 @@ function Nexus({
         <boxGeometry args={[0.9, 0.5, 1.1]} />
       </mesh>
       <Html center position={[0, 0.66, 0]} distanceFactor={6.5} zIndexRange={[14, 0]} className={styles.nexusCard}>
-        <div data-targetable={targetable || undefined} data-hit={justHit || undefined}>
+        <div data-targetable={targetable || undefined} data-hit={justHit || undefined} data-integrity={damage > 0.65 ? 'critical' : damage > 0.2 ? 'wounded' : undefined}>
           <img src={withBase(commanderArt)} alt="" />
         </div>
       </Html>
@@ -1471,6 +1479,7 @@ function Scene(props: Board3DProps) {
         playerId="player"
         mine={props.localPlayerId === 'player'}
         health={props.state.players.player.nexusHealth}
+        maxHealth={COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
         onHover={props.onHoverNexus}
@@ -1483,6 +1492,7 @@ function Scene(props: Board3DProps) {
         playerId="ai"
         mine={props.localPlayerId === 'ai'}
         health={props.state.players.ai.nexusHealth}
+        maxHealth={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
         onHover={props.onHoverNexus}

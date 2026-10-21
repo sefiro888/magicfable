@@ -106,6 +106,13 @@
 .nexusCard img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
 .nexusCard [data-targetable] { border-color: #ffd257; box-shadow: 0 0 16px rgba(255, 210, 87, 0.55); }
 .nexusCard [data-hit] { border-color: #ff6b58; box-shadow: 0 0 22px rgba(255, 107, 88, 0.85); }
+.nexusCard [data-integrity="wounded"] { border-color: #a27a56; }
+.nexusCard [data-integrity="critical"] {
+  border-color: #d16e4f;
+  box-shadow: inset 0 0 12px rgba(70, 14, 6, 0.55), 0 0 16px rgba(180, 52, 24, 0.45);
+}
+.nexusCard [data-integrity][data-targetable] { border-color: #ffd257; }
+.nexusCard [data-integrity][data-hit] { border-color: #ff6b58; box-shadow: 0 0 22px rgba(255, 107, 88, 0.85); }
 
 /* ── Chapas de unidad en pantalla estrecha ──
    La chapa mide 116 px de ancho y en un móvil cada casilla del tablero ronda
