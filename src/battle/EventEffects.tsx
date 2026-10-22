@@ -288,27 +288,6 @@ function NexusShock({ at, tone, timing }: { at: readonly [number, number]; tone:
   )
 }
 
-/** Haz vertical de cierre de partida. */
-function VictoryBeam({ tone, timing }: { tone: string; timing: TimedProps }) {
-  const progress = useProgress(timing)
-  const beam = useRef<Mesh>(null)
-  useFrame(() => {
-    const value = progress.current
-    const fade = Math.sin(value * Math.PI)
-    if (beam.current) {
-      beam.current.scale.set(1 + value * 0.6, 1, 1 + value * 0.6)
-      ;(beam.current.material as MeshBasicMaterial).opacity = fade * 0.5
-    }
-  })
-  if (timing.reducedMotion) return null
-  return (
-    <mesh ref={beam} position={[0, 4, 0]}>
-      <cylinderGeometry args={[1.4, 2.2, 8.5, 24, 1, true]} />
-      <meshBasicMaterial color={tone} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-    </mesh>
-  )
-}
-
 interface EventEffectsProps {
   readonly event: AnimationEvent
   readonly reducedMotion: boolean
@@ -371,7 +350,7 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       return at ? <NexusShock at={at} tone={tone} timing={timing} /> : null
     }
     case 'victory':
-      return <VictoryBeam tone={tone} timing={timing} />
+      return null
     default:
       return null
   }

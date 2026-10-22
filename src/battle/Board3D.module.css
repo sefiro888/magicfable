@@ -113,6 +113,17 @@
 }
 .nexusCard [data-integrity][data-targetable] { border-color: #ffd257; }
 .nexusCard [data-integrity][data-hit] { border-color: #ff6b58; box-shadow: 0 0 22px rgba(255, 107, 88, 0.85); }
+.nexusCard [data-collapsed] { animation: nexusPortraitFall var(--rupture-duration, 900ms) ease-in forwards; }
+.nexusCard [data-collapsed][data-reduced-motion] { animation: none; opacity: 0; }
+.nexusLabel [data-fallen] { color: #bdb09b; letter-spacing: .035em; }
+@keyframes nexusPortraitFall {
+  0%, 20% { opacity: 1; transform: none; filter: brightness(1); }
+  35% { opacity: .5; transform: translateY(3px) scale(.96); filter: brightness(.5); }
+  70%, 100% { opacity: 0; transform: translateY(14px) scale(.8); filter: brightness(.2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexusCard [data-collapsed] { animation: none; opacity: 0; }
+}
 
 /* ── Chapas de unidad en pantalla estrecha ──
    La chapa mide 116 px de ancho y en un móvil cada casilla del tablero ronda

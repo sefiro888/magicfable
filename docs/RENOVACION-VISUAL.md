@@ -69,14 +69,14 @@ global), **V** terminada y verificada.
 | 44 | Impactos por facción y material | A |
 | 45 | Destrucciones por facción | A |
 | 46 | Deterioro de Nexos | A |
-| 47 | Caída del Nexo | P |
+| 47 | Caída del Nexo | A |
 | 48 | Interfaz de batalla | P |
 | 49 | Inspección de cartas | A |
 | 50 | Presentación de escenario y comandantes | P |
 
 ## Bloque activo
 
-**22 oct, 01:35.** Quinto bloque guardado en `06894eb`; sexto en `8208e5b`.
+**22 oct, 02:16.** Quinto bloque guardado en `06894eb`; sexto en `8208e5b`.
 Séptimo bloque validado: `AttackTrail` ya integrado (ocho estilos y ataque
 de contacto), `ImpactDebris` con fragmentos instanciados según material,
 metadatos `cardId`/`targetCardId`/facción en eventos resueltos y salida de los
@@ -113,28 +113,41 @@ Inspección de batalla ya pasó en ambas
 resoluciones con capturas, control de foco y dos copias con estados distintos.
 
 Gate actual: **550 unitarias en verde, 5 omitidas; build y lint verdes**.
-E2e completo cerrado: **70 en verde y 29 omitidas** (99 pruebas). Sin procesos
-de verificación pendientes. Guardar checkpoint; después integrar ruptura.
+Séptimo bloque guardado en `ecc9507`: 70 e2e verdes, 29 omitidas.
 
-Borrador para después del checkpoint: `NexusRupture.tsx` NO integrado, sectores
-cerrados e instanciados de los tres niveles del Nexo, fragmentos de cristales,
-onda breve y ruina persistente. Falta conectar su ciclo a victoria y revisar.
-Al integrar ruptura, pasar `reducedMotion` al Nexo: su reacción antigua aún
-tiembla sin consultar esa preferencia. `justHit` también conserva un timeout
-ligado al cambio de evento; usar el gestor de temporizadores con identidad de
-golpe para que no se quede encendido al acelerar. La caída debe persistir al
-terminar el evento, ocultar el retrato con transición y resetearse en revancha.
-Después cerrar #38 (maldición/quemadura), #48/50 y pasar a escenarios.
+Octavo bloque integrado y validado: caída del Nexo,
+30 bloques compactos por fractura Voronoi, rig rígido compartiendo cuatro
+materiales, caras cerradas con grano propio, fragmentos de cristal, impulso
+breve y ruina persistente. Los primeros sectores radiales parecían una rueda;
+se descartaron. Los triángulos largos parecían astillas; también se descartaron.
+El retrato desaparece, la luz se apaga y la cámara encuadra al Nexo derrotado
+antes de devolver exactamente la vista del jugador. Revancha restaura el Nexo.
+Movimiento reducido muestra directamente la ruina sin giro ni acercamiento.
+Se quitó el haz genérico del centro del tablero; no cambiaron reglas.
+Corregidos también el temporizador de impacto que dependía del siguiente evento
+y el tamaño inicial del retrato: Drei reiniciaba el portal sin su escala y la
+recuperaba solo al mover la cámara. La sonda exige posición y tamaño restaurados.
+Sonda de ambos Nexos a ambas resoluciones: 2 pruebas verdes (`78600`).
+Victoria real, revancha y movimiento reducido: 3 pruebas verdes (`44427`).
+Capturas `nexo-ruptura-*`/`nexo-ruina-*` revisadas. Último ajuste posterior:
+menos microfacetas y piedra con polvo más neutro. Unitarias: 550 verdes/5 skip.
+Build `61508` y lint `15903` verdes. E2e `55895`: 71 verdes, 31 omitidas,
+dos tiempos de espera (inspección y navegación) mientras competían compilación,
+análisis y WebGL. Ambos pasaron aislados sin cambios (`39042`, dos verdes).
+Las 73 pruebas activas quedaron verificadas. En futuras pasadas, no ejecutar
+build junto al navegador: la compilación ocupó 1,8 GB y retrasó el render.
+Sin procesos pendientes. Después checkpoint y #38 (maldición/quemadura),
+#48/50, escenarios al final. `burnAppearance.ts` y su test son preparación
+sin integrar para el bloque siguiente, no parte de la caída del Nexo.
 
-Arte de interfaz preparándose aparte con la habilidad `imagegen`: solo faltan
-cinco sigilos ilustrados (Forja, Marea, Bestiario, Plaga, Quinto Sol); los otros
-once ya existen. Primer Forja original copiado a
-`tools/art-inbox/ui-sigils/forja-metal-v1.png` (ignorado), pero su encuadre es
-demasiado ajustado. Edición para dejar márgenes y creación de Marea en celda
-`302` de functions.exec. Esperar con functions.wait, no lanzar duplicados.
-Resultados en store `forja_sigil_framed` y `marea_sigil_generation` al terminar.
-Son recursos originales, sin archivos ajenos; no se ha sustituido ningún sigilo
-existente ni integrado aún ningún bitmap nuevo en public.
+Los cinco sigilos nuevos ya están generados con `imagegen` y copiados a
+`tools/art-inbox/ui-sigils` (ignorado): Forja v2, Marea v1, Bestiario v1,
+Plaga v1 y Sol v1. Originales RGBA 1254², transparencia real. No hay llamadas
+de generación pendientes; no duplicarlas. Optimización a 300² WebP terminada,
+lámina `tools/captures/sigilos-reliquia-review.png` revisada a 190 y 38 px.
+Aún sin integrar en public. Mantener los once
+sigilos existentes; estos completan los cinco huecos. Documentar procedencia
+al integrar, conservar originales privados y respaldo SVG.
 
 Resumen del sexto bloque validado:
 inspector con ilustración original, alternancia de carta completa,

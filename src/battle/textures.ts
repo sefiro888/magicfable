@@ -33,6 +33,23 @@ const seededRandom = (seed: number) => {
   };
 };
 
+/** La cara recién rota no contiene las juntas de ladrillo de la superficie.
+ * Grano neutro y poros pequeños conservan el relieve sin pintar un damero. */
+export const rubbleGrainTexture = (): CanvasTexture => {
+  const cached = cache.get('rubble-grain');
+  if (cached) return cached;
+  const [canvas, context] = makeCanvas(256);
+  const random = seededRandom(0x52554242);
+  context.fillStyle = '#c9c7c2';
+  context.fillRect(0, 0, 256, 256);
+  for (let index = 0; index < 12000; index += 1) {
+    const shade = 130 + Math.floor(random() * 110);
+    context.fillStyle = `rgba(${shade},${shade},${shade},${0.12 + random() * 0.35})`;
+    context.fillRect(random() * 256, random() * 256, 0.5 + random() * 2, 0.5 + random() * 1.5);
+  }
+  return finishTexture('rubble-grain', canvas);
+};
+
 const drawGlyph = (
   context: CanvasRenderingContext2D,
   x: number,

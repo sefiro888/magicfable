@@ -2,7 +2,7 @@ import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-thr
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
-import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
@@ -37,6 +37,9 @@ import { NexusFractures } from './NexusFractures'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
+import { NexusRupture } from './NexusRupture'
+import { useVisualTimers } from './useVisualTimers'
+import { NexusFocus } from './NexusFocus'
 
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
@@ -972,6 +975,8 @@ function Nexus({
   commanderArt,
   activeEvent,
   terrainStyle,
+  reducedMotion,
+  terminal,
 }: {
   playerId: PlayerId
   /** Si este Nexo es el de quien mira la pantalla (no siempre coincide con el bando 'player' del motor: en multijugador el invitado es 'ai'). */
@@ -986,10 +991,14 @@ function Nexus({
   activeEvent?: AnimationEvent
   /** Piedra del sitio: el pedestal se talla en el material de la escena. */
   terrainStyle: BoardTileStyle
+  reducedMotion: boolean
+  terminal: boolean
 }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && targetable)
   const [justHit, setJustHit] = useState(false)
+  const [collapse, setCollapse] = useState<{ id: string; durationMs: number; settled?: boolean }>()
+  const schedule = useVisualTimers()
   const lastEvent = useRef<AnimationEvent | undefined>(undefined)
   /**
    * Golpe recibido: hasta ahora el Nexo solo cambiaba un dato en su etiqueta
@@ -1002,21 +1011,43 @@ function Nexus({
   const shock = useRef<Mesh>(null)
   const crystals = useRef<Group>(null)
   const hitAt = useRef(-10)
+  const hitDuration = useRef(620)
+  const nexusLight = useRef<PointLight>(null)
+  const portraitLabel = useRef<HTMLDivElement>(null)
+  const portraitWorld = useMemo(() => new Vector3(), [])
   useEffect(() => {
     if (
       activeEvent &&
-      activeEvent !== lastEvent.current &&
+      activeEvent.id !== lastEvent.current?.id &&
       activeEvent.targetId === `${playerId}-nexus` &&
       (activeEvent.type === 'nexus-damage' || activeEvent.type === 'victory')
     ) {
       lastEvent.current = activeEvent
       hitAt.current = performance.now()
-      setJustHit(true)
-      const timer = window.setTimeout(() => setJustHit(false), 380)
-      return () => window.clearTimeout(timer)
+      hitDuration.current = Math.min(620, Math.max(1, activeEvent.durationMs))
+      schedule(() => {
+        setJustHit(true)
+        if (activeEvent.type === 'victory' && health <= 0) {
+          setCollapse({ id: activeEvent.id, durationMs: activeEvent.durationMs })
+        }
+      }, 0)
+      schedule(() => {
+        if (lastEvent.current?.id === activeEvent.id) setJustHit(false)
+      }, Math.min(380, Math.max(40, activeEvent.durationMs)))
     }
     return undefined
-  }, [activeEvent, playerId])
+  }, [activeEvent, playerId, health, schedule])
+  useEffect(() => {
+    if (health > 0 && collapse) {
+      schedule(() => { setCollapse(undefined); setJustHit(false) }, 0)
+      lastEvent.current = undefined
+      hitAt.current = -10
+    } else if (terminal && health <= 0 && !collapse) {
+      // Fatiga y partidas restauradas pueden llegar sin un evento de victoria.
+      // El resultado ya está resuelto: conservar la ruina, sin inventar daño.
+      schedule(() => setCollapse({ id: `settled-${playerId}`, durationMs: 1, settled: true }), 0)
+    }
+  }, [health, collapse, terminal, playerId, schedule])
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
   const stoneMap = masonryTexture()
@@ -1024,15 +1055,22 @@ function Nexus({
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
   const damage = 1 - integrity
-  /** Cuánto dura la reacción al golpe, en milisegundos. */
-  const HIT_MS = 620
-
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const since = performance.now() - hitAt.current
-    const progress = Math.min(1, since / HIT_MS)
-    const golpe = progress < 1 ? 1 - progress : 0
+    // Html reinicia su estilo al conectar el portal y solo recalcula escala
+    // cuando cambia la proyección. Con cámara quieta quedaba a tamaño CSS
+    // hasta el primer movimiento: restaurar la escala que omite ese reinicio.
+    const wrapper = portraitLabel.current?.parentElement
+    if (wrapper && !wrapper.style.transform.includes('scale(') && camera instanceof ThreePerspectiveCamera) {
+      portraitWorld.set(0, 0.66, 0)
+      structure.current?.parent?.localToWorld(portraitWorld)
+      wrapper.style.transform += ` scale(${6.5 / (2 * Math.tan(camera.fov * Math.PI / 360) * camera.position.distanceTo(portraitWorld))})`
+    }
+    const progress = Math.min(1, since / hitDuration.current)
+    const golpe = !reducedMotion && progress < 1 ? 1 - progress : 0
     const node = structure.current
     if (node) {
+      node.visible = !collapse
       // Se hunde de golpe y vuelve, con una vibración que se apaga.
       node.position.y = -0.16 * golpe * golpe
       node.rotation.z = Math.sin(since * 0.06) * 0.05 * golpe
@@ -1051,8 +1089,9 @@ function Nexus({
       const material = shock.current.material as MeshBasicMaterial
       material.opacity = golpe * 0.55
       shock.current.scale.setScalar(0.6 + (1 - golpe) * 2.4)
-      shock.current.visible = golpe > 0.01
+      shock.current.visible = !collapse && golpe > 0.01
     }
+    if (nexusLight.current) nexusLight.current.intensity = collapse ? 0 : 3.5 + integrity * 1.5
   })
 
   return (
@@ -1090,6 +1129,8 @@ function Nexus({
       })}
       </group>
       </group>
+      {collapse && <NexusRupture key={collapse.id} durationMs={collapse.durationMs} tone={color}
+        stoneColors={[stone.base, stone.shaft, stone.crown]} reducedMotion={reducedMotion || Boolean(collapse.settled)} />}
       {/* Volumen invisible: conserva el clic/hover en 3D sin gastar una textura. */}
       <mesh
         position={[0, 0.66, 0]}
@@ -1100,20 +1141,22 @@ function Nexus({
       >
         <boxGeometry args={[0.9, 0.5, 1.1]} />
       </mesh>
-      <Html center position={[0, 0.66, 0]} distanceFactor={6.5} zIndexRange={[14, 0]} className={styles.nexusCard}>
-        <div data-targetable={targetable || undefined} data-hit={justHit || undefined} data-integrity={damage > 0.65 ? 'critical' : damage > 0.2 ? 'wounded' : undefined}>
+      <Html ref={portraitLabel} center position={[0, 0.66, 0]} distanceFactor={6.5} zIndexRange={[14, 0]} className={styles.nexusCard}>
+        <div data-targetable={targetable || undefined} data-hit={justHit || undefined} data-integrity={damage > 0.65 ? 'critical' : damage > 0.2 ? 'wounded' : undefined}
+          data-collapsed={collapse ? true : undefined} data-reduced-motion={reducedMotion || collapse?.settled || undefined}
+          style={collapse ? { '--rupture-duration': `${collapse.durationMs}ms` } as CSSProperties : undefined}>
           <img src={withBase(commanderArt)} alt="" />
         </div>
       </Html>
       <Html center position={[0, 1.28, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
-        <div data-targetable={targetable || undefined}>{mine ? 'TU NEXO' : 'NEXO RIVAL'} · {health}</div>
+        <div data-targetable={targetable || undefined} data-fallen={collapse ? true : undefined}>{mine ? 'TU NEXO' : 'NEXO RIVAL'} · {collapse ? 'CAÍDO' : health}</div>
       </Html>
       {previewLines && previewLines.length > 0 && (
         <Html center position={[0, 1.7, 0]} distanceFactor={7} zIndexRange={[15, 0]} className={styles.attackPreview}>
           {previewLines.map((line, index) => <div key={index}>{line}</div>)}
         </Html>
       )}
-      <pointLight position={[0, 1.1, 0]} color={color} intensity={5} distance={4} decay={2} />
+      <pointLight ref={nexusLight} position={[0, 1.1, 0]} color={color} intensity={5} distance={4} decay={2} />
     </group>
   )
 }
@@ -1248,7 +1291,7 @@ function ResponsiveCamera() {
     camera.fov = fov
     camera.position.copy(target).addScaledVector(dir, distance)
     camera.updateProjectionMatrix()
-  })
+  }, -0.75)
   return null
 }
 
@@ -1267,7 +1310,10 @@ function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMo
   const captured = useRef(false)
   useEffect(() => {
     if (!event) return
-    if (event.type === 'nexus-damage') {
+    if (event.type === 'victory') {
+      shakeStart.current = -10
+      captured.current = false
+    } else if (event.type === 'nexus-damage') {
       shakeStart.current = performance.now()
       shakeMagnitude.current = 0.09
     } else if (event.type === 'damage' && (event.amount ?? 0) > 0) {
@@ -1298,7 +1344,7 @@ function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMo
       base.current.y + (Math.random() - 0.5) * decay,
       base.current.z + (Math.random() - 0.5) * decay,
     )
-  })
+  }, -0.6)
   return null
 }
 
@@ -1425,6 +1471,7 @@ function Scene(props: Board3DProps) {
   )
   const waitingSummons = useMemo(() => new Set((props.pendingEvents ?? EMPTY_EVENTS)
     .filter((event) => event.type === 'summon').map((event) => event.targetId)), [props.pendingEvents])
+  const terminal = Boolean(props.state.winner) && !props.activeEvent && (props.pendingEvents?.length ?? 0) === 0
   return (
     <>
       {/* Todo el contenido jugable gira 180° cuando el invitado ('ai') mira la
@@ -1510,6 +1557,7 @@ function Scene(props: Board3DProps) {
         ))}
       </Suspense>
       <Nexus
+        key={`nexus-player-${props.state.seed}`}
         playerId="player"
         mine={props.localPlayerId === 'player'}
         health={props.state.players.player.nexusHealth}
@@ -1521,8 +1569,11 @@ function Scene(props: Board3DProps) {
         commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}
+        reducedMotion={props.reducedMotion}
+        terminal={terminal}
       />
       <Nexus
+        key={`nexus-ai-${props.state.seed}`}
         playerId="ai"
         mine={props.localPlayerId === 'ai'}
         health={props.state.players.ai.nexusHealth}
@@ -1534,6 +1585,8 @@ function Scene(props: Board3DProps) {
         commanderArt={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.art.webp ?? '/assets/cards/art/fuente-arcana.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}
+        reducedMotion={props.reducedMotion}
+        terminal={terminal}
       />
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
       <FallenPieces
@@ -1548,6 +1601,7 @@ function Scene(props: Board3DProps) {
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ResponsiveCamera />
+      <NexusFocus event={props.activeEvent} localPlayerId={props.localPlayerId} reducedMotion={props.reducedMotion} photoMode={props.photoMode} />
       {props.onCellHover && (
         <DropTargeting active={Boolean(props.dragging)} localPlayerId={props.localPlayerId} onCell={props.onCellHover} />
       )}

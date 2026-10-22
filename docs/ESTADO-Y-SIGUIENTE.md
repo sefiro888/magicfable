@@ -19,9 +19,11 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
 en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegador:
-70 pruebas en verde y 29 omitidas (capturas bajo demanda), con los hechizos
+73 pruebas activas verificadas y 31 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
+Última pasada: 71 e2e verdes y dos tiempos de espera bajo carga; los dos
+pasaron aislados sin modificar el juego. No compilar a la vez que WebGL.
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**
 Leer también `docs/RENOVACION-VISUAL.md`: contiene las 50 tareas autorizadas,
