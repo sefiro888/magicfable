@@ -36,6 +36,17 @@ El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la p
 
 ## Marco de carta
 
+### Preparación de la batalla
+
+El mulligan presenta el lugar y a ambos comandantes en una misma composición:
+retratos originales sin espejar, emblemas de facción, nombres y títulos sobre
+una vitrina oscura. El recorte conserva los rostros; la ornamentación deja
+espacio al arte y a las cinco decisiones de mano. La presentación no añade
+esperas ni una pantalla que deba saltarse. En móvil se condensan los retratos
+y las cinco cartas se distribuyen en dos filas. Movimiento reducido conserva
+la composición sin acercamiento; teclado y foco pertenecen al diálogo hasta
+confirmar la mano.
+
 ### Inspección y presencia
 
 - La inspección prioriza el original `art-full`, sin recortar ni ampliar por

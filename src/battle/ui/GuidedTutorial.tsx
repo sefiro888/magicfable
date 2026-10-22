@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { CARD_BY_ID, type MatchState } from '../../game'
 import styles from './GuidedTutorial.module.css'
 
@@ -34,7 +34,9 @@ const useTrackedRect = (getElement: () => HTMLElement | null | undefined, active
       const element = getElement()
       if (element) {
         const box = element.getBoundingClientRect()
-        setRect({ top: box.top, left: box.left, width: box.width, height: box.height })
+        setRect((current) => current?.top === box.top && current.left === box.left && current.width === box.width && current.height === box.height
+          ? current
+          : { top: box.top, left: box.left, width: box.width, height: box.height })
       } else {
         setRect(undefined)
       }
@@ -112,14 +114,17 @@ export function GuidedTutorial({ match, handBarRef, endTurnRef, onFinish }: Guid
   }, [step?.id, player.hand])
 
   const targetsHand = step?.id === 'source' || step?.id === 'unit'
-  const rect = useTrackedRect(
-    () => {
+  // Una función nueva por render reiniciaba la medición y borraba el anclaje:
+  // el botón saltaba entre dos posiciones incluso mientras se intentaba pulsar.
+  const getTargetElement = useCallback(() => {
       if (targetsHand && targetCardId) {
         return handBarRef.current?.querySelector<HTMLElement>(`[data-card-id="${targetCardId}"]`) ?? undefined
       }
       if (step?.id === 'endTurn') return endTurnRef.current ?? undefined
       return undefined
-    },
+    }, [targetsHand, targetCardId, handBarRef, step?.id, endTurnRef])
+  const rect = useTrackedRect(
+    getTargetElement,
     Boolean(step && (targetsHand || step.id === 'endTurn')),
   )
 

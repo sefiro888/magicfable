@@ -132,7 +132,7 @@ test('el rival elegido en «Jugar» es contra quien se acaba peleando', async ({
   await page.getByRole('button', { name: /Entrar al tablero/i }).click()
   await page.getByRole('button', { name: /Entendido, a jugar/i }).click().catch(() => {})
   // El encabezado de la batalla nombra al comandante rival.
-  await expect(page.locator('header')).toContainText('Malachar', { timeout: 25_000 })
+  await expect(page.locator('header').first()).toContainText('Malachar', { timeout: 25_000 })
 })
 
 test('ceder el turno con acciones sin usar avisa antes de cederlo', async ({ page }) => {

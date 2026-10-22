@@ -16,7 +16,9 @@ test('arrastrar una unidad de la mano al tablero la despliega', async ({ page })
   const keep = page.getByRole('button', { name: /Conservar las cinco/i })
   await keep.click()
   await expect(keep).toBeHidden()
-  await page.getByRole('button', { name: /Saltar guía/i }).click().catch(() => {})
+  // La primera partida siempre muestra el coach. Exigir un clic normal detecta
+  // el antiguo salto continuo entre el anclaje a la carta y el centro del campo.
+  await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 8000 })
 
   // Esencia suficiente para poder desplegar en el primer turno.
   await page.keyboard.press('Control+Shift+KeyD')

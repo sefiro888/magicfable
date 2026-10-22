@@ -1,6 +1,10 @@
-import { CARD_BY_ID, type CardInstance } from '../../game'
+import { useEffect, useId, useRef, type KeyboardEvent } from 'react'
+import { CARD_BY_ID, type CardInstance, type CommanderDefinition } from '../../game'
+import type { ScenarioId } from '../../store/preferences'
 import { withBase } from '../../utils/assets'
+import { CommanderDuel } from './CommanderDuel'
 import styles from '../BattlePage.module.css'
+import presentation from './MulliganPresentation.module.css'
 
 interface MulliganDialogProps {
   hand: readonly CardInstance[]
@@ -8,6 +12,10 @@ interface MulliganDialogProps {
   selectedIds: readonly string[]
   onToggle: (instanceId: string) => void
   onConfirm: () => void
+  ownCommander?: CommanderDefinition
+  rivalCommander?: CommanderDefinition
+  scenario: Exclude<ScenarioId, 'auto'>
+  reducedMotion: boolean
 }
 
 /**
@@ -16,36 +24,62 @@ interface MulliganDialogProps {
  * La pista de fuentes es el consejo más útil del juego para quien empieza:
  * casi todas las manos malas lo son por tener demasiadas o muy pocas.
  */
-export function MulliganDialog({ hand, selectedIds, onToggle, onConfirm }: MulliganDialogProps) {
+export function MulliganDialog({ hand, selectedIds, onToggle, onConfirm, ownCommander, rivalCommander, scenario, reducedMotion }: MulliganDialogProps) {
+  const titleId = useId()
+  const dialog = useRef<HTMLElement>(null)
+  const firstCard = useRef<HTMLButtonElement>(null)
+  const confirm = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const frame = requestAnimationFrame(() => (firstCard.current ?? confirm.current)?.focus({ preventScroll: true }))
+    return () => {
+      cancelAnimationFrame(frame)
+      if (previous?.isConnected) previous.focus({ preventScroll: true })
+    }
+  }, [])
+  const keepFocus = (event: KeyboardEvent<HTMLElement>) => {
+    // E/H/I pertenecen al campo. La preparación mantiene su propio foco y
+    // no debe ocultar la mano ni ceder el turno que queda detrás del diálogo.
+    event.stopPropagation()
+    if (event.key !== 'Tab') return
+    const controls = dialog.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])')
+    const first = controls?.[0]
+    const last = controls?.[controls.length - 1]
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+  }
   const sources = hand.filter((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana').length
   const balanced = sources >= 2 && sources <= 4
 
   return (
     <div className={styles.resultBackdrop}>
-      <section className={styles.mulligan}>
+      <section ref={dialog} className={`${styles.mulligan} ${presentation.prepared}`} role="dialog" aria-modal="true"
+        aria-labelledby={titleId} onKeyDown={keepFocus}>
+        {ownCommander && rivalCommander && <CommanderDuel own={ownCommander} opponent={rivalCommander}
+          scenario={scenario} reducedMotion={reducedMotion} />}
         <small>Preparación de la crónica</small>
-        <h2>Tu mano inicial</h2>
-        <p>
-          El <strong>mulligan</strong> te deja cambiar cartas de tu mano de salida una sola vez:
-          marca las que no te convenzan y roba otras tantas nuevas.
+        <h2 id={titleId}>Tu mano inicial</h2>
+        <p className={presentation.instruction}>
+          El <strong>mulligan</strong> permite cambiar cartas una vez. Marca las que quieras devolver.
         </p>
-        <p className={styles.mulliganHint} data-ok={balanced}>
-          Tienes <strong>{sources}</strong> {sources === 1 ? 'fuente' : 'fuentes'} de Esencia en la mano.
+        <p className={`${styles.mulliganHint} ${presentation.hint}`} data-ok={balanced}>
+          Tienes <strong>{sources}</strong> {sources === 1 ? 'fuente' : 'fuentes'} de Esencia.
           {balanced
-            ? ' Es un buen arranque para desplegar cartas pronto.'
+            ? ' Buen equilibrio para empezar.'
             : sources < 2
-              ? ' Con menos de dos te costará pagar tus cartas: valora cambiar alguna.'
-              : ' Demasiadas fuentes y pocas jugadas: valora cambiar alguna.'}
+              ? ' Con menos de dos te costará pagar tus jugadas.'
+              : ' Muchas fuentes: considera buscar unidades o hechizos.'}
         </p>
-        <div className={styles.mulliganCards}>
-          {hand.map((instance) => {
+        <div className={`${styles.mulliganCards} ${presentation.cards}`}>
+          {hand.map((instance, index) => {
             const card = CARD_BY_ID[instance.cardId]
             if (!card) return null
             const selected = selectedIds.includes(instance.instanceId)
             return (
               <button
                 key={instance.instanceId}
-                className={styles.mulliganCard}
+                ref={index === 0 ? firstCard : undefined}
+                className={`${styles.mulliganCard} ${presentation.card}`}
                 data-selected={selected}
                 aria-pressed={selected}
                 onClick={() => onToggle(instance.instanceId)}
@@ -57,8 +91,8 @@ export function MulliganDialog({ hand, selectedIds, onToggle, onConfirm }: Mulli
             )
           })}
         </div>
-        <button className={styles.confirmMulligan} onClick={onConfirm}>
-          {selectedIds.length > 0 ? `Cambiar ${selectedIds.length} cartas` : 'Conservar las cinco'}
+        <button ref={confirm} className={`${styles.confirmMulligan} ${presentation.confirm}`} onClick={onConfirm}>
+          {selectedIds.length > 0 ? `Cambiar ${selectedIds.length} ${selectedIds.length === 1 ? 'carta' : 'cartas'}` : 'Conservar las cinco'}
         </button>
       </section>
     </div>

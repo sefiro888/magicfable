@@ -72,9 +72,73 @@ global), **V** terminada y verificada.
 | 47 | Caída del Nexo | A |
 | 48 | Interfaz de batalla | A |
 | 49 | Inspección de cartas | A |
-| 50 | Presentación de escenario y comandantes | P |
+| 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**22 oct, 06:21.** Presentación validada: e2e completo `51288`, **78 verdes y
+33 omitidas**, sin fallos. Unitarias 555/5; build/lint verdes (`26712`/`60029`).
+Recaptura `49991`: **tres verdes**, imágenes revisadas a 1920×1080, 1366×768
+y 375×812; rostros completos y confirmación accesible en las tres. Sin fuentes
+modificadas durante ella. Build adicional `43594` verde, también con los
+borradores de arquitectura presentes. Lint detectó solo una inicialización
+sobrante en esos borradores, retirada; repetición `79939` verde.
+Undécimo bloque listo para checkpoint, excluyendo architecture.
+Sin verificaciones ni generaciones de imágenes en ejecución. Servidor propio
+4173 conservado; automatización conservada porque faltan los escenarios y el
+pulido global, y aún no se ha alcanzado la fecha límite.
+Siguiente bloque: integrar la basílica de Ciudadela, renovar plaza/materiales,
+luz, nubes y banderas, y comprobar ambos tamaños desde la cámara real. No basta
+con sustituir el portal: el suelo y la transición al vacío también necesitan
+acabado. En el dosier de Olimpo se exige mármol vivido, bronce, lino plisado y
+acentos azul egeo/púrpura; evitar convertir todo el lugar en blanco y oro.
+Las tareas 1–23 siguen pendientes hasta integrar y revisar sus escenas.
+
+**22 oct, 06:16.** Retomado tras avisos acumulados. La suite `1663` terminó
+con 76 verdes, 33 omitidas y dos fallos. No era un fallo del arrastre: su traza
+mostró 74 s intentando pulsar «Saltar guía», que alternaba entre posición
+flotante y anclada. El getter del objetivo era una función nueva en cada
+render: reiniciaba el efecto y borraba su medida. Getter estabilizado y medidas
+idénticas conservadas, sin subir tiempos ni forzar clics. La prueba exige ahora
+pulsar la guía en 8 s. El otro fallo era el selector genérico `header`: la nueva
+presentación tiene su propia cabecera; la prueba del rival apunta a la primera,
+la de batalla. Ambas regresiones pasan juntas (`5640`, dos verdes).
+Nuevo gate: unitarias `24403` **555/5**, build `26712` y lint `60029`, verdes.
+E2e completo `51288` en ejecución, dos navegadores, sin compilación simultánea.
+No editar fuentes importadas hasta terminarlo.
+
+Preparación de escenarios, todavía **sin importar ni dar por validada**:
+`architecture/stoneGeometry.ts` (sillares biselados, dovelas y columnas
+acanaladas), `stoneMaterial.ts` (mármol, caliza, basalto y arenisca propios,
+mapas de color/relieve/rugosidad separados), `StoneArchitecture.tsx` (instancias
+por tamaño) y `CitadelBasilica.tsx` (patio a nivel inferior y arquería). Falta
+integrar, compilar, fotografiar y revisar. No incluir estos borradores en el
+checkpoint de presentación ni marcar escenarios terminados.
+
+**22 oct, 03:24.** Décimo bloque guardado en `b42e300` (555 unitarias,
+75 e2e, build/lint verdes). Undécimo en curso: `CommanderDuel` integrado en
+el mulligan, con ambos retratos, emblemas y nombre/contexto del escenario.
+No hay espera extra ni nueva pantalla. `MulliganPresentation` adapta el
+diálogo a desktop y móvil. Foco inicial, Tab cíclico y atajos del campo
+bloqueados dentro del diálogo; guía inicial y mulligan ya no se superponen.
+Texto condensado y singular de «Cambiar 1 carta» corregido.
+Build `53031` y lint `42501` verdes. Sonda nueva de presentación y teclado
+en marcha: `RUN_SHOTS=1` solo en mulligan-presentation.spec, tres resoluciones.
+Esperar y revisar imágenes antes de tocar fuentes. Esta sonda usa
+`e2e/helpers/cameraSnapshot.ts` para capturar matrices reales de R3F al
+terminar, útiles para no colocar decorado fuera del encuadre.
+Herramienta preparada: `node tools/world-projection.mjs <JSON> [X Y Z ...]`;
+validarla contra los JSON de la sonda. Sin nuevos recursos externos.
+Sonda `25312`: tres verdes y capturas revisadas; `33899`: revisión del rostro
+de Torvald tras alinear el arte arriba, una verde. Cámara real exportada en
+`tools/captures/camera-foundry-*.json`; world-projection validado con ellas.
+Ejemplo medido: (0, 4, -8) queda FUERA del lienzo; ni siquiera (0, 2.8, -5.8)
+cabe completo. Para edificios altos, usar niveles inferiores reales o los
+flancos más próximos, y medir, en vez de repetir decorado invisible.
+Gate de presentación: unitarias `89613` 555/5 skip, build `57651`, lint
+`99177`, verdes. E2e completo `1663` ejecutándose: 111 pruebas, 78 activas,
+33 omitidas. No editar fuentes importadas hasta que termine. Se puede preparar
+arquitectura nueva SIN importar para el bloque de escenarios.
 
 **22 oct, 03:21.** Décimo bloque validado. Gate completo: **555 unitarias
 verdes/5 omitidas**, build y lint verdes; e2e `20002` **75 verdes/33 omitidas**.

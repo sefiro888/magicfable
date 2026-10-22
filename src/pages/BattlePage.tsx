@@ -1205,8 +1205,12 @@ export function BattlePage() {
         />
       )}
 
-      {canTakeMulligan(match, ME) && !match.winner && (
+      {canTakeMulligan(match, ME) && !match.winner && !howToOpen && (
         <MulliganDialog
+          ownCommander={commander}
+          rivalCommander={rivalCommander}
+          scenario={scenario}
+          reducedMotion={preferences.reducedMotion}
           hand={player.hand}
           selectedIds={mulliganIds}
           onToggle={(instanceId) => setMulliganIds((current) =>

@@ -1,0 +1,57 @@
+.duel { margin: -4px -4px 20px; }
+.place { margin-bottom: 14px; text-align: center; }
+.place > span { color: #aaa493; font-size: 8px; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; }
+.place h3 { margin: 5px 0 3px; color: var(--scene-accent); font: 500 27px/1.15 var(--display); letter-spacing: .025em; }
+.place small { color: #b4ac9c; font-size: 10px; letter-spacing: .07em; }
+.pair { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.wing { position: relative; min-width: 0; height: 186px; overflow: hidden; isolation: isolate; text-align: right; background: #0c1019; border: 1px solid #8d7b515e; box-shadow: inset 0 0 0 3px #0004, 0 8px 24px #0005; }
+.wing::after { content: ''; position: absolute; z-index: 1; inset: 3px; pointer-events: none; border: 1px solid #d1bb7f1c; }
+.art { position: absolute; inset: 0 auto 0 0; width: 72%; height: 100%; object-fit: cover; object-position: center top; filter: saturate(.85); animation: artArrival .8s ease-out both; }
+.engraving { position: absolute; inset: 0; background: linear-gradient(90deg, #070a1100 8%, #080d1480 40%, #080d14f7 70%), linear-gradient(0deg, #080b14b3, transparent 45%); }
+.engraving::after { content: ''; position: absolute; inset: 0; opacity: .2; background: radial-gradient(ellipse at 80% 0%, var(--commander-accent), transparent 65%); }
+.identity { position: absolute; z-index: 2; right: 18px; top: 15px; width: 58%; }
+.side { color: #c6baa1; font-size: 8px; letter-spacing: .12em; text-transform: uppercase; }
+.sigil { --sigil-size: 43px; display: grid; margin: 8px 0 6px auto; filter: drop-shadow(0 2px 4px #000b); }
+.identity h3 { margin: 0; color: #f6ead0; font: 500 26px/1.05 var(--display); }
+.identity p { margin: 5px 0 8px; color: #c5bba4; font-size: 10px; line-height: 1.3; }
+.faction { color: color-mix(in srgb, var(--commander-accent) 65%, #f3e5bd); font-size: 8px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.wing[data-rival] { text-align: left; }
+.wing[data-rival] .art { inset: 0 0 0 auto; }
+.wing[data-rival] .engraving { background: linear-gradient(-90deg, #070a1100 8%, #080d1480 40%, #080d14f7 70%), linear-gradient(0deg, #080b14b3, transparent 45%); }
+.wing[data-rival] .identity { left: 18px; right: auto; }
+.wing[data-rival] .sigil { margin-inline: 0 auto; }
+.versus { position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: #d8c28e; background: linear-gradient(135deg, #27282a, #10141d); border: 1px solid #b79a5f80; clip-path: polygon(50% 0, 100% 16%, 100% 84%, 50% 100%, 0 84%, 0 16%); }
+.versus svg { width: 24px; height: 24px; }
+.versus span { font-size: 7px; letter-spacing: .1em; text-transform: uppercase; }
+@keyframes artArrival { from { opacity: .1; transform: scale(1.06); } to { opacity: 1; transform: scale(1); } }
+.duel[data-reduced-motion] .art { animation: none; }
+@media (max-height: 820px) {
+  .wing { height: 154px; }
+  .identity { top: 11px; }
+  .sigil { --sigil-size: 32px; margin-block: 6px; }
+  .identity h3 { font-size: 22px; }
+  .identity p { margin-block: 4px; }
+  .place h3 { font-size: 23px; }
+  .place { margin-bottom: 10px; }
+  .duel { margin-bottom: 14px; }
+}
+@media (max-width: 600px) {
+  .duel { margin: -2px -5px 14px; }
+  .pair { gap: 12px; }
+  .wing { height: 110px; }
+  .art { width: 100%; opacity: .7; }
+  .engraving { background: linear-gradient(0deg, #080d14fa 5%, #080d145c 80%); }
+  .wing[data-rival] .engraving { background: linear-gradient(0deg, #080d14fa 5%, #080d145c 80%); }
+  .identity, .wing[data-rival] .identity { width: auto; inset: auto 8px 8px; text-align: left; }
+  .identity h3 { font-size: 18px; }
+  .identity p { display: none; }
+  .side { display: block; font-size: 6px; }
+  .sigil, .wing[data-rival] .sigil { --sigil-size: 27px; position: absolute; right: 0; bottom: 0; margin: 0; }
+  .faction { display: block; margin-top: 4px; max-width: calc(100% - 26px); font-size: 7px; }
+  .versus { width: 31px; height: 48px; }
+  .versus svg { width: 18px; height: 18px; }
+  .versus span { display: none; }
+  .place h3 { font-size: 21px; }
+  .place small { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) { .art { animation: none; } }

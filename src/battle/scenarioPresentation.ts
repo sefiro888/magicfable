@@ -1,0 +1,20 @@
+import type { ScenarioId } from '../store/preferences'
+
+/** El lugar se presenta antes de elegir la mano: comparte identidad con el
+ * tablero, sin añadir otra pantalla que retrase el comienzo de la partida. */
+export const SCENARIO_PRESENTATION: Readonly<Record<Exclude<ScenarioId, 'auto'>, {
+  readonly name: string
+  readonly setting: string
+  readonly accent: string
+}>> = {
+  'aether-citadel': { name: 'Aether Citadel', setting: 'Plaza suspendida · Amanecer', accent: '#dfc68d' },
+  sanctuary: { name: 'Santuario de las Runas', setting: 'Isla de monolitos · Noche', accent: '#8bbbc4' },
+  caldera: { name: 'Fragua de la Caldera', setting: 'Lago de lava · Penumbra', accent: '#e79254' },
+  duna: { name: 'Necrópolis de Duna', setting: 'Patio funerario · Mediodía', accent: '#dbc17c' },
+  fimbul: { name: 'Fiordo de Fimbul', setting: 'Mar helado · Noche polar', accent: '#9ecbd5' },
+  grove: { name: 'Claro del Bosque', setting: 'Dosel antiguo · Luz filtrada', accent: '#b0c58a' },
+  shore: { name: 'Rompiente de Nerith', setting: 'Costa de basalto · Marea baja', accent: '#83c4b9' },
+  foundry: { name: 'Patio del Gremio', setting: 'Fundición · Anochecer', accent: '#d9a877' },
+  'jade-court': { name: 'Corte de Jade', setting: 'Palacio celestial · Amanecer', accent: '#c0bf8e' },
+  'wheel-ghat': { name: 'Escalinata de la Rueda', setting: 'Ghat sagrado · Alba', accent: '#dfb17b' },
+}
