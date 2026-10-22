@@ -28,7 +28,7 @@ global), **V** terminada y verificada.
 | 3 | Santuario: renovación integral | A |
 | 4 | Duna: renovación integral | A |
 | 5 | Fiordo: renovación integral | A |
-| 6 | Claro: renovación integral | P |
+| 6 | Claro: renovación integral | A |
 | 7 | Rompiente: pulido integral | P |
 | 8 | Gremio: pulido integral | P |
 | 9 | Jade: pulido integral | P |
@@ -75,6 +75,39 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**13:37, Claro validado.** `68073`: media y alta reducida a ambas
+resoluciones verdes; capturas nativas revisadas. Suite completa78 activas
+verdes en6,2min. Hay35 omitidas en esta ejecución porque SCENERY_QUALITY
+seguía enhigh y registra dos capturas opcionales en vez de cuatro; ninguna
+prueba activa se eliminó. Limpiar variables SCENERY al próximo gate completo.
+Unitarias563/5, build `90346`, lint `95290`, verdes. #6 pasa a A, con
+pulido global pendiente. Se guarda checkpoint local sin recursos de costa
+ni Gremio. Siguiente: integrar Rompiente usando su paisaje, estratos, arco,
+faro de hueso, espuma fragmentada y shader de mar ya preparados sin importar.
+No hay suites activas. Servidor `55450` conservado.
+
+**13:30, Claro corregido tras revisar imágenes reales.** La primera raíz
+de ocho tubos se rechazó por uniones cortadas; sustituida por superficie
+implícita continua con contrafuertes y hueco excavado. Copa de hojas lobuladas
+instanciadas, helechos desalineados que siguen el suelo y hojarasca plegada.
+Luz moteada real mediante máscara original y proyección con oclusión, sin
+conos sólidos. Unitarias563/5, build `90346`/lint `95290` verdes. Matriz final
+`54581`: cuatro verdes, alta/baja ambas resoluciones, fotografías revisadas;
+la sonda confirma viento activo y quieto con movimiento reducido, luz filtrada
+solo en media/alta y protagonista dentro de cámara segura. En foto se ve la
+copa completa. Media/alta reducida y suite completa en curso; no editar
+aplicación ni compilar hasta terminar. Corteza y mantillo aún admiten más
+variación de detalle en pulido global. Shore tiene panorama original ya
+preparado y geometría sin importar; excluirlos de checkpoint Claro.
+
+**13:15, Claro integrado para primera revisión.** Checkpoint Fiordo
+`897d10a` local, sin push. El Claro conecta panorama original, raíz de roble
+con hueco real, corteza propia, helechos instanciados y terraza continua de
+mantillo. Retirados cilindros, parches rectangulares de musgo y conos sólidos
+de luz; clave cálida/relleno frío, bruma fina y polen. Losas con bisel real,
+Nexo calizo y luz contenida. Nueva prueba de apoyo de las cuatro esquinas.
+Build `62321`/lint `70508` en curso; todavía no revisado en WebGL.
 
 **13:16, Fiordo validado y Claro siguiente.** Regresión `56191`: ocho verdes
 en AMD para Ciudadela/Caldera/Santuario/Duna en alta y ambas resoluciones;

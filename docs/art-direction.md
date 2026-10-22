@@ -244,6 +244,11 @@ Los WebP no deben incluir marco, nombre, coste ni símbolos de interfaz. Peso ob
 
 ## Convención de nombres
 
+Claro: bosque templado antiguo, roble con contrafuertes continuos y cavidad
+real, hojas lobuladas, frondes pinnadas, mantillo y hojarasca plegada. Clave
+cálida filtrada por dosel y relleno frío contenido. No usar cilindros abiertos,
+copas esféricas, helechos como palos, musgo como paneles ni haces sólidos.
+
 Fiordo: fantasía polar sobria, hielo azul gris con aire y fracturas finas,
 nieve mate en la orla, casco naval de tablas abiertas y bruma localizada.
 Un solo reflejo planar de la placa en alta/media; lago exterior mate y baja

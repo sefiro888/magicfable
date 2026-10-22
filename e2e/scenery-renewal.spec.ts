@@ -6,6 +6,7 @@ import { cameraSnapshot, fiberModuleUrl, poseCamera } from './helpers/cameraSnap
 import { reflectionProbe, waterConfiguration } from './helpers/reflectionProbe'
 import type { GraphicsQuality } from '../src/store/preferences'
 import { glacierBankPoint } from '../src/battle/scenarios/architecture/glacierBankGeometry'
+import { groveProbe } from './helpers/groveProbe'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
 const scenarios = ['aether-citadel', 'sanctuary', 'caldera', 'duna', 'fimbul', 'grove', 'shore', 'foundry', 'jade-court', 'wheel-ghat'] as const
@@ -16,6 +17,7 @@ const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '')
 const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium']
   : process.env.SCENERY_QUALITY === 'high' ? ['high'] : process.env.SCENERY_QUALITY === 'low' ? ['low'] : ['high', 'low']
 const landmarks: Partial<Record<typeof scenario, readonly (readonly [number, number, number])[]>> = {
+  grove: [[0, 1.65, -7.6], [-5.3, 0.15, -2.6], [5.3, 0.15, -2.6]],
   fimbul: [[-3.57, 1.61, -8.2], glacierBankPoint(-1, 0.46, 0.12), glacierBankPoint(1, 0.46, 0.12)],
   duna: [[-2.15, 1.59, -8.15], [-6.08, 2.05, -3.3], [6.08, 2.05, -3.3]],
   sanctuary: [[0, 1.47, -7.5], [-5.5, 1.8, -3.8], [5.55, 2.05, -3.5]],
@@ -61,6 +63,15 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       const camera = await cameraSnapshot(page, url)
       expect(camera.background).not.toBeNull()
       expect(camera.fog).not.toBeNull()
+      if (scenario === 'grove') {
+        const before = await groveProbe(page, url)
+        await page.waitForTimeout(350)
+        const after = await groveProbe(page, url)
+        expect(before.count).toBeGreaterThan(0)
+        expect(before.filteredLight).toBe(quality === 'low' ? 0 : 512)
+        if (reduced) expect(after.matrix).toEqual(before.matrix)
+        else expect(after.matrix).not.toEqual(before.matrix)
+      }
       if (scenario === 'sanctuary' || scenario === 'fimbul') {
         const water = await waterConfiguration(page, url)
         expect(water.enabled).toBe(quality === 'low' ? 0 : 1)

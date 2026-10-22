@@ -14,7 +14,7 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 561 en verde, 5 omitidos |
+| Tests | 563 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
@@ -22,8 +22,9 @@ en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegado
 78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `19671`: 78 e2e verdes, 37 omitidas en seis minutos
-(22 oct, 13:09). Playwright usa un worker y `channel: chromium`: el shell
+Última pasada completa `68073`: 78 e2e verdes, 35 omitidas en6,2min
+(22 oct,13:37; selecciónhigh registra dos capturas opcionales menos).
+Playwright usa un worker y `channel: chromium`: el shell
 antiguo imponía SwiftShader aunque había una AMD Radeon disponible. El nuevo
 headless aprovecha Direct3D11, mantiene calidad, tiempos y trazas completas.
 No compilar ni modificar fuentes importadas mientras se verifica WebGL.
@@ -70,8 +71,16 @@ Se corrigió un fallo compartido: background/fog estaban unidos al Group
 giratorio en vez de Scene. `ScenarioAtmosphere` debe seguir fuera de ese grupo.
 La guía inicial ya no intercepta el campo y se suspende en foto conservando
 su paso. Las seis pruebas originales de guía siguen presentes, más una nueva.
-Siguiente: integrar Claro. Panorama y seis auxiliares de botánica/suelo
-preparados, **sin importar ni verificar visualmente todavía**.
+Claro integrado: roble de superficie continua con contrafuertes y hueco real,
+copa de hojas lobuladas, helechos instanciados con viento, hojarasca y mantillo.
+Se rechazó el primer montaje de raíces por uniones de tubos cortadas y se
+rehízo antes de validar. Luz moteada con proyección y oclusión real en
+media/alta; baja mantiene una clave sencilla. Matriz alta/media/baja y alta
+reducida verde a ambas resoluciones; fotos amplias revisadas. Unitarias563/5,
+build/lint y suite completa78 activas verdes. Falta pulido global.
+Siguiente: Rompiente. Panoramas de costa y Gremio generados y optimizados;
+geometría litoral, faro de hueso, espuma y shader de mar preparados sin
+importar. Ver detalles y procedencia en `docs/arte-escenarios.md`.
 Leer el registro para sesiones activas; no duplicar verificaciones.
 
 

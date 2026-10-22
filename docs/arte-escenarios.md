@@ -116,18 +116,22 @@ Optimización local con Pillow, sin edición semántica ni descargas en partida.
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Fiordo de Fimbul in Crónicas del Nexo, a mature tactical fantasy card game. A vast frozen Nordic fjord at polar night, viewed from high above looking DOWN approximately 37 degrees, monumental weathered dark gneiss cliffs and glacial striations, tilted fractured blue ice shelves with fine trapped air layers, sweeping drifted snow on the ledges. A distant modest timber longhouse and carved dragon-prow mooring posts, tiny and solemn, express an ancient seafaring culture without dominating geology. Subtle green and violet auroral light is reflected in the ice, with faint layered veils at the extreme far upper edge; no visible sky or horizon, no huge light ribbons across the center. Composition: spectacular far cliffs and snowbound dark spruce on the upper third and outer thirds, central and lower half mostly spacious dark blue-slate frozen water with fine snow traces, delicate cracks and dark seams, leaving visual room for a separate game board in front. Four layers of low cold mist convey immense scale. Moon key from upper left, readable blue-grey shadows, minimal turquoise reflection, a few very small distant amber windows, restrained palette rather than neon blue everywhere. Refined cinematic painterly realism with convincing observed geology and materials, compatible with sophisticated mature fantasy card illustrations. Original design, no reference images, no franchise, no artist imitation. No foreground board, platform, table, arena, cards, UI, characters, giant creatures, readable text, logos, marks, watermarks or border. Avoid toy low-poly cone mountains or cone trees, faceted crystal spikes, luminous runic circles, glowing white snowfield, tropical turquoise water, saturated neon aurora, medieval castle, horned helmets, simple block menhirs.
 ```
 
-## Claro — panorámica v1 preparada
+## Claro — panorámica v1
 
 Generada el 22 de octubre de 2026 con `imagegen` integrado, sin referencias,
 artistas ni marcas. Bosque templado antiguo con raíces de contrafuerte,
 helechos, mantillo, pavimento absorbido por el bosque y luz filtrada.
-**Sin integrar todavía.** Maestro original copiado sin modificar al proyecto:
+**Integrada y revisada; falta pulido global.** Maestro original copiado sin modificar al proyecto:
 `tools/art-inbox/scenery/grove-vista-v1.png` (1916×821, ignorado por Git).
 Original conservado en
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f51c32ad-438f-4a77-b55f-a8f6ccef853c.png`.
 Revisado visualmente como paisaje y optimizado con Pillow, sin edición semántica.
-Falta conectar con geometría botánica próxima; no sustituir los árboles nativos
-por la pintura solamente.
+Conectada con roble de superficie continua y hueco real, copa de hojas
+lobuladas, helechos instanciados, mantillo y hojarasca nativos. Alta/baja a
+ambas resoluciones revisadas, incluidas poses de foto; viento respeta movimiento
+reducido y la luz filtrada modula materiales con oclusión. Media y alta
+reducida también revisadas a ambas resoluciones. Gate563/5, build/lint y
+78 e2e activos verdes. La pintura no sustituye la geometría próxima.
 
 | Archivo | Uso |
 | --- | --- |
@@ -138,6 +142,44 @@ por la pintura solamente.
 
 ```text
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Claro del Bosque in Crónicas del Nexo, a mature tactical fantasy card game. An immense ancient temperate forest sanctuary viewed from high above looking DOWN approximately 37 degrees. Vast gnarled oak and beech buttress roots, weathered bark, trunks extending out of frame, mature layered broadleaf canopy, luxuriant but believable ferns, bracken, damp moss, fallen leaves, wet dark earth and broken ancient limestone paving being slowly reclaimed. One immense natural hollow in a far ancient root buttress gives the background a sacred focal silhouette; no face, eyes or anthropomorphic tree. Refined warm shafts of late-morning sunlight entering through gaps in foliage, dappled shadows, cool green-grey depth and a little golden airborne pollen, subtle layered ground mist. Composition: strongest roots and monumental tree forms concentrated in upper third and outer thirds, central and lower half mostly spacious shadowed leaf-litter clearing and sparse paving traces, leaving visual room for a separate board placed in front. No visible sky or horizon, elevated downward-looking view, not a frontal forest postcard. At least four atmospheric layers; beautiful fine botanical detail and material texture without confetti-like visual noise. Mature cinematic painterly realism compatible with refined fantasy card illustrations, majestic forest antiquity rather than cute fairy woodland. Rich muted olive, deep bark brown, warm stone and restrained sunlit yellow-green. Original design, no artist imitation, no franchise, no reference images. No foreground platform, arena, game board, table, cards, UI, characters, animals, monsters, readable text, logos, watermark or border. Avoid cartoon mushrooms, glowing blue crystals, purple fairy lights, giant mushrooms, giant flowers, neon green fog everywhere, tropical jungle, repeated cylinder trunks, low-poly shrubs, simple cone trees, round lollipop canopies, uniformly bright green ground, literal laser sun beams.
+```
+
+## Gremio — panorámica v1 preparada
+
+Generada con `imagegen` integrado el22 de octubre de2026, sin referencias,
+artistas ni marcas. Imagen original revisada: arquitectura industrial antigua,
+engranajes funcionales, grúas, horno de calor controlado y vapor por planos;
+se distingue de la geología volcánica de Furia. Sin integrar todavía.
+Maestro sin modificar en `tools/art-inbox/scenery/foundry-vista-v1.png`,
+1918×820, con prompt al lado. Original conservado en
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-8237bd8e-8981-4840-b0c5-89e32ce106a4.png`.
+Pillow solo para optimización: WebP90 1918×820 585862 bytes, WebP86
+1024×438 161616 bytes. Rutas `public/assets/scenarios/foundry-vista-v1.webp`
+y `foundry-vista-v1-low.webp`. No descargas durante la partida.
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Patio del Gremio in Crónicas del Nexo, a mature tactical fantasy card game. An immense ancient industrial guild foundry yard seen from high above looking DOWN approximately 37 degrees, no sky or horizon. Monumental soot-black masonry workshops, carefully engineered riveted wrought iron gantries, old bronze gear trains, counterweighted cranes, chain hoists, exposed shafts and functional water-powered machinery, precise restrained brass details. A massive brick furnace and contained molten-metal channel in the far upper third; controlled amber heat, NOT volcanic lava or natural magma. Layered steam drifting between workshop roofs, dark oily iron, worn load-bearing stone, rope under tension, slag and water troughs. No modern factory, electric lamps, guns, vehicles, Victorian city street or whimsical steampunk clutter. Architecture and impressive machines concentrated in upper third and outer thirds. Central and lower half mostly spacious subdued paved yard and worn muted iron plates with occasional drainage seams, leave visual room for a separate tactical board in front; no foreground platform, game arena, table or game board. Warm furnace light from localized openings and cool grey daylight filtering through high workshop gaps, rich restrained bronze-brown, charcoal, old brass and grey-blue steam, realistic wear and four atmospheric planes, elegant mature cinematic painterly realism with strong readable industrial scale. Original design, no references, no artist imitation or franchise. No workers, characters, creatures, cards, UI, readable text, logos, watermarks or border. Avoid toy-like simple cylinders, decorative giant gears floating without function, glowing orange everything, lava cliffs, neon, brightly colored plastic, a giant cartoon anvil dominating the foreground.
+```
+
+## Rompiente — panorámica v1 preparada
+
+Generada con `imagegen` integrado el22 de octubre de2026, sin referencias,
+artistas ni marcas. Paisaje original revisado: costa rocosa estratificada,
+oleaje entre arrecifes, santuario marítimo erosionado y faro distante.
+Sin integrar todavía. Maestro privado copiado sin modificación a
+`tools/art-inbox/scenery/shore-vista-v1.png` (1942×809), con prompt al lado.
+Original conservado en
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-dea157df-fe7a-432a-989b-de1277660226.png`.
+Optimización con Pillow sin edición semántica. WebP90 1942×809:506554 bytes;
+WebP86 1024×427:136432 bytes, en `public/assets/scenarios/shore-vista-v1.webp`
+y `shore-vista-v1-low.webp`. Geología, faro y agua cercanos serán nativos.
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Rompiente de Nerith in Crónicas del Nexo, a mature tactical fantasy card game. Spectacular rugged temperate Atlantic tidal coast at the end of afternoon, viewed from high above looking DOWN approximately 37 degrees, no horizon or visible sky. Dark stratified slate sea cliffs, deeply eroded rock arches, tidal pools with restrained pale turquoise in the shallows, deep grey teal open water, long curling white surf advancing laterally between black reef ribs. Remains of an ancient maritime sanctuary carved organically into the far shore: salt-eaten bronze, pale mother of pearl, a few weathered curved whale-bone-like stone forms, small distant solemn beacon in a squat eroded tower integrated into rock. No Mediterranean resort, no tropical beach, no pirate theme. Strongest monumental cliffs and maritime masonry in upper third and outer thirds. Central and lower half mostly spacious dark water and subdued wet rock textures, leave room for a separate tactical board in front; no foreground platform, arena, game board or table. Warm late afternoon light grazing the upper rocks and cool marine shadows, rich nuanced slate, deep teal, muted coral accents, a restrained amber beacon. Fine sea spray and four distance layers, painterly cinematic realism with observed geology and believable water, mature majestic atmosphere, no cartoon simplification. Original design, no references, no artist imitation or franchises. No cards, UI, characters, animals, ships in foreground, readable text, logos, watermarks or borders. Avoid huge luminous turquoise neon waves, repeated geometric cone rocks, flat cyan ocean, plastic coral, giant whimsical shells, floating architecture, visible sky or sunset disk, frontal postcard viewpoint.
 ```
 
 ## Duna — panorámica v1
