@@ -2522,23 +2522,23 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       const py = random() * size;
       const radius = 22 + random() * 50;
       const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
-      gradient.addColorStop(0, `rgba(58, 168, 168, ${0.3 + random() * 0.2})`);
-      gradient.addColorStop(0.7, `rgba(44, 128, 138, ${0.16 + random() * 0.12})`);
+      gradient.addColorStop(0, `rgba(58, 138, 148, ${0.14 + random() * 0.12})`);
+      gradient.addColorStop(0.7, `rgba(44, 108, 128, ${0.08 + random() * 0.08})`);
       gradient.addColorStop(1, 'rgba(40, 116, 128, 0)');
       context.fillStyle = gradient;
       context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
     }
     // Agua encajada en las juntas: un marco turquesa por dentro del borde.
-    context.strokeStyle = 'rgba(62, 176, 176, 0.3)';
-    context.lineWidth = 9;
+    context.strokeStyle = 'rgba(62, 146, 156, 0.17)';
+    context.lineWidth = 3;
     context.strokeRect(5, 5, size - 10, size - 10);
     // Y el brillo del reflejo justo encima de esa agua.
-    context.strokeStyle = 'rgba(178, 240, 236, 0.22)';
-    context.lineWidth = 2.2;
+    context.strokeStyle = 'rgba(178, 220, 216, 0.09)';
+    context.lineWidth = 0.8;
     context.strokeRect(9, 9, size - 18, size - 18);
 
-    drawTileGroove(context, size, 0.5);
-    bakeEdgeShade(context, size, 0.3);
+    drawTileGroove(context, size, 0.18);
+    bakeEdgeShade(context, size, 0.06);
   } else if (style === 'ice') {
     // Losa helada: piedra gris azulada bajo una capa de hielo, con la nieve
     // apelmazada en las juntas y flores de escarcha creciendo desde los
@@ -2799,6 +2799,23 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
       context.fillStyle = rise((1 - dist / band) * 0.5 * random());
       context.fillRect(fx, fy, 2 + random() * 3, 2 + random() * 3);
     }
+  } else if (style === 'tide') {
+    // Pizarra con estratos finos: las conchas y el agua del color no deben
+    // convertirse en bultos. El bisel físico ya recoge el brillo del canto.
+    for (let grain = 0; grain < 2400; grain += 1) {
+      const level = 135 + random() * 10;
+      context.fillStyle = `rgb(${level}, ${level}, ${level})`;
+      context.fillRect(random() * size, random() * size, 1, 1);
+    }
+    for (let layer = 0; layer < 4; layer += 1) {
+      const y = (layer + 0.5) * size / 4 + (random() - 0.5) * 18;
+      context.strokeStyle = dip(0.16);
+      context.lineWidth = 1.1;
+      context.beginPath();
+      context.moveTo(0, y);
+      for (let x = 0; x <= size; x += 22) context.lineTo(x, y + (random() - 0.5) * 5);
+      context.stroke();
+    }
   } else if (style === 'sand') {
     // Microporos de arenisca cortada, sin surcos paralelos sobre el tablero.
     for (let grain = 0; grain < 2600; grain += 1) {
@@ -2838,7 +2855,7 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
 
   // La junta del borde es lo MÁS hundido de la losa en todos los materiales:
   // es donde acaba la piedra. Se dibuja al final para que nada la pise.
-  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' ? 1.25 : Math.max(3, size * 0.03);
+  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' || style === 'tide' ? 1.25 : Math.max(3, size * 0.03);
   context.strokeStyle = dip(0.9);
   context.lineWidth = grooveWidth;
   context.strokeRect(grooveWidth / 2, grooveWidth / 2, size - grooveWidth, size - grooveWidth);

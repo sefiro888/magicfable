@@ -163,18 +163,22 @@ y `foundry-vista-v1-low.webp`. No descargas durante la partida.
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Patio del Gremio in Crónicas del Nexo, a mature tactical fantasy card game. An immense ancient industrial guild foundry yard seen from high above looking DOWN approximately 37 degrees, no sky or horizon. Monumental soot-black masonry workshops, carefully engineered riveted wrought iron gantries, old bronze gear trains, counterweighted cranes, chain hoists, exposed shafts and functional water-powered machinery, precise restrained brass details. A massive brick furnace and contained molten-metal channel in the far upper third; controlled amber heat, NOT volcanic lava or natural magma. Layered steam drifting between workshop roofs, dark oily iron, worn load-bearing stone, rope under tension, slag and water troughs. No modern factory, electric lamps, guns, vehicles, Victorian city street or whimsical steampunk clutter. Architecture and impressive machines concentrated in upper third and outer thirds. Central and lower half mostly spacious subdued paved yard and worn muted iron plates with occasional drainage seams, leave visual room for a separate tactical board in front; no foreground platform, game arena, table or game board. Warm furnace light from localized openings and cool grey daylight filtering through high workshop gaps, rich restrained bronze-brown, charcoal, old brass and grey-blue steam, realistic wear and four atmospheric planes, elegant mature cinematic painterly realism with strong readable industrial scale. Original design, no references, no artist imitation or franchise. No workers, characters, creatures, cards, UI, readable text, logos, watermarks or border. Avoid toy-like simple cylinders, decorative giant gears floating without function, glowing orange everything, lava cliffs, neon, brightly colored plastic, a giant cartoon anvil dominating the foreground.
 ```
 
-## Rompiente — panorámica v1 preparada
+## Rompiente — panorámica v1
 
 Generada con `imagegen` integrado el22 de octubre de2026, sin referencias,
 artistas ni marcas. Paisaje original revisado: costa rocosa estratificada,
 oleaje entre arrecifes, santuario marítimo erosionado y faro distante.
-Sin integrar todavía. Maestro privado copiado sin modificación a
+Integrada y revisada con estratos, arco abierto y faro de hueso nativos.
+Mar con oleaje geométrico, reflejo planar y espuma fragmentada; alta/baja
+revisadas a ambas resoluciones, reflejo real0→631→0. Media/alta reducida
+también revisadas, gate565/5, build/lint y78/37 e2e verdes. Falta pulido global.
+Maestro privado copiado sin modificación a
 `tools/art-inbox/scenery/shore-vista-v1.png` (1942×809), con prompt al lado.
 Original conservado en
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-dea157df-fe7a-432a-989b-de1277660226.png`.
 Optimización con Pillow sin edición semántica. WebP90 1942×809:506554 bytes;
 WebP86 1024×427:136432 bytes, en `public/assets/scenarios/shore-vista-v1.webp`
-y `shore-vista-v1-low.webp`. Geología, faro y agua cercanos serán nativos.
+y `shore-vista-v1-low.webp`. Geología, faro y agua cercanos son nativos.
 
 ### Prompt usado
 

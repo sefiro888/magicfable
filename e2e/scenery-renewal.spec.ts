@@ -17,6 +17,7 @@ const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '')
 const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium']
   : process.env.SCENERY_QUALITY === 'high' ? ['high'] : process.env.SCENERY_QUALITY === 'low' ? ['low'] : ['high', 'low']
 const landmarks: Partial<Record<typeof scenario, readonly (readonly [number, number, number])[]>> = {
+  shore: [[5.9, 2.48, -5.6], [-7.1, 2, -5.5]],
   grove: [[0, 1.65, -7.6], [-5.3, 0.15, -2.6], [5.3, 0.15, -2.6]],
   fimbul: [[-3.57, 1.61, -8.2], glacierBankPoint(-1, 0.46, 0.12), glacierBankPoint(1, 0.46, 0.12)],
   duna: [[-2.15, 1.59, -8.15], [-6.08, 2.05, -3.3], [6.08, 2.05, -3.3]],
@@ -72,10 +73,11 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         if (reduced) expect(after.matrix).toEqual(before.matrix)
         else expect(after.matrix).not.toEqual(before.matrix)
       }
-      if (scenario === 'sanctuary' || scenario === 'fimbul') {
+      if (scenario === 'sanctuary' || scenario === 'fimbul' || scenario === 'shore') {
         const water = await waterConfiguration(page, url)
         expect(water.enabled).toBe(quality === 'low' ? 0 : 1)
         expect(water.size).toBe(quality === 'high' ? 512 : quality === 'medium' ? 256 : 0)
+        expect(water.captures).toBe(quality === 'low' ? 0 : 1)
         if (reduced || scenario === 'fimbul') expect(water.time).toBe(0)
       }
       const viewProjection = new Matrix4().fromArray(camera.projection)
@@ -109,8 +111,8 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         await page.waitForTimeout(500)
         await page.screenshot({ path: `e2e/__shots__/${prefix}-foto-orbita.png` })
       }
-      if ((scenario === 'sanctuary' || scenario === 'fimbul') && width === 1920 && quality === 'high') {
-        const reflection = await reflectionProbe(page, url, scenario === 'fimbul' ? 'fimbul-bank--1' : 'sanctuary-stone-11')
+      if ((scenario === 'sanctuary' || scenario === 'fimbul' || scenario === 'shore') && width === 1920 && quality === 'high') {
+        const reflection = await reflectionProbe(page, url, scenario === 'fimbul' ? 'fimbul-bank--1' : scenario === 'shore' ? 'shore-sea-arch' : 'sanctuary-stone-11')
         writeFileSync(`tools/captures/${prefix}-reflection.json`, JSON.stringify(reflection, null, 2))
         expect(reflection.width).toBe(512)
         expect(reflection.after - reflection.before).toBeGreaterThan(4)

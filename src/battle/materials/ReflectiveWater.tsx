@@ -1,11 +1,12 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { Color, DataTexture, LinearFilter, Matrix4, NoColorSpace, PerspectiveCamera, Plane, RepeatWrapping, RGBAFormat, ShaderMaterial, UniformsLib, UniformsUtils, Vector3, Vector4, WebGLRenderTarget } from 'three'
+import { Color, DataTexture, LinearFilter, Matrix4, NoColorSpace, PerspectiveCamera, Plane, PlaneGeometry, RepeatWrapping, RGBAFormat, ShaderMaterial, UniformsLib, UniformsUtils, Vector3, Vector4, WebGLRenderTarget } from 'three'
 import type { BufferGeometry, Mesh } from 'three'
 import type { GraphicsQuality } from '../../store/preferences'
 import { usePageVisibility } from '../usePageVisibility'
 import { iceField } from './iceField'
 import { frozenIceFragmentShader } from './frozenIceShader'
+import { seaFragmentShader, seaVertexShader } from './seaShader'
 
 let ripples: DataTexture | undefined
 function rippleField() {
@@ -87,13 +88,14 @@ const fragmentShader = /* glsl */`
  * a calcular sombras. Alta/media limitan resolución/frecuencia; baja conserva
  * Fresnel y ondas sin otro render. El reflejo contiene geometría de la escena,
  * no una copia pegada sobre cada losa. */
-export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius = 15, color = '#203849', frozen = false, geometry }: {
+export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius = 15, color = '#203849', frozen = false, ocean = false, geometry }: {
   readonly quality: GraphicsQuality
   readonly reducedMotion: boolean
   readonly level?: number
   readonly radius?: number
   readonly color?: string
   readonly frozen?: boolean
+  readonly ocean?: boolean
   readonly geometry?: BufferGeometry
 }) {
   const water = useRef<Mesh>(null)
@@ -101,6 +103,9 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
   const visible = usePageVisibility()
   const lastCapture = useRef(-Infinity)
   const target = useMemo(() => quality === 'low' ? undefined : new WebGLRenderTarget(quality === 'high' ? 512 : 256, quality === 'high' ? 512 : 256), [quality])
+  const seaGeometry = useMemo(() => ocean ? new PlaneGeometry(radius * 2, radius * 2,
+    quality === 'low' ? 64 : 128, quality === 'low' ? 64 : 128) : undefined, [ocean, radius, quality])
+  useEffect(() => () => seaGeometry?.dispose(), [seaGeometry])
   const reflection = useMemo(() => ({
     camera: new PerspectiveCamera(), plane: new Plane(), clip: new Vector4(), q: new Vector4(),
     direction: new Vector3(), look: new Vector3(), matrix: new Matrix4(),
@@ -112,8 +117,8 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
       uIce: { value: frozen ? iceField() : null },
       uReflectionMatrix: { value: reflection.matrix }, uHasReflection: { value: target ? 1 : 0 },
       uTime: { value: 0 }, uRadius: { value: radius }, uColor: { value: new Color(color) },
-    }, vertexShader, fragmentShader: frozen ? frozenIceFragmentShader : fragmentShader, fog: true, transparent: true, depthWrite: false,
-  }), [target, reflection, radius, color, frozen])
+    }, vertexShader: ocean ? seaVertexShader : vertexShader, fragmentShader: frozen ? frozenIceFragmentShader : ocean ? seaFragmentShader : fragmentShader, fog: true, transparent: true, depthWrite: false,
+  }), [target, reflection, radius, color, frozen, ocean])
   useEffect(() => () => material.dispose(), [material])
   useEffect(() => () => target?.dispose(), [target])
   useFrame(({ camera, gl, scene, clock }) => {
@@ -168,8 +173,9 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
       water.current.visible = true
     }
   })
+  const surfaceGeometry = geometry ?? seaGeometry
   return <mesh ref={water} position={[0, level, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-    {geometry ? <primitive object={geometry} attach="geometry" /> : <circleGeometry args={[radius, quality === 'low' ? 48 : 80]} />}
+    {surfaceGeometry ? <primitive object={surfaceGeometry} attach="geometry" /> : <circleGeometry args={[radius, quality === 'low' ? 48 : 80]} />}
     <primitive ref={surface} object={material} attach="material" />
   </mesh>
 }

@@ -244,6 +244,12 @@ Los WebP no deben incluir marco, nombre, coste ni símbolos de interfaz. Peso ob
 
 ## Convención de nombres
 
+Rompiente: costa de pizarra, agua profunda azul gris, oleaje irregular y espuma
+rota en frentes oblicuos. Faro de costillas de hueso y bronce erosionado con
+linterna ámbar contenida. Reflejo planar único y roca con cavidades reales.
+Evitar faros modernos a franjas, arcos lisos como piezas de puzle, agua cian
+uniforme, reflejos como un patrón de chapa ondulada y aros blancos continuos.
+
 Claro: bosque templado antiguo, roble con contrafuertes continuos y cavidad
 real, hojas lobuladas, frondes pinnadas, mantillo y hojarasca plegada. Clave
 cálida filtrada por dosel y relleno frío contenido. No usar cilindros abiertos,

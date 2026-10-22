@@ -11,15 +11,17 @@ export async function waterConfiguration(page: Page, moduleUrl: string) {
     const state = module._roots.get(canvas)?.store.getState()
     if (!state) throw new Error('No hay agua para comprobar su calidad.')
     let result: { enabled: number; size: number; time: number } | undefined
+    let captures = 0
     state.scene.traverse((object) => {
       const material = (object as Mesh).material as ShaderMaterial | undefined
       if (!material?.uniforms?.uHasReflection) return
       const texture = material.uniforms.uReflection?.value as Texture | undefined
+      if (texture?.renderTarget) captures += 1
       result = { enabled: Number(material.uniforms.uHasReflection.value), size: texture?.renderTarget?.width ?? 0,
         time: Number(material.uniforms.uTime?.value) }
     })
     if (!result) throw new Error('No se encontró el material de agua.')
-    return result
+    return { ...result, captures }
   }, moduleUrl)
 }
 

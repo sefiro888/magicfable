@@ -29,7 +29,7 @@ global), **V** terminada y verificada.
 | 4 | Duna: renovación integral | A |
 | 5 | Fiordo: renovación integral | A |
 | 6 | Claro: renovación integral | A |
-| 7 | Rompiente: pulido integral | P |
+| 7 | Rompiente: pulido integral | A |
 | 8 | Gremio: pulido integral | P |
 | 9 | Jade: pulido integral | P |
 | 10 | Escalinata: pulido integral | P |
@@ -75,6 +75,45 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**14:00, Rompiente validado como avance.** Matriz `47320`: cuatro verdes
+alta/baja ambas resoluciones. `74848`: media y alta reducida ambas resoluciones,
+regresión Santuario/Fiordo y suite completa78/37 verdes (5,9min). Imágenes
+nativas de todas las calidades revisadas: mar oscuro con oleaje irregular,
+espuma fina fragmentada y linterna visible. Sonda de mar0→631→0,512px;
+Santuario0→14→0 y Fiordo0→234→0. Se comprueba una sola captura planar en
+media/alta, ninguna en baja. Unitarias565/5, build `58806`, lint `33636`,
+verdes. No confundir con acabado global: roca/faro aún admiten más detalle y
+la banda panorámica compartida necesita revisar distorsión e invitado.
+Se guarda checkpoint local sin push. Siguiente: integrar Gremio; panorama,
+materiales propios de hierro/bronce/ladrillo y auxiliares de horno, engranajes,
+patio y colada están preparados sin importar ni compilar todavía. Excluirlos
+del checkpoint de costa. No hay suites activas; servidor `55450` conservado.
+
+**13:51, costa aún en revisión, no aceptar la primera captura.** `33681`
+pasó cuatro casos pero la imagen mostró agua plana cian, espuma como pista
+y arco demasiado extruido. Se añadió malla de oleaje real, normales de varias
+escalas con desfase irregular, reflejo roto y crestas finas; espuma ahora de
+frentes oblicuos fragmentados, no dos contornos del islote. El arco se erosiona
+tras subdividir y suelda normales para evitar facetas de cristal. Faro abierto
+para que su linterna sea visible. Dos errores estrictos de tipado al elegir
+geometría se corrigieron sin aserciones ni any; build `58806` verde, lint
+`33636` verde, unitarias `75582`:565/5. Matriz final `47320` en curso, no
+editar fuentes importadas ni compilar. Después media/alta reducida, regresión
+Santuario/Fiordo por compartir agua y suite completa. Gremio tiene paisaje
+optimizado; todavía sin importar. Servidor `55450` conservado.
+
+**Rompiente integrado para primera revisión.** Claro guardado en `04c11e5`,
+sin push. Nueva pizarra de estratos con plataforma que sostiene la diagonal,
+arco marino con apertura real y faro próximo de costillas de hueso con linterna
+de bronce. Mar de oleaje cruzado y reflejo planar único512/256/0; espuma de
+frentes rotos que sigue la costa, responde a eventos ya resueltos y se aquieta
+con movimiento reducido. Panorama original conectado; retirados aro blanco,
+faro moderno invisible y cono sólido de luz. Losas con bisel físico y relieve
+fino. Build `26267` verde; lint detectó mutación de un material fuera de ref,
+corregida siguiendo ReflectiveWater, `9293` verde. Unitarias y primera matriz
+en curso: todavía no validar #7 ni guardar como acabado. Gremio solo tiene
+panorama preparado, excluir sus dos WebP del checkpoint.
 
 **13:37, Claro validado.** `68073`: media y alta reducida a ambas
 resoluciones verdes; capturas nativas revisadas. Suite completa78 activas
