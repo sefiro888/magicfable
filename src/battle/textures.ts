@@ -2271,8 +2271,8 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       context.fill();
     }
 
-    drawTileGroove(context, size, 0.42);
-    bakeEdgeShade(context, size, 0.3);
+    drawTileGroove(context, size, 0.18);
+    bakeEdgeShade(context, size, 0.06);
   } else if (style === 'forge') {
     // Plancha de fundición: acero remachado, con una banda de rejilla por la
     // que se ve el metal al rojo de abajo. Es el único suelo FABRICADO del
@@ -2853,7 +2853,7 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
 
   // La junta del borde es lo MÁS hundido de la losa en todos los materiales:
   // es donde acaba la piedra. Se dibuja al final para que nada la pise.
-  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' || style === 'tide' || style === 'forge' ? 1.25 : Math.max(3, size * 0.03);
+  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' || style === 'tide' || style === 'forge' || style === 'glaze' ? 1.25 : Math.max(3, size * 0.03);
   context.strokeStyle = dip(0.9);
   context.lineWidth = grooveWidth;
   context.strokeRect(grooveWidth / 2, grooveWidth / 2, size - grooveWidth, size - grooveWidth);

@@ -18,6 +18,7 @@ const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '')
 const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium']
   : process.env.SCENERY_QUALITY === 'high' ? ['high'] : process.env.SCENERY_QUALITY === 'low' ? ['low'] : ['high', 'low']
 const landmarks: Partial<Record<typeof scenario, readonly (readonly [number, number, number])[]>> = {
+  'jade-court': [[0, 2.32, -6.3], [-6.25, 2.3, -3.9], [6.15, 1, -3.5]],
   foundry: [[0, 2.05, -6], [-6.2, 1.55, -3.4]],
   shore: [[5.9, 2.48, -5.6], [-7.1, 2, -5.5]],
   grove: [[0, 1.65, -7.6], [-5.3, 0.15, -2.6], [5.3, 0.15, -2.6]],

@@ -14,16 +14,17 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 567 en verde, 5 omitidos |
+| Tests | 569 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
-en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegador:
+en `2134dc9`, publicada con el avance `a182100` por petición del usuario el22oct.
+Verificación de navegador:
 78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `87625`: 78 e2e verdes,37 omitidas en6,7min
-(22 oct,16:41; variables de capturas opcionales limpias).
+Última pasada completa `16510`: 78 e2e verdes,37 omitidas en6,4min
+(22 oct,17:00; variables de capturas opcionales limpias).
 Playwright usa un worker y `channel: chromium`: el shell
 antiguo imponía SwiftShader aunque había una AMD Radeon disponible. El nuevo
 headless aprovecha Direct3D11, mantiene calidad, tiempos y trazas completas.
@@ -88,8 +89,12 @@ Gremio integrado: paisaje original, materiales de hierro/bronce/ladrillo,
 horno profundo con abertura real, engranajes24/12 acoplados, patio y colada.
 Alta/media/baja y alta reducida revisadas a ambas resoluciones. Transmisión2:1
 y colada comprobadas;567/5, build/lint y78/37 e2e verdes. Falta pulido global.
-Siguiente: Jade. Paisaje original y dos módulos de arquitectura preparados
-sin integrar, excluidos de la publicación pedida por el usuario a las16:41.
+Jade integrado después de publicar: aleros curvos con tejas y dougong, puerta
+lunar circular con dovelas, bronce ritual hueco, terraza y patio de caliza.
+Alta/media/baja y alta reducida revisadas en ambas resoluciones,569/5,
+build/lint y78/37 e2e verdes. Falta pulido global de piedra/bronce y composición.
+Siguiente: Escalinata. Arquitectura, rueda con vanos reales y lámparas preparadas
+sin importar; paisajes propios de Samsara/Sol/Bestiario preparados y documentados.
 Ver registro para evitar duplicar procesos.
 Leer el registro para sesiones activas; no duplicar verificaciones.
 

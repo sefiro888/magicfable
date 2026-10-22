@@ -242,7 +242,14 @@ El archivo maestro debe incluir un 8 % de sangrado visual en los cuatro lados. E
 
 Los WebP no deben incluir marco, nombre, coste ni símbolos de interfaz. Peso objetivo: 180–450 KB por carta; máximo recomendado: 700 KB. No ampliar imágenes generadas pequeñas para cumplir la resolución: regenerar o repintar el maestro.
 
-## Convención de nombres
+## Criterios de escenarios renovados
+
+Jade: laca cinabrio, celadón y caliza con amanecer cálido/sombra fría.
+Aleros continuos de cuatro faldones con caballete, tejas de relieve físico,
+apoyos dougong y puerta de hueco circular con dovelas, sin pagodas cónicas.
+Bronce ritual con pared interior y tres patas. El patio deja visibles las
+cartas y sostiene las cuatro esquinas del tablero; no usar faroles gigantes
+para sustituir arquitectura. Paisaje original documentado en arte-escenarios.
 
 Gremio: calor industrial contenido, acero envejecido y bronce con poros y
 aceite separados del color. Horno de ladrillo refractario con dovelas y hogar

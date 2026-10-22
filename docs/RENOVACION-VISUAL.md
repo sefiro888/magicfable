@@ -33,7 +33,7 @@ global), **V** terminada y verificada.
 | 6 | Claro: renovación integral | A |
 | 7 | Rompiente: pulido integral | A |
 | 8 | Gremio: pulido integral | A |
-| 9 | Jade: pulido integral | P |
+| 9 | Jade: pulido integral | A |
 | 10 | Escalinata: pulido integral | P |
 | 11 | Escenario propio de Quinto Sol | P |
 | 12 | Escenario propio de Bestiario | P |
@@ -77,6 +77,46 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**17:00, Jade validado como avance local.** `16510`: media/alta reducida en
+ambas resoluciones y suite completa78/37 verdes en6,4min. Capturas nativas
+de todas las calidades revisadas, mano visible/recogida y poses de foto.
+569/5, build/lint verdes. Guardar checkpoint sin push; publicación autorizada
+ya cumplida con `a182100`, accesible en Pages. Pendiente pulido global.
+Siguiente: Escalinata. GhatArchitecture, GhatLamps, wheelGeometry y su test
+preparados SIN importar; excluir del checkpoint, igual que vistas de wheel,
+sol y bestiary. Los tres paisajes originales tienen maestro/prompt privados
+y WebP públicos preparados, procedencia en arte-escenarios. No hay suites
+activas. Servidor4173 PID38452 conservado; no duplicarlo.
+
+**16:52, Jade supera la matriz corregida.** `13649`: cuatro verdes alta/baja
+a ambas resoluciones. Imágenes nativas y foto orbital revisadas: aleros ya
+visibles, puerta con dovelas, bronce legible y cuatro cartas preservadas.
+569/5, build/lint verdes. Media, alta reducida y suite completa en curso:
+no editar aplicación importada ni compilar durante ese proceso. La terraza
+y el bronce admiten más detalle en el pulido global; no marcar #9 como V.
+Escalinata: WebP2048×768428110bytes y baja1024×38498032bytes preparados
+sin importar. No incluirlos en el checkpoint de Jade.
+
+**16:50, publicación comprobada.** `a182100` publicado en
+https://sefiro888.github.io/magicfable/ . Despliegue `39798109358` con build
+y deploy verdes; estado de deployment7255236549 success. Portada y WebP nuevo
+de Gremio responden200. Usuario avisado. Se continúa localmente hasta20:00.
+Jade:569/5, build/lint verdes. Primera matriz detectó remate1,5px fuera de
+cámara segura; pabellón acercado, bronce aclarado y puerta con dovelas/remate.
+Segunda matriz en curso. No editar fuentes importadas mientras se captura.
+Escalinata tiene panorama original generado con imagegen, maestro copiado a
+tools/art-inbox/scenery/wheel-vista-v1.png y prompt al lado, sin integrar.
+
+**16:46, subida y Jade en primera revisión.** El usuario autorizó publicar
+el avance jugable; push a main de `a182100` realizado. Incluye los20 commits
+anteriores (IA, cartas, combate, interfaz y ocho escenarios), no los borradores
+de Jade. Despliegue GitHub Actions `39798109358` aún en cola: no decir que la
+web esté actualizada hasta verificar Pages y el nuevo WebP con respuesta200.
+Jade integrado después del push: aleros curvos con tejas, soportes dougong,
+puerta con hueco circular real, bronce hueco con tres patas, patio y paisaje.
+Dos pruebas geométricas nuevas, build/lint en curso. No hay navegador activo.
+Falta primera revisión visual; no marcar #9 como validada ni publicar Jade.
 
 **16:44, Gremio validado y publicación solicitada.** `87625`: media y alta
 reducida verdes a ambas resoluciones; imágenes nativas revisadas. Suite completa:

@@ -344,7 +344,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge'
+      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' || terrainStyle === 'glaze'
         ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       <meshStandardMaterial
@@ -462,7 +462,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   forest: { base: '#646755', shaft: '#858573', crown: '#aaa28b' },
   tide: { base: '#53666b', shaft: '#728487', crown: '#92a2a0' },
   forge: { base: '#706b5f', shaft: '#858477', crown: '#a1a08e' },
-  glaze: { base: '#2f2420', shaft: '#4a2b26', crown: '#6b3a30' },
+  glaze: { base: '#91978a', shaft: '#aeb8a8', crown: '#c2c9b6' },
   sandstone: { base: '#3a2a20', shaft: '#54402e', crown: '#6e563c' },
 }
 
@@ -1054,7 +1054,7 @@ function Nexus({
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
   const nexusMetal = terrainStyle === 'forge' ? forgedMetalMaps('bronze') : undefined
-  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' || terrainStyle === 'forest' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : terrainStyle === 'ice' || terrainStyle === 'tide' ? stoneMaps('granite').map : nexusMetal?.map ?? masonryTexture()
+  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' || terrainStyle === 'forest' || terrainStyle === 'glaze' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : terrainStyle === 'ice' || terrainStyle === 'tide' ? stoneMaps('granite').map : nexusMetal?.map ?? masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
@@ -1097,7 +1097,7 @@ function Nexus({
     }
     // La intensidad 5 teñía las piedras renovadas de un oro plano. La energía queda en los cristales; la piedra sigue recibiendo sol.
     if (nexusLight.current) nexusLight.current.intensity = collapse ? 0
-      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
+      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' || terrainStyle === 'glaze' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
   })
 
   return (

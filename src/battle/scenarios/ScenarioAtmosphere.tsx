@@ -14,7 +14,7 @@ const ATMOSPHERE: Readonly<Record<Exclude<ScenarioId, 'auto'>, Atmosphere>> = {
   grove: { background: '#20291d', fog: ['#46513e', 20, 52] },
   shore: { background: '#34464f', fog: ['#7b9094', 22, 65] },
   foundry: { background: '#25292c', fog: ['#4d5151', 20, 55] },
-  'jade-court': { background: '#1d2436', fog: ['#8f9aa8', 18, 74] },
+  'jade-court': { background: '#647b87', fog: ['#8dabad', 22, 60] },
   'wheel-ghat': { background: '#2a2438', fog: ['#9aa4b8', 12, 58] },
 }
 

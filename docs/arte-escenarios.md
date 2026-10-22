@@ -144,11 +144,65 @@ reducida también revisadas a ambas resoluciones. Gate563/5, build/lint y
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Claro del Bosque in Crónicas del Nexo, a mature tactical fantasy card game. An immense ancient temperate forest sanctuary viewed from high above looking DOWN approximately 37 degrees. Vast gnarled oak and beech buttress roots, weathered bark, trunks extending out of frame, mature layered broadleaf canopy, luxuriant but believable ferns, bracken, damp moss, fallen leaves, wet dark earth and broken ancient limestone paving being slowly reclaimed. One immense natural hollow in a far ancient root buttress gives the background a sacred focal silhouette; no face, eyes or anthropomorphic tree. Refined warm shafts of late-morning sunlight entering through gaps in foliage, dappled shadows, cool green-grey depth and a little golden airborne pollen, subtle layered ground mist. Composition: strongest roots and monumental tree forms concentrated in upper third and outer thirds, central and lower half mostly spacious shadowed leaf-litter clearing and sparse paving traces, leaving visual room for a separate board placed in front. No visible sky or horizon, elevated downward-looking view, not a frontal forest postcard. At least four atmospheric layers; beautiful fine botanical detail and material texture without confetti-like visual noise. Mature cinematic painterly realism compatible with refined fantasy card illustrations, majestic forest antiquity rather than cute fairy woodland. Rich muted olive, deep bark brown, warm stone and restrained sunlit yellow-green. Original design, no artist imitation, no franchise, no reference images. No foreground platform, arena, game board, table, cards, UI, characters, animals, monsters, readable text, logos, watermark or border. Avoid cartoon mushrooms, glowing blue crystals, purple fairy lights, giant mushrooms, giant flowers, neon green fog everywhere, tropical jungle, repeated cylinder trunks, low-poly shrubs, simple cone trees, round lollipop canopies, uniformly bright green ground, literal laser sun beams.
 ```
 
-## Jade — panorámica v1 preparada
+## Quinto Sol — panorámica v1 preparada
+
+Generada con imagegen integrado el22oct2026, sin referencias, artistas ni marcas.
+Revisada como paisaje original; aún sin integrar ni validar en la partida.
+Original conservado en
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-a392b1f3-806e-462d-98e3-36f77f418621.png`.
+Maestro intacto en `tools/art-inbox/scenery/sol-vista-v1.png`, prompt adyacente.
+Pillow solo optimiza WebP90/86: 1983×793654060bytes; baja1024×409169686bytes.
+Rutas públicas `public/assets/scenarios/sol-vista-v1.webp` y `sol-vista-v1-low.webp`.
+Sin descarga durante partida.
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Patio del Quinto Sol, a mature tactical fantasy card game. Spectacular intact living Mexica ceremonial city at high noon, viewed from high above looking DOWN about 37 degrees, no visible sky or horizon. Monumental sharply stepped temple terraces with twin sanctuaries in the upper third, clean warm lime stucco over volcanic stone, architectural bands of cochineal red and deep turquoise mosaic, polished obsidian accents, finely carved feathered serpent balustrades, a restrained carved calendar disk, sparse amate ritual banners and quetzal green details. Inspired by material culture but an original fictional city, not a reconstruction of any named site. Mature solemn solar cosmology, inhabited and maintained but no people in this environmental asset. No ruined jungle city, no Egyptian pyramids, no lava or volcanic eruption. Architecture concentrated in upper third and outer thirds. Central and lower half spacious subdued warm pale stucco paving and grey volcanic stone foundations, leave visual room for a separate tactical board in front; no foreground game board, arena, table or circular platform. Powerful high sun and short precise shadows, cool blue-grey ambient in shade, rich but restrained turquoise and red architectural color with realistic stone wear. Refined cinematic painterly realism, four distance layers with subtle dusty air, impressive believable architectural scale and intricately crafted reliefs. Original design, no references, artist imitation or franchise. No figures, creatures, characters, cards, UI, text, logos, watermarks or border. Avoid toy block pyramids, cartoon skulls, blood, gore, neon magic, gigantic glowing sun disks, ruined temples covered in vines, orange color wash, foreground clutter, visible sky or tourist postcard frontal view.
+```
+
+## Bestiario — panorámica v1 preparada
+
+Generada con imagegen integrado el22oct2026, sin referencias, artistas ni marcas.
+Revisada como paisaje original; aún sin integrar ni validar en la partida.
+Original conservado en
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f4f0d9d5-e590-4434-be12-2aec481993df.png`.
+Maestro intacto en `tools/art-inbox/scenery/bestiary-vista-v1.png`, prompt adyacente.
+Pillow solo optimiza WebP90/86: 1916×821595826bytes; baja1024×439163872bytes.
+Rutas públicas `public/assets/scenarios/bestiary-vista-v1.webp` y `bestiary-vista-v1-low.webp`.
+Sin descarga durante partida.
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Garganta del Bestiario, a mature tactical fantasy card game. Spectacular primeval ravine where colossal legendary creatures once passed, viewed from high above looking DOWN approximately 37 degrees, no sky or horizon. Massive deeply stratified dark green-grey limestone cliffs, a huge naturally weathered ancient ivory-colored rib arch and broken mineralized horn emerging from rock in upper and outer thirds, immense claw-scratched stone surfaces, scale-like overlapping geological plates, subdued reed beds and a deep slow dark green stream. Bone and horn anatomically coherent, weathered with fine cracks and mineral patina, no gore or human remains; awe and natural history rather than haunted graveyard. Sparse ancient low vegetation, rugged open ravine, not a dense forest, not a frozen fjord, no manmade temple or fortress. Central and lower half spacious subdued slate-grey limestone flats and fine damp gravel, leave visual room for a separate tactical board in front; no foreground platform, arena, table, game board or cards. Strong pale overcast directional light grazing ivory and rock, deep green-black recesses, restrained old amber mineral accents, atmospheric mist separating four planes. Mature naturalist painterly cinematic realism, convincing immense scale and observed geology, sophisticated dark fantasy compatible with a finely illuminated medieval bestiary. Original design, no references, artist imitation or franchise. No visible living creatures, people, characters, UI, text, logos, watermarks or borders. Avoid cartoon dragon skulls, simplistic low-poly cones, floating giant bones, bright neon green, toy props, blood, grotesque horror, glowing magic everywhere, jungle ruins, visible sky, horizon or tourist postcard frontal view.
+```
+
+## Escalinata — panorámica v1 preparada
+
+Generada con imagegen integrado el22oct2026 sin referencias, marcas ni artistas.
+Revisada: ghat monumental de arenisca rosada, río índigo y lámparas contenidas,
+sin cielo ni figuras. Preparación sin integrar ni validar en el juego.
+Original conservado en
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f904a577-d751-47a4-a233-6e073e6b91a4.png`.
+Maestro intacto copiado a `tools/art-inbox/scenery/wheel-vista-v1.png` y prompt
+adyacente. Pillow solo optimiza: WebP90 2048×768428110bytes, WebP86
+1024×38498032bytes en `public/assets/scenarios/wheel-vista-v1.webp` y
+`wheel-vista-v1-low.webp`. Sin descarga durante partida.
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide cinematic panoramic matte painting for Escalinata de la Rueda, Samsara, a mature tactical fantasy card game. Monumental ancient Indian sacred riverside ghat in the cool blue hour just before sunrise, viewed from high above looking DOWN approximately 37 degrees, no sky or horizon. Broad long flights of worn rose sandstone steps descend into a deep slow indigo river. Temple mandapas, intricately carved sober sandstone columns, corbelled arches and small chhatri pavilions, sacred wheel reliefs, restrained saffron silk banners, tiny marigold garlands and localized small warm oil lamps, lotus leaves sparse in the river margins. Rich solemn Indian cosmology and serene monumental craft, not an Egyptian necropolis, not an Asian pagoda or oriental bazaar. Strongest carved architecture and descending stair flights concentrated in the upper third and outer thirds. Central and lower half mostly spacious subdued deep blue river and muted worn sandstone paving, leave visual space for a separate tactical board in front; no foreground arena, game board, table or central circular platform. Carefully balanced cool indigo and blue-grey shadows with warm pale sandstone grazed by early light and tiny controlled amber flames; do not wash everything orange. Four atmospheric planes with fine river mist. Mature detailed painterly cinematic realism, believable carved stone, layered architecture and water, impressive refined scale, no cartoon simplification. Original design, no references, no artist imitation, no franchise. No people, gods, animals, characters, cards, UI, readable lettering, logos, watermarks or borders. Avoid neon mandalas, giant floating magical wheels, oversized flames, glowing orange river, generic cones, toy props, visible sky, sunset disk, frontal tourist postcard viewpoint.
+```
+
+## Jade — panorámica v1
 
 Generada con `imagegen` integrado el22 de octubre de2026, sin referencias,
 artistas ni marcas. Revisada: corte celestial de madera y laca, aleros curvos,
-tejas, bronce ritual y patios de piedra con bruma de amanecer. Sin integrar.
+tejas, bronce ritual y patios de piedra con bruma de amanecer. Integrada con
+geometría nativa, alta/media/baja y alta reducida revisadas a ambas resoluciones.
+Gate569/5, build/lint y78/37 e2e verdes; falta pulido global.
 Maestro copiado sin modificación a `tools/art-inbox/scenery/jade-vista-v1.png`,
 1916×821, con prompt al lado. Original conservado en
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-04f694a6-26d1-41b7-836e-4f1c1b9424f2.png`.
