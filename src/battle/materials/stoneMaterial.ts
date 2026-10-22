@@ -1,6 +1,6 @@
 import { CanvasTexture, NoColorSpace, RepeatWrapping, SRGBColorSpace } from 'three'
 
-export type StoneFinish = 'marble' | 'limestone' | 'basalt' | 'sandstone'
+export type StoneFinish = 'marble' | 'limestone' | 'basalt' | 'sandstone' | 'granite'
 
 interface StoneMaps {
   readonly map: CanvasTexture
@@ -52,7 +52,7 @@ export function stoneMaps(finish: StoneFinish): StoneMaps {
   const albedo = new Uint8ClampedArray(SIZE * SIZE * 4)
   const height = new Uint8ClampedArray(albedo.length)
   const roughness = new Uint8ClampedArray(albedo.length)
-  const seed = { marble: 17, limestone: 29, basalt: 41, sandstone: 53 }[finish]
+  const seed = { marble: 17, limestone: 29, basalt: 41, sandstone: 53, granite: 67 }[finish]
   for (let y = 0; y < SIZE; y += 1) {
     for (let x = 0; x < SIZE; x += 1) {
       const u = x / SIZE
@@ -78,6 +78,13 @@ export function stoneMaps(finish: StoneFinish): StoneMaps {
         relief = 0.56 + (medium - 0.5) * 0.09 + (grain - 0.5) * 0.13 - pore * 0.3
         matte = 0.91 - pore * 0.08
         warmth = 0.023
+      } else if (finish === 'granite') {
+        const mineral = Math.pow(clamp((grain - 0.58) / 0.42), 2)
+        const fault = Math.pow(1 - Math.abs(Math.sin(Math.PI * (u * 2 + v * 3 + (medium - 0.5) * 0.4))), 42)
+        value = 0.71 + broad * 0.1 + (grain - 0.5) * 0.2 + mineral * 0.1 - fault * 0.18
+        relief = 0.53 + (grain - 0.5) * 0.26 + (fine - 0.5) * 0.06 - fault * 0.23
+        matte = 0.91 - mineral * 0.19
+        warmth = -0.008
       } else if (finish === 'basalt') {
         const crystal = Math.pow(clamp((grain - 0.6) / 0.4), 3)
         // Fracturas estrechas de enfriamiento, separadas del micrograno. Sin

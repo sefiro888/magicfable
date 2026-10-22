@@ -14,7 +14,7 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 557 en verde, 5 omitidos |
+| Tests | 558 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
@@ -22,7 +22,7 @@ en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegado
 78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `28204`: 78 e2e verdes, 37 omitidas (22 oct, 08:01). El campo ampliado
+Última pasada completa `72743`: 78 e2e verdes, 37 omitidas (22 oct, 08:32). El campo ampliado
 saturaba el rasterizado por CPU con tres navegadores. La configuración usa
 dos, sin ampliar límites de comprobación. No compilar a la vez que WebGL.
 El campo renderiza bajo demanda con movimiento reducido o tras un modal
@@ -44,9 +44,18 @@ Losas de basalto con bisel físico y normales suaves; Nexo conserva color de
 piedra. Matriz visual alta/baja y mano visible/recogida a ambas resoluciones,
 con poses amplias de foto. 557 unitarias, build/lint y suite completa 78/37
 verdes. Caldera/Ciudadela son avances validados pendientes del pulido global.
-Siguiente: Santuario. Panorama original ya preparado, sin integrar; también
-`ReflectiveWater.tsx` y `megalithGeometry.ts` sin importar, compilados/lintados
-pero todavía no revisados en WebGL. Ver registro antes de continuar.
+Santuario renovado: granito erosionado con mapas minerales y grabados que
+siguen la cara, dintel partido en un patio hundido, isla de esquinas cortadas,
+pavimento, cuencos de luz fría, bruma por planos y paisaje original. Agua con
+reflejo planar real único en alta/media (512/256 px, 24/12 Hz), baja sin captura;
+movimiento reducido inmoviliza las ondas. Una sonda cambia una piedra y exige
+cambio/restauración de píxeles en el reflejo. Revisado a ambas resoluciones,
+alta/media/baja y alta reducida, mano visible/recogida y modo foto. Gate completo
+558 unitarias, build/lint y 78/37 e2e verdes. Estos escenarios son avances
+validados pendientes de pulido global; las 50 mejoras no están terminadas.
+Siguiente: Duna. Panorama preparado, sin integrar; `egyptianGeometry.ts` y
+`DesertGround.tsx` sin importar, compilados/lintados, sin comprobar en WebGL.
+Leer registro antes de continuar.
 
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**

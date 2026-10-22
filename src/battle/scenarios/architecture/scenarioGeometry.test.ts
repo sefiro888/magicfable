@@ -3,6 +3,7 @@ import { Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three'
 import { BOARD_WORLD_HALF } from '../../grid/gridCoordinates'
 import { greatAnvilGeometry } from './greatAnvilGeometry'
 import { volcanicMesaGeometry } from './volcanicGeometry'
+import { sanctuaryIslandGeometry } from './sanctuaryIslandGeometry'
 
 describe('apoyos y siluetas de Caldera', () => {
   it('la meseta sostiene las cuatro esquinas del tablero y muestra su canto exterior', () => {
@@ -32,6 +33,21 @@ describe('apoyos y siluetas de Caldera', () => {
     parts.horn.computeBoundingBox()
     expect(parts.horn.boundingBox!.max.x).toBeGreaterThan(2.3)
     expect(parts.horn.boundingBox!.max.y).toBeCloseTo(1.62, 2)
+    material.dispose()
+  })
+})
+
+describe('apoyo de la isla del Santuario', () => {
+  it('los recortes de la costa no dejan en el aire las esquinas del tablero', () => {
+    const material = new MeshBasicMaterial()
+    const island = new Mesh(sanctuaryIslandGeometry(), material)
+    island.updateMatrixWorld()
+    for (const x of [-BOARD_WORLD_HALF, BOARD_WORLD_HALF]) {
+      for (const z of [-BOARD_WORLD_HALF, BOARD_WORLD_HALF]) {
+        const hits = new Raycaster(new Vector3(x, 1, z), new Vector3(0, -1, 0)).intersectObject(island)
+        expect(hits[0]?.point.y).toBeCloseTo(-0.085, 3)
+      }
+    }
     material.dispose()
   })
 })

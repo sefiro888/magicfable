@@ -76,6 +76,26 @@ Las losas de basalto reciben bisel físico, junta estrecha y normales sin el
 antiguo abombamiento. Panorámica original y prompt documentados en
 [arte de escenarios](arte-escenarios.md). Pendiente pulido global comparado.
 
+### Santuario: granito, lago y grabado
+
+Granito frío, mineral y mate; evitar caras lisas de caja y emisivos sobre el
+bloque entero. Las piedras tienen coronación rota, perfiles erosionados,
+base húmeda y líquenes discretos. El grabado es fino, con máscara y surco
+independientes, adaptado a la cara. El dintel está partido en dos masas que
+siguen apoyadas en los pilares. El dolmen nace en una cota inferior: su remate
+entra completo en la cámara de batalla y se conserva la escala monumental.
+La isla tiene costa de esquinas cortadas, pavimento irregular y escaleras
+hacia el lago. Carta y estados siguen dominando el centro.
+
+Agua nocturna de ondas finas, Fresnel y reflejo planar único para toda la
+superficie; alta/media con captura limitada, baja sin render adicional.
+La piedra reflejada debe responder a cambios de la escena. Probar reflejo,
+órbita y liberación de recursos, no aceptar un mapa fijo como reflejo.
+Bruma por planos de profundidad, luces frías pequeñas en cuencos de piedra
+y pocas partículas. Evitar conos blancos y rectángulos luminosos de portal.
+Arte distante original y prompt en [arte de escenarios](arte-escenarios.md).
+Pendiente pulido global de cohesión entre geometría y pintura.
+
 ## Marco de carta
 
 ### Preparación de la batalla

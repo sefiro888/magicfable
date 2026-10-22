@@ -3,15 +3,19 @@ import { writeFileSync } from 'node:fs'
 import { Matrix4, Vector3 } from 'three'
 import { CARD_BY_ID, STARTER_DECKS, createMatch, type BoardPiece, type MatchState } from '../src/game'
 import { cameraSnapshot, fiberModuleUrl, poseCamera } from './helpers/cameraSnapshot'
+import { reflectionProbe, waterConfiguration } from './helpers/reflectionProbe'
+import type { GraphicsQuality } from '../src/store/preferences'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
-const scenario = process.env.SCENERY === 'caldera' ? 'caldera' : 'aether-citadel'
-const prefix = scenario === 'caldera' ? 'caldera' : 'ciudadela'
+const scenario = process.env.SCENERY === 'sanctuary' ? 'sanctuary' : process.env.SCENERY === 'caldera' ? 'caldera' : 'aether-citadel'
+const prefix = (scenario === 'sanctuary' ? 'santuario' : scenario === 'caldera' ? 'caldera' : 'ciudadela') + (process.env.SCENERY_REDUCED ? '-quieto' : '')
+const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium'] : process.env.SCENERY_QUALITY === 'high' ? ['high'] : ['high', 'low']
 
 for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
-  for (const quality of ['high', 'low'] as const) {
+  for (const quality of qualities) {
     test(`${prefix} a ${width} × ${height}, calidad ${quality}`, async ({ page }) => {
       test.setTimeout(120000)
+      const reduced = quality === 'low' || process.env.SCENERY_REDUCED === '1'
       const errors: string[] = []
       page.on('pageerror', (error) => errors.push(error.message))
       page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()) })
@@ -27,15 +31,15 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
           piece('rival-west', 'centinela-cristal', 1, 2, true), piece('rival-east', 'leviatan-de-las-simas', 6, 2, true)],
       }
       await page.setViewportSize({ width, height })
-      await page.addInitScript(({ saved, quality, scenario }) => {
+      await page.addInitScript(({ saved, quality, scenario, reduced }) => {
         localStorage.setItem('cronicas-nexo-howto-visto', '1')
         localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: {
-          scenario, graphicsQuality: quality, muted: true, reducedMotion: quality === 'low',
+          scenario, graphicsQuality: quality, muted: true, reducedMotion: reduced,
         }, version: 7 }))
         localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: {
           match: saved, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
         }, version: 2 }))
-      }, { saved: match, quality, scenario })
+      }, { saved: match, quality, scenario, reduced })
       const fiber = fiberModuleUrl(page)
       await page.goto('/battle')
       const url = await fiber
@@ -43,11 +47,17 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       await expect(page.locator('[data-mine]').filter({ hasText: 'Sabueso de Brasa' })).toBeVisible({ timeout: 25000 })
       await page.waitForTimeout(2000)
       const camera = await cameraSnapshot(page, url)
+      if (scenario === 'sanctuary') {
+        const water = await waterConfiguration(page, url)
+        expect(water.enabled).toBe(quality === 'low' ? 0 : 1)
+        expect(water.size).toBe(quality === 'high' ? 512 : quality === 'medium' ? 256 : 0)
+        if (reduced) expect(water.time).toBe(0)
+      }
       const viewProjection = new Matrix4().fromArray(camera.projection)
         .multiply(new Matrix4().fromArray(camera.matrixWorld).invert())
       // Se verifica el remate del edificio y ambos pórticos contra la cámara
       // real, además de mirar las imágenes: no volver a aceptar un hito invisible.
-      for (const point of scenario === 'caldera' ? [[-5.4, 0.8, -5.3], [-6.5, 0.8, -2.8], [6.5, 0.8, -2.8]] : [[0, 2.01, -7.35], [-5.22, 2.61, -2.65], [5.22, 2.61, -2.65]]) {
+      for (const point of scenario === 'sanctuary' ? [[0, 1.47, -7.5], [-5.5, 1.8, -3.8], [5.55, 2.05, -3.5]] : scenario === 'caldera' ? [[-5.4, 0.8, -5.3], [-6.5, 0.8, -2.8], [6.5, 0.8, -2.8]] : [[0, 2.01, -7.35], [-5.22, 2.61, -2.65], [5.22, 2.61, -2.65]]) {
         const projected = new Vector3(...point).applyMatrix4(viewProjection)
         const x = camera.canvas.x + (projected.x + 1) / 2 * camera.canvas.width
         const y = camera.canvas.y + (1 - projected.y) / 2 * camera.canvas.height
@@ -71,6 +81,13 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         expect(rotated.position[0]).toBeCloseTo(20, 1)
         await page.waitForTimeout(500)
         await page.screenshot({ path: `e2e/__shots__/${prefix}-foto-orbita.png` })
+      }
+      if (scenario === 'sanctuary' && width === 1920 && quality === 'high') {
+        const reflection = await reflectionProbe(page, url)
+        writeFileSync('tools/captures/santuario-reflection.json', JSON.stringify(reflection, null, 2))
+        expect(reflection.width).toBe(512)
+        expect(reflection.after - reflection.before).toBeGreaterThan(4)
+        expect(reflection.restored).toBeLessThanOrEqual(reflection.before + 2)
       }
       expect(errors).toEqual([])
     })

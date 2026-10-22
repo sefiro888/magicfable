@@ -25,7 +25,7 @@ global), **V** terminada y verificada.
 | --- | --- | --- |
 | 1 | Caldera: renovación integral | A |
 | 2 | Ciudadela: renovación integral | A |
-| 3 | Santuario: renovación integral | P |
+| 3 | Santuario: renovación integral | A |
 | 4 | Duna: renovación integral | P |
 | 5 | Fiordo: renovación integral | P |
 | 6 | Claro: renovación integral | P |
@@ -41,13 +41,13 @@ global), **V** terminada y verificada.
 | 16 | Materiales de piedra | C |
 | 17 | Materiales metálicos | C |
 | 18 | Materiales de hielo | P |
-| 19 | Agua | P |
+| 19 | Agua | C |
 | 20 | Lava | A |
 | 21 | Arena, tierra y nieve | P |
 | 22 | Iluminación propia por escenario | C |
 | 23 | Sombras del escenario | C |
 | 24 | Sombras de contacto de cartas | V |
-| 25 | Reflejos apropiados al material | P |
+| 25 | Reflejos apropiados al material | C |
 | 26 | Niebla y separación de planos | C |
 | 27 | Humo y vapor por capas | C |
 | 28 | Partículas ambientales | C |
@@ -75,6 +75,99 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**22 oct, 08:36. Santuario verificado.** Suite completa `72743`: **78 verdes,
+37 omitidas**. Unitarias `2678`: **558 verdes/5 omitidas**. Build final `82911`,
+lint final `56795`, verdes, incluidos los dos borradores sin importar de Duna.
+Matriz `29860` cuatro verdes (alta/baja), `77437` dos verdes (media), `16746`
+dos verdes (alta con movimiento reducido). Ambas resoluciones, mano visible/
+recogida y dos poses amplias de foto. Reflejo real probado: **0→12→0 píxeles**
+al cambiar/restaurar una piedra; ondas en tiempo cero con movimiento reducido.
+Comprobación explícita final de baja sin RT a 1366: `42372`, una verde;
+fuente de juego sin cambios, solo nuevas aserciones de calidad. #3 pasa a A: falta pulido
+global, no afirmar las 50 terminadas. Agua/reflejos siguen C por otros escenarios.
+
+**Siguiente acción: Duna.** Sin verificaciones ni generaciones en curso. Panorama original
+ya preparado y documentado en `docs/arte-escenarios.md`, no regenerarlo.
+`architecture/egyptianGeometry.ts` y `architecture/DesertGround.tsx` son
+borradores **sin importar**, compilados/lintados pero sin revisar en WebGL.
+Excluirlos del checkpoint de Santuario. Empezar por terreno y patio posterior
+excavado, después pilono en talud/gola y columnas papiriformes. El patio actual
+circular vuelve a dejar esquinas sin apoyo; esfinges de cajas/columnas lisas,
+oro emisivo y altas puntas fuera de cámara deben reemplazarse. Mantener la
+identidad luminosa/solemne del dosier y el centro despejado. Servidor 4173 en
+sesión `35243` conservado; ningún push.
+
+Posible pulido global, todavía **no probado**: comparar el cinturón esférico
+de paisajes con un cinturón cilíndrico que conserve rectas las verticales de
+las pinturas al orbitar. La repetición reflejada actual no equivale a una
+pintura única de 360°. No cambiar los tres escenarios sin revisar sus matrices.
+
+**22 oct, 08:32.** Suite completa `72743` terminada: **78 verdes/37 omitidas**,
+sin fallos. Unitarias 558/5, build `92859`, lint `85916` verdes. Fuentes de
+aplicación sin cambios desde la matriz visual `29860`. Se ampliaron solo las
+sondas opcionales de escenarios: verifican RT512/256/0 y tiempo de ondas
+cero con movimiento reducido, además de restauración tras la prueba de color.
+Revisión de calidad media en curso; después alta reducida. No compilar aún.
+Los borradores nuevos de Duna siguen sin importar; al acabar las capturas,
+compilarlos/lintarlos pero excluirlos del checkpoint de Santuario.
+
+**22 oct, 08:24.** Matriz final Santuario `29860`: **cuatro verdes**, imágenes
+revisadas a ambas resoluciones, alta/baja y mano visible/recogida, dos poses de
+foto. Sonda planar **0→12 píxeles** al alterar una piedra; restauración correcta.
+La pasada principal de alta registra 299 llamadas/106520 triángulos; baja,
+165/57990. Son métricas de la pasada principal, no suman la captura de reflejo.
+Suite completa **`72743` en curso**, sin fallos hasta ahora. No editar fuentes
+importadas ni compilar mientras siga. Unitarias 558/5, build/lint verdes antes
+de esta suite. Después: comprobar media y movimiento reducido alto, guardar
+checkpoint local y seguir con Duna. Pulido global de roca/agua/pintura pendiente.
+
+Preparación de Duna, **sin integrar**: leído dosier `docs/FACCION_DUNA.md` y
+fuentes. Panorama original generado con imagegen, sin referencias externas,
+revisado como imperio funerario luminoso/solemne, arenisca y lapislázuli,
+mediodía y arena abierta; maestro copiado en
+`tools/art-inbox/scenery/duna-vista-v1.png`, prompt junto a él. Original:
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f978b26a-2df2-4fe1-8abb-fb77ac1b1b93.png`.
+No regenerarlo. Borrador `architecture/egyptianGeometry.ts` (pilono en talud,
+gola cóncava y capitel papiriforme) sin importar; no compilado ni revisado aún.
+Otro borrador sin importar: `architecture/DesertGround.tsx`, arena con mapas
+propios/grano/crestas, UV independiente de máscara y patio posterior excavado
+para alojar el pilono (altura exportada para apoyar la arquitectura). Tampoco
+compilado ni revisado en WebGL. Excluir ambos del checkpoint de Santuario.
+Evitar esfinges de cajas, patio circular
+sin apoyo en esquinas, oro emisivo y limitarse al muro bajo: el pilono puede
+ser monumental en un patio inferior, como se resolvió en Ciudadela/Santuario.
+No hay generaciones activas; servidor 4173 conservado.
+
+**22 oct, 08:20.** Reparaciones de tipado/lint resueltas. `2678`: **558
+verdes/5 omitidas**, incluye apoyo de las cuatro esquinas de isla. Build
+`92859`, lint `85916`, verdes. Matriz final **`29860` en curso**, no editar
+fuentes importadas. Granito ahora tiene mapas propios de microcristal,
+rugosidad y fractura; perfil de monolitos más erosionado, deriva lateral y
+coronación irregular. Los grabados comparten perfil, no flotan. El agua añade
+crestas tenues y limita captura alta/media a 24/12 Hz, 512/256 px; baja sin RT.
+Matriz anterior `11188` cuatro verdes, sonda de reflejo **0→16 píxeles** con
+cambio real de material, restaurado al terminar. Sin generaciones activas.
+Después de revisar imágenes finales: suite completa y checkpoint local.
+
+**22 oct, 08:17. Santuario integrado, todavía sin gate cerrado.** Primer
+reflejo/GLSL `52279` sin errores; arquitectura completa `58806` cuatro verdes.
+Capturas revelaron piedra cercana demasiado regular y agua demasiado plana.
+En la siguiente versión: coronación erosionada, variación de perfil, dintel
+partido en dos masas con junta real, andén con pavimento periférico, grabado
+adaptado a la cara del granito y reflexión más legible. El dolmen está en
+cota inferior y entra entero desde cámara real; baja no crea render target.
+
+Matriz **`11188` en curso**, incluye sonda de reflejo real: se cambia
+provisionalmente el material de una piedra y se exige cambio de píxeles de
+la captura planar; se restaura al terminar. No editar fuentes importadas ni
+compilar durante esta prueba. Build `34344` detectó ensanchamiento de tuplas
+en PAVING: reconstruir el array con objetos contextualmente tipados como
+StoneBlock, sin cast doble. Lint `96184`: quitar inicialización inútil de
+`after` en reflectionProbe. Son reparaciones pendientes para DESPUÉS de la
+matriz; no afirmar gate verde. Unitarias/build/lint y suite completa pendientes.
+Panorama original ya optimizado: 1916×821 WebP90 240462 bytes y 1024×439
+WebP86 64640 bytes. No hay generaciones activas. Servidor 4173 conservado.
 
 **22 oct, 08:02. Bloque Caldera verificado.** Suite completa `28204`:
 **78 verdes/37 omitidas**, sin fallos. Unitarias `41316`: **557/5**; build
