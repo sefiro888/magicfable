@@ -87,6 +87,19 @@ global), **V** terminada y verificada.
 
 ## Bloque activo
 
+**19:58, revisión artística de cierre local.** Ver
+`docs/REVISION-VISUAL-2026-10-22.md`: las50 no están terminadas (11 V/39 A).
+La foto orbital de Ciudadela revela un arco de cielo en primer plano. Sonda
+reversible y cerrada confirma que la esfera70 corta el panorama; radio
+efectivo105 elimina el arco con la misma cámara[20,12,8]. Solo memoria del
+navegador, sin parche de producción ni publicación. Antes/después y script
+en tools/captures; el primer intento se descartó por cámara aún en transición.
+Pendiente aplicar corrección con regresión, gate completo y capturas.
+No iniciar fuentes cerca del límite: la suite anterior tardó7,2min.
+Último HEAD publicado481a373, Actions39826131837 y deployment7259487818 success.
+No hay pruebas ni capturas activas. Guardar este bloque local sin push.
+Al llegar a20:00 cerrar y eliminar la automatización, preservando«ç».
+
 **19:50, PUBLICACIÓN CONFIRMADA y petición del mazo CUMPLIDA.**
 Origin/main contiene3f7b88d (reglas/mano) y2a028a5 (panoramas/bronce).
 Actions39825636655 success y deployment7259414952 success para2a028a5.

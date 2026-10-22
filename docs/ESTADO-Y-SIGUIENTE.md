@@ -14,6 +14,10 @@ y simulaciones de40 semillas verdes. Matriz panorámica48/48 verde. PUBLICADO en
 deployment7259414952 success. Web real verificada con10 cartas iniciales;
 pedido del mazo cumplido, no repetirlo ni publicar más juego sin nueva petición.
 Consultar bloque activo del registro antes de abrir otro proceso.
+Revisión de cierre local: `docs/REVISION-VISUAL-2026-10-22.md`. Prioridad
+concreta al retomar: esfera del cielo de Ciudadela recorta el panorama en
+modo foto; sonda reversible confirma radio105, sin parche aplicado. No
+confundir48 pruebas de escenarios con50 mejoras terminadas (11 V/39 A).
 
 | | |
 | --- | --- |
