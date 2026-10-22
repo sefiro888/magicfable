@@ -35,3 +35,23 @@ export async function cameraSnapshot(page: Page, moduleUrl: string) {
     }
   }, moduleUrl)
 }
+
+/** Las sondas artísticas necesitan vistas repetibles. Los gestos reales ya
+ * se comprueban en calidad de vida; aquí fijar la pose evita que el número
+ * de frames por software determine el ángulo que acaba fotografiándose. */
+export async function poseCamera(page: Page, moduleUrl: string, position: readonly [number, number, number]) {
+  await page.evaluate(async ({ url, position }) => {
+    const module = await import(url) as {
+      _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState: () => RootState } }>
+    }
+    const canvas = document.querySelector('[data-testid="battle-board"] canvas') as HTMLCanvasElement | null
+    const state = canvas ? module._roots.get(canvas)?.store.getState() : undefined
+    const controls = state?.controls as unknown as { target: { set: (x: number, y: number, z: number) => void }; update: () => void } | undefined
+    if (!state || !controls) throw new Error('No hay cámara con controles para preparar la vista.')
+    state.camera.position.set(...position)
+    controls.target.set(0, 0, 0)
+    controls.update()
+    state.invalidate()
+  }, { url: moduleUrl, position })
+  return cameraSnapshot(page, moduleUrl)
+}

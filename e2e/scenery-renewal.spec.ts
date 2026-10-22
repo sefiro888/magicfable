@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { writeFileSync } from 'node:fs'
 import { Matrix4, Vector3 } from 'three'
 import { CARD_BY_ID, STARTER_DECKS, createMatch, type BoardPiece, type MatchState } from '../src/game'
-import { cameraSnapshot, fiberModuleUrl } from './helpers/cameraSnapshot'
+import { cameraSnapshot, fiberModuleUrl, poseCamera } from './helpers/cameraSnapshot'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
 
@@ -59,6 +59,17 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       await page.keyboard.press('h')
       await page.waitForTimeout(700)
       await page.screenshot({ path: `e2e/__shots__/ciudadela-${width}x${height}-${quality}-mano-oculta.png` })
+      if (width === 1920 && quality === 'high') {
+        await page.getByRole('button', { name: /Modo foto/i }).click()
+        const distant = await poseCamera(page, url, [0, 16, 20])
+        expect(distant.position[2]).toBeCloseTo(20, 1)
+        await page.waitForTimeout(500)
+        await page.screenshot({ path: 'e2e/__shots__/ciudadela-foto-lejana.png' })
+        const rotated = await poseCamera(page, url, [20, 12, 8])
+        expect(rotated.position[0]).toBeCloseTo(20, 1)
+        await page.waitForTimeout(500)
+        await page.screenshot({ path: 'e2e/__shots__/ciudadela-foto-orbita.png' })
+      }
       expect(errors).toEqual([])
     })
   }

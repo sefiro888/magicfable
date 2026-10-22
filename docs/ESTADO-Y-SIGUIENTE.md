@@ -36,6 +36,12 @@ Ciudadela renovada: arquitectura de dovelas/columnas acanaladas en cotas
 inferiores, plaza que sostiene las cuatro esquinas del tablero, mármol con
 bisel físico y Nexo de caliza. Revisión de calidad alta/baja y mano visible/
 recogida a ambas resoluciones en `e2e/scenery-renewal.spec.ts` (opcional).
+Vista distante original integrada y documentada en `docs/arte-escenarios.md`.
+Última suite con esta vista: `41994`, 77 verdes y un caso que buscaba un
+aviso de 1,2 s después de una orden de teclado de 3 s. Observación instalada
+antes del golpe; `71625` verifica ese caso y las dos interfaces con dos
+navegadores (tres verdes). Las 78 activas están verificadas, aunque la última
+pasada única limpia sigue siendo `90321` (antes de la vista panorámica).
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**
 Leer también `docs/RENOVACION-VISUAL.md`: contiene las 50 tareas autorizadas,
@@ -87,10 +93,11 @@ tres (Arcano, Orden, Olimpo) comparten estética grecolatina a propósito.
 - `src/store/` — Zustand con `persist`. Preferencias y estado de partida.
 - `src/pages/`, `src/components/` — interfaz.
 
-Las texturas son **todas procedurales**, dibujadas con Canvas 2D en
+Los materiales del escenario usan texturas **procedurales**, dibujadas con Canvas 2D en
 `textures.ts`, `materials/` y los auxiliares de escenarios, cacheadas por clave.
-No hay un solo archivo de imagen de
-material en el repositorio: si quieres un material nuevo, se dibuja con código.
+Los materiales nuevos se dibujan con código. Las vistas panorámicas originales
+generadas con `imagegen` se documentan aparte en `docs/arte-escenarios.md`;
+los maestros privados se conservan y el juego consume WebP optimizado.
 
 ---
 

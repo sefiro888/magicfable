@@ -25,11 +25,22 @@ test('los números de daño caducan aunque el director ya haya terminado el even
   await page.goto('/battle')
   await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25000 })
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
+  // El número vive 1,2 s. Bajo rasterizado por software, Enter puede tardar
+  // más en devolver el control: observar DESDE ANTES del golpe conserva la
+  // prueba de aparición aunque la siguiente orden llegue tras su extinción.
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      if (!document.querySelector('[data-color="damage"]')) return
+      document.documentElement.dataset.damageSeen = 'true'
+      observer.disconnect()
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+  })
   await page.keyboard.press('ArrowUp')
   await page.keyboard.press('Enter')
   await page.keyboard.press('ArrowUp')
   await page.keyboard.press('Enter')
-  await expect(page.locator('[data-color="damage"]').first()).toBeAttached({ timeout: 12000 })
+  await expect(page.locator('html')).toHaveAttribute('data-damage-seen', 'true', { timeout: 12000 })
   await expect(page.locator('[data-color="damage"]')).toHaveCount(0, { timeout: 10000 })
   expect(errors).toEqual([])
 })

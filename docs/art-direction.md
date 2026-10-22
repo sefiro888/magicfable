@@ -52,6 +52,10 @@ caliza. Las losas tienen bisel real y una junta estrecha: no volver a pintar
 una sombra ancha que abombe cada cuadrado. La evolución del sol consume
 eventos de turno resueltos y respeta movimiento reducido. Las nubes distantes
 se hornean una vez; los bancos cercanos se desplazan con discreción.
+La vista distante incorpora una panorámica original en una banda de cúpula,
+con orientación mundial y transición al cielo. Evitar planos que revelen
+un borde de cartel al orbitar. Maestro, versiones optimizadas y prompt:
+[arte de escenarios](arte-escenarios.md).
 
 ## Marco de carta
 

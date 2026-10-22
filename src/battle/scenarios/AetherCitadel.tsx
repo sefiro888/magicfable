@@ -2,7 +2,7 @@ import { Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { BackSide, Color } from 'three'
-import type { DirectionalLight, Group, MeshStandardMaterial } from 'three'
+import type { DirectionalLight, Group, Mesh, MeshStandardMaterial } from 'three'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
 import { cloudTexture } from '../textures'
@@ -10,6 +10,7 @@ import { usePageVisibility } from '../usePageVisibility'
 import { CitadelBasilica } from './architecture/CitadelBasilica'
 import { CitadelBanner } from './architecture/CitadelBanner'
 import { CitadelLowerCity } from './architecture/CitadelLowerCity'
+import { DistantVista } from './architecture/DistantVista'
 import { StoneColumns, StoneMasonry, type StoneBlock } from './architecture/StoneArchitecture'
 import { floatingCragGeometry, terraceGeometry } from './architecture/stoneGeometry'
 import { stoneMaps } from '../materials/stoneMaterial'
@@ -30,11 +31,13 @@ const BRONZE = { color: '#9d8050', roughness: 0.52, metalness: 0.72 } as const
  * cielo distraía; seis grados y una variación pequeña bastan para leer tiempo. */
 function DawnAtmosphere({ quality, reducedMotion, turn }: { readonly quality: GraphicsQuality; readonly reducedMotion: boolean; readonly turn: { readonly current: number } }) {
   const sun = useRef<DirectionalLight>(null)
+  const sky = useRef<Mesh>(null)
   const visible = usePageVisibility()
   const progress = useRef(0)
   const dawn = useMemo(() => new Color('#ffdcab'), [])
   const daylight = useMemo(() => new Color('#ffe9cb'), [])
-  useFrame((_, delta) => {
+  useFrame(({ camera }, delta) => {
+    sky.current?.position.copy(camera.position)
     if (!sun.current || !visible.current) return
     const target = Math.min(1, turn.current / 30)
     progress.current = reducedMotion ? target : progress.current + (target - progress.current) * Math.min(1, delta * 0.25)
@@ -45,7 +48,7 @@ function DawnAtmosphere({ quality, reducedMotion, turn }: { readonly quality: Gr
   return <>
     <color attach="background" args={['#7c8da8']} />
     <fog attach="fog" args={['#90a1b5', 16, 48]} />
-    <mesh rotation={[0, -2.2, 0]}>
+    <mesh ref={sky} rotation={[0, -2.2, 0]}>
       <sphereGeometry args={[70, 64, 32]} />
       <meshBasicMaterial map={citadelSkyTexture()} side={BackSide} fog={false} toneMapped={false} />
     </mesh>
@@ -197,6 +200,7 @@ export function AetherCitadel({ quality, reducedMotion, event }: AetherCitadelPr
   useFrame((_, delta) => { pulse.current = Math.max(0, pulse.current - delta * 1.3) })
   return <>
     <DawnAtmosphere quality={quality} reducedMotion={reducedMotion} turn={turn} />
+    <DistantVista image={`/assets/scenarios/aether-citadel-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <FloatingIsles quality={quality} />
     <CitadelLowerCity quality={quality} />
     <CitadelBasilica quality={quality} />

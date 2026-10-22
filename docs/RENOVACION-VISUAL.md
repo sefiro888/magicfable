@@ -35,9 +35,9 @@ global), **V** terminada y verificada.
 | 10 | Escalinata: pulido integral | P |
 | 11 | Escenario propio de Quinto Sol | P |
 | 12 | Escenario propio de Bestiario | P |
-| 13 | Elemento protagonista por escenario | P |
-| 14 | Composición y decorado desde cámara real | P |
-| 15 | Transición entre tablero y entorno | P |
+| 13 | Elemento protagonista por escenario | C |
+| 14 | Composición y decorado desde cámara real | C |
+| 15 | Transición entre tablero y entorno | C |
 | 16 | Materiales de piedra | C |
 | 17 | Materiales metálicos | P |
 | 18 | Materiales de hielo | P |
@@ -48,9 +48,9 @@ global), **V** terminada y verificada.
 | 23 | Sombras del escenario | C |
 | 24 | Sombras de contacto de cartas | V |
 | 25 | Reflejos apropiados al material | P |
-| 26 | Niebla y separación de planos | P |
+| 26 | Niebla y separación de planos | C |
 | 27 | Humo y vapor por capas | P |
-| 28 | Partículas ambientales | P |
+| 28 | Partículas ambientales | C |
 | 29 | Movimiento del entorno | C |
 | 30 | Evolución ambiental durante la partida | C |
 | 31 | Marcos de las cartas desplegadas | A |
@@ -75,6 +75,78 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**22 oct, 07:31.** Integración panorámica verificada. `41994`: 77 verdes/37
+omitidas y una observación transitoria fallida; caso corregido verificado en
+`71625` junto con interfaz y dos navegadores: **tres verdes**. Quedaron
+verificadas las 78 pruebas activas con la versión actual; no presentar esta
+combinación como una única pasada completa limpia. Build `52249`, unitarias
+`11729` 555/5, revisión visual `81964` y lint final `79176`, verdes.
+Sin verificaciones ni generaciones en ejecución; servidor 4173 conservado.
+Guardar checkpoint de vista/prompt/observador; excluir los tres borradores
+de Caldera. Después integrar LavaSurface en Caldera y comprobar GLSL real,
+continuar con yunque/roca/humo y su panorámica preparada.
+Los estados C de 13–16/22–23/26/28–30 representan trabajo aplicado a Ciudadela,
+no que el resto de escenarios tenga ya esos acabados.
+
+**22 oct, 07:29.** `41994` terminó: **77 verdes, 37 omitidas y el fallo de
+observación transitoria descrito debajo**. Sin otros fallos, incluidos caída,
+revancha, navegación y modo foto. Validación del observador nuevo en curso,
+junto con las dos pruebas de interfaz y dos navegadores, para repetir una
+carga comparable a la suite completa. Ningún cambio en fuentes de aplicación
+desde la última matriz visual; no ampliar tiempos ni vida del efecto.
+
+**22 oct, 07:24.** `41994` continúa. Un fallo en combat-effects no era un
+número inmortal: la traza muestra ataque resuelto (víctima retirada/Nexo
+dañado) y órdenes de teclado de 3 s, más largas que la vida de 1,2 s del
+número. La prueba buscaba su aparición después de que hubiera desaparecido.
+Se instala ahora un MutationObserver antes de atacar que registra aparición;
+se conserva la exigencia de cero números al caducar, sin aumentar tiempos ni
+tocar duración/producción. Cambiado solo el test ya terminado; el resto de la
+suite sigue con fuentes de aplicación estables. Al terminar ejecutar ese
+caso aislado y registrar el resultado; no afirmar que `41994` quedó toda verde.
+La panorámica de Caldera tiene su prompt exacto conservado junto al maestro,
+en `tools/art-inbox/scenery/caldera-vista-v1.prompt.txt`, ambos ignorados.
+
+**22 oct, 07:18.** Integración panorámica: matriz final `81964`, **cuatro
+verdes**, revisadas calidad alta/baja, ambas resoluciones y dos poses amplias
+de modo foto. El plano se ha sustituido por cúpula; el desvanecido termina
+dentro del mapa para que el clamp no estire torres hacia el cénit. Métrica
+alta final: 365 llamadas, 301666 triángulos y 44 texturas (una llamada adicional
+frente a la Ciudadela sin panorámica). Fuente y prompt en `arte-escenarios.md`.
+Unitarias `11729` **555/5**, build `52249` y lint `48123`, verdes. Nueva pasada
+e2e completa `41994` en ejecución; no editar fuentes importadas hasta terminar.
+Después guardar el bloque de panorámica excluyendo borradores de Caldera.
+Preparado también `architecture/greatAnvilGeometry.ts` (sin importar): cuerpo
+curvo biselado, mesa con hueco real y cuerno horizontal de sección decreciente.
+Los tres borradores compilan pero necesitan revisión real al integrarse.
+También generada y revisada una panorámica original para Caldera con imagegen:
+basalto estratificado, rift profundo, arco natural, lava distante y humo frío.
+Maestro privado copiado en `tools/art-inbox/scenery/caldera-vista-v1.png`;
+original conservado en `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-0910ca0f-0aae-4035-8f9a-cfd4a3395119.png`.
+Sin referencias externas, marcas ni estilos de artistas. Todavía sin convertir
+ni integrar: conservarla para el próximo bloque y documentar su prompt en arte-escenarios.
+
+**22 oct, 07:08.** Arquitectura de Ciudadela guardada en `50a6212`.
+Panorámica original copiada al workspace (maestro privado) y optimizada en
+dos WebP versionados: 272868/87132 bytes. Prompt completo y procedencia en
+`docs/arte-escenarios.md`. La primera integración en un plano se rechazó:
+la prueba de órbita reveló un cartel inclinado, aunque la vista normal era
+correcta. `DistantVista` pasa a cinturón esférico con orientación mundial y
+desvanecido al cielo en latitudes extremas; la repetición reflejada evita
+juntas de píxel. La cúpula sigue traslación, nunca giro de cámara.
+
+La primera sonda ampliada `22808` agotó 120 s en la cuarta captura. Traza:
+el arrastre de órbita consumió 41 s por rasterizado de software. No había
+una comprobación fallida del juego. Las sondas artísticas ahora fijan poses
+repetibles por la cámara y OrbitControls públicos (`poseCamera`), exigen su
+posición real y mantienen intacta la prueba funcional de modo foto.
+Sonda posterior `60833` pasó y reveló visualmente el defecto del plano.
+Sonda actual `3671` revisa la versión esférica; no editar fuentes importadas
+hasta terminar. Build/lint/unitarias `72310`/`74288`/`41022` estaban verdes
+antes del cambio a cúpula. Repetir build/lint tras la revisión final; no dar
+por cerrado aún el gate de esta integración. LavaSurface/AtmosphericPlumes
+siguen sin importar; solo quedaron compilados, no revisados en WebGL.
 
 **22 oct, 06:55.** Gate de Ciudadela cerrado: `90321`, **78 e2e verdes y
 37 omitidas**. Unitarias 555/5, build `26575`, lint `32033` verdes. Capturas
