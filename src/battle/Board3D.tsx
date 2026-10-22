@@ -10,6 +10,7 @@ import { withBase } from '../utils/assets'
 import { GameIcon } from '../components/GameIcon'
 import { boardSlabGeometry } from './grid/boardSlabGeometry'
 import { stoneMaps } from './materials/stoneMaterial'
+import { forgedMetalMaps } from './materials/forgedMetal'
 import { DamageNumbers } from './DamageNumbers'
 import { FallenPieces } from './FallenPieces'
 import { RecentHits } from './RecentHits'
@@ -343,7 +344,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide'
+      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge'
         ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       <meshStandardMaterial
@@ -365,7 +366,8 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
         roughness={1}
         // Sin mapa de entorno, subir `metalness` no refleja nada: solo apaga
         // la componente difusa y deja la losa negra. Se queda casi a cero.
-        metalness={0.05}
+        metalness={terrainStyle === 'forge' ? 0.58 : 0.05}
+        envMapIntensity={terrainStyle === 'forge' ? 2.2 : 1}
         emissive={emissive}
         emissiveIntensity={valid ? 1.15 : scorched ? 1 : hovered ? 0.62 : threatened ? 0.7 : deployRow ? 0.38 : 0}
       />
@@ -459,7 +461,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   ice: { base: '#576a73', shaft: '#6b7d84', crown: '#8c9da1' },
   forest: { base: '#646755', shaft: '#858573', crown: '#aaa28b' },
   tide: { base: '#53666b', shaft: '#728487', crown: '#92a2a0' },
-  forge: { base: '#2b241c', shaft: '#3d3327', crown: '#544634' },
+  forge: { base: '#706b5f', shaft: '#858477', crown: '#a1a08e' },
   glaze: { base: '#2f2420', shaft: '#4a2b26', crown: '#6b3a30' },
   sandstone: { base: '#3a2a20', shaft: '#54402e', crown: '#6e563c' },
 }
@@ -1051,7 +1053,8 @@ function Nexus({
   }, [health, collapse, terminal, playerId, schedule])
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
-  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' || terrainStyle === 'forest' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : terrainStyle === 'ice' || terrainStyle === 'tide' ? stoneMaps('granite').map : masonryTexture()
+  const nexusMetal = terrainStyle === 'forge' ? forgedMetalMaps('bronze') : undefined
+  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' || terrainStyle === 'forest' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : terrainStyle === 'ice' || terrainStyle === 'tide' ? stoneMaps('granite').map : nexusMetal?.map ?? masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
@@ -1094,7 +1097,7 @@ function Nexus({
     }
     // La intensidad 5 teñía las piedras renovadas de un oro plano. La energía queda en los cristales; la piedra sigue recibiendo sol.
     if (nexusLight.current) nexusLight.current.intensity = collapse ? 0
-      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
+      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
   })
 
   return (
@@ -1108,15 +1111,15 @@ function Nexus({
       {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
       <mesh position={[0, 0.04, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[0.98, 1.2, 0.22, 8]} />
-        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={0.035} color={stone.base} roughness={0.9} metalness={0.04} emissive="#0a0e18" emissiveIntensity={0.15} />
+        <meshStandardMaterial map={stoneMap} bumpMap={nexusMetal?.bumpMap ?? stoneMap} roughnessMap={nexusMetal?.roughnessMap} bumpScale={0.035} color={stone.base} roughness={0.9} metalness={nexusMetal ? 0.55 : 0.04} emissive="#0a0e18" emissiveIntensity={nexusMetal ? 0 : 0.15} />
       </mesh>
       <mesh position={[0, 0.26, 0]} castShadow>
         <cylinderGeometry args={[0.62, 0.82, 0.3, 8]} />
-        <meshStandardMaterial map={stoneMap} bumpMap={stoneMap} bumpScale={0.035} color={stone.shaft} roughness={0.82} metalness={0.04} emissive="#0c1120" emissiveIntensity={0.15} />
+        <meshStandardMaterial map={stoneMap} bumpMap={nexusMetal?.bumpMap ?? stoneMap} roughnessMap={nexusMetal?.roughnessMap} bumpScale={0.035} color={stone.shaft} roughness={0.82} metalness={nexusMetal ? 0.55 : 0.04} emissive="#0c1120" emissiveIntensity={nexusMetal ? 0 : 0.15} />
       </mesh>
       <mesh position={[0, 0.46, 0]} castShadow>
         <cylinderGeometry args={[0.74, 0.6, 0.12, 8]} />
-        <meshStandardMaterial map={stoneMap} color={stone.crown} roughness={0.7} metalness={0.04} emissive={ringEmissive} emissiveIntensity={0.15 + integrity * 0.2} />
+        <meshStandardMaterial map={stoneMap} roughnessMap={nexusMetal?.roughnessMap} color={stone.crown} roughness={0.7} metalness={nexusMetal ? 0.6 : 0.04} emissive={ringEmissive} emissiveIntensity={nexusMetal ? 0.08 : 0.15 + integrity * 0.2} />
       </mesh>
       <NexusFractures damage={damage} />
       {/* Corona de esquirlas de cristal alrededor del borde del pedestal. */}

@@ -144,12 +144,34 @@ reducida también revisadas a ambas resoluciones. Gate563/5, build/lint y
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Claro del Bosque in Crónicas del Nexo, a mature tactical fantasy card game. An immense ancient temperate forest sanctuary viewed from high above looking DOWN approximately 37 degrees. Vast gnarled oak and beech buttress roots, weathered bark, trunks extending out of frame, mature layered broadleaf canopy, luxuriant but believable ferns, bracken, damp moss, fallen leaves, wet dark earth and broken ancient limestone paving being slowly reclaimed. One immense natural hollow in a far ancient root buttress gives the background a sacred focal silhouette; no face, eyes or anthropomorphic tree. Refined warm shafts of late-morning sunlight entering through gaps in foliage, dappled shadows, cool green-grey depth and a little golden airborne pollen, subtle layered ground mist. Composition: strongest roots and monumental tree forms concentrated in upper third and outer thirds, central and lower half mostly spacious shadowed leaf-litter clearing and sparse paving traces, leaving visual room for a separate board placed in front. No visible sky or horizon, elevated downward-looking view, not a frontal forest postcard. At least four atmospheric layers; beautiful fine botanical detail and material texture without confetti-like visual noise. Mature cinematic painterly realism compatible with refined fantasy card illustrations, majestic forest antiquity rather than cute fairy woodland. Rich muted olive, deep bark brown, warm stone and restrained sunlit yellow-green. Original design, no artist imitation, no franchise, no reference images. No foreground platform, arena, game board, table, cards, UI, characters, animals, monsters, readable text, logos, watermark or border. Avoid cartoon mushrooms, glowing blue crystals, purple fairy lights, giant mushrooms, giant flowers, neon green fog everywhere, tropical jungle, repeated cylinder trunks, low-poly shrubs, simple cone trees, round lollipop canopies, uniformly bright green ground, literal laser sun beams.
 ```
 
-## Gremio — panorámica v1 preparada
+## Jade — panorámica v1 preparada
+
+Generada con `imagegen` integrado el22 de octubre de2026, sin referencias,
+artistas ni marcas. Revisada: corte celestial de madera y laca, aleros curvos,
+tejas, bronce ritual y patios de piedra con bruma de amanecer. Sin integrar.
+Maestro copiado sin modificación a `tools/art-inbox/scenery/jade-vista-v1.png`,
+1916×821, con prompt al lado. Original conservado en
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-04f694a6-26d1-41b7-836e-4f1c1b9424f2.png`.
+Pillow solo para optimización: WebP90 542474 bytes y WebP86 1024×439,
+149002 bytes, en `public/assets/scenarios/jade-vista-v1.webp` y
+`jade-vista-v1-low.webp`. La arquitectura próxima seguirá siendo geometría.
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Corte de Jade in Crónicas del Nexo, a mature tactical fantasy card game. An immense dignified Chinese celestial imperial administrative court at dawn, viewed from high above looking DOWN approximately 37 degrees, no sky or visible horizon. Carefully observed traditional timber architecture with layered sweeping curved eaves, rows of individually weathered glazed jade-green and muted yellow roof tiles, intricate load-bearing dougong bracket sets, cinnabar lacquered columns, dark ebony beams, patinated ritual bronze, restrained imperial gold finials, pale carved stone balustrades and secluded lotus water courts. Monumental halls and archive pavilions recede in four layers of blue-grey morning mist, rich but solemn ceremonial statecraft rather than martial arts or restaurant decoration. Strongest architecture concentrated in upper third and outer thirds. Central and lower half mostly spacious subdued polished stone and muted dark lacquer paving with a few long soft dawn reflections, leave visual room for a separate tactical board in front. No foreground platform, game board, table or arena. Warm dawn grazes red lacquer and copper-gold details while shadows remain cool ink blue. Mature refined cinematic painterly realism, beautifully crafted architecture with convincing materials, no visual clutter or generic festival. Original design, no references, no artist imitation or franchise. No characters, animals, floating dragons, cards, UI, readable text, logos, watermark or border. Avoid pagoda cone roofs, simplistic block arches, giant cartoon lanterns, neon green jade, oversaturated gold everywhere, pseudo-Asian themed restaurant, modern buildings, visible sunrise disk or sky.
+```
+
+## Gremio — panorámica v1
 
 Generada con `imagegen` integrado el22 de octubre de2026, sin referencias,
 artistas ni marcas. Imagen original revisada: arquitectura industrial antigua,
 engranajes funcionales, grúas, horno de calor controlado y vapor por planos;
-se distingue de la geología volcánica de Furia. Sin integrar todavía.
+se distingue de la geología volcánica de Furia. Integrada y validada como avance,
+con horno, engranajes, patio y colada nativos. Alta/baja a ambas resoluciones
+revisadas; sonda verifica relación2:1 y colada activa, ambas quietas con
+movimiento reducido. Media y alta reducida revisadas a ambas resoluciones;
+gate567/5, build/lint y78/37 e2e verdes. Falta pulido global.
 Maestro sin modificar en `tools/art-inbox/scenery/foundry-vista-v1.png`,
 1918×820, con prompt al lado. Original conservado en
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-8237bd8e-8981-4840-b0c5-89e32ce106a4.png`.

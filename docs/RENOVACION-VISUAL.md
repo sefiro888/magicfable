@@ -2,7 +2,9 @@
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,
-cada cinco minutos. No publicar ni hacer push automáticamente.
+cada cinco minutos. El usuario autorizó el 22 oct a las16:41 publicar el avance
+verificado para jugar y continuar hasta las20:00. Publicaciones posteriores
+requieren nueva petición; la automatización conserva su alcance local.
 
 ## Dirección y orden
 
@@ -30,7 +32,7 @@ global), **V** terminada y verificada.
 | 5 | Fiordo: renovación integral | A |
 | 6 | Claro: renovación integral | A |
 | 7 | Rompiente: pulido integral | A |
-| 8 | Gremio: pulido integral | P |
+| 8 | Gremio: pulido integral | A |
 | 9 | Jade: pulido integral | P |
 | 10 | Escalinata: pulido integral | P |
 | 11 | Escenario propio de Quinto Sol | P |
@@ -75,6 +77,32 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**16:44, Gremio validado y publicación solicitada.** `87625`: media y alta
+reducida verdes a ambas resoluciones; imágenes nativas revisadas. Suite completa:
+78 activas verdes,37 omitidas en6,7min. Unitarias567/5, build/lint verdes.
+Engranajes24/12 con transmisión2:1 comprobada, colada en movimiento y estado
+estático reducido. Falta pulido global, incluido encuadre superior del horno.
+El usuario pide subir este avance para jugar y después continuar hasta20:00.
+Excluir las dos vistas WebP de Jade y sus dos módulos de arquitectura sin
+integrar del commit/publicación. Siguiente: Jade. No hay suites activas.
+
+**16:32, Gremio en gate final.** Primera imagen demasiado oscura sobre acero:
+aclarados albedo y reflejo local, conservando la clave fría. Horno acercado para
+que su boca y dovelas entren en encuadre. Matriz `14487`: cuatro verdes con
+sonda de transmisión2:1 y colada, quietas con movimiento reducido, e hitos
+dentro de cámara segura. Imágenes nativas revisadas. Unitarias `90355`:
+567/5; build `76269`, lint `18004`, verdes. Faltan media/alta reducida y suite
+completa antes de pasar #8 a A. Jade tiene paisaje original preparado, sin
+importar; excluir sus dos WebP del checkpoint. No duplicar procesos.
+
+**16:24, revisión de continuidad.** Gremio ya integrado, todavía sin validar:
+horno profundo de ladrillo y dovelas, engranajes24/12 acoplados, colada estrecha,
+patio de acero y materiales propios de hierro/bronce. Build `69009` y lint
+`33412` completados en verde. Se conservan todos los cambios. Primera matriz
+alta/baja en curso; no editar aplicación ni compilar durante sus capturas.
+Los tres escenarios siguientes y dos propios continúan pendientes: no afirmar
+que las50 estén terminadas. Fecha límite sigue20:00Europe/Madrid.
 
 **14:00, Rompiente validado como avance.** Matriz `47320`: cuatro verdes
 alta/baja ambas resoluciones. `74848`: media y alta reducida ambas resoluciones,

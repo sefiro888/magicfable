@@ -244,6 +244,13 @@ Los WebP no deben incluir marco, nombre, coste ni símbolos de interfaz. Peso ob
 
 ## Convención de nombres
 
+Gremio: calor industrial contenido, acero envejecido y bronce con poros y
+aceite separados del color. Horno de ladrillo refractario con dovelas y hogar
+profundo; transmisión de engranajes con módulo común y relación2:1. Colada
+estrecha protegida por acero. La luz fría mantiene legible el metal frente al
+ámbar del hogar. Evitar lava libre, ruedas lisas, dientes que se atraviesan y
+metal negro sin entorno suficiente.
+
 Rompiente: costa de pizarra, agua profunda azul gris, oleaje irregular y espuma
 rota en frentes oblicuos. Faro de costillas de hueso y bronce erosionado con
 linterna ámbar contenida. Reflejo planar único y roca con cavidades reales.

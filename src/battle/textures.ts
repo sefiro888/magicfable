@@ -2279,15 +2279,13 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
     // juego — todos los demás son piedra, arena, hielo o tierra — y por eso su
     // dibujo es el único que tiene simetría y piezas repetidas a propósito.
     //
-    // AVISO para quien toque el material: aquí NO se sube `metalness`. No hay
-    // mapa de entorno en ninguna escena, y el metal sin entorno que reflejar se
-    // apaga en vez de brillar (ya dejó las losas de basalto como un agujero
-    // negro). El acero se finge con rugosidad baja, arañazos claros y el
-    // rescoldo de las juntas, no con metalness.
+    // El acero renovado usa entorno propio de MaterialEnvironment. Su albedo
+    // debe ser más claro que el antiguo falso metal: con aquel tono y metalness
+    // real la mitad rival se convertía en un agujero negro.
     const base = context.createLinearGradient(0, 0, size, size);
-    base.addColorStop(0, '#8a8272');
-    base.addColorStop(0.5, '#756e60');
-    base.addColorStop(1, '#635d51');
+    base.addColorStop(0, '#b4b3ad');
+    base.addColorStop(0.5, '#a2a29c');
+    base.addColorStop(1, '#90928f');
     context.fillStyle = base;
     context.fillRect(0, 0, size, size);
 
@@ -2409,8 +2407,8 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       context.stroke();
     }
 
-    drawTileGroove(context, size, 0.55);
-    bakeEdgeShade(context, size, 0.34);
+    drawTileGroove(context, size, 0.18);
+    bakeEdgeShade(context, size, 0.06);
   } else if (style === 'tide') {
     // Plataforma de marea: la roca que el mar descubre y vuelve a tapar dos
     // veces al día. Es la losa con MÁS capas del juego, y a propósito: es el
@@ -2855,7 +2853,7 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
 
   // La junta del borde es lo MÁS hundido de la losa en todos los materiales:
   // es donde acaba la piedra. Se dibuja al final para que nada la pise.
-  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' || style === 'tide' ? 1.25 : Math.max(3, size * 0.03);
+  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' || style === 'tide' || style === 'forge' ? 1.25 : Math.max(3, size * 0.03);
   context.strokeStyle = dip(0.9);
   context.lineWidth = grooveWidth;
   context.strokeRect(grooveWidth / 2, grooveWidth / 2, size - grooveWidth, size - grooveWidth);

@@ -14,7 +14,7 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 565 en verde, 5 omitidos |
+| Tests | 567 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
@@ -22,8 +22,8 @@ en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegado
 78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `74848`: 78 e2e verdes,37 omitidas en5,9min
-(22 oct,14:00; variables de capturas opcionales limpias).
+Última pasada completa `87625`: 78 e2e verdes,37 omitidas en6,7min
+(22 oct,16:41; variables de capturas opcionales limpias).
 Playwright usa un worker y `channel: chromium`: el shell
 antiguo imponía SwiftShader aunque había una AMD Radeon disponible. El nuevo
 headless aprovecha Direct3D11, mantiene calidad, tiempos y trazas completas.
@@ -84,16 +84,21 @@ normales irregulares y reflejo planar único512/256/0; espuma fragmentada,
 sin aro blanco. Alta/media/baja y alta reducida a ambas resoluciones
 revisadas. Sondas reales de reflejo de costa, Santuario y Fiordo verdes.
 Gate565/5, build/lint y78/37 e2e verdes. Falta pulido global entre escenarios.
-Siguiente: Gremio. Paisaje original, materiales de hierro/bronce/ladrillo,
-horno profundo, engranajes24/12, patio y canal de colada preparados sin
-importar ni compilar. Ver registro para evitar duplicar procesos.
+Gremio integrado: paisaje original, materiales de hierro/bronce/ladrillo,
+horno profundo con abertura real, engranajes24/12 acoplados, patio y colada.
+Alta/media/baja y alta reducida revisadas a ambas resoluciones. Transmisión2:1
+y colada comprobadas;567/5, build/lint y78/37 e2e verdes. Falta pulido global.
+Siguiente: Jade. Paisaje original y dos módulos de arquitectura preparados
+sin integrar, excluidos de la publicación pedida por el usuario a las16:41.
+Ver registro para evitar duplicar procesos.
 Leer el registro para sesiones activas; no duplicar verificaciones.
 
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**
 Leer también `docs/RENOVACION-VISUAL.md`: contiene las 50 tareas autorizadas,
 el estado individual, capturas, verificaciones y el siguiente bloque. Primero
-cartas/tablero, combate e interfaz; escenarios después. No publicar automáticamente.
+cartas/tablero, combate e interfaz; escenarios después. El usuario pidió publicar
+el avance verificado el22oct a las16:41; después continuar localmente hasta20:00.
 
 ### Las 16 facciones
 
