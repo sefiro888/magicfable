@@ -415,14 +415,14 @@ export function TidalShore({ quality, reducedMotion, event }: TidalShoreProps) {
 
   return (
     <>
-      <color attach="background" args={['#1b3a4e']} />
+
       {/* Bruma marina. En el Fiordo el fallo fue que la niebla se comía las
           montañas; aquí me pasé al contrario y la puse a empezar en 30, cuando
           los farallones están entre 13 y 28: se quedaban fuera de ella, sin
           niebla que los integrara y a contraluz, o sea como recortes negros
           pegados al horizonte. Empezando en 16 la bruma los envuelve y pasan a
           ser fondo, que es lo suyo. */}
-      <fog attach="fog" args={['#7d8f8a', 16, 78]} />
+
 
       {/* LUZ. Sol de tarde por la izquierda, en línea con el faro.
           Primer intento: lo puse a [-16, 4.5, -9], o sea a 14 grados sobre el

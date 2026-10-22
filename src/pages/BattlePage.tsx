@@ -1202,6 +1202,7 @@ export function BattlePage() {
           handBarRef={handBarRef}
           endTurnRef={endTurnRef}
           onFinish={() => setTutorialActive(false)}
+          suspended={photoMode}
         />
       )}
 

@@ -27,7 +27,7 @@ global), **V** terminada y verificada.
 | 2 | Ciudadela: renovación integral | A |
 | 3 | Santuario: renovación integral | A |
 | 4 | Duna: renovación integral | A |
-| 5 | Fiordo: renovación integral | P |
+| 5 | Fiordo: renovación integral | A |
 | 6 | Claro: renovación integral | P |
 | 7 | Rompiente: pulido integral | P |
 | 8 | Gremio: pulido integral | P |
@@ -40,7 +40,7 @@ global), **V** terminada y verificada.
 | 15 | Transición entre tablero y entorno | C |
 | 16 | Materiales de piedra | C |
 | 17 | Materiales metálicos | C |
-| 18 | Materiales de hielo | P |
+| 18 | Materiales de hielo | C |
 | 19 | Agua | C |
 | 20 | Lava | A |
 | 21 | Arena, tierra y nieve | C |
@@ -75,6 +75,235 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**13:16, Fiordo validado y Claro siguiente.** Regresión `56191`: ocho verdes
+en AMD para Ciudadela/Caldera/Santuario/Duna en alta y ambas resoluciones;
+capturas nativas revisadas. Santuario mantiene reflejo real 0→14→0,512px.
+Con la matriz Fiordo, el gate561/5 y78/37, #5 pasa a A: aún falta cohesión y
+detalle final global. Se guarda checkpoint local sin push. Integrar ahora
+los seis auxiliares del Claro; su nueva tierra aún necesita build/lint y
+revisión. No hay ninguna suite activa. Servidor `55450` sigue en4173.
+
+**13:12, gate completo en GPU verde.** `19671`: 78 activas, 37 omitidas,
+seis minutos; unitarias561/5, build/lint verdes. Matriz Fiordo `54987`:
+cuatro verdes en45,8s (alta/baja, ambas resoluciones), capturas nativas
+revisadas, incluidas poses de foto. Fondo continuo y cartas legibles; los
+bancos de nieve y el casco aún admiten más detalle en el pulido global.
+Sonda de reflejo 0→234→0,512px. Regresión alta de los cuatro escenarios
+anteriores en curso `56191`, sin editar aplicación. El nuevo headless usa
+AMD real con trazas completas. Después checkpoint Fiordo/atmósfera/guía y
+continuación de Claro. Sus seis borradores y dos WebP se excluyen del checkpoint.
+
+**13:03, suite completa en hardware recién lanzada.** Unitarias561/5,
+build `88226`, lint `48311`, verdes. Tres casos críticos en AMD (`62377`)
+pasan en32,2s, frente a3,4min del emulador. Sin reducir gráficos ni tiempos;
+trazas completas restauradas. Registro recuperable
+`tools/captures/fiordo-full-hardware-20261022.log`. No editar aplicación,
+compilar ni lanzar otro Playwright mientras siga. Después repetir matriz de
+escenarios en AMD, cerrar checkpoint Fiordo/atmósfera/guía y continuar Claro.
+Los cinco borradores de Claro siguen sin importar, compilados/lintados, sin
+revisión visual; excluirlos del checkpoint. Servidor `55450`, 4173, conservado.
+
+**GPU real confirmada en `62377`: tres verdes en32,2s.** Nexo14,2s frente a
+~90s emulados; entrada4,2s frente a~60s; foto12,2s frente a49–57s. Mismos
+gráficos, aserciones y tiempos, **grabación completa de trazas restaurada**.
+El cuello era headless_shell/SwiftShader. `channel: chromium` usa el Chromium
+moderno ya instalado y devuelve AMD Radeon Direct3D11 en esta máquina. No se
+han cerrado navegadores del usuario ni instalado controladores. Se mantiene
+un worker para equipos/CI sin GPU. Gate final de config en curso; después
+suite completa y matriz visual en hardware. Los avances siguen sin push.
+
+**Cuello de botella identificado, no rebajar calidad.** Comparativa `89944`
+sin película: tres verdes, pero Nexo1,5min y entrada1min, apenas mejora. Se ha
+retirado esa reducción de diagnóstico: vuelve `trace: retain-on-failure` con
+película. Proceso inspeccionado: headless_shell imponía **SwiftShader**. El
+equipo tiene AMD Radeon; Chromium completo ya estaba instalado. Sonda real
+del nuevo headless devuelve **ANGLE AMD Radeon Direct3D11**, no emulación.
+La opción `channel: chromium` está documentada en los tipos locales de Playwright
+y ya configurada, con un worker y las mismas aserciones/tiempos/calidad.
+Sonda de Nexo/entrada/foto recién lanzada en GPU, log
+`tools/captures/fiordo-hardware-check-20261022.log`. Cámara registra ahora el
+renderer real en sus métricas. Después suite completa y nueva matriz visual.
+No editar aplicación ni compilar mientras siga. Servidor `55450` conservado.
+
+**Seis fallidas repetidas en `86621`: seis verdes (4,9 min), mismos tiempos.**
+La prueba de foto conserva el coach abierto y ya pasa. Aun con un worker,
+Nexo/entrada quedan cerca del límite. Se ha aislado otro coste de diagnóstico:
+las trazas filmaban continuamente el lienzo (88 fotogramas en Nexo, 56 en
+entrada, hasta302 en foto), forzando lecturas de WebGL. Métricas preservadas
+en `tools/captures/fiordo-serial-trace-metrics.json`. Configuración de trace
+ahora conserva DOM/pasos/red/fuentes y PNG del fallo, **sin película continua**;
+capturas artísticas explícitas intactas. No se cambian gráficos ni aserciones.
+Prueba comparativa de Nexo/entrada/foto **`89944` en curso**, log
+`tools/captures/fiordo-diagnostics-cost-20261022.log`. Después suite completa
+serial. No editar aplicación ni compilar mientras siga.
+
+**Gate de la corrección de guía:** unitarias `88789`, **561 verdes/5 omitidas**;
+build `75195`, lint `35969`, verdes. Se conservan las seis pruebas previas de
+GuidedTutorial y se añade la nueva: el diff del test es **16 líneas añadidas,
+cero borradas**. La primera edición había reemplazado ese archivo por error;
+recuperado desde el checkpoint sin perder pruebas. No usar el recuento555 de
+la ejecución intermedia como gate válido.
+
+Repetición de las seis fallidas con un worker y trazas activas recién lanzada;
+log `tools/captures/fiordo-failed-serial-20261022.log`. No editar aplicación,
+compilar ni lanzar otra suite mientras siga. Después suite completa serial.
+Sin intervención necesaria; servidor `55450`, puerto4173, conservado.
+
+**12:35, suite `45590` terminada: 72 verdes, 6 fallos, 37 omitidas (15,5 min).**
+Trazas preservadas en `tools/captures/fiordo-e2e-failures-v1/`, antes de cualquier
+repetición. Se confirma Resaca devuelve y=1 con respuesta4126ms. El módulo de
+Jugar llegó en3ms: no hubo descarga fallida; su presentación se retrasó.
+Además hay fallo concreto de interfaz: la guía interceptaba el clic del
+tablero en modo foto. Corregido: guía suspendida al fotografiar **sin desmontar
+su estado**, texto deja pasar clics y solo «Saltar guía» los recibe. Test de
+componente verifica recuperar un paso ya avanzado; e2e de foto mantiene la
+guía abierta deliberadamente, exige ocultarla/reponerla y comprueba despliegue.
+
+Playwright pasa a **un worker**, sin ampliar tiempos, omitir pruebas ni cambiar
+calidad. Gate en curso: unitarias `39726`, build `75195`, lint `58498`.
+Después repetir las seis fallidas (`--last-failed`) y suite completa.
+No hay navegadores de pruebas activos ahora. Servidor `55450` conservado.
+
+**Suite completa `45590` con fallos, todavía en curso.** No dar Fiordo por
+cerrado ni hacer checkpoint final todavía. Fallan flujo Galería→Jugar,
+Resaca1920 y repetición de caída del Nexo1920. Trazas revisadas: en Resaca,
+la lectura devuelve la posición **correcta y=1**, pero tarda **4126 ms** y
+la espera de 5 s caduca por coste total; varias pulsaciones duran 3–6 s.
+El Nexo llega al resumen pero la vuelta al mulligan se retrasa. Apunta a
+contención de rasterizado con dos contextos WebGL, no cambiar reglas ni
+ampliar esperas para ocultarlo. Al acabar, guardar trazas y repetir esos tres
+casos con un solo worker, mismos criterios. Revisar también navegación de
+galería antes de asumir que sea solo carga. No editar fuentes importadas ni
+lanzar otro navegador mientras esta suite continúe.
+
+**22 oct, cierre Fiordo.** Matriz final `10120` cuatro verdes; regresión
+`26923` 14 verdes y **todas sus imágenes revisadas**. Media/alta reducida
+`12053`: cuatro verdes a ambas resoluciones; registro en
+`tools/captures/fiordo-quality-20261022.log`. Unitarias `66698`: 560/5. Build
+final `87502`, lint `19658`, verdes, incluidos los borradores sin importar de
+Claro. **Suite completa `45590` en curso**, registro recuperable
+`tools/captures/fiordo-full-e2e-20261022.log`. No editar fuentes importadas,
+compilar ni lanzar otro Playwright mientras siga. Después checkpoint Fiordo
+y empezar Claro. El aspecto nativo aún necesita el pulido global comparado;
+no afirmar las 50 tareas terminadas.
+
+Preparación Claro: `AncientOak.tsx`, `ancientRootGeometry.ts`, `barkMaterial.ts`,
+`fernGeometry.ts` y `FernUnderstory.tsx` **sin importar**, compilados/lintados
+pero sin comprobar en WebGL. Excluirlos del checkpoint Fiordo, igual que sus
+dos WebP. Panorama optimizado: alta685636 bytes, baja174186 bytes; maestro y
+prompt conservados, procedencia en `docs/arte-escenarios.md`. No regenerarlo.
+No hay generaciones activas. Servidor `55450`, 4173, conservado; ningún push.
+
+**Regresión de atmósfera `26923` cerrada: 14 verdes.** Ciudadela/Caldera/
+Santuario/Duna en alta con modo foto; Claro/Rompiente/Gremio/Jade/Escalinata
+en baja a ambas resoluciones. Fondo y niebla reales no nulos. Reflejo del
+Santuario conserva **0→12→0 píxeles** tras activar la niebla. Sin errores de
+consola. Fiordo final conserva **0→234→0**, RT512; pasada principal 323
+llamadas/60880 triángulos (no suma captura). Falta revisar todas las imágenes
+de esta regresión. Media/alta reducida Fiordo se ejecutan a continuación;
+registro `tools/captures/fiordo-quality-20261022.log`. Después suite completa.
+No editar fuentes importadas ni compilar hasta acabar los navegadores.
+
+Claro: añadidos borradores sin importar `fernGeometry.ts` y `FernUnderstory.tsx`,
+frondes pinnadas con raquis, foliolos plegados e instancias, viento contenido
+a 12 Hz, quieto en baja/reducido. Aún sin compilar ni ver en WebGL. Excluir
+del checkpoint Fiordo junto con raíz y corteza. No hay generación activa.
+
+**22 oct, 12:06. Fiordo, matriz final `10120`: cuatro verdes.** Revisadas
+imágenes alta/baja, ambas resoluciones, mano visible/recogida y modo foto.
+Nieve sin recorte de triángulos también en baja; losas sin sombra ancha pintada.
+Gate `66698`: **560 verdes/5 omitidas**, build `15912`, lint `3758`, verdes.
+Regresión atmosférica **`26923` en curso**: cuatro escenarios renovados en
+alta a 1920 con modo foto y reflejo del Santuario; después los otros cinco
+en baja a ambas resoluciones (14 casos en total). Registro recuperable en
+`tools/captures/atmosphere-regression-20261022.log`. **No editar fuentes
+importadas ni compilar mientras siga.** No lanzar otro Playwright en paralelo.
+Después: media y alta reducida Fiordo, suite completa, checkpoint y Claro.
+Servidor `55450`, puerto 4173, conservado. Ningún push.
+
+Preparación de Claro durante la regresión: `architecture/ancientRootGeometry.ts`
+y `materials/barkMaterial.ts` son borradores **sin importar ni compilar**.
+Curvas de raíces con contrafuertes, variación de radio y corteza longitudinal
+propia con mapas de color/relieve/rugosidad separados. Excluir del checkpoint
+Fiordo. No integrar hasta acabar las verificaciones en curso. El panorama de
+Claro está preservado, con prompt y procedencia en `docs/arte-escenarios.md`.
+
+**Fiordo, revisión final en curso.** Matriz `77339`: cuatro verdes, pero las
+crestas de nieve mostraban recortes de triángulo. Corregido con alfa por vértice
+según altura/pendiente y desvanecido granular; las orillas se estrechan hacia
+primer plano. No ocultar el defecto solo aumentando resolución. Gate actual:
+unitarias `66698`, build `15912`, lint `3758`. Después repetir matriz Fiordo,
+cerrar aspecto y lanzar las regresiones de atmósfera enumeradas abajo.
+Unitarias anteriores `17927`: **560 verdes/5 omitidas**. Las dos orillas se
+comprueban por raycast con caras superiores visibles en alta y baja.
+
+**22 oct, 12:00. Tercera matriz `55338`: cuatro verdes, pero hielo lateral
+rechazado por acabado.** Las seis piezas aisladas seguían pareciendo prismas,
+aunque estuvieran volcadas. Sustituidas por **dos orillas continuas** de hielo
+roto por presión: superficie transversal elevada, frente irregular, nieve
+solo en crestas de pendiente apta y costura sumergida en el lago. Nuevo
+`glacierBankGeometry.ts`, menor número de objetos y topología escalada por
+calidad. La sonda de reflejo altera ahora una orilla; los hitos salen de sus
+coordenadas reales. Build `69227` y lint `25127` verdes. Unitarias `17927` en
+curso, añaden comprobación de caras superiores en ambas orillas/ambas calidades.
+Después repetir matriz antes de aceptar #5. No hay navegadores activos ahora.
+Fuentes importadas libres hasta arrancar esa matriz. Servidor `55450` conservado.
+
+**22 oct, 11:58. Segunda matriz Fiordo `89595`: cuatro verdes.** Fondo real
+`17232e`, estable en modo foto; reflejo probado **0→145→0 píxeles**. Alta:
+334 llamadas/50894 triángulos en pasada principal, sin sumar captura planar.
+Imágenes revisadas: queda demasiado uniforme la nieve y demasiado vertical
+la alineación de hielo. No subir #5 a A todavía. Ajuste posterior ya escrito:
+escarcha de ruido periódico multiescala (sin ondas sinusoidales visibles),
+bloques volcados de tamaños distintos, estratos más finos, textura granular
+de nieve y sombra de contacto para el casco. Nuevos hitos proyectados desde
+la transformación real de los bloques. Sonda preparada para los diez escenarios
+y ahora exige también niebla real no nula. **Gate actual**: unitarias `4272`,
+build `22214`, lint `7771`, en curso; después nueva matriz Fiordo.
+
+Regresión obligatoria pendiente antes de guardar: Ciudadela/Caldera/Santuario/
+Duna en alta, con dos poses de foto y reflejo del Santuario; los otros cinco
+escenarios en baja a ambas resoluciones para comprobar la niebla recién activa.
+Después media/alta reducida Fiordo y suite completa. No hay WebGL en ejecución
+ahora. Servidor `55450` conservado, puerto 4173. Ningún push.
+
+**22 oct, 11:55. Primera matriz Fiordo `51482`, cuatro fallos útiles:** fondo
+real null en las cuatro variantes. No se han validado estas capturas. Causa
+encontrada: todos los escenarios adjuntaban color/niebla al Group que rota para
+el invitado, no a Scene. No era una limpieza del fallback. La primera hipótesis
+se ha retirado. `ScenarioAtmosphere.tsx` centraliza perfiles y se monta como
+hijo directo de Scene; retirados los veinte attach locales ineficaces. Esto
+activa también la niebla prevista, así que revisar **los diez escenarios**.
+Sonda exige fondo no nulo y estable al girar, sin relajar la comprobación.
+
+Fiordo ajustado tras la imagen fallida: menos contorno de celdas en el hielo,
+fisuras finas discontinuas, escarcha interrumpida por viento en vez de marco
+blanco continuo, fracturas laterales sin escalones de caja y mapa estratificado,
+barco más visible y madera aclarada. Build `68301`, lint `77742` en curso.
+Unitarias anteriores `59587`: **559 verdes/5 omitidas**, incluido apoyo de la
+diagonal y nieve fuera del tablero. Servidor `55450`, puerto 4173, conservado.
+
+Claro preparado mientras se verificaba Fiordo: nuevo paisaje original visto
+y copiado a `tools/art-inbox/scenery/grove-vista-v1.png`, prompt junto a él.
+Original `exec-f51c32ad-438f-4a77-b55f-a8f6ccef853c.png` en la carpeta imagegen
+del chat. **Sin optimizar ni integrar**, no regenerarlo. Sin generaciones activas.
+
+**22 oct, 11:48. Checkpoint Duna `b44c165`, sin push. Fiordo integrado.**
+Placa irregular con nieve solo en la orla, fracturas laterales de hielo,
+barco abierto de tracas/costillas/proas con madera propia y paisaje original.
+ReflectiveWater admite superficie congelada sin ondas: textura de datos de
+fisuras/escarcha/aire, captura única512/256 en alta/media y baja sin captura.
+El lago exterior usa material congelado mate y no crea otra captura.
+Casillas de hielo biseladas y punto del Nexo contenido, piedra de granito.
+
+El fallback de carga ya usa una cúpula temporal en vez de adjuntar otro
+scene.background: su desmontaje podía restaurar null después del color del
+escenario. Hipótesis implementada, **todavía por comprobar en WebGL**. Las
+sondas miden color real de fondo y lo exigen estable tras dos poses de foto.
+Build `77896`, lint `36343`, unitarias `59587` en curso. Después matriz Fiordo,
+ajustes y regresión Ciudadela/Caldera/Santuario/Duna (fondo/reflejo de agua).
+No hay navegadores de prueba activos ahora. Servidor `55450` en 4173.
 
 **22 oct, 11:43. Duna verificada.** Gate 558 unitarias/5 omitidas, build y
 lint verdes; suite completa `68781`: **78/37**. Matriz alta/baja `23402`:

@@ -14,7 +14,7 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 558 en verde, 5 omitidos |
+| Tests | 561 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
@@ -22,9 +22,11 @@ en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegado
 78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `68781`: 78 e2e verdes, 37 omitidas (22 oct, 11:39). El campo ampliado
-saturaba el rasterizado por CPU con tres navegadores. La configuración usa
-dos, sin ampliar límites de comprobación. No compilar a la vez que WebGL.
+Última pasada completa `19671`: 78 e2e verdes, 37 omitidas en seis minutos
+(22 oct, 13:09). Playwright usa un worker y `channel: chromium`: el shell
+antiguo imponía SwiftShader aunque había una AMD Radeon disponible. El nuevo
+headless aprovecha Direct3D11, mantiene calidad, tiempos y trazas completas.
+No compilar ni modificar fuentes importadas mientras se verifica WebGL.
 El campo renderiza bajo demanda con movimiento reducido o tras un modal
 opaco, conservando reloj de reglas y actualizaciones de React/OrbitControls.
 La pose reducida se aplica directamente: no depende de fotogramas futuros.
@@ -59,10 +61,17 @@ Panorama original y arena granular. Casillas de arenisca con relieve fino,
 bisel y juntas estrechas; la ondulación exterior ya no parece madera en ellas.
 Alta/baja y alta reducida a ambas resoluciones revisadas, mano visible/oculta
 y dos poses de foto. Unitarias 558/5, build/lint y suite completa 78/37 verdes.
-Media y alta reducida también verdes a ambas resoluciones. Queda pulido global, incluido el fondo negro
-fuera de la banda de pintura al orbitar (comprobar attach del fallback).
-Siguiente: integrar Fiordo. Panorama y borradores de placa, escarcha, casco
-naval y fracturas próximos preparados, **sin importar ni verificar todavía**.
+Media y alta reducida también verdes a ambas resoluciones. Queda pulido global.
+Fiordo integrado: placa irregular con nieve periférica, hielo profundo con
+fracturas finas y reflejo planar único, orillas continuas, casco naval abierto
+con tablas y costillas, panorama original y bruma baja. Alta/media/baja y
+movimiento reducido comprobados; matriz alta/baja también revisada en GPU.
+Se corrigió un fallo compartido: background/fog estaban unidos al Group
+giratorio en vez de Scene. `ScenarioAtmosphere` debe seguir fuera de ese grupo.
+La guía inicial ya no intercepta el campo y se suspende en foto conservando
+su paso. Las seis pruebas originales de guía siguen presentes, más una nueva.
+Siguiente: integrar Claro. Panorama y seis auxiliares de botánica/suelo
+preparados, **sin importar ni verificar visualmente todavía**.
 Leer el registro para sesiones activas; no duplicar verificaciones.
 
 

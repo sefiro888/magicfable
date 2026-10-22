@@ -169,8 +169,8 @@ function Obelisk({ side, quality }: { side: -1 | 1; quality: GraphicsQuality }) 
  * el mediodía, y el lapislázuli/lino evita que todo sea una mancha dorada. */
 export function DunaNecropolis({ quality, reducedMotion }: DunaProps) {
   return <>
-    <color attach="background" args={['#d8c5a8']} />
-    <fog attach="fog" args={['#d4bd97', 22, 60]} />
+
+
     <ambientLight intensity={0.25} color="#d0cbba" />
     <hemisphereLight intensity={0.35} color="#c0d1df" groundColor="#b29a6e" />
     <directionalLight position={[-6, 12, 5]} intensity={2.65} color="#fff0d2" castShadow={quality !== 'low'}

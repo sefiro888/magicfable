@@ -581,12 +581,12 @@ export function JadeCourt({ quality, reducedMotion, event }: JadeCourtProps) {
 
   return (
     <>
-      <color attach="background" args={['#1d2436']} />
+
       {/* Calima del amanecer. Empieza en 18, ANTES de donde está el decorado
           (farolillos a 11, puerta de la luna a 16, pabellón a 26): si empezara
           después, esas piezas quedarían fuera de la niebla y recortadas contra
           el cielo. Es el fallo que cometí en el Rompiente. */}
-      <fog attach="fog" args={['#8f9aa8', 18, 74]} />
+
 
       {/* LUZ. Sol de amanecer bajo por la derecha, a unos 33 grados sobre el
           horizonte. La cuenta que gobierna esto: sobre una superficie

@@ -25,8 +25,8 @@ export async function waterConfiguration(page: Page, moduleUrl: string) {
 
 /** Cambiar una piedra real debe cambiar los píxeles del reflejo. Esta sonda
  * evita aceptar como reflejo una textura fija o una captura vacía. */
-export async function reflectionProbe(page: Page, moduleUrl: string) {
-  return page.evaluate(async (url) => {
+export async function reflectionProbe(page: Page, moduleUrl: string, objectName = 'sanctuary-stone-11') {
+  return page.evaluate(async ({ url, objectName }) => {
     const module = await import(url) as {
       _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState: () => RootState } }>
     }
@@ -41,7 +41,7 @@ export async function reflectionProbe(page: Page, moduleUrl: string) {
       if (texture?.renderTarget) target = texture.renderTarget as WebGLRenderTarget
     })
     if (!target) throw new Error('No se ha creado la captura planar del lago.')
-    const stone = state.scene.getObjectByName('sanctuary-stone-11') as Mesh | undefined
+    const stone = state.scene.getObjectByName(objectName) as Mesh | undefined
     if (!stone) throw new Error('No se encontró la piedra que debe reflejarse.')
     const original = stone.material as MeshStandardMaterial
     const magenta = original.clone()
@@ -76,5 +76,5 @@ export async function reflectionProbe(page: Page, moduleUrl: string) {
       await frames()
     }
     return { before, after, restored: count(), width: target.width, height: target.height }
-  }, moduleUrl)
+  }, { url: moduleUrl, objectName })
 }

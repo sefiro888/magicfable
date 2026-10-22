@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
-/** Enters a fresh battle past the welcome guide and mulligan. */
-const enterBattle = async (page: Page, seed?: number) => {
+/** La guía puede permanecer abierta para comprobar que no roba los clics. */
+const enterBattle = async (page: Page, seed?: number, skipTutorial = true) => {
   await page.goto(seed === undefined ? '/battle' : `/battle?seed=${seed}`)
   await page.getByRole('button', { name: /Entendido, a jugar/i }).click()
   const keep = page.getByRole('button', { name: /Conservar las cinco/i })
@@ -10,7 +10,7 @@ const enterBattle = async (page: Page, seed?: number) => {
   // El coach interactivo solo sale la primera vez: si no está, no hay que
   // esperarle los 30 s del test entero — con varios workers en paralelo, esa
   // espera bastaba para agotar el tiempo antes de empezar la prueba.
-  await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 3000 }).catch(() => {})
+  if (skipTutorial) await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 3000 }).catch(() => {})
 }
 
 test('la tecla E finaliza el turno como el botón', async ({ page }) => {
@@ -58,7 +58,9 @@ test('modo foto muestra el aviso y bloquea el despliegue en el tablero', async (
   test.setTimeout(60_000)
   // Semilla fija: la prueba necesita una unidad desplegable en la mano inicial
   // y con mano aleatoria fallaba de vez en cuando sin que hubiera nada roto.
-  await enterBattle(page, 1311657807)
+  await enterBattle(page, 1311657807, false)
+  const lesson = page.getByRole('heading', { name: 'Juega una fuente', exact: true })
+  await expect(lesson).toBeVisible()
   await page.keyboard.press('Control+Shift+KeyD')
   const essence = page.getByRole('button', { name: '+1 Esencia' })
   await essence.waitFor({ state: 'visible' })
@@ -68,6 +70,7 @@ test('modo foto muestra el aviso y bloquea el despliegue en el tablero', async (
   await toggle.click()
   await expect(page.getByRole('status').filter({ hasText: 'Modo foto' })).toBeVisible()
   await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  await expect(lesson).toBeHidden()
 
   // Con el modo foto activo, un clic en el tablero no debe desplegar nada.
   const unit = page.locator('[class*="fanCard"]').filter({ hasText: /Unidad/ }).first()
@@ -80,6 +83,7 @@ test('modo foto muestra el aviso y bloquea el despliegue en el tablero', async (
   // Al salir, el mismo clic sí despliega la unidad seleccionada.
   await page.getByRole('button', { name: /Salir del modo foto/i }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Modo foto' })).toBeHidden()
+  await expect(lesson).toBeVisible()
   await board.click({ position: { x: 640, y: 380 } })
   await expect(page.getByText(/entra en juego/i).first()).toBeVisible({ timeout: 10_000 })
 })

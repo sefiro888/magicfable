@@ -432,12 +432,12 @@ export function ForgeYard({ quality, reducedMotion, event }: ForgeYardProps) {
 
   return (
     <>
-      <color attach="background" args={['#14100c']} />
+
       {/* Humo en suspensión. Empieza en 14, ANTES de donde está el decorado
           (los volantes a 12, la chatarra a 10-20, el horno a 24): si empezara
           después, esas piezas quedarían fuera de la niebla y a contraluz, o sea
           recortadas en negro. Es el fallo que cometí en el Rompiente. */}
-      <fog attach="fog" args={['#3a2b22', 14, 62]} />
+
 
       {/* LUZ. Clave cálida y alta por la izquierda, a unos 34 grados: por
           debajo de 30 el tablero recibiría demasiado poco (a 14 grados llega

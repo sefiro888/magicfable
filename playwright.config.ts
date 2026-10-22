@@ -7,16 +7,19 @@ export default defineConfig({
   /**
    * Cada prueba levanta un tablero WebGL real y, sin GPU, Chromium lo rasteriza
    * por software. Con los escenarios nuevos (plaza, columnata, lago, lava) eso
-   * pesa lo suyo. Con el lienzo a ancho completo, tres navegadores llegaron
-   * a tardar varios segundos por pulsación bajo rasterizado por CPU y hasta
-   * retrasaban la carga de rutas. Dos evitan esa contención sin ampliar los
-   * límites de las comprobaciones ni reducir la calidad que estas verifican.
+   * pesa lo suyo. Al activar la niebla real, dos contextos simultáneos llegaron
+   * a tardar 3–6 s por pulsación: una sonda leyó la posición correcta, pero su
+   * respuesta tardó 4,1 s y agotó la espera total. Un contexto evita esa
+   * contención sin ampliar los límites ni reducir la calidad comprobada.
    */
-  workers: 2,
+  workers: 1,
   timeout: 60_000,
   reporter: 'list',
   use: {
     baseURL: 'http://127.0.0.1:4173',
+    // El shell antiguo forzaba SwiftShader incluso con una Radeon disponible.
+    // Chromium moderno usa la GPU real cuando existe y conserva fallback en CI.
+    channel: 'chromium',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

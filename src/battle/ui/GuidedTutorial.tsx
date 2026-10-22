@@ -58,6 +58,7 @@ interface GuidedTutorialProps {
   readonly handBarRef: RefObject<HTMLElement | null>
   readonly endTurnRef: RefObject<HTMLButtonElement | null>
   readonly onFinish: () => void
+  readonly suspended?: boolean
 }
 
 /**
@@ -65,7 +66,7 @@ interface GuidedTutorialProps {
  * golpe, señala la jugada concreta que toca hacer y avanza solo cuando el
  * motor confirma que ocurrió, no con un botón «siguiente».
  */
-export function GuidedTutorial({ match, handBarRef, endTurnRef, onFinish }: GuidedTutorialProps) {
+export function GuidedTutorial({ match, handBarRef, endTurnRef, onFinish, suspended = false }: GuidedTutorialProps) {
   const [index, setIndex] = useState(0)
   const step = STEPS[index]
   const player = match.players.player
@@ -125,10 +126,12 @@ export function GuidedTutorial({ match, handBarRef, endTurnRef, onFinish }: Guid
     }, [targetsHand, targetCardId, handBarRef, step?.id, endTurnRef])
   const rect = useTrackedRect(
     getTargetElement,
-    Boolean(step && (targetsHand || step.id === 'endTurn')),
+    Boolean(!suspended && step && (targetsHand || step.id === 'endTurn')),
   )
 
-  if (!step) return null
+  // Mantener el componente conserva el paso y sus referencias de inicio al
+  // salir del modo foto; desmontarlo volvería a pedir una fuente ya jugada.
+  if (!step || suspended) return null
 
   const calloutStyle = rect
     ? { top: rect.top, left: rect.left + rect.width / 2 }

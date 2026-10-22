@@ -456,7 +456,7 @@ export function WheelGhat({ quality, reducedMotion, event }: WheelGhatProps) {
 
   return (
     <>
-      <color attach="background" args={['#2a2438']} />
+
       {/* Bruma del amanecer sobre el río. Empieza en 12, ANTES de todo el
           decorado (ruedas a 8, lámparas a 10,5, escalinata a 12,5): si empezara
           después, esas piezas quedarían fuera de ella y recortadas.
@@ -466,7 +466,7 @@ export function WheelGhat({ quality, reducedMotion, event }: WheelGhatProps) {
           sí anaranjada, la escena entera salió del mismo óxido: suelo, terraza,
           tablero y ruedas indistinguibles. La bruma de un río al amanecer es
           azulada, y esa frialdad es justo lo que devuelve la profundidad. */}
-      <fog attach="fog" args={['#9aa4b8', 12, 58]} />
+
 
       {/* LUZ. Sol de amanecer bajo por la izquierda, a unos 34 grados sobre el
           horizonte: por debajo de 30 el tablero recibiría demasiado poco (a 14

@@ -1,5 +1,5 @@
-/* Capa de coach: nunca bloquea el tablero, solo el propio bloque de texto
-   recibe clics (para el botón de saltar). */
+/* El texto no intercepta jugadas ni cámara. Solo el botón recibe clics:
+   el recuadro entero podía tapar una casilla incluso en modo foto. */
 .layer {
   position: fixed;
   inset: 0;
@@ -18,7 +18,7 @@
 .calloutAnchored,
 .calloutFloating {
   position: fixed;
-  pointer-events: auto;
+  pointer-events: none;
   width: 236px;
   padding: 13px 15px 12px;
   border: 1px solid var(--line-bright, rgba(232, 205, 133, 0.5));
@@ -76,6 +76,7 @@
 }
 
 .skip {
+  pointer-events: auto;
   display: block;
   width: 100%;
   padding: 6px 8px;

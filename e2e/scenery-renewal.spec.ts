@@ -5,11 +5,23 @@ import { CARD_BY_ID, STARTER_DECKS, createMatch, type BoardPiece, type MatchStat
 import { cameraSnapshot, fiberModuleUrl, poseCamera } from './helpers/cameraSnapshot'
 import { reflectionProbe, waterConfiguration } from './helpers/reflectionProbe'
 import type { GraphicsQuality } from '../src/store/preferences'
+import { glacierBankPoint } from '../src/battle/scenarios/architecture/glacierBankGeometry'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
-const scenario = process.env.SCENERY === 'duna' ? 'duna' : process.env.SCENERY === 'sanctuary' ? 'sanctuary' : process.env.SCENERY === 'caldera' ? 'caldera' : 'aether-citadel'
-const prefix = (scenario === 'duna' ? 'duna' : scenario === 'sanctuary' ? 'santuario' : scenario === 'caldera' ? 'caldera' : 'ciudadela') + (process.env.SCENERY_REDUCED ? '-quieto' : '')
-const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium'] : process.env.SCENERY_QUALITY === 'high' ? ['high'] : ['high', 'low']
+const scenarios = ['aether-citadel', 'sanctuary', 'caldera', 'duna', 'fimbul', 'grove', 'shore', 'foundry', 'jade-court', 'wheel-ghat'] as const
+const scenario = scenarios.find((id) => id === process.env.SCENERY) ?? 'aether-citadel'
+const names = { 'aether-citadel': 'ciudadela', sanctuary: 'santuario', caldera: 'caldera', duna: 'duna',
+  fimbul: 'fiordo', grove: 'claro', shore: 'rompiente', foundry: 'gremio', 'jade-court': 'jade', 'wheel-ghat': 'escalinata' } as const
+const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '')
+const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium']
+  : process.env.SCENERY_QUALITY === 'high' ? ['high'] : process.env.SCENERY_QUALITY === 'low' ? ['low'] : ['high', 'low']
+const landmarks: Partial<Record<typeof scenario, readonly (readonly [number, number, number])[]>> = {
+  fimbul: [[-3.57, 1.61, -8.2], glacierBankPoint(-1, 0.46, 0.12), glacierBankPoint(1, 0.46, 0.12)],
+  duna: [[-2.15, 1.59, -8.15], [-6.08, 2.05, -3.3], [6.08, 2.05, -3.3]],
+  sanctuary: [[0, 1.47, -7.5], [-5.5, 1.8, -3.8], [5.55, 2.05, -3.5]],
+  caldera: [[-5.4, 0.8, -5.3], [-6.5, 0.8, -2.8], [6.5, 0.8, -2.8]],
+  'aether-citadel': [[0, 2.01, -7.35], [-5.22, 2.61, -2.65], [5.22, 2.61, -2.65]],
+}
 
 for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
   for (const quality of qualities) {
@@ -47,17 +59,19 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       await expect(page.locator('[data-mine]').filter({ hasText: 'Sabueso de Brasa' })).toBeVisible({ timeout: 25000 })
       await page.waitForTimeout(2000)
       const camera = await cameraSnapshot(page, url)
-      if (scenario === 'sanctuary') {
+      expect(camera.background).not.toBeNull()
+      expect(camera.fog).not.toBeNull()
+      if (scenario === 'sanctuary' || scenario === 'fimbul') {
         const water = await waterConfiguration(page, url)
         expect(water.enabled).toBe(quality === 'low' ? 0 : 1)
         expect(water.size).toBe(quality === 'high' ? 512 : quality === 'medium' ? 256 : 0)
-        if (reduced) expect(water.time).toBe(0)
+        if (reduced || scenario === 'fimbul') expect(water.time).toBe(0)
       }
       const viewProjection = new Matrix4().fromArray(camera.projection)
         .multiply(new Matrix4().fromArray(camera.matrixWorld).invert())
       // Se verifica el remate del edificio y ambos pórticos contra la cámara
       // real, además de mirar las imágenes: no volver a aceptar un hito invisible.
-      for (const point of scenario === 'duna' ? [[-2.15, 1.59, -8.15], [-6.08, 2.05, -3.3], [6.08, 2.05, -3.3]] : scenario === 'sanctuary' ? [[0, 1.47, -7.5], [-5.5, 1.8, -3.8], [5.55, 2.05, -3.5]] : scenario === 'caldera' ? [[-5.4, 0.8, -5.3], [-6.5, 0.8, -2.8], [6.5, 0.8, -2.8]] : [[0, 2.01, -7.35], [-5.22, 2.61, -2.65], [5.22, 2.61, -2.65]]) {
+      for (const point of landmarks[scenario] ?? []) {
         const projected = new Vector3(...point).applyMatrix4(viewProjection)
         const x = camera.canvas.x + (projected.x + 1) / 2 * camera.canvas.width
         const y = camera.canvas.y + (1 - projected.y) / 2 * camera.canvas.height
@@ -75,16 +89,18 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         await page.getByRole('button', { name: /Modo foto/i }).click()
         const distant = await poseCamera(page, url, [0, 16, 20])
         expect(distant.position[2]).toBeCloseTo(20, 1)
+        expect(distant.background).toBe(camera.background)
         await page.waitForTimeout(500)
         await page.screenshot({ path: `e2e/__shots__/${prefix}-foto-lejana.png` })
         const rotated = await poseCamera(page, url, [20, 12, 8])
         expect(rotated.position[0]).toBeCloseTo(20, 1)
+        expect(rotated.background).toBe(camera.background)
         await page.waitForTimeout(500)
         await page.screenshot({ path: `e2e/__shots__/${prefix}-foto-orbita.png` })
       }
-      if (scenario === 'sanctuary' && width === 1920 && quality === 'high') {
-        const reflection = await reflectionProbe(page, url)
-        writeFileSync('tools/captures/santuario-reflection.json', JSON.stringify(reflection, null, 2))
+      if ((scenario === 'sanctuary' || scenario === 'fimbul') && width === 1920 && quality === 'high') {
+        const reflection = await reflectionProbe(page, url, scenario === 'fimbul' ? 'fimbul-bank--1' : 'sanctuary-stone-11')
+        writeFileSync(`tools/captures/${prefix}-reflection.json`, JSON.stringify(reflection, null, 2))
         expect(reflection.width).toBe(512)
         expect(reflection.after - reflection.before).toBeGreaterThan(4)
         expect(reflection.restored).toBeLessThanOrEqual(reflection.before + 2)

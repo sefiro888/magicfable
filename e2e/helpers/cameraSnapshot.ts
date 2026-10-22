@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import type { RootState } from '@react-three/fiber'
+import type { Color } from 'three'
 
 /** Usar el módulo optimizado que cargó la página evita consultar otro mapa
  * de raíces tras una recarga de Vite. Registrar la espera antes de goto. */
@@ -22,6 +23,9 @@ export async function cameraSnapshot(page: Page, moduleUrl: string) {
     const state = module._roots.get(canvas)?.store.getState()
     if (!state) throw new Error('La raíz de Three no pertenece al módulo observado.')
     state.camera.updateMatrixWorld()
+    const context = state.gl.getContext()
+    const debug = context.getExtension('WEBGL_debug_renderer_info')
+    const renderer = String(context.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : context.RENDERER))
     const rect = (element: Element) => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return { x, y, width, height }
@@ -30,7 +34,9 @@ export async function cameraSnapshot(page: Page, moduleUrl: string) {
       canvas: rect(canvas), safe: rect(safe), position: state.camera.position.toArray(),
       matrixWorld: [...state.camera.matrixWorld.elements],
       projection: [...state.camera.projectionMatrix.elements],
-      rendering: { calls: state.gl.info.render.calls, triangles: state.gl.info.render.triangles,
+      background: (state.scene.background as Color | null)?.getHexString?.() ?? null,
+      fog: state.scene.fog?.color.getHexString() ?? null,
+      rendering: { renderer, calls: state.gl.info.render.calls, triangles: state.gl.info.render.triangles,
         geometries: state.gl.info.memory.geometries, textures: state.gl.info.memory.textures },
     }
   }, moduleUrl)

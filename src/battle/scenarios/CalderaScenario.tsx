@@ -140,8 +140,8 @@ export function CalderaScenario({ quality, reducedMotion, event }: CalderaScenar
     if (!reducedMotion && (event?.type === 'nexus-damage' || event?.type === 'victory' || event?.type === 'destroy')) flare.current = 1
   }, [event, reducedMotion])
   return <>
-    <color attach="background" args={['#20242d']} />
-    <fog attach="fog" args={['#35343c', 18, 49]} />
+
+
     <ambientLight intensity={0.3} color="#9ba8c5" />
     <hemisphereLight intensity={0.45} color="#a5b6d8" groundColor="#70371e" />
     <directionalLight position={[-6, 11, 7]} intensity={2.3} color="#ffd8b6" castShadow={quality !== 'low'}

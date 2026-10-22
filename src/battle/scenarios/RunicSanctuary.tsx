@@ -158,8 +158,8 @@ export function RunicSanctuary({ quality, reducedMotion, event }: SanctuaryProps
     if (!reducedMotion && (event?.type === 'turn' || event?.type === 'nexus-damage' || event?.type === 'victory')) pulse.current = 1
   }, [event, reducedMotion])
   return <>
-    <color attach="background" args={['#121e28']} />
-    <fog attach="fog" args={['#253742', 20, 52]} />
+
+
     <ambientLight intensity={0.32} color="#9ba9b6" />
     <hemisphereLight intensity={0.36} color="#b1c2cd" groundColor="#344841" />
     <directionalLight position={[-9, 11, 7]} intensity={2.05} color="#d0dce5" castShadow={quality !== 'low'}

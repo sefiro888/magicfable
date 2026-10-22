@@ -1,9 +1,11 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { Color, DataTexture, LinearFilter, Matrix4, NoColorSpace, PerspectiveCamera, Plane, RepeatWrapping, RGBAFormat, ShaderMaterial, UniformsLib, UniformsUtils, Vector3, Vector4, WebGLRenderTarget } from 'three'
-import type { Mesh } from 'three'
+import type { BufferGeometry, Mesh } from 'three'
 import type { GraphicsQuality } from '../../store/preferences'
 import { usePageVisibility } from '../usePageVisibility'
+import { iceField } from './iceField'
+import { frozenIceFragmentShader } from './frozenIceShader'
 
 let ripples: DataTexture | undefined
 function rippleField() {
@@ -85,12 +87,14 @@ const fragmentShader = /* glsl */`
  * a calcular sombras. Alta/media limitan resolución/frecuencia; baja conserva
  * Fresnel y ondas sin otro render. El reflejo contiene geometría de la escena,
  * no una copia pegada sobre cada losa. */
-export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius = 15, color = '#203849' }: {
+export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius = 15, color = '#203849', frozen = false, geometry }: {
   readonly quality: GraphicsQuality
   readonly reducedMotion: boolean
   readonly level?: number
   readonly radius?: number
   readonly color?: string
+  readonly frozen?: boolean
+  readonly geometry?: BufferGeometry
 }) {
   const water = useRef<Mesh>(null)
   const surface = useRef<ShaderMaterial>(null)
@@ -105,15 +109,16 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
   const material = useMemo(() => new ShaderMaterial({
     uniforms: { ...UniformsUtils.clone(UniformsLib.fog),
       uRipples: { value: rippleField() }, uReflection: { value: target?.texture ?? null },
+      uIce: { value: frozen ? iceField() : null },
       uReflectionMatrix: { value: reflection.matrix }, uHasReflection: { value: target ? 1 : 0 },
       uTime: { value: 0 }, uRadius: { value: radius }, uColor: { value: new Color(color) },
-    }, vertexShader, fragmentShader, fog: true, transparent: true, depthWrite: false,
-  }), [target, reflection, radius, color])
+    }, vertexShader, fragmentShader: frozen ? frozenIceFragmentShader : fragmentShader, fog: true, transparent: true, depthWrite: false,
+  }), [target, reflection, radius, color, frozen])
   useEffect(() => () => material.dispose(), [material])
   useEffect(() => () => target?.dispose(), [target])
   useFrame(({ camera, gl, scene, clock }) => {
     if (!visible.current || !water.current || !surface.current) return
-    surface.current.uniforms.uTime!.value = reducedMotion ? 0 : clock.elapsedTime
+    surface.current.uniforms.uTime!.value = reducedMotion || frozen ? 0 : clock.elapsedTime
     if (!target || !(camera instanceof PerspectiveCamera) || camera.position.y <= level) return
     const now = performance.now()
     if (!reducedMotion && now - lastCapture.current < (quality === 'high' ? 1000 / 24 : 1000 / 12)) return
@@ -164,7 +169,7 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
     }
   })
   return <mesh ref={water} position={[0, level, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-    <circleGeometry args={[radius, quality === 'low' ? 48 : 80]} />
+    {geometry ? <primitive object={geometry} attach="geometry" /> : <circleGeometry args={[radius, quality === 'low' ? 48 : 80]} />}
     <primitive ref={surface} object={material} attach="material" />
   </mesh>
 }

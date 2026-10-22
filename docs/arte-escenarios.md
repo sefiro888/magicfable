@@ -88,16 +88,21 @@ recogida y modo foto. Falta el pulido global de cohesión con la geometría.
 Use case: stylized-concept. Asset type: original wide panoramic matte painting for Santuario de las Runas Quebradas in Crónicas del Nexo, a mature atmospheric fantasy tactical card game. A vast still black-blue lake at night, seen from high above looking DOWN approximately 37 degrees, surrounded by ancient fractured megalithic sanctuaries on rocky islets. Monumental irregular granite standing stones, several immense broken stone lintels, half-submerged stairways, distant ruined circular astronomical sanctuaries, moss and mineral weathering, a few restrained turquoise engraved magical seams and faint violet light deep within one far ruin. Believable immense scale, mysterious sacred antiquity, neither Viking settlement nor Gothic castle. Composition: very wide cinematic environment, silhouettes concentrated in upper third and far outer thirds, central and lower half mostly spacious dark slate-blue water with subtle silver moonlight reflections and wisps of layered blue-grey mist. No visible horizon or sky, NO moon disk, no foreground platform, no game board, no cards, no table, no UI, no characters. At least four distinct atmospheric depth planes. Cool moon key from upper left, restrained reflected turquoise glints, textured readable dark areas, fine natural ripples, cinematic painterly realism compatible with refined fantasy card illustrations. The lake is calm and profound, not ocean surf; monoliths are uneven weathered granite with chipped edges, not clean rectangular toy blocks. Mature spectacular haunting landscape, meticulous material detail, original design only, no reference images, no existing franchise, no artist imitation. No readable text or alphabet, no logos, no watermarks, no border. Avoid neon circles, saturated blue everywhere, glowing white lake, industrial elements, snow, giant background creatures, childish style, simplistic low-poly forms, repeated identical standing stones.
 ```
 
-## Fiordo — panorámica v1 preparada
+## Fiordo — panorámica v1
 
 Generada el 22 de octubre de 2026 con la herramienta integrada `imagegen`,
-sin referencias, artistas ni marcas. **Preparada, todavía sin integrar**.
+sin referencias, artistas ni marcas. **Integrada y revisada; falta pulido global**.
 Fiordo nocturno de gneis estratificado, hielo fracturado y nieve acumulada,
 una mínima presencia de madera naval y luz de aurora. Maestro privado copiado
 en `tools/art-inbox/scenery/fimbul-vista-v1.png` (1916×821, ignorado por Git).
 Original conservado:
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-77385cdb-c9bb-4068-96c2-99d35f4a1431.png`.
-Revisado como paisaje; falta integrarlo con la nueva geometría cercana.
+Revisado como paisaje; conectado a nueva placa, hielo, escarcha y barco nativo.
+La primera matriz detectó el fondo no aplicado a Scene: corregido. Matriz
+final alta/baja a ambas resoluciones, media y alta reducida en verde, imágenes
+revisadas y reflejo real 0→234→0 al cambiar/restaurar una orilla. Suite completa
+verde: 78 activas y37 omitidas en seis minutos sobre AMD Radeon real.
+Unitarias561/5, build/lint verdes. Pulido global de cohesión posterior pendiente.
 Optimización local con Pillow, sin edición semántica ni descargas en partida.
 
 | Archivo | Uso |
@@ -111,10 +116,34 @@ Optimización local con Pillow, sin edición semántica ni descargas en partida.
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Fiordo de Fimbul in Crónicas del Nexo, a mature tactical fantasy card game. A vast frozen Nordic fjord at polar night, viewed from high above looking DOWN approximately 37 degrees, monumental weathered dark gneiss cliffs and glacial striations, tilted fractured blue ice shelves with fine trapped air layers, sweeping drifted snow on the ledges. A distant modest timber longhouse and carved dragon-prow mooring posts, tiny and solemn, express an ancient seafaring culture without dominating geology. Subtle green and violet auroral light is reflected in the ice, with faint layered veils at the extreme far upper edge; no visible sky or horizon, no huge light ribbons across the center. Composition: spectacular far cliffs and snowbound dark spruce on the upper third and outer thirds, central and lower half mostly spacious dark blue-slate frozen water with fine snow traces, delicate cracks and dark seams, leaving visual room for a separate game board in front. Four layers of low cold mist convey immense scale. Moon key from upper left, readable blue-grey shadows, minimal turquoise reflection, a few very small distant amber windows, restrained palette rather than neon blue everywhere. Refined cinematic painterly realism with convincing observed geology and materials, compatible with sophisticated mature fantasy card illustrations. Original design, no reference images, no franchise, no artist imitation. No foreground board, platform, table, arena, cards, UI, characters, giant creatures, readable text, logos, marks, watermarks or border. Avoid toy low-poly cone mountains or cone trees, faceted crystal spikes, luminous runic circles, glowing white snowfield, tropical turquoise water, saturated neon aurora, medieval castle, horned helmets, simple block menhirs.
 ```
 
+## Claro — panorámica v1 preparada
+
+Generada el 22 de octubre de 2026 con `imagegen` integrado, sin referencias,
+artistas ni marcas. Bosque templado antiguo con raíces de contrafuerte,
+helechos, mantillo, pavimento absorbido por el bosque y luz filtrada.
+**Sin integrar todavía.** Maestro original copiado sin modificar al proyecto:
+`tools/art-inbox/scenery/grove-vista-v1.png` (1916×821, ignorado por Git).
+Original conservado en
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f51c32ad-438f-4a77-b55f-a8f6ccef853c.png`.
+Revisado visualmente como paisaje y optimizado con Pillow, sin edición semántica.
+Falta conectar con geometría botánica próxima; no sustituir los árboles nativos
+por la pintura solamente.
+
+| Archivo | Uso |
+| --- | --- |
+| `public/assets/scenarios/grove-vista-v1.webp` | 1916×821, WebP90, 685636 bytes |
+| `public/assets/scenarios/grove-vista-v1-low.webp` | 1024×439, WebP86, 174186 bytes |
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Claro del Bosque in Crónicas del Nexo, a mature tactical fantasy card game. An immense ancient temperate forest sanctuary viewed from high above looking DOWN approximately 37 degrees. Vast gnarled oak and beech buttress roots, weathered bark, trunks extending out of frame, mature layered broadleaf canopy, luxuriant but believable ferns, bracken, damp moss, fallen leaves, wet dark earth and broken ancient limestone paving being slowly reclaimed. One immense natural hollow in a far ancient root buttress gives the background a sacred focal silhouette; no face, eyes or anthropomorphic tree. Refined warm shafts of late-morning sunlight entering through gaps in foliage, dappled shadows, cool green-grey depth and a little golden airborne pollen, subtle layered ground mist. Composition: strongest roots and monumental tree forms concentrated in upper third and outer thirds, central and lower half mostly spacious shadowed leaf-litter clearing and sparse paving traces, leaving visual room for a separate board placed in front. No visible sky or horizon, elevated downward-looking view, not a frontal forest postcard. At least four atmospheric layers; beautiful fine botanical detail and material texture without confetti-like visual noise. Mature cinematic painterly realism compatible with refined fantasy card illustrations, majestic forest antiquity rather than cute fairy woodland. Rich muted olive, deep bark brown, warm stone and restrained sunlit yellow-green. Original design, no artist imitation, no franchise, no reference images. No foreground platform, arena, game board, table, cards, UI, characters, animals, monsters, readable text, logos, watermark or border. Avoid cartoon mushrooms, glowing blue crystals, purple fairy lights, giant mushrooms, giant flowers, neon green fog everywhere, tropical jungle, repeated cylinder trunks, low-poly shrubs, simple cone trees, round lollipop canopies, uniformly bright green ground, literal laser sun beams.
+```
+
 ## Duna — panorámica v1
 
 Generada el 22 de octubre de 2026 con la herramienta integrada `imagegen`,
-sin imágenes de referencia, artistas ni marcas. **Integrada, en revisión**:
+sin imágenes de referencia, artistas ni marcas. **Integrada y revisada**:
 no forma parte de la verificación de Santuario. El dosier de Duna guía los
 materiales y el tono: imperio funerario solemne, luminoso e intacto.
 Maestro original ya copiado al workspace, sin modificar:
@@ -134,7 +163,8 @@ cercana son geometría y materiales propios. Sin descargas durante la partida.
 Matriz alta/baja tras ajustar el relieve de las casillas a ambas resoluciones,
 mano visible/recogida y modo foto en verde. Alta reducida revisada y gate
 completo 558 unitarias/78 e2e, build/lint verdes. Falta el pulido global entre
-escenarios y el fondo fuera de la banda de pintura en fotos muy abiertas.
+escenarios. El fondo fuera de la banda de pintura en fotos abiertas se corrigió
+al aplicar la atmósfera a Scene y se volvió a comprobar en la regresión de Fiordo.
 
 ### Prompt usado
 

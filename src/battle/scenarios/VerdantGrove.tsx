@@ -282,9 +282,9 @@ function MossyStones({ quality }: { quality: GraphicsQuality }) {
 export function VerdantGrove({ quality, reducedMotion }: GroveProps) {
   return (
     <>
-      <color attach="background" args={['#0d160c']} />
+
       {/* Niebla verde y cercana: el bosque no se acaba, se pierde. */}
-      <fog attach="fog" args={['#1e2f1a', 15, 46]} />
+
 
       {/* Luz FILTRADA, que es lo que define el sitio: el sol entra fuerte y
           muy vertical por los claros del dosel, y el relleno se mantiene bajo

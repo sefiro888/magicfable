@@ -46,8 +46,8 @@ function DawnAtmosphere({ quality, reducedMotion, turn }: { readonly quality: Gr
     sun.current.color.copy(dawn).lerp(daylight, amount)
   })
   return <>
-    <color attach="background" args={['#7c8da8']} />
-    <fog attach="fog" args={['#90a1b5', 16, 48]} />
+
+
     <mesh ref={sky} rotation={[0, -2.2, 0]}>
       <sphereGeometry args={[70, 64, 32]} />
       <meshBasicMaterial map={citadelSkyTexture()} side={BackSide} fog={false} toneMapped={false} />

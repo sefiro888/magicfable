@@ -42,6 +42,7 @@ import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
 import { NexusRupture } from './NexusRupture'
 import { useVisualTimers } from './useVisualTimers'
+import { ScenarioAtmosphere } from './scenarios/ScenarioAtmosphere'
 import { NexusFocus } from './NexusFocus'
 
 const AetherCitadel = lazy(() =>
@@ -342,7 +343,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand'
+      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice'
         ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       <meshStandardMaterial
@@ -455,7 +456,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   // La piedra fría del Santuario conserva tono propio bajo el cristal ámbar.
   moss: { base: '#586c72', shaft: '#708080', crown: '#8b9690' },
   sand: { base: '#9b825b', shaft: '#b89c70', crown: '#d2b589' },
-  ice: { base: '#2b3a48', shaft: '#3a4d5e', crown: '#4d6376' },
+  ice: { base: '#576a73', shaft: '#6b7d84', crown: '#8c9da1' },
   forest: { base: '#2a3022', shaft: '#39412d', crown: '#4b543a' },
   tide: { base: '#22343c', shaft: '#2e454f', crown: '#3e5c68' },
   forge: { base: '#2b241c', shaft: '#3d3327', crown: '#544634' },
@@ -1050,7 +1051,7 @@ function Nexus({
   }, [health, collapse, terminal, playerId, schedule])
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
-  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : masonryTexture()
+  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : terrainStyle === 'ice' ? stoneMaps('granite').map : masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
@@ -1093,7 +1094,7 @@ function Nexus({
     }
     // La intensidad 5 teñía las piedras renovadas de un oro plano. La energía queda en los cristales; la piedra sigue recibiendo sol.
     if (nexusLight.current) nexusLight.current.intensity = collapse ? 0
-      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
+      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
   })
 
   return (
@@ -1401,7 +1402,6 @@ function DropTargeting({ active, localPlayerId, onCell }: { active: boolean; loc
 function LoadingStage() {
   return (
     <>
-      <color attach="background" args={['#3b4468']} />
       <ambientLight intensity={1.3} color="#aeb9d8" />
       <mesh position={[0, -0.58, 0]}>
         <boxGeometry args={[11.6, 1.1, 11.6]} />
@@ -1484,6 +1484,7 @@ function Scene(props: Board3DProps) {
           pasa al anfitrión con el suyo. La cámara y sus controles no son
           hijos de este grupo, así que el punto de vista real no se mueve. */}
       <MaterialEnvironment quality={props.quality} />
+      <ScenarioAtmosphere scenario={props.scenario} />
       <group rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
       <RitualSeal cell={{ x: 3, y: 4 }} tone="#ffffff" durationMs={1} reducedMotion={false} warmup />
       <Suspense fallback={<LoadingStage />}>

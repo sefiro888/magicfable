@@ -97,3 +97,19 @@ describe('GuidedTutorial', () => {
     expect(onFinish).toHaveBeenCalledTimes(1)
   })
 })
+
+it('oculta la guía para una foto y recupera el paso que ya había avanzado', async () => {
+  const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 42)
+  const refs = { handBarRef: createRef<HTMLElement>(), endTurnRef: createRef<HTMLButtonElement>(), onFinish: vi.fn() }
+  const view = render(<GuidedTutorial {...refs} match={base} />)
+  expect(screen.getByRole('heading', { name: 'Juega una fuente' })).toBeVisible()
+  const afterSource = { ...base, players: { ...base.players,
+    player: { ...base.players.player, resourcePlayedThisTurn: true } } }
+  view.rerender(<GuidedTutorial {...refs} match={afterSource} />)
+  expect(await screen.findByRole('heading', { name: 'Despliega una unidad' })).toBeVisible()
+  view.rerender(<GuidedTutorial {...refs} match={afterSource} suspended />)
+  expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+  view.rerender(<GuidedTutorial {...refs} match={afterSource} />)
+  expect(screen.getByRole('heading', { name: 'Despliega una unidad' })).toBeVisible()
+  expect(refs.onFinish).not.toHaveBeenCalled()
+})

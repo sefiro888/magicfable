@@ -244,6 +244,14 @@ Los WebP no deben incluir marco, nombre, coste ni símbolos de interfaz. Peso ob
 
 ## Convención de nombres
 
+Fiordo: fantasía polar sobria, hielo azul gris con aire y fracturas finas,
+nieve mate en la orla, casco naval de tablas abiertas y bruma localizada.
+Un solo reflejo planar de la placa en alta/media; lago exterior mate y baja
+sin captura. Evitar prismas de cristal repetidos, auroras como paneles y
+superficies blancas emisivas. Panorama original en `docs/arte-escenarios.md`.
+La atmósfera de todos los escenarios se aplica a Scene: unir niebla/fondo al
+grupo giratorio no los hacía efectivos y abría negro al salir de la pintura.
+
 - Arte: `public/assets/cards/art/<card-id>.webp`.
 - Respaldo: `public/assets/cards/art/<card-id>.svg`.
 - El `card-id` usa minúsculas ASCII y guiones, coincide exactamente con `CardDefinition.id` y no lleva versión.
