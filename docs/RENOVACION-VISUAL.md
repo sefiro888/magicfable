@@ -9,9 +9,10 @@ requieren nueva petición; la automatización conserva su alcance local.
 Prioridad humana posterior (22 oct,19:00): mano inicial de10 cartas para ambos
 bandos, conservar el robo normal y reciclar/barajar el cementerio al agotarse
 el mazo. El usuario confirmó expresamente que no quiere rellenar la mano
-automáticamente y pidió publicar todo de nuevo tras verificar. Implementación
-y regresiones en curso; no duplicar procesos ni iniciar otro bloque visual
-hasta cerrar esta petición. El gate encontró colisión de ids de zombis al
+automáticamente y pidió publicar todo de nuevo tras verificar. Cambio
+TERMINADO y PUBLICADO en2a028a5: regresiones588/5 y85/37 e2e, más48/48
+escenarios verdes. La web real abrió mano10 sin errores. No repetir esta
+petición ni volver a publicar sin nueva autorización humana. El gate encontró colisión de ids de zombis al
 reciclar una carta infectada; se asigna id determinista por conversión.
 
 ## Dirección y orden
@@ -85,6 +86,19 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | V |
 
 ## Bloque activo
+
+**19:50, PUBLICACIÓN CONFIRMADA y petición del mazo CUMPLIDA.**
+Origin/main contiene3f7b88d (reglas/mano) y2a028a5 (panoramas/bronce).
+Actions39825636655 success y deployment7259414952 success para2a028a5.
+Comprobación con Chromium en la web pública: abrir Jugar, comenzar partida,
+contar10 cartas en el mulligan y10 en la mano, sin errores de JavaScript.
+Captura `tools/captures/publicado-mano-diez-1366x768.png`; script y recibo
+en la carpeta de capturas ignorada. Usuario avisado del enlace jugable.
+No hay suites ni capturas activas. Solo queda revisión/documentación visual
+hasta20:00, sin ampliar reglas ni publicar más cambios de juego. Al llegar
+a20:00 guardar el cierre y eliminar la automatización. Las50 siguen con
+39 avances y11 terminadas: no confundir los48 casos de escenarios con50
+mejoras completadas. Conservar el PNG ajeno«ç» sin añadirlo.
 
 **19:46, pipeline49114 CERRADO en verde.**588/5 unitarias, build/lint,
 85/37 e2e completos,4/4 capturas de mano y48/48 escenarios:12 lugares en

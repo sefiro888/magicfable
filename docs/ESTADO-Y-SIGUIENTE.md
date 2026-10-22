@@ -10,7 +10,9 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 **Prioridad humana del22oct a las19:00:** mano inicial10, conservar robo
 normal y reciclar/barajar el cementerio al agotarse el mazo; sin autorrellenar
 mano ni recuperar piezas/fuentes en juego. Implementado en3f7b88d:588 unitarias,85 e2e/37 omitidas, build/lint
-y simulaciones de40 semillas verdes. Matriz panorámica48/48 verde; publicación autorizada del avance completo.
+y simulaciones de40 semillas verdes. Matriz panorámica48/48 verde. PUBLICADO en2a028a5: Actions39825636655 y
+deployment7259414952 success. Web real verificada con10 cartas iniciales;
+pedido del mazo cumplido, no repetirlo ni publicar más juego sin nueva petición.
 Consultar bloque activo del registro antes de abrir otro proceso.
 
 | | |
