@@ -26,7 +26,7 @@ global), **V** terminada y verificada.
 | 1 | Caldera: renovación integral | A |
 | 2 | Ciudadela: renovación integral | A |
 | 3 | Santuario: renovación integral | A |
-| 4 | Duna: renovación integral | P |
+| 4 | Duna: renovación integral | A |
 | 5 | Fiordo: renovación integral | P |
 | 6 | Claro: renovación integral | P |
 | 7 | Rompiente: pulido integral | P |
@@ -43,7 +43,7 @@ global), **V** terminada y verificada.
 | 18 | Materiales de hielo | P |
 | 19 | Agua | C |
 | 20 | Lava | A |
-| 21 | Arena, tierra y nieve | P |
+| 21 | Arena, tierra y nieve | C |
 | 22 | Iluminación propia por escenario | C |
 | 23 | Sombras del escenario | C |
 | 24 | Sombras de contacto de cartas | V |
@@ -75,6 +75,61 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**22 oct, 11:43. Duna verificada.** Gate 558 unitarias/5 omitidas, build y
+lint verdes; suite completa `68781`: **78/37**. Matriz alta/baja `23402`:
+cuatro verdes, imágenes revisadas; alta reducida `69727`: dos verdes;
+media `53662`: dos verdes, ambas resoluciones, mano visible/recogida. #4 pasa
+a A, pendiente de cohesión global y del fondo al abrir mucho el modo foto.
+Pasada principal: alta 367 llamadas/97916 triángulos; baja 196/49300.
+
+Siguiente: Fiordo. Los borradores citados abajo siguen sin importar y se
+excluyen del checkpoint Duna. Integrar superficie congelada con captura única,
+placa que apoya esquinas, borde nevado, fracturas laterales y barco varado.
+Antes del siguiente gate, resolver/medir el fondo negro causado posiblemente
+por el color del fallback de Suspense. Servidor `55450` en 4173 conservado.
+No hay verificaciones ni generaciones activas; ningún push.
+
+**22 oct, 11:40. Suite Duna cerrada:** `68781`, **78 verdes/37 omitidas**.
+Unitarias 558/5 y build/lint verdes sin cambios posteriores en aplicación.
+Revisión alta con movimiento reducido **`69727` en curso**, ambas resoluciones.
+No editar fuentes importadas. Después comprobar media, guardar checkpoint Duna
+y pasar a integrar Fiordo. Los borradores de Fiordo siguen sin importar.
+
+**22 oct, 11:34. Reanudado tras disponibilidad de cuota.** La segunda matriz
+Duna `23402` terminó y dejó `test-results/.last-run.json` en passed; capturas
+de alta/baja a ambas resoluciones hasta las 08:53, ya revisadas. Las casillas
+son piedra de relieve discreto, no arena ondulada. Unitarias `12256`: 558/5;
+build `96154`, lint `26442`, verdes. Suite completa **`68781` en curso**;
+no editar fuentes importadas ni compilar. El servidor anterior dejó de existir
+durante la interrupción; comprobado puerto libre y procesos. Nuevo servidor
+propio **`55450`**, mismo puerto 4173. No duplicarlo ni cerrarlo.
+
+Preparación de Fiordo sin integrar: paisaje original `fimbul-vista-v1.png`
+copiado al workspace, prompt junto al maestro, WebP alta/baja exportados.
+`iceField.ts` y `floeGeometry.ts` son borradores sin importar ni compilar:
+datos de fisuras/escarcha/aire y placa irregular que sostiene las esquinas,
+nieve solo en la orla. No incluirlos en el checkpoint de Duna. Primero acabar
+suite, revisión media/reducida y checkpoint Duna; después integrarlos.
+Otros borradores sin importar: `FrozenLongship.tsx`, casco abierto de tracas,
+costillas y proas talladas, `GlacierFlanks.tsx` y `frozenIceShader.ts`. Sin
+compilar/revisar aún. La superficie congelada debe usar una sola captura,
+sin ondas, y escarcha que atenúe el reflejo. No duplicar el lago por losa.
+
+Hallazgo de pulido compartido: en la foto orbital de Duna se ve negro más allá
+de la banda de pintura. Comprobar `scene.background` real tras Suspense y la
+limpieza del fallback; la foto principal queda cubierta y no lo revela.
+Posible respaldo de color en otra cúpula dentro de DistantVista, todavía sin
+implementar. Revisar los cuatro escenarios si se modifica ese componente.
+
+**22 oct, 08:49. Duna en integración.** Pilono en talud con gola cóncava,
+relieves propios sin emisión, seis columnas papiriformes de fustes en haces,
+obeliscos, lino tejido y patio rectangular con escalinata hacia la cota baja.
+Arena con relieve y máscara independiente, panorama original ya conectado.
+Build `1972` y lint `73736`, verdes. Matriz visual `85072` en curso: no editar
+fuentes importadas. Primera imagen muestra demasiado relieve en las casillas
+de arena: corregir tras esta matriz, antes del gate. #4 sigue C, sin validar.
+Servidor 4173 conservado, ningún push.
 
 **22 oct, 08:36. Santuario verificado.** Suite completa `72743`: **78 verdes,
 37 omitidas**. Unitarias `2678`: **558 verdes/5 omitidas**. Build final `82911`,

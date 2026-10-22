@@ -96,8 +96,10 @@ export function stoneMaps(finish: StoneFinish): StoneMaps {
         warmth = -0.008
       } else {
         const bedding = Math.sin(Math.PI * 2 * (v * 14 + (noise(u, v, 4, seed + 5) - 0.5) * 0.7))
-        value = 0.79 + broad * 0.1 + bedding * 0.03 + (grain - 0.5) * 0.07
-        relief = 0.5 + bedding * 0.06 + (grain - 0.5) * 0.2 + (fine - 0.5) * 0.07
+        // El estrato es mineral, no una tabla cepillada: en la gran terraza
+        // las bandas de relieve anteriores dominaban toda la arquitectura.
+        value = 0.79 + broad * 0.1 + bedding * 0.008 + (grain - 0.5) * 0.07
+        relief = 0.5 + bedding * 0.012 + (grain - 0.5) * 0.2 + (fine - 0.5) * 0.07
         matte = 0.94 + (medium - 0.5) * 0.06
         warmth = 0.04
       }

@@ -88,10 +88,33 @@ recogida y modo foto. Falta el pulido global de cohesión con la geometría.
 Use case: stylized-concept. Asset type: original wide panoramic matte painting for Santuario de las Runas Quebradas in Crónicas del Nexo, a mature atmospheric fantasy tactical card game. A vast still black-blue lake at night, seen from high above looking DOWN approximately 37 degrees, surrounded by ancient fractured megalithic sanctuaries on rocky islets. Monumental irregular granite standing stones, several immense broken stone lintels, half-submerged stairways, distant ruined circular astronomical sanctuaries, moss and mineral weathering, a few restrained turquoise engraved magical seams and faint violet light deep within one far ruin. Believable immense scale, mysterious sacred antiquity, neither Viking settlement nor Gothic castle. Composition: very wide cinematic environment, silhouettes concentrated in upper third and far outer thirds, central and lower half mostly spacious dark slate-blue water with subtle silver moonlight reflections and wisps of layered blue-grey mist. No visible horizon or sky, NO moon disk, no foreground platform, no game board, no cards, no table, no UI, no characters. At least four distinct atmospheric depth planes. Cool moon key from upper left, restrained reflected turquoise glints, textured readable dark areas, fine natural ripples, cinematic painterly realism compatible with refined fantasy card illustrations. The lake is calm and profound, not ocean surf; monoliths are uneven weathered granite with chipped edges, not clean rectangular toy blocks. Mature spectacular haunting landscape, meticulous material detail, original design only, no reference images, no existing franchise, no artist imitation. No readable text or alphabet, no logos, no watermarks, no border. Avoid neon circles, saturated blue everywhere, glowing white lake, industrial elements, snow, giant background creatures, childish style, simplistic low-poly forms, repeated identical standing stones.
 ```
 
-## Duna — panorámica v1 preparada
+## Fiordo — panorámica v1 preparada
 
 Generada el 22 de octubre de 2026 con la herramienta integrada `imagegen`,
-sin imágenes de referencia, artistas ni marcas. **No integrada todavía**:
+sin referencias, artistas ni marcas. **Preparada, todavía sin integrar**.
+Fiordo nocturno de gneis estratificado, hielo fracturado y nieve acumulada,
+una mínima presencia de madera naval y luz de aurora. Maestro privado copiado
+en `tools/art-inbox/scenery/fimbul-vista-v1.png` (1916×821, ignorado por Git).
+Original conservado:
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-77385cdb-c9bb-4068-96c2-99d35f4a1431.png`.
+Revisado como paisaje; falta integrarlo con la nueva geometría cercana.
+Optimización local con Pillow, sin edición semántica ni descargas en partida.
+
+| Archivo | Uso |
+| --- | --- |
+| `public/assets/scenarios/fimbul-vista-v1.webp` | 1916×821, WebP90, 419398 bytes |
+| `public/assets/scenarios/fimbul-vista-v1-low.webp` | 1024×439, WebP86, 115400 bytes |
+
+### Prompt usado
+
+```text
+Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Fiordo de Fimbul in Crónicas del Nexo, a mature tactical fantasy card game. A vast frozen Nordic fjord at polar night, viewed from high above looking DOWN approximately 37 degrees, monumental weathered dark gneiss cliffs and glacial striations, tilted fractured blue ice shelves with fine trapped air layers, sweeping drifted snow on the ledges. A distant modest timber longhouse and carved dragon-prow mooring posts, tiny and solemn, express an ancient seafaring culture without dominating geology. Subtle green and violet auroral light is reflected in the ice, with faint layered veils at the extreme far upper edge; no visible sky or horizon, no huge light ribbons across the center. Composition: spectacular far cliffs and snowbound dark spruce on the upper third and outer thirds, central and lower half mostly spacious dark blue-slate frozen water with fine snow traces, delicate cracks and dark seams, leaving visual room for a separate game board in front. Four layers of low cold mist convey immense scale. Moon key from upper left, readable blue-grey shadows, minimal turquoise reflection, a few very small distant amber windows, restrained palette rather than neon blue everywhere. Refined cinematic painterly realism with convincing observed geology and materials, compatible with sophisticated mature fantasy card illustrations. Original design, no reference images, no franchise, no artist imitation. No foreground board, platform, table, arena, cards, UI, characters, giant creatures, readable text, logos, marks, watermarks or border. Avoid toy low-poly cone mountains or cone trees, faceted crystal spikes, luminous runic circles, glowing white snowfield, tropical turquoise water, saturated neon aurora, medieval castle, horned helmets, simple block menhirs.
+```
+
+## Duna — panorámica v1
+
+Generada el 22 de octubre de 2026 con la herramienta integrada `imagegen`,
+sin imágenes de referencia, artistas ni marcas. **Integrada, en revisión**:
 no forma parte de la verificación de Santuario. El dosier de Duna guía los
 materiales y el tono: imperio funerario solemne, luminoso e intacto.
 Maestro original ya copiado al workspace, sin modificar:
@@ -99,8 +122,19 @@ Maestro original ya copiado al workspace, sin modificar:
 Original de la herramienta conservado:
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f978b26a-2df2-4fe1-8abb-fb77ac1b1b93.png`.
 Revisado visualmente: arquitectura de arenisca, lapislázuli, remates dorados
-contenidos, calima y arena central abierta. Optimizar e integrar junto a
-geometría próxima renovada; no usar como excusa para dejar esfinges de cajas.
+contenidos, calima y arena central abierta. Optimización local con Pillow,
+sin edición semántica. El pilono, el relieve, el lino, las columnas y la arena
+cercana son geometría y materiales propios. Sin descargas durante la partida.
+
+| Archivo | Uso |
+| --- | --- |
+| `public/assets/scenarios/duna-vista-v1.webp` | 1850×850, WebP90, 443720 bytes |
+| `public/assets/scenarios/duna-vista-v1-low.webp` | 1024×470, WebP86, 130764 bytes |
+
+Matriz alta/baja tras ajustar el relieve de las casillas a ambas resoluciones,
+mano visible/recogida y modo foto en verde. Alta reducida revisada y gate
+completo 558 unitarias/78 e2e, build/lint verdes. Falta el pulido global entre
+escenarios y el fondo fuera de la banda de pintura en fotos muy abiertas.
 
 ### Prompt usado
 

@@ -22,7 +22,7 @@ en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegado
 78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `72743`: 78 e2e verdes, 37 omitidas (22 oct, 08:32). El campo ampliado
+Última pasada completa `68781`: 78 e2e verdes, 37 omitidas (22 oct, 11:39). El campo ampliado
 saturaba el rasterizado por CPU con tres navegadores. La configuración usa
 dos, sin ampliar límites de comprobación. No compilar a la vez que WebGL.
 El campo renderiza bajo demanda con movimiento reducido o tras un modal
@@ -53,9 +53,17 @@ cambio/restauración de píxeles en el reflejo. Revisado a ambas resoluciones,
 alta/media/baja y alta reducida, mano visible/recogida y modo foto. Gate completo
 558 unitarias, build/lint y 78/37 e2e verdes. Estos escenarios son avances
 validados pendientes de pulido global; las 50 mejoras no están terminadas.
-Siguiente: Duna. Panorama preparado, sin integrar; `egyptianGeometry.ts` y
-`DesertGround.tsx` sin importar, compilados/lintados, sin comprobar en WebGL.
-Leer registro antes de continuar.
+Duna integrada: pilono en talud y gola, relieves propios, fustes en haces y
+capiteles papiriformes, lino plegado, obeliscos y patio rectangular excavado.
+Panorama original y arena granular. Casillas de arenisca con relieve fino,
+bisel y juntas estrechas; la ondulación exterior ya no parece madera en ellas.
+Alta/baja y alta reducida a ambas resoluciones revisadas, mano visible/oculta
+y dos poses de foto. Unitarias 558/5, build/lint y suite completa 78/37 verdes.
+Media y alta reducida también verdes a ambas resoluciones. Queda pulido global, incluido el fondo negro
+fuera de la banda de pintura al orbitar (comprobar attach del fallback).
+Siguiente: integrar Fiordo. Panorama y borradores de placa, escarcha, casco
+naval y fracturas próximos preparados, **sin importar ni verificar todavía**.
+Leer el registro para sesiones activas; no duplicar verificaciones.
 
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**

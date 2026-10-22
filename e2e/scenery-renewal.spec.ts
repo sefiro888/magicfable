@@ -7,8 +7,8 @@ import { reflectionProbe, waterConfiguration } from './helpers/reflectionProbe'
 import type { GraphicsQuality } from '../src/store/preferences'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
-const scenario = process.env.SCENERY === 'sanctuary' ? 'sanctuary' : process.env.SCENERY === 'caldera' ? 'caldera' : 'aether-citadel'
-const prefix = (scenario === 'sanctuary' ? 'santuario' : scenario === 'caldera' ? 'caldera' : 'ciudadela') + (process.env.SCENERY_REDUCED ? '-quieto' : '')
+const scenario = process.env.SCENERY === 'duna' ? 'duna' : process.env.SCENERY === 'sanctuary' ? 'sanctuary' : process.env.SCENERY === 'caldera' ? 'caldera' : 'aether-citadel'
+const prefix = (scenario === 'duna' ? 'duna' : scenario === 'sanctuary' ? 'santuario' : scenario === 'caldera' ? 'caldera' : 'ciudadela') + (process.env.SCENERY_REDUCED ? '-quieto' : '')
 const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium'] : process.env.SCENERY_QUALITY === 'high' ? ['high'] : ['high', 'low']
 
 for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
@@ -57,7 +57,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         .multiply(new Matrix4().fromArray(camera.matrixWorld).invert())
       // Se verifica el remate del edificio y ambos pórticos contra la cámara
       // real, además de mirar las imágenes: no volver a aceptar un hito invisible.
-      for (const point of scenario === 'sanctuary' ? [[0, 1.47, -7.5], [-5.5, 1.8, -3.8], [5.55, 2.05, -3.5]] : scenario === 'caldera' ? [[-5.4, 0.8, -5.3], [-6.5, 0.8, -2.8], [6.5, 0.8, -2.8]] : [[0, 2.01, -7.35], [-5.22, 2.61, -2.65], [5.22, 2.61, -2.65]]) {
+      for (const point of scenario === 'duna' ? [[-2.15, 1.59, -8.15], [-6.08, 2.05, -3.3], [6.08, 2.05, -3.3]] : scenario === 'sanctuary' ? [[0, 1.47, -7.5], [-5.5, 1.8, -3.8], [5.55, 2.05, -3.5]] : scenario === 'caldera' ? [[-5.4, 0.8, -5.3], [-6.5, 0.8, -2.8], [6.5, 0.8, -2.8]] : [[0, 2.01, -7.35], [-5.22, 2.61, -2.65], [5.22, 2.61, -2.65]]) {
         const projected = new Vector3(...point).applyMatrix4(viewProjection)
         const x = camera.canvas.x + (projected.x + 1) / 2 * camera.canvas.width
         const y = camera.canvas.y + (1 - projected.y) / 2 * camera.canvas.height

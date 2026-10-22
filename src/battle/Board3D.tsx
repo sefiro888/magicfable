@@ -342,7 +342,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss'
+      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand'
         ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       <meshStandardMaterial
@@ -454,7 +454,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   basalt: { base: '#505563', shaft: '#646a77', crown: '#7c808a' },
   // La piedra fría del Santuario conserva tono propio bajo el cristal ámbar.
   moss: { base: '#586c72', shaft: '#708080', crown: '#8b9690' },
-  sand: { base: '#4a3d28', shaft: '#5d4d33', crown: '#75603f' },
+  sand: { base: '#9b825b', shaft: '#b89c70', crown: '#d2b589' },
   ice: { base: '#2b3a48', shaft: '#3a4d5e', crown: '#4d6376' },
   forest: { base: '#2a3022', shaft: '#39412d', crown: '#4b543a' },
   tide: { base: '#22343c', shaft: '#2e454f', crown: '#3e5c68' },
@@ -1050,7 +1050,7 @@ function Nexus({
   }, [health, collapse, terminal, playerId, schedule])
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
-  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : masonryTexture()
+  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
@@ -1093,7 +1093,7 @@ function Nexus({
     }
     // La intensidad 5 teñía las piedras renovadas de un oro plano. La energía queda en los cristales; la piedra sigue recibiendo sol.
     if (nexusLight.current) nexusLight.current.intensity = collapse ? 0
-      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
+      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
   })
 
   return (

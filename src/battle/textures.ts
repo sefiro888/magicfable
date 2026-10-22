@@ -2627,38 +2627,22 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
     drawTileGroove(context, size, 0.34);
     bakeEdgeShade(context, size, 0.24);
   } else {
-    // Arenisca al sol: ocre, con ondulación de viento y arena acumulada.
+    // El patio está pavimentado: las crestas de viento pertenecen al suelo
+    // exterior. Sobre cada casilla parecían vetas de madera y ocultaban piezas.
     const base = context.createLinearGradient(0, 0, size * 0.3, size);
-    base.addColorStop(0, '#d8b87c');
-    base.addColorStop(0.5, '#c9a86a');
-    base.addColorStop(1, '#b8975c');
+    base.addColorStop(0, '#d8c6a1');
+    base.addColorStop(0.5, '#cebb95');
+    base.addColorStop(1, '#c6b28b');
     context.fillStyle = base;
     context.fillRect(0, 0, size, size);
     // Estratos: la arenisca se deposita en capas horizontales.
-    for (let layer = 0; layer < 22; layer += 1) {
+    for (let layer = 0; layer < 12; layer += 1) {
       const y = random() * size;
       const h = 2 + random() * 12;
       const t = 178 + Math.floor(random() * 44);
-      context.fillStyle = `rgba(${t}, ${t - 28}, ${t - 78}, ${0.12 + random() * 0.2})`;
+      context.fillStyle = `rgba(${t}, ${t - 15}, ${t - 40}, ${0.025 + random() * 0.04})`;
       context.fillRect(0, y, size, h);
     }
-    // Ondulación de viento: crestas suaves y paralelas, giradas por variante.
-    context.save();
-    context.translate(size / 2, size / 2);
-    context.rotate((variant / BOARD_TILE_VARIANTS) * Math.PI);
-    context.translate(-size / 2, -size / 2);
-    for (let ripple = 0; ripple < 14; ripple += 1) {
-      const y = (ripple / 14) * size + (random() - 0.5) * 8;
-      context.strokeStyle = `rgba(232, 206, 158, ${0.1 + random() * 0.14})`;
-      context.lineWidth = 2 + random() * 4;
-      context.beginPath();
-      context.moveTo(-size * 0.3, y);
-      for (let x = -size * 0.3; x < size * 1.3; x += 24) {
-        context.lineTo(x, y + Math.sin(x * 0.05 + ripple) * 4);
-      }
-      context.stroke();
-    }
-    context.restore();
     for (let grain = 0; grain < 2400; grain += 1) {
       const t = 156 + random() * 82;
       context.fillStyle = `rgba(${t}, ${t - 30}, ${t - 80}, ${0.08 + random() * 0.2})`;
@@ -2672,8 +2656,8 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       context.fillStyle = `rgba(226, 202, 152, ${(1 - borde) * 0.3 * random()})`;
       context.fillRect(dx, dy, 1 + random() * 3.4, 1 + random() * 3.4);
     }
-    drawTileGroove(context, size, 0.3);
-    bakeEdgeShade(context, size, 0.28);
+    drawTileGroove(context, size, 0.18);
+    bakeEdgeShade(context, size, 0.055);
   }
 
   return finishTexture(key, canvas);
@@ -2816,27 +2800,12 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
       context.fillRect(fx, fy, 2 + random() * 3, 2 + random() * 3);
     }
   } else if (style === 'sand') {
-    // Ondulación de viento: crestas y valles suaves, girados por variante.
-    context.save();
-    context.translate(size / 2, size / 2);
-    context.rotate((variant / BOARD_TILE_VARIANTS) * Math.PI);
-    context.translate(-size / 2, -size / 2);
-    for (let ripple = 0; ripple < 14; ripple += 1) {
-      const y = (ripple / 14) * size;
-      context.strokeStyle = rise(0.34);
-      context.lineWidth = 5;
-      context.beginPath();
-      context.moveTo(-size * 0.3, y);
-      for (let x = -size * 0.3; x < size * 1.3; x += 24) context.lineTo(x, y + Math.sin(x * 0.05 + ripple) * 4);
-      context.stroke();
-      context.strokeStyle = dip(0.28);
-      context.lineWidth = 5;
-      context.beginPath();
-      context.moveTo(-size * 0.3, y + 9);
-      for (let x = -size * 0.3; x < size * 1.3; x += 24) context.lineTo(x, y + 9 + Math.sin(x * 0.05 + ripple) * 4);
-      context.stroke();
+    // Microporos de arenisca cortada, sin surcos paralelos sobre el tablero.
+    for (let grain = 0; grain < 2600; grain += 1) {
+      const level = 134 + random() * 12;
+      context.fillStyle = `rgb(${level}, ${level}, ${level})`;
+      context.fillRect(random() * size, random() * size, 1, 1);
     }
-    context.restore();
   } else {
     // Caliza: marcas de cincel hundidas y la esquina desportillada, que es
     // material que FALTA y por tanto baja.
@@ -2869,7 +2838,7 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
 
   // La junta del borde es lo MÁS hundido de la losa en todos los materiales:
   // es donde acaba la piedra. Se dibuja al final para que nada la pise.
-  const grooveWidth = style === 'basalt' || style === 'moss' ? 1.25 : Math.max(3, size * 0.03);
+  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' ? 1.25 : Math.max(3, size * 0.03);
   context.strokeStyle = dip(0.9);
   context.lineWidth = grooveWidth;
   context.strokeRect(grooveWidth / 2, grooveWidth / 2, size - grooveWidth, size - grooveWidth);

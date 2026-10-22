@@ -36,6 +36,23 @@ El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la p
 
 ## Escenarios 3D
 
+### Duna: Tribunal luminoso de arenisca
+
+Imperio funerario intacto, solemne y vivo según el dosier. El pilono conserva
+talud y gola cóncava reales en un patio posterior excavado; la terraza alta
+sostiene la diagonal completa del tablero. Las columnas tienen fustes en
+haces, capiteles papiriformes y ábacos, con filetes de lapislázuli y oro viejo
+contenido. El lino cuelga de travesaños y se mueve por pliegues, con pose
+estática cuando se pide movimiento reducido. Los relieves originales de sol,
+balanza y papiro siguen la cara inclinada y reciben luz, sin emisión.
+
+Mediodía con sombras cortas, relleno frío y arenisca mate con microporo.
+Reservar las crestas de arena para el exterior; en las casillas parecían
+madera abombada. El centro conserva juntas estrechas, bisel físico y bandos
+distinguibles. Evitar esfinges de cajas, columnas griegas recoloreadas, oro
+luminoso y necrópolis nocturna embrujada. Panorama original y prompt en
+[arte de escenarios](arte-escenarios.md). Pendiente pulido global comparado.
+
 ### Ciudadela y piedra del campo
 
 La Ciudadela se compone desde la cámara de batalla: una plaza elevada con
