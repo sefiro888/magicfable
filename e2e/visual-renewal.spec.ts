@@ -26,6 +26,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         piece('shield', 'centinela-cristal', 2, 3, { owner: 'ai', statuses: [{ kind: 'shielded', amount: 3 }] }),
         piece('damaged', 'leviatan-de-las-simas', 4, 3, { owner: 'ai', currentHealth: 3 }),
         piece('structure', 'torre-horizonte', 6, 3, { owner: 'ai' }),
+        piece('cursed', 'centinela-cristal', 6, 5, { statuses: [{ kind: 'cursed', amount: 1 }] }),
       ],
     }
     await page.setViewportSize({ width, height })
@@ -44,6 +45,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
     await expect(page.locator('[title^="Infectada:"]')).toBeAttached({ timeout: 25_000 })
     await expect(page.locator('[title^="Congelada:"]')).toBeAttached({ timeout: 25_000 })
+    await expect(page.locator('[title^="Maldita:"]')).toBeAttached({ timeout: 25_000 })
     // El shader se compila al primer fotograma que usa la superficie; esperar
     // al tablero HTML no detectaba errores de GLSL que aparecían después.
     await page.waitForTimeout(1800)

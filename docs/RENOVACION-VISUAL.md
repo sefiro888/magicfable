@@ -60,7 +60,7 @@ global), **V** terminada y verificada.
 | 35 | Entradas por facción | A |
 | 36 | Congelación sobre las piezas | A |
 | 37 | Escudos y protecciones | A |
-| 38 | Contagio, maldición y quemaduras | C |
+| 38 | Contagio, maldición y quemaduras | A |
 | 39 | Desgaste de piezas dañadas | A |
 | 40 | Solapamiento de nombres y estadísticas | A |
 | 41 | Anticipación, impacto y recuperación | A |
@@ -70,11 +70,33 @@ global), **V** terminada y verificada.
 | 45 | Destrucciones por facción | A |
 | 46 | Deterioro de Nexos | A |
 | 47 | Caída del Nexo | A |
-| 48 | Interfaz de batalla | P |
+| 48 | Interfaz de batalla | C |
 | 49 | Inspección de cartas | A |
 | 50 | Presentación de escenario y comandantes | P |
 
 ## Bloque activo
+
+**22 oct, 02:32.** Octavo bloque guardado en `c180eec`.
+Noveno avance: maldición con tinta y filamentos en los bordes de ambas caras,
+sin el círculo violeta plano. Quemaduras tras daño real con VFX de fuego:
+brasas de 1,5 s y hollín que desaparece a los 8 s, independientes de la cola.
+No se inventó un estado de quemadura ni se usa la casilla abrasada para
+marcar a su ocupante. Las protecciones que absorben todo el daño no chamuscan.
+El reconocedor separa palabras para que `slash`/`flash` no se confundan con `ash`.
+Movimiento reducido conserva hollín estático y omite brasas.
+Cinco emblemas integrados en public, originales privados conservados y
+procedencia documentada en `docs/arte-interfaz.md`. Sin recorte circular de
+las siluetas nuevas. Fallar una imagen ya no contagia el respaldo SVG a la
+siguiente facción del mismo hueco. Cuatro pruebas nuevas de clasificación,
+caducidad y cambio de emblema. Unitarias: **554 verdes, 5 omitidas**.
+Build `60250` y lint `76109` verdes. Sonda `87521`: dos verdes y seis capturas
+revisadas de brasas, hollín y extinción a ambas resoluciones. La revisión
+normal de acabados ahora incluye maldición. Falta la pasada e2e completa del
+noveno avance: agruparla con la renovación inmediata de interfaz, antes de
+entregar. No afirmar que la suite completa ya se ejecutó con estos cambios.
+Sin procesos pendientes. Siguiente: jerarquía y legibilidad de la interfaz,
+quitar el vacío del panel derecho y preparar el escenario a ancho completo
+conservando el encuadre seguro y los puntos interactivos del tablero.
 
 **22 oct, 02:16.** Quinto bloque guardado en `06894eb`; sexto en `8208e5b`.
 Séptimo bloque validado: `AttackTrail` ya integrado (ocho estilos y ataque

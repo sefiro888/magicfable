@@ -20,6 +20,8 @@
   height: 100%;
 }
 
+.sigil[data-relief] img { object-fit: contain; border-radius: 0; }
+
 .small { --sigil-size: 0.95rem; }
 .medium { --sigil-size: 1.5rem; }
 .large { --sigil-size: 2.35rem; }

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { FACTION_BY_ID } from '../game/factions';
 import type { FactionId } from '../game/types';
 import { withBase } from '../utils/assets';
@@ -131,6 +131,19 @@ export interface FactionSigilProps {
   readonly title?: string;
 }
 
+function SigilArtwork({ faction }: { readonly faction: FactionId }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const glyph = CUSTOM_GLYPHS[faction];
+  return imageFailed && glyph ? (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      {glyph(FACTION_BY_ID[faction].accentColor)}
+    </svg>
+  ) : (
+    <img src={withBase(`/assets/factions/sigil-${faction}.webp`)} alt="" aria-hidden="true"
+      onError={() => setImageFailed(true)} />
+  );
+}
+
 export function FactionSigil({
   faction,
   size = 'medium',
@@ -138,30 +151,22 @@ export function FactionSigil({
   className,
   title,
 }: FactionSigilProps) {
-  const [imageFailed, setImageFailed] = useState(false);
   const label = title ?? `Símbolo de ${FACTION_LABELS[faction]}`;
   const classes = [styles.sigil, styles[size], styles[faction], className].filter(Boolean).join(' ');
-  const glyph = CUSTOM_GLYPHS[faction];
+  const relief = ['forja', 'marea', 'bestiario', 'plaga', 'sol'].includes(faction);
   return (
     <span
       className={classes}
+      data-relief={relief || undefined}
+      style={{ '--sigil-color': FACTION_BY_ID[faction].accentColor } as CSSProperties}
       role={decorative ? undefined : 'img'}
       aria-label={decorative ? undefined : label}
       aria-hidden={decorative || undefined}
       title={decorative ? undefined : label}
     >
-      {imageFailed && glyph ? (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          {glyph(FACTION_BY_ID[faction].accentColor)}
-        </svg>
-      ) : (
-        <img
-          src={withBase(`/assets/factions/sigil-${faction}.webp`)}
-          alt=""
-          aria-hidden="true"
-          onError={() => setImageFailed(true)}
-        />
-      )}
+      {/* Un fallo pertenece a la imagen, no al hueco de interfaz: al cambiar
+          de facción debe intentarse su ilustración en lugar de heredar el SVG. */}
+      <SigilArtwork key={faction} faction={faction} />
     </span>
   );
 }

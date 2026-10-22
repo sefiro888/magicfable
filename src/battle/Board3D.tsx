@@ -565,7 +565,7 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; arrival?: AnimationEvent; waiting: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -579,7 +579,6 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
   const frame = useRef<Mesh>(null)
   const readyRing = useRef<Mesh>(null)
   const stunOrbit = useRef<Group>(null)
-  const curseAura = useRef<Mesh>(null)
   const contactShadow = useRef<Mesh>(null)
   const plinth = useRef<Group>(null)
   const [hovered, setHovered] = useState(false)
@@ -730,12 +729,6 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         child.scale.setScalar(0.24 + Math.sin(t * 4 + index * 1.7) * 0.06)
       })
     }
-    // Maldita: el aura late al ritmo del drenaje, no a un ritmo decorativo —
-    // este estado le quita Vida cada turno y conviene que se sienta.
-    if (curseAura.current && !reducedMotion) {
-      const material = curseAura.current.material as MeshBasicMaterial
-      material.opacity = 0.55 + Math.sin(clock.elapsedTime * 2.4) * 0.2
-    }
     // Embestida / retroceso: ida y vuelta con seno, para que salga y regrese
     // en el mismo gesto sin dejar la ficha descolocada si se corta a medias.
     const strikeNode = strike.current
@@ -853,7 +846,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             />
           </mesh>
         ))}
-        <CardSurfaceWear damage={Math.max(0, 1 - piece.currentHealth / maxHealth)} frozen={frozen} infected={infected} reducedMotion={reducedMotion} />
+        <CardSurfaceWear damage={Math.max(0, 1 - piece.currentHealth / maxHealth)} frozen={frozen} infected={infected}
+          cursed={cursed} impact={impact} reducedMotion={reducedMotion} />
       </group>
       {/* Escudo: cúpula traslúcida alrededor de la ficha.
 
@@ -878,17 +872,6 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             )
           })}
         </group>
-      )}
-      {/* Maldita: aura oscura a los pies, que es de donde se la está
-          drenando. En violeta enfermizo para no confundirla con el azul del
-          escudo ni con el dorado del aturdimiento. */}
-      {cursed && (
-        <mesh ref={curseAura} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]} scale={CARD_SCALE}>
-          <circleGeometry args={[0.62, 22]} />
-          {/* Violeta muy saturado y bien opaco: el aditivo sobre el suelo
-              claro de Duna se comía por completo un morado discreto. */}
-          <meshBasicMaterial map={glowTexture('shadow')} color="#c465ff" transparent opacity={0.55} blending={AdditiveBlending} depthWrite={false} />
-        </mesh>
       )}
       </group>
       </group>
@@ -1551,6 +1534,7 @@ function Scene(props: Board3DProps) {
             previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.lines : undefined}
             reducedMotion={props.reducedMotion}
             impulse={impulses.get(piece.instanceId)}
+            impact={props.activeEvent?.targetId === piece.instanceId ? props.activeEvent : undefined}
             arrival={props.activeEvent?.type === 'summon' && props.activeEvent.targetId === piece.instanceId ? props.activeEvent : undefined}
             waiting={waitingSummons.has(piece.instanceId)}
           />

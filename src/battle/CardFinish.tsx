@@ -1,8 +1,10 @@
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { BoxGeometry, Color, DoubleSide, ExtrudeGeometry, MeshStandardMaterial, OctahedronGeometry, Path, Shape, Vector2, type ShaderMaterial } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { boardTileRoughness, masonryTexture } from './textures'
+import type { AnimationEvent } from '../game'
+import { isScorchImpact, scorchAppearance } from './burnAppearance'
 
 // La ventana queda abierta: una placa completa con brillo sobre el arte
 // lavaba las ilustraciones y hacía indistinguibles cartas de facciones distintas.
@@ -140,6 +142,9 @@ const fragmentShader = `
   uniform float uDamage;
   uniform float uFrozen;
   uniform float uInfected;
+  uniform float uCursed;
+  uniform float uChar;
+  uniform float uEmbers;
   uniform float uTime;
   uniform vec3 uFrost;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
@@ -161,10 +166,21 @@ const fragmentShader = `
     float crystals = step(0.72,noise(uv*75.0))*frost;
     float veins = 1.0-smoothstep(0.025,0.09,abs(noise(uv*18.0)-0.5));
     float infection = uInfected*border*veins*(0.65+sin(uTime*0.7)*0.08);
+    float cursePath = abs(edge-(0.04+noise(uv*vec2(9.0,18.0))*0.045));
+    float curseThread = (1.0-smoothstep(0.002,0.009,cursePath))*uCursed;
+    float curse = uCursed*border*(0.35+veins*0.45);
+    float charEdge = 1.0-smoothstep(0.035,0.13,edge+grain*0.025);
+    float charred = uChar*charEdge;
+    float emberLine = (1.0-smoothstep(0.003,0.016,abs(edge-(0.055+noise(uv*28.0)*0.035))))
+      *step(0.58,grain)*uEmbers*(0.7+0.3*sin(uTime*5.0+uv.y*50.0));
     vec3 color = mix(vec3(0.08,0.055,0.04),uFrost,clamp(frost+crystals,0.0,1.0));
     color = mix(color,vec3(0.37,0.54,0.12),infection);
+    color = mix(color,vec3(0.055,0.018,0.09),curse);
+    color = mix(color,vec3(0.39,0.16,0.53),curseThread*0.8);
+    color = mix(color,vec3(0.028,0.018,0.015),charred);
+    color = mix(color,vec3(1.0,0.22,0.025),emberLine);
     color += crystals*0.22+grain*frost*0.13;
-    float alpha = clamp(chips*0.65+crack+frost*0.65+infection*0.8,0.0,0.88);
+    float alpha = clamp(chips*0.65+crack+frost*0.65+infection*0.8+curse*0.7+curseThread*0.7+charred*0.85+emberLine,0.0,0.88);
     if(alpha<0.01) discard;
     gl_FragColor = vec4(color,alpha);
     #include <tonemapping_fragment>
@@ -172,20 +188,32 @@ const fragmentShader = `
   }
 `
 
-export function CardSurfaceWear({ damage, frozen, infected, reducedMotion }: {
-  damage: number; frozen: boolean; infected: boolean; reducedMotion: boolean
+export function CardSurfaceWear({ damage, frozen, infected, cursed, impact, reducedMotion }: {
+  damage: number; frozen: boolean; infected: boolean; cursed: boolean; impact?: AnimationEvent; reducedMotion: boolean
 }) {
   const materials = useRef<(ShaderMaterial | null)[]>([])
+  const burn = useRef<{ id: string; startedAt: number } | null>(null)
+  useEffect(() => {
+    if (impact && isScorchImpact(impact) && burn.current?.id !== impact.id) {
+      burn.current = { id: impact.id, startedAt: performance.now() }
+    }
+  }, [impact])
   const uniforms = useMemo(() => ({
     uDamage: { value: Math.max(0, Math.min(1, damage)) }, uFrozen: { value: frozen ? 1 : 0 },
     uInfected: { value: infected ? 1 : 0 }, uTime: { value: 0 }, uFrost: { value: new Color('#a7d6e5') },
-  }), [damage, frozen, infected])
+    uCursed: { value: cursed ? 1 : 0 }, uChar: { value: 0 }, uEmbers: { value: 0 },
+  }), [damage, frozen, infected, cursed])
   useFrame(({ clock }) => {
+    const appearance = burn.current ? scorchAppearance(performance.now() - burn.current.startedAt) : undefined
     for (const material of materials.current) {
-      if (material) material.uniforms.uTime!.value = reducedMotion ? 0 : clock.elapsedTime
+      if (material) {
+        material.uniforms.uTime!.value = reducedMotion ? 0 : clock.elapsedTime
+        material.uniforms.uChar!.value = appearance?.char ?? 0
+        material.uniforms.uEmbers!.value = reducedMotion ? 0 : appearance?.embers ?? 0
+      }
     }
   })
-  if (damage <= 0 && !frozen && !infected) return null
+  if (damage <= 0 && !frozen && !infected && !cursed) return null
   return <>{[1, -1].map((side, index) => <mesh key={side} position={[0, side * 0.057, 0]} rotation={[-Math.PI / 2, side > 0 ? 0 : Math.PI, 0]}>
     <planeGeometry args={[0.816, 1.006]} />
     <shaderMaterial ref={(material) => { materials.current[index] = material }} uniforms={uniforms}

@@ -2,6 +2,10 @@
 
 ## Propósito visual
 
+Los cinco emblemas de relieve nuevos (Forja, Marea, Bestiario, Plaga y Quinto
+Sol) completan los huecos de la interfaz. Procedencia y conservación de los
+originales: [arte de interfaz](arte-interfaz.md). Mantener sus siluetas enteras.
+
 `Crónicas del Nexo` combina fantasía oscura elegante, materiales antiguos y magia de alto contraste. La carta es siempre la miniatura, la interfaz y la pieza de juego: el tablero, los efectos y el entorno deben enmarcarla, nunca competir con ella. La imagen debe poder leerse en tres escalas: una masa cromática inequívoca en mano, una escena reconocible sobre el tablero y una narración rica al inspeccionarla.
 
 Las ilustraciones provisionales son vectores originales de 800 × 560. No contienen texto ni marcos y se pueden sustituir individualmente por arte final WebP manteniendo el mismo identificador.
