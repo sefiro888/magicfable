@@ -45,7 +45,7 @@ export function SelectionPanel({ card, heading, stats, hint, canCast, onCast, of
             {FACTION_LABELS[card.faction]} · {TYPE_LABELS[card.type]}{card.subtype ? ` — ${card.subtype}` : ''} · {RARITY_LABELS[card.rarity]}
           </p>
           <p className={styles.contextCost}>Coste: {formatManaCost(card.cost)}</p>
-          {stats && <p className={styles.contextStats}>{stats}</p>}
+          {stats && <p className={styles.contextStats}>{stats.split(' · ').map((part) => <span key={part}>{part}</span>)}</p>}
           <p className={styles.contextRules}>{card.rules}</p>
           {card.keywords.length > 0 && (
             <div className={styles.contextKeywords}>

@@ -7,6 +7,7 @@ import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../ga
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
+import { GameIcon } from '../components/GameIcon'
 import { DamageNumbers } from './DamageNumbers'
 import { FallenPieces } from './FallenPieces'
 import { RecentHits } from './RecentHits'
@@ -109,6 +110,8 @@ interface Board3DProps {
   /** Modo foto: cámara libre para admirar el tablero, sin límites de ángulo/distancia ni clics de juego. */
   photoMode?: boolean
   reducedMotion: boolean
+  /** Una interfaz opaca cubre el campo: no gastar fotogramas detrás de ella. */
+  renderPaused?: boolean
   quality: GraphicsQuality
   scenario: ScenarioId
   /** Evento visual en reproducción, entregado por el director de animaciones. */
@@ -655,10 +658,16 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       arrivalGroup.current.scale.setScalar(pose?.scale ?? 1)
       arrivalGroup.current.rotation.set(pose?.lean ?? 0, pose?.turn ?? 0, 0)
     }
-    const speed = reducedMotion ? 100 : 8
+    const speed = 8
     const lift = selected ? 0.3 : hovered ? 0.22 : 0.15
     const path = hop.current
-    if (path && path.index < path.cells.length - 1) {
+    if (reducedMotion) {
+      // Bajo demanda puede haber un solo fotograma. Amortiguar muy rápido
+      // aún dejaba un pequeño desplazamiento pendiente hasta otro evento.
+      hop.current = null
+      impulseRun.current = null
+      node.position.set(target.x, lift, target.z)
+    } else if (path && path.index < path.cells.length - 1) {
       const elapsed = performance.now() - path.segmentStart
       const progress = Math.min(1, elapsed / HOP_STEP_MS)
       const from = path.cells[path.index]!
@@ -678,7 +687,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       node.position.z = MathUtils.damp(node.position.z, target.z, speed, delta)
       node.position.y = MathUtils.damp(node.position.y, lift, speed, delta)
     }
-    node.rotation.y = MathUtils.damp(node.rotation.y, selected ? (piece.owner === 'player' ? -0.08 : 0.08) : 0, speed, delta)
+    const turnAngle = selected ? (piece.owner === 'player' ? -0.08 : 0.08) : 0
+    node.rotation.y = reducedMotion ? turnAngle : MathUtils.damp(node.rotation.y, turnAngle, speed, delta)
     // La ficha encara a la cámara girando SOLO sobre su eje vertical, como un
     // standee de mesa al que se le da la vuelta para mirarlo: desde un lateral
     // exacto, una lámina plana se vería de canto y la ilustración desaparecía.
@@ -695,7 +705,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
       face.rotation.y = reducedMotion ? wanted : MathUtils.damp(current, shortest, 6, delta)
     }
     // Agotada: la carta descansa ligeramente girada, como una carta «tapeada».
-    node.rotation.z = MathUtils.damp(node.rotation.z, spent ? 0.16 : 0, speed, delta)
+    node.rotation.z = reducedMotion ? (spent ? 0.16 : 0) : MathUtils.damp(node.rotation.z, spent ? 0.16 : 0, speed, delta)
     if (contactShadow.current) {
       // La sombra vive en el mundo, fuera del giro y la elevación de la carta:
       // así tampoco se inclina al agotarse ni acompaña la embestida.
@@ -734,7 +744,10 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
     const strikeNode = strike.current
     if (strikeNode) {
       const run = impulseRun.current
-      if (run) {
+      if (reducedMotion) {
+        strikeNode.position.set(0, 0, 0)
+        strikeNode.rotation.set(0, 0, 0)
+      } else if (run) {
         const progress = Math.min(1, (performance.now() - run.start) / Math.max(1, run.durationMs))
         const pose = combatPose(run.kind, progress)
         strikeNode.position.set(run.dx * pose.reach, pose.lift, run.dz * pose.reach)
@@ -904,8 +917,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats}>
-          {card.attack !== undefined && <span className={styles.attackStat}>⚔ {Math.max(0, card.attack + piece.attackModifier)}</span>}
-          <span className={damaged ? styles.damagedStat : styles.healthStat}>♥ {piece.currentHealth}</span>
+          {card.attack !== undefined && <span className={styles.attackStat} aria-label={`Ataque ${Math.max(0, card.attack + piece.attackModifier)}`}><GameIcon name="attack" /> {Math.max(0, card.attack + piece.attackModifier)}</span>}
+          <span className={damaged ? styles.damagedStat : styles.healthStat} aria-label={`Vida ${piece.currentHealth}`}><GameIcon name="health" /> {piece.currentHealth}</span>
         </div>
         {/* Estados: solo aparecen cuando los hay, en su propia fila para que no
             empujen a las estadísticas. «Aturdida» faltaba desde que se añadió
@@ -1251,12 +1264,15 @@ function ResponsiveCamera() {
   // de R3F para este tipo de mutación imperativa; la comparación con
   // appliedKey evita recalcular en cada frame, solo cuando cambia el tamaño.
   const appliedKey = useRef<string | null>(null)
-  useFrame(({ camera, size }) => {
+  useFrame(({ camera, size, gl }) => {
     if (!(camera instanceof ThreePerspectiveCamera)) return
     const key = `${size.width}x${size.height}`
     if (appliedKey.current === key) return
     appliedKey.current = key
-    const aspect = size.width / size.height
+    // El escenario llega bajo los paneles, pero las esquinas jugables siguen
+    // pidiendo el mismo ancho seguro que cuando el lienzo acababa junto a ellos.
+    const inset = Number.parseFloat(getComputedStyle(gl.domElement).getPropertyValue('--scene-bleed')) || 0
+    const aspect = Math.max(1, size.width - inset * 2) / size.height
     // Se prefiere SIEMPRE el ángulo estrecho por defecto y ajustar la
     // distancia: un ángulo ancho encoge todo lo que hay en pantalla. Solo si
     // ni retrocediendo al máximo cabe el tablero —el caso del móvil en
@@ -1617,7 +1633,12 @@ export function Board3D(props: Board3DProps) {
       data-testid="battle-board"
       style={{ '--label-scale': props.boardTextScale ?? 1 } as CSSProperties}
     >
-      <Canvas shadows={props.quality !== 'low'} dpr={dpr} camera={{ position: [...CAMERA_POSITION], fov: CAMERA_FOV }} gl={{ antialias: props.quality !== 'low', alpha: false }}>
+      {/* Con movimiento reducido el campo es estático; tras un modal opaco
+          tampoco se ve. Dibujar sin pausa bloqueaba incluso el foco del
+          inspector por software. React y OrbitControls invalidan los cambios. */}
+      <Canvas style={{ position: 'absolute', left: 'calc(-1 * var(--scene-bleed, 0px))', width: 'calc(100% + 2 * var(--scene-bleed, 0px))' }}
+        frameloop={props.reducedMotion || props.renderPaused ? 'demand' : 'always'}
+        shadows={props.quality !== 'low'} dpr={dpr} camera={{ position: [...CAMERA_POSITION], fov: CAMERA_FOV }} gl={{ antialias: props.quality !== 'low', alpha: false }}>
         <Scene {...props} />
       </Canvas>
     </div>

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
   canTakeMulligan,
   COMMANDER_BY_ID,
+  FACTION_BY_ID,
   effectiveCost,
   getValidAttacks,
   getValidDeploymentPositions,
@@ -18,6 +19,7 @@ import {
   summarizeMana,
   validSpellTargets,
   type GameAction,
+  type FactionId,
   type MatchState,
   type PlayerId,
   type Position,
@@ -38,6 +40,7 @@ import { GlossaryPanel } from '../components/GlossaryPanel'
 import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { describePendingActions, pendingTurnActions } from '../battle/ui/pendingTurnActions'
 import { CardInspector, FactionSigil } from '../components'
+import { GameIcon } from '../components/GameIcon'
 import { inspectionStatuses } from '../battle/inspectionStatuses'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useSoundtrack } from '../services/useAudioMix'
@@ -783,7 +786,9 @@ export function BattlePage() {
   })
 
   return (
-    <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}>
+    <div className={styles.battle} data-motion={preferences.reducedMotion ? 'reduced' : 'full'}
+      data-hand-collapsed={handTucked || player.hand.length === 0 || undefined}
+      style={{ '--battle-accent': FACTION_BY_ID[commander?.faction ?? 'fury'].accentColor } as CSSProperties}>
       <header className={styles.topbar}>
         <button
           className={styles.exit}
@@ -818,17 +823,17 @@ export function BattlePage() {
             </div>
             <div className={styles.enemyChips}>
               <span className={styles.enemyChip} data-kind="mana" title="Esencia disponible del rival">
-                ◆ {rivalMana.available}/{rivalMana.total}
+                <GameIcon name="mana" /> {rivalMana.available}/{rivalMana.total}
               </span>
               <span className={styles.enemyChip} data-kind="hand" title="Cartas en la mano del rival">
-                🂠 {rival.hand.length}
+                <GameIcon name="hand" /> {rival.hand.length}
               </span>
               <span className={styles.enemyChip} data-kind="deck" title="Cartas en el mazo del rival">
-                ▤ {rival.deck.length}
+                <GameIcon name="deck" /> {rival.deck.length}
               </span>
             </div>
           </div>
-          <div className={styles.nexusOrb} title="Vida del Nexo rival">♥{rival.nexusHealth}</div>
+          <div className={styles.nexusOrb} title="Vida del Nexo rival"><GameIcon name="health" />{rival.nexusHealth}</div>
         </button>
       </header>
 
@@ -857,6 +862,7 @@ export function BattlePage() {
             attackPreview={attackPreview}
             photoMode={photoMode}
             reducedMotion={preferences.reducedMotion}
+            renderPaused={Boolean(inspected || scryOpen || howToOpen || glossaryOpen || confirmAbandon || canTakeMulligan(match, ME))}
             quality={preferences.graphicsQuality}
             scenario={scenario}
             activeEvent={visualEvent}
@@ -879,13 +885,14 @@ export function BattlePage() {
             </button>
           )}
           <div className={styles.essencePill} aria-label={`Esencia disponible: ${mana.available} de ${mana.total}`}>
-            <span className={styles.essenceSigil} aria-hidden="true">◆</span>
+            <span className={styles.essenceSigil} aria-hidden="true"><GameIcon name="mana" /></span>
             <strong key={`${mana.available}/${mana.total}`} className={styles.essenceCount}>{mana.available} / {mana.total}</strong>
             <span className={styles.essencePips} aria-hidden="true">
               {player.resources.slice(0, 12).map((resource) => (
                 <span
                   key={resource.instanceId}
                   data-faction={resource.faction}
+                  style={{ '--resource-color': FACTION_BY_ID[resource.faction].accentColor } as CSSProperties}
                   data-exhausted={resource.exhausted}
                   data-spend={(payment?.payable && payment.resourceIds.includes(resource.instanceId)) || undefined}
                 />
@@ -896,9 +903,12 @@ export function BattlePage() {
         <aside className={styles.leftPanel} data-mobile-open={ownPanelOpenMobile || undefined}>
           <section className={styles.panelSection}>
             <span className={styles.panelLabel}>Comandante</span>
-            <div className={styles.commander}>
-              <img className={styles.portrait} src={commander ? withBase(commander.art.webp) : undefined} alt="" />
-              <div><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
+            <div className={`${styles.commander} ${styles.ownCommander}`}>
+              <div className={styles.portraitFrame}>
+                <img className={styles.portrait} src={commander ? withBase(commander.art.webp) : undefined} alt="" />
+                {commander && <FactionSigil faction={commander.faction} size="large" decorative className={styles.commanderSigil} />}
+              </div>
+              <div className={styles.commanderIdentity}><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
             </div>
             {commander && <p className={styles.commanderRules}>{commander.rules}</p>}
             {player.unitDiscountPending && <p className={styles.commanderBoon}>Pasiva activa: tu siguiente unidad cuesta 1 menos.</p>}
@@ -914,12 +924,14 @@ export function BattlePage() {
                 disabled={!canUsePower && !aimingPower}
                 title={powerUsed ? 'Ya usado en esta partida' : power.description}
               >
+                <span className={styles.powerCaption}>Poder único · {powerUsed ? 'Usado' : '1 uso'}</span>
                 <span className={styles.powerHead}>
                   <strong>{power.name}</strong>
                   <span className={styles.powerCost}>
                     {power.cost.generic > 0 && <span>{power.cost.generic}</span>}
                     {Object.entries(power.cost.colored).map(([faction, amount]) => (
-                      <span key={faction} data-faction={faction}>{amount}</span>
+                      <span key={faction} data-faction={faction}
+                        style={{ '--resource-color': FACTION_BY_ID[faction as FactionId].accentColor } as CSSProperties}>{amount}</span>
                     ))}
                   </span>
                 </span>
@@ -955,7 +967,7 @@ export function BattlePage() {
           <section className={styles.panelSection}>
             <div className={styles.lifeRow}>
               <span>Vida del Nexo</span>
-              <span key={player.nexusHealth} className={styles.life}>♥ {player.nexusHealth}</span>
+              <span key={player.nexusHealth} className={styles.life}><GameIcon name="health" /> {player.nexusHealth}</span>
             </div>
             <div className={styles.deckCounters}>
               <div className={styles.counter}><strong key={player.deck.length}>{player.deck.length}</strong><span>Mazo</span></div>
@@ -1031,18 +1043,20 @@ export function BattlePage() {
         </aside>
       </div>
 
-      <footer ref={handBarRef} className={styles.handBar} data-tucked={handTucked || undefined}>
+      <footer ref={handBarRef} className={styles.handBar} data-tucked={handTucked || player.hand.length === 0 || undefined}>
         <button
           className={styles.handToggle}
           type="button"
           onClick={() => setHandTucked((current) => !current)}
-          aria-pressed={handTucked}
-          aria-label={handTucked ? 'Mostrar la mano' : 'Recoger la mano'}
-          title={handTucked ? 'Mostrar la mano (tecla H)' : 'Recoger la mano para despejar el tablero (tecla H)'}
+          aria-pressed={handTucked || player.hand.length === 0}
+          disabled={player.hand.length === 0}
+          aria-label={player.hand.length === 0 ? 'Sin cartas en mano' : handTucked ? 'Mostrar la mano' : 'Recoger la mano'}
+          title={player.hand.length === 0 ? 'Tu mano está vacía.' : handTucked ? 'Mostrar la mano (tecla H)' : 'Recoger la mano para despejar el tablero (tecla H)'}
         >
-          {handTucked ? '▲ Mano' : '▼ Recoger'}
+          {player.hand.length === 0 ? 'Sin cartas en mano' : handTucked ? '▲ Mano' : '▼ Recoger'}
         </button>
         <HandFan
+          reducedMotion={preferences.reducedMotion}
           match={match}
           localPlayerId={ME}
           selectedHandId={store.selectedHandId}

@@ -33,6 +33,7 @@ export interface CardProps {
   readonly playable?: boolean;
   readonly disabled?: boolean;
   readonly exhausted?: boolean;
+  readonly reducedMotion?: boolean;
   readonly statusEffects?: readonly CardStatus[];
   readonly className?: string;
   readonly onSelect?: (card: CardDefinition) => void;
@@ -195,6 +196,7 @@ export function Card({
   playable,
   disabled = false,
   exhausted = false,
+  reducedMotion = false,
   statusEffects = [],
   className,
   onSelect,
@@ -213,7 +215,7 @@ export function Card({
   ].filter(Boolean).join(', ');
   const accessibleLabel = `${card.name}. ${typeLine}. Coste ${formatManaCost(card.cost)}. ${RARITY_LABELS[card.rarity]}${stateDescription ? `. ${stateDescription}` : ''}`;
 
-  const tiltEnabled = isInteractive && TILT_SIZES.has(size);
+  const tiltEnabled = isInteractive && TILT_SIZES.has(size) && !reducedMotion;
 
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     if (!tiltEnabled || prefersReducedMotion()) return;
@@ -277,6 +279,7 @@ export function Card({
       data-card-id={card.id}
       data-faction={card.faction}
       data-rarity={card.rarity}
+      data-reduced-motion={reducedMotion || undefined}
       data-frozen={statuses.some((status) => status.id === 'frozen') || undefined}
       data-scorched={statuses.some((status) => status.id === 'scorched') || undefined}
       role={isInteractive ? 'button' : 'group'}

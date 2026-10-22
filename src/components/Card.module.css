@@ -184,6 +184,11 @@
 }
 .interactive:focus-visible { outline: 2px solid #fff1b8; outline-offset: 0.45rem; }
 .selected { transform: translateY(-0.38rem) rotate(-0.8deg); }
+.card[data-reduced-motion], .card[data-reduced-motion] .artImage { transition: none; animation: none; }
+.card[data-reduced-motion]:hover, .card[data-reduced-motion]:focus-visible,
+.card[data-reduced-motion]:hover .artImage, .card[data-reduced-motion]:focus-visible .artImage { transform: none; }
+.card[data-reduced-motion] .foil, .card[data-reduced-motion]:hover .foil,
+.card[data-reduced-motion]:focus-visible .foil { opacity: 0; }
 .playable { animation: playablePulse 1.8s ease-in-out infinite; }
 .unplayable { filter: saturate(0.72) brightness(0.78); }
 .disabled { cursor: not-allowed; filter: grayscale(0.48) brightness(0.58); opacity: 0.76; }

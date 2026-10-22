@@ -1,4 +1,6 @@
-.battle { height: 100vh; min-height: 720px; min-width: 1180px; position: relative; overflow: hidden; background: #06080d; }
+/* hidden permitía que enfocar una carta alta desplazase todo el contenedor:
+   desaparecía la cabecera aunque no existiese una barra de desplazamiento. */
+.battle { height: 100vh; min-height: 720px; min-width: 1180px; position: relative; overflow: clip; background: #06080d; }
 .topbar { height: 60px; position: relative; z-index: 30; display: grid; grid-template-columns: 340px 1fr 340px; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(8,10,16,.92); backdrop-filter: blur(14px); }
 .exit { width: max-content; padding: 7px 11px; border: 1px solid rgba(255,255,255,.12); color: #aaa69e; background: rgba(255,255,255,.025); cursor: pointer; font-size: 10px; letter-spacing: .11em; text-transform: uppercase; }
 .exit:hover { border-color: var(--line-bright); color: var(--ivory); }
@@ -37,7 +39,7 @@
 
 /* ── Arena: el tablero es el protagonista ─────────────────────────────────── */
 .arena { position: absolute; inset: 60px 0 210px; }
-.boardFrame { position: absolute; inset: 0 206px; }
+.boardFrame { --scene-bleed: 206px; position: absolute; inset: 0 206px; }
 .leftPanel, .rightPanel { position: absolute; z-index: 20; top: 12px; width: 186px; border: 1px solid var(--line); background: rgba(11,13,20,.84); box-shadow: 0 18px 45px rgba(0,0,0,.3); }
 .leftPanel { backdrop-filter: blur(12px); }
 /* rightPanel solo lleva backdrop-filter en desktop (ver media query de abajo,
@@ -59,6 +61,7 @@
 .leftPanel .panelSection:last-child { border-bottom: 0; }
 .rightPanel { bottom: 12px; }
 .rightPanel { right: 12px; display: flex; flex-direction: column; }
+.rightPanel[data-context-empty] { bottom: auto; }
 .panelSection { padding: 15px; border-bottom: 1px solid rgba(255,255,255,.07); }
 /* Duna — Ofrenda: interruptor de pagar Vida por el efecto mejorado. Va en rojo
    apagado y no en dorado a propósito: lo que se gasta aquí es tu Nexo. */
@@ -662,7 +665,7 @@
   .enemyPanel .counter { padding: 5px 3px; }
 
   .arena { inset: 52px 0 150px; }
-  .boardFrame { inset: 0 4px; }
+  .boardFrame { --scene-bleed: 4px; inset: 0 4px; }
 
   /* Paneles compactos y semitransparentes: informan sin tapar el tablero. */
   .leftPanel, .rightPanel { width: 45vw; max-height: 30vh; top: 6px; font-size: 12px; background: rgba(11,13,20,.92); }
@@ -822,3 +825,95 @@
 }
 .powerTargets button:hover { background: rgba(255,90,80,.24); }
 .powerTargets p { margin: 0; color: #918e86; font-size: 11px; }
+
+/* El metal enmarca y el color de facción acentúa. Subir el contraste del texto
+   evita que la decoración se coma las reglas cuando falta Esencia. */
+.topbar { background: linear-gradient(180deg, #14171f, #090c12); box-shadow: 0 3px 16px #0006; }
+.turn strong { font-size: 21px; letter-spacing: .025em; }
+.turn span { color: #aca79b; font-size: 10px; }
+.enemyName strong { font-size: 16px; }
+.nexusOrb { display: flex; justify-content: center; gap: 3px; font-variant-numeric: tabular-nums; }
+.nexusOrb svg { width: 11px; }
+.leftPanel, .rightPanel { border-color: #7f6b464f; background: linear-gradient(135deg, #1b1d24eb, #090d14eb 65%); box-shadow: inset 0 1px #e6d1a212, 0 12px 35px #0007; }
+.leftPanel { border-top-color: color-mix(in srgb, var(--battle-accent) 65%, #a89163); }
+.panelLabel { color: #aaa394; font-size: 9px; letter-spacing: .18em; }
+.portraitFrame { position: relative; }
+.portraitFrame::after { content: ''; position: absolute; inset: 0; pointer-events: none; border: 1px solid #cfb37880; box-shadow: inset 0 0 0 3px #080b104d, inset 0 -22px 28px #03060b80; }
+.ownCommander .portrait { display: block; height: 150px; aspect-ratio: auto; object-position: center 25%; }
+.commanderSigil { --sigil-size: 45px; position: absolute; right: 5px; bottom: -11px; z-index: 1; filter: drop-shadow(0 3px 5px #000); }
+.commanderIdentity { padding-right: 22px; }
+.commanderIdentity strong { color: #f2e6cf; font-size: 19px; font-weight: 500; line-height: 1.15; }
+.commanderIdentity small { color: #b7aa91; font-size: 9px; line-height: 1.5; letter-spacing: .06em; }
+.commanderRules { color: #c5c0b5; font-size: 11px; line-height: 1.55; }
+.lifeRow > span:first-child { color: #b7b0a3; font-size: 11px; }
+.life { display: inline-flex; align-items: center; gap: 5px; font-size: 25px; font-variant-numeric: tabular-nums; }
+.life svg { width: 14px; }
+.counter { border-color: #8c7b543d; background: linear-gradient(#ffffff04, #00000020); }
+.counter span { color: #aaa496; font-size: 9px; }
+.essenceNote { color: #aaa496; font-size: 10px; }
+.essencePips span[data-faction] { color: var(--resource-color); }
+.essencePips span[data-exhausted='true'] { color: #3c3e46; }
+.commanderPower { position: relative; padding: 10px; gap: 7px; background: linear-gradient(125deg, #a68a391b, #171a2133); border-color: #bfa26670; border-left-width: 1px; }
+.commanderPower:disabled { opacity: 1; color: #aaa395; border-color: #8a79513f; }
+.commanderPower[data-used='true'] { opacity: .72; }
+.powerCaption { color: #ac9b78; font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+.powerHead { display: grid; grid-template-columns: 1fr; gap: 7px; }
+.powerHead strong { font-size: 15px; font-weight: 500; line-height: 1.2; }
+.powerCost { flex-wrap: wrap; }
+.powerCost span { border: 1px solid #d9c7954d; border-radius: 2px; background: #0003; }
+.powerCost span[data-faction] { color: #eee4d0; border-color: color-mix(in srgb, var(--resource-color) 65%, transparent); background: color-mix(in srgb, var(--resource-color) 25%, #11151d); }
+.commanderPower small { color: #bcb6aa; font-size: 10.5px; line-height: 1.5; }
+.context h3 { color: #f0e3ca; font-size: 20px; line-height: 1.15; }
+.contextType { color: #b2a99a; font-size: 9px; letter-spacing: .08em; line-height: 1.5; }
+.contextRules { color: #c9c2b6; font-size: 11.5px; }
+.contextCost { color: #bcb4a4; font-size: 11px; }
+.contextStats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; letter-spacing: .035em; }
+.contextStats span { padding: 4px 6px; white-space: nowrap; border: 1px solid #9a83523d; background: #070b123d; }
+.contextFlavor { color: #a69a86; font-size: 11px; }
+.contextKeywords span { color: #e6d1a2; font-size: 9px; }
+.actionHint { font-size: 11px; }
+.endTurn { border-radius: 2px; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); }
+.endTurn[data-state='ready'] { background: linear-gradient(135deg, #f0d99a, #b58a3d 65%, #d6b568); }
+.handBar { background: linear-gradient(180deg, #161922ed, #080b12fa); }
+.handToggle:disabled { color: #b8ad95; cursor: default; }
+.battle[data-hand-collapsed] .arena { bottom: 56px; }
+.handToggle, .endTurn, .commanderPower { -webkit-tap-highlight-color: transparent; }
+.battle[data-motion='reduced'] .handBar, .battle[data-motion='reduced'] .handBar > div:first-of-type { transition: none; }
+
+@media (min-width: 1600px) and (min-height: 821px) {
+  .boardFrame { --scene-bleed: 240px; inset-inline: 240px; }
+  .leftPanel, .rightPanel { width: 216px; }
+  .panelSection { padding: 16px; }
+  .ownCommander .portrait { height: 184px; }
+  .commanderRules { font-size: 12px; }
+  .contextRules { font-size: 12px; }
+  .powerHead strong { font-size: 17px; }
+  .commanderPower small { font-size: 11px; }
+}
+@media (min-width: 761px) and (max-height: 820px) and (min-height: 501px) {
+  .ownCommander .portrait { height: 106px; }
+  .ownCommander { gap: 6px; }
+  .commanderIdentity strong { font-size: 17px; }
+  .leftPanel .panelSection { padding: 12px 15px; }
+  .commanderRules { margin-top: 7px; padding-top: 7px; font-size: 10.5px; }
+  .commanderPower { gap: 5px; margin-top: 8px; padding: 8px; }
+  .powerHead { gap: 5px; }
+  .commanderPower small { font-size: 10px; }
+}
+@media (max-width: 760px), (max-height: 500px) {
+  .turn strong { font-size: 13px; }
+  .turn span { font-size: 8px; }
+  .enemyName strong { font-size: 12px; }
+  .nexusOrb { font-size: 10px; }
+  .nexusOrb svg { display: none; }
+  .ownCommander .portraitFrame { display: none; }
+  .commanderIdentity { padding: 0; }
+  .commanderIdentity strong { font-size: 16px; }
+  .powerHead { grid-template-columns: 1fr auto; align-items: start; }
+  .powerHead strong { font-size: 13px; }
+  .powerCaption { font-size: 7px; }
+  .panelLabel { font-size: 8px; }
+  .battle[data-hand-collapsed] .arena { bottom: 52px; }
+  .contextRules { font-size: 11px; }
+  .context h3 { font-size: 16px; }
+}

@@ -6,6 +6,7 @@ import styles from './HandFan.module.css'
 
 interface HandFanProps {
   readonly match: MatchState
+  readonly reducedMotion?: boolean
   /** Bando de la partida que controla este navegador: 'player' en solitario y para el anfitrión, 'ai' para el invitado. */
   readonly localPlayerId: PlayerId
   readonly selectedHandId?: string
@@ -24,7 +25,7 @@ interface HandFanProps {
  * Mano en abanico del jugador. Memoizada: solo se vuelve a renderizar cuando
  * cambia la partida o la selección, no en cada evento visual de la cola.
  */
-export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHandId, onSelect, onInspect, onDragStart, draggingId, favoriteIds, onToggleFavorite }: HandFanProps) {
+export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayerId, selectedHandId, onSelect, onInspect, onDragStart, draggingId, favoriteIds, onToggleFavorite }: HandFanProps) {
   const player = match.players[localPlayerId]
   const count = player.hand.length
   // Las cartas fijadas van primero, conservando su orden relativo entre sí
@@ -39,7 +40,7 @@ export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHan
   const maxRotation = Math.min(3.4, 20 / Math.max(1, count))
   const liftStep = Math.min(3.6, 20 / Math.max(1, count))
   return (
-    <div className={styles.hand} aria-label="Tu mano">
+    <div className={styles.hand} aria-label="Tu mano" data-reduced-motion={reducedMotion || undefined}>
       {orderedHand.map((instance, index) => {
         const card = CARD_BY_ID[instance.cardId]
         if (!card) return null
@@ -62,12 +63,14 @@ export const HandFan = memo(function HandFan({ match, localPlayerId, selectedHan
             className={styles.fanCard}
             style={style}
             data-selected={selected}
+            data-playable={playable}
             data-dragging={draggingId === instance.instanceId || undefined}
             onPointerDown={(event) => { if (playable) onDragStart?.(instance.instanceId, event) }}
           >
             <Card
               card={card}
               size="hand"
+              reducedMotion={reducedMotion}
               selected={selected}
               playable={playable}
               onSelect={() => onSelect(instance.instanceId)}

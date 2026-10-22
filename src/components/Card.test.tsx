@@ -50,4 +50,16 @@ describe('Card', () => {
     fireEvent.error(art);
     expect(art.getAttribute('src')).toContain('data:image/svg+xml');
   });
+
+  it('el movimiento reducido de la aplicación omite la inclinación y conserva la selección', () => {
+    const onSelect = vi.fn();
+    render(<Card card={source} size="hand" reducedMotion onSelect={onSelect} />);
+    const card = screen.getByRole('button', { name: /Sabueso de Brasa/i });
+    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 100, 140));
+    fireEvent.pointerMove(card, { clientX: 85, clientY: 20 });
+    expect(card.style.getPropertyValue('--tilt-x')).toBe('');
+    expect(card.style.getPropertyValue('--tilt-y')).toBe('');
+    fireEvent.click(card);
+    expect(onSelect).toHaveBeenCalledWith(source);
+  });
 });

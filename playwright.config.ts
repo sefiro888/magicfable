@@ -7,11 +7,12 @@ export default defineConfig({
   /**
    * Cada prueba levanta un tablero WebGL real y, sin GPU, Chromium lo rasteriza
    * por software. Con los escenarios nuevos (plaza, columnata, lago, lava) eso
-   * pesa lo suyo: con los ~5 workers por defecto los navegadores se robaban la
-   * CPU entre ellos y alguna prueba agotaba su tiempo sin que nada estuviera
-   * roto. Tres workers y un minuto por prueba dejan margen de sobra.
+   * pesa lo suyo. Con el lienzo a ancho completo, tres navegadores llegaron
+   * a tardar varios segundos por pulsación bajo rasterizado por CPU y hasta
+   * retrasaban la carga de rutas. Dos evitan esa contención sin ampliar los
+   * límites de las comprobaciones ni reducir la calidad que estas verifican.
    */
-  workers: 3,
+  workers: 2,
   timeout: 60_000,
   reporter: 'list',
   use: {

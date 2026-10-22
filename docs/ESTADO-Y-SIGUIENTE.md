@@ -14,16 +14,20 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 550 en verde, 5 omitidos |
+| Tests | 555 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
 en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegador:
-73 pruebas activas verificadas y 31 omitidas (capturas bajo demanda), con los hechizos
+75 pruebas activas en verde y 33 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada: 71 e2e verdes y dos tiempos de espera bajo carga; los dos
-pasaron aislados sin modificar el juego. No compilar a la vez que WebGL.
+Última pasada completa `20002`: 75 e2e verdes, 33 omitidas. El campo ampliado
+saturaba el rasterizado por CPU con tres navegadores. La configuración usa
+dos, sin ampliar límites de comprobación. No compilar a la vez que WebGL.
+El campo renderiza bajo demanda con movimiento reducido o tras un modal
+opaco, conservando reloj de reglas y actualizaciones de React/OrbitControls.
+La pose reducida se aplica directamente: no depende de fotogramas futuros.
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**
 Leer también `docs/RENOVACION-VISUAL.md`: contiene las 50 tareas autorizadas,
@@ -88,6 +92,13 @@ rompiendo algo.
 
 ### 3.1 La cámara: el error que he cometido CUATRO veces
 
+**Desde la renovación del 22 oct:** el lienzo llega bajo los paneles mediante
+`--scene-bleed`, mientras el cálculo de encuadre conserva el ancho seguro.
+Recoger la mano o quedarse sin cartas también amplía el alto del campo.
+`ResponsiveCamera` ajusta distancia/proyección al tamaño efectivo; las cifras
+siguientes explican la dirección de vista, pero no sustituyen medir la cámara
+real del estado que se esté revisando. No colocar decorado solo a ojo.
+
 La cámara está en `z = 8,8`, mira **37° en picado**, y deja tan poco cielo que
 en la práctica **no se ve ninguno**. Consecuencias:
 
@@ -128,10 +139,12 @@ la cuenta antes de colocar nada.**
 
 ### 3.3 Materiales
 
-- **Subir `metalness` sin mapa de entorno deja el material NEGRO.** No hay
-  `Environment` en ninguna escena. El metal no tiene componente difusa: refleja
-  el entorno, y sin entorno solo se apaga. Mantén `metalness ≤ 0,05` y finge el
-  metal con rugosidad baja, arañazos claros y emisivo.
+- **Subir `metalness` sin mapa de entorno deja el material NEGRO.** Era el
+  caso de las escenas antiguas. Ahora `MaterialEnvironment` captura tres
+  paneles neutros propios una vez, sin HDR externo: los filetes de carta
+  admiten metalness 0,6. Piedra y papel siguen en ≤ 0,05. No convertir todo
+  en metal ni confundir ese entorno con reflejos de piezas en el suelo,
+  que todavía están pendientes en la lista de renovación.
 - **Los mapas de datos (rugosidad, normales) NO pueden ir en sRGB.**
   `finishTexture()` marca todo como `SRGBColorSpace`, que está bien para color
   pero no para datos. Sobrescribe con `NoColorSpace` después.

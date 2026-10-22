@@ -70,11 +70,73 @@ global), **V** terminada y verificada.
 | 45 | Destrucciones por facción | A |
 | 46 | Deterioro de Nexos | A |
 | 47 | Caída del Nexo | A |
-| 48 | Interfaz de batalla | C |
+| 48 | Interfaz de batalla | A |
 | 49 | Inspección de cartas | A |
 | 50 | Presentación de escenario y comandantes | P |
 
 ## Bloque activo
+
+**22 oct, 03:21.** Décimo bloque validado. Gate completo: **555 unitarias
+verdes/5 omitidas**, build y lint verdes; e2e `20002` **75 verdes/33 omitidas**.
+La pasada con dos navegadores pasó completa, incluidos navegación, modo foto,
+inspección y controles. Capturas de interfaz/piezas revisadas a ambas resoluciones.
+Guardar checkpoint de interfaz. No incluir aún los archivos preparados de
+CommanderDuel/MulliganPresentation/scenarioPresentation ni cameraSnapshot y
+world-projection: pertenecen al bloque siguiente y siguen sin integrar.
+No hay procesos de verificación pendientes. Siguiente: conectar presentación
+al mulligan, verificar desktop/móvil y luego renovar los escenarios.
+
+**22 oct, 02:48.** Noveno avance guardado en `f741055`.
+Actualización 02:58: e2e completo `74949` detenido, no cerrado en verde.
+Las dos inspecciones agotaron 60 s. Traza leída: todas las comprobaciones
+del primer inspector pasaban, pero cada pulsación tardaba 3–8 s mientras tres
+campos WebGL se rasterizaban continuamente. Se detuvo solo el árbol del
+proceso de Playwright verificado (PID 11388); servidor 4173 conservado.
+`Canvas` pasa a `demand` con movimiento reducido o bajo modal opaco; React y
+OrbitControls solicitan los fotogramas necesarios. Los relojes de reglas no
+se paran. La pose reducida ahora es exacta, sin amortiguado residual de un
+solo fotograma. Matriz de tres navegadores `55536`: cinco verdes; inspecciones
+en 23/16 s en lugar de agotar 60 s. Build `96147` y lint `36383` verdes antes
+del ajuste mínimo de pose. Repetir gate tras ese ajuste.
+Gate de pose exacta: unitarias `82496` **555/5 omitidas**, build `58329` y
+lint `28068`, todos verdes. E2e completo relanzado a las 03:03 sin trabajos
+pesados paralelos. Esperar antes de integrar CommanderDuel o tocar fuentes.
+Esa pasada es `51230`: inspecciones ya verdes con tres workers; queda un
+tiempo de espera de navegación galería → Jugar. La traza confirma URL /play
+pero el DOM anterior sigue mientras carga el módulo. No se alteran límites
+de los tests: `playwright.config.ts` pasa a dos navegadores por la contención
+de rasterizado software del campo ampliado. Terminar `51230` y repetir suite
+completa con dos; no afirmar gate cerrado todavía. Sin compilaciones paralelas.
+`51230` terminó: 73 verdes/33 omitidas, navegación y modo foto por tiempo de
+espera. La configuración de dos workers aún no estaba aplicada a ese proceso.
+`CommanderDuel.tsx`, su CSS y `scenarioPresentation.ts` están preparados pero
+SIN importar ni integrar. No incluirlos en el checkpoint de interfaz hasta
+la fase de presentación. No hay generación de imágenes pendiente.
+Décimo en curso, sin commit: interfaz de batalla. Paneles con más contraste,
+retrato de comandante, emblema, jerarquía de textos y poder legible aun sin
+Esencia. El panel derecho vacío ya no es un rectángulo de alto completo.
+Iconos de trazo propio para ataque/vida/esencia/mano/mazo y chapas más sobrias.
+Recoger la mano o agotarla libera realmente alto para el tablero. El lienzo
+3D llega bajo los paneles con `--scene-bleed`, pero `ResponsiveCamera` calcula
+el encuadre con el ancho seguro: el contenedor de pruebas/interacción conserva
+sus coordenadas. Se corrigió además el desplazamiento programático de toda
+la batalla al enfocar una carta alta (`overflow: clip`): la primera captura
+había perdido la cabecera. Una prueba exige ahora cabecera completa y scroll 0.
+La mano distingue jugable/seleccionada mediante filetes verde/dorado; se han
+reducido los halos gruesos. `Card` recibe el movimiento reducido de la app,
+no solo el del sistema operativo; prueba de inclinación/selección añadida.
+Unitarias `11164`: **555 verdes, 5 omitidas**. Build `3915` y lint `99500`
+verdes. UI específica `92233`: dos verdes y capturas revisadas con cabecera.
+Último ajuste: estadísticas del panel separadas en dos columnas y etiqueta
+de mano vacía coherente. Revisión conjunta `43630`: cuatro pruebas verdes,
+capturas de interfaz y piezas revisadas en ambas resoluciones. Encabezado y
+selección siguen visibles; contador de vida/ataque ya sin emojis de plataforma.
+E2e completo recién lanzado, sin build simultáneo; cierra también la
+verificación del noveno avance. Las sondas nuevas elevan los omitidos a 33; UI añade dos
+pruebas activas (75 activas en total, 108 en la suite).
+Siguiente: presentación de escenario/comandantes #50, preferiblemente renovar
+la cabecera del mulligan existente sin añadir una espera/modal obligatorio.
+Después renovación de escenarios y materiales. No marcar escenarios como hechos.
 
 **22 oct, 02:32.** Octavo bloque guardado en `c180eec`.
 Noveno avance: maldición con tinta y filamentos en los bordes de ambas caras,
