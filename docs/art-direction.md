@@ -34,6 +34,25 @@ Los respaldos SVG de prototipo siguen esta lógica:
 
 El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la piedra de fondo, `#0c1015`. El blanco puro se reserva para el punto de máxima emisión mágica.
 
+## Escenarios 3D
+
+### Ciudadela y piedra del campo
+
+La Ciudadela se compone desde la cámara de batalla: una plaza elevada con
+basílica en un patio inferior, pórticos laterales y ciudad distante vista a
+través de los arcos. Los edificios conservan apoyos reales y cotas distintas.
+El mármol usa vetas finas, poro y rugosidad separados; las dovelas, columnas
+acanaladas y molduras tienen geometría. Los frisos azul egeo y púrpura rompen
+el blanco, acompañados por lino plegado y bordado propio. Evitar pilares de
+caja lisos, enormes bandas de oro emisivo y estandartes que giran como cartón.
+
+La luz cálida frontal conserva volumen sobre la fachada; el relleno es frío.
+El Nexo de este lugar recibe un punto de energía contenido, que deja ver la
+caliza. Las losas tienen bisel real y una junta estrecha: no volver a pintar
+una sombra ancha que abombe cada cuadrado. La evolución del sol consume
+eventos de turno resueltos y respeta movimiento reducido. Las nubes distantes
+se hornean una vez; los bancos cercanos se desplazan con discreción.
+
 ## Marco de carta
 
 ### Preparación de la batalla

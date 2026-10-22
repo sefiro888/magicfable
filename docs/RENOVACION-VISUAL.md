@@ -24,7 +24,7 @@ global), **V** terminada y verificada.
 | Nº | Mejora | Estado |
 | --- | --- | --- |
 | 1 | Caldera: renovación integral | P |
-| 2 | Ciudadela: renovación integral | P |
+| 2 | Ciudadela: renovación integral | A |
 | 3 | Santuario: renovación integral | P |
 | 4 | Duna: renovación integral | P |
 | 5 | Fiordo: renovación integral | P |
@@ -38,21 +38,21 @@ global), **V** terminada y verificada.
 | 13 | Elemento protagonista por escenario | P |
 | 14 | Composición y decorado desde cámara real | P |
 | 15 | Transición entre tablero y entorno | P |
-| 16 | Materiales de piedra | P |
+| 16 | Materiales de piedra | C |
 | 17 | Materiales metálicos | P |
 | 18 | Materiales de hielo | P |
 | 19 | Agua | P |
 | 20 | Lava | P |
 | 21 | Arena, tierra y nieve | P |
-| 22 | Iluminación propia por escenario | P |
-| 23 | Sombras del escenario | P |
+| 22 | Iluminación propia por escenario | C |
+| 23 | Sombras del escenario | C |
 | 24 | Sombras de contacto de cartas | V |
 | 25 | Reflejos apropiados al material | P |
 | 26 | Niebla y separación de planos | P |
 | 27 | Humo y vapor por capas | P |
 | 28 | Partículas ambientales | P |
-| 29 | Movimiento del entorno | P |
-| 30 | Evolución ambiental durante la partida | P |
+| 29 | Movimiento del entorno | C |
+| 30 | Evolución ambiental durante la partida | C |
 | 31 | Marcos de las cartas desplegadas | A |
 | 32 | Integración de iluminación de las piezas | A |
 | 33 | Diferenciación de unidades y estructuras | A |
@@ -75,6 +75,89 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**22 oct, 06:55.** Gate de Ciudadela cerrado: `90321`, **78 e2e verdes y
+37 omitidas**. Unitarias 555/5, build `26575`, lint `32033` verdes. Capturas
+finales revisadas, tanto con mano visible como recogida. Guardar checkpoint
+de arquitectura/materiales; excluir LavaSurface y AtmosphericPlumes (borradores
+sin integrar). #2 pasa a A, pendiente de pulido global junto al resto.
+
+Para reforzar escala se acaba de generar con `imagegen` una panorámica
+original de ciudad suspendida/nubes, sin referencias externas, no integrada.
+Resultado: `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-c808739c-7def-436c-8a16-909f447cd523.png`.
+Se ha revisado: composición compatible con cámara en picado, arquitectura
+distante en tercio superior y mar de nubes abierto. Conservar el original y
+copiar al workspace antes de usar. Si se integra, hacerlo como vista distante
+con geometría/oclusión reales delante y probar también zoom y modo foto;
+evitar una imagen pegada a la cámara que gire con el tablero. Documentar
+procedencia y prompt en `docs/arte-escenarios.md`. Todavía NO es parte del gate.
+
+**22 oct, 06:42.** Matriz final `27747`: **cuatro verdes**, capturas revisadas
+a ambas resoluciones/calidades y con mano recogida. Ciudad a cota inferior
+visible a través del arco; frisos azul/púrpura y nubes con más separación de
+valores. Mármol sin el antiguo damero acolchado. Medida alta final: 364 llamadas,
+289570 triángulos, 127 geometrías y 41 texturas. La calidad baja conserva
+arquitectura y legibilidad, sin sombras dinámicas. El recorte superior del
+remate se comprueba además por proyección real en la sonda.
+Unitarias `20215`: **555 verdes/5 omitidas**. Build `26575` y lint `32033`
+verdes tras el ajuste final. E2e completo `90321` recién lanzado, 115 pruebas (78
+activas/37 omitidas). No tocar fuentes importadas hasta terminar. Preparar
+solo archivos nuevos sin integrar para Caldera si se trabaja durante la suite.
+Preparado `materials/LavaSurface.tsx`, todavía **sin importar ni validar**:
+campo térmico advectado, balsas oscuras y canales calientes; ruido propio
+horneado y tres/cuatro consultas por píxel, sin fBm iterativo por fragmento.
+No incluir en el checkpoint de Ciudadela. Compilar/revisar GLSL en navegador
+solo cuando se integre en Caldera; la compilación TS no comprueba un shader.
+También `materials/AtmosphericPlumes.tsx`, sin integrar: capas de sprites con
+profundidad, ascenso/ensanchamiento/extinción y pose estática al reducir
+movimiento. No compilar junto al navegador para comprobar estos borradores.
+Los dos se excluyen del checkpoint de Ciudadela.
+
+Dirección inmediata de Caldera: mantener identidad volcánica frente al Patio
+industrial. Cambiar el radio 4,83 (menor que la media diagonal del tablero),
+el disco artificial con vigas radiales y los cilindros repetidos por roca
+estratificada y columnas basálticas en flancos/cotas inferiores. El yunque
+necesita silueta continua biselada y cuerno horizontal, no cajas y un cono
+vertical; conservar su función de hito y situarlo desde la cámara medida.
+Iluminar la roca con clave legible/relleno frío; las luces de lava no deben
+bañar todo en naranja ni borrar el volumen (hay puntos antiguos de 46/26).
+Integrar/probar primero LavaSurface, luego humo y arquitectura, con capturas
+a ambas resoluciones antes de dar por renovada la escena. Ningún cambio de reglas.
+Después del gate: checkpoint de Ciudadela y renovación de Caldera; tareas
+2/16/22/23/29/30 conservan su condición parcial hasta cerrar el bloque.
+En el pulido global de #30, sustituir el contador de eventos vistos desde
+montaje por `match.turn` como dato de presentación: una partida restaurada o
+una revancha deben recuperar el ciclo ambiental correcto sin depender de
+cuántos eventos se hayan mostrado. El ciclo actual solo avanza durante esta
+sesión; no marcar #30 como terminado todavía.
+
+**22 oct, 06:34.** Undécimo bloque guardado en `2cf1135`.
+Duodécimo en curso: Ciudadela reconstruida con basílica en terraza inferior,
+arco de dovelas, columnas acanaladas, entablamento dentado, balcones y estandartes
+de lino plegado con bordado original. Sillares instanciados por tamaño y
+geometrías cacheadas. Plaza de radio 5,68: sus esquinas ya sostienen el tablero;
+roca estratificada bajo ella, puentes y escalones reales. Islas con pequeños
+pórticos dentro del encuadre. Clave frontal cálida, relleno frío y sombras
+con frustum explícito; el sol varía suavemente tras turnos ya resueltos.
+No cambiaron reglas. El primer arco blanco y alto fuera de cuadro se retiró.
+
+Primera sonda `37773`: una verde, captura revisada. 332 llamadas, 185838
+triángulos a calidad alta. Detectó el acabado acolchado del tablero, mármol
+con vetas demasiado gruesas y un cielo antiguo con manchas planas. Corregidos:
+`materials/stoneMaterial.ts` ahora compartido por arquitectura y losas;
+microrelieve separado y vetas estrechas; bisel geométrico en las losas de
+Ciudadela y sombra pintada muy contenida. El Nexo de piedra usa caliza neutra
+y una luz local menor solo en este escenario, sin el baño de oro anterior.
+El resto de escenarios conserva su iluminación de Nexo por ahora.
+Nuevo cielo propio horneado con campo de nubes coherente, sin ruido por frame.
+Build `99173` y lint `84295` verdes. Sonda `32774` ejecutándose: alta/baja a
+1920×1080 y 1366×768, con mano visible/oculta. No editar fuentes importadas
+hasta terminar. Revisar imágenes y luego gate completo; aún no guardar este
+bloque como validado. El escenario es C, no terminado.
+
+`e2e/scenery-renewal.spec.ts` es opcional (`RUN_SCENERY_SHOTS=1`) y añade
+cuatro omitidas al gate normal (37 en total). Verifica los remates contra
+las matrices reales, guarda métricas y captura en las dos configuraciones.
 
 **22 oct, 06:21.** Presentación validada: e2e completo `51288`, **78 verdes y
 33 omitidas**, sin fallos. Unitarias 555/5; build/lint verdes (`26712`/`60029`).

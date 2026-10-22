@@ -19,10 +19,10 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
 en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegador:
-78 pruebas activas en verde y 33 omitidas (capturas bajo demanda), con los hechizos
+78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `51288`: 78 e2e verdes, 33 omitidas. El campo ampliado
+Última pasada completa `90321`: 78 e2e verdes, 37 omitidas. El campo ampliado
 saturaba el rasterizado por CPU con tres navegadores. La configuración usa
 dos, sin ampliar límites de comprobación. No compilar a la vez que WebGL.
 El campo renderiza bajo demanda con movimiento reducido o tras un modal
@@ -32,6 +32,10 @@ El mulligan presenta ambos comandantes y el escenario sin otra pantalla.
 Su foco y teclado están contenidos. La guía inicial no se superpone a él;
 el coach posterior mide con un getter estable y no reinicia su anclaje por
 cada render (hacía saltar el botón «Saltar guía» bajo el cursor).
+Ciudadela renovada: arquitectura de dovelas/columnas acanaladas en cotas
+inferiores, plaza que sostiene las cuatro esquinas del tablero, mármol con
+bisel físico y Nexo de caliza. Revisión de calidad alta/baja y mano visible/
+recogida a ambas resoluciones en `e2e/scenery-renewal.spec.ts` (opcional).
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**
 Leer también `docs/RENOVACION-VISUAL.md`: contiene las 50 tareas autorizadas,
@@ -84,7 +88,8 @@ tres (Arcano, Orden, Olimpo) comparten estética grecolatina a propósito.
 - `src/pages/`, `src/components/` — interfaz.
 
 Las texturas son **todas procedurales**, dibujadas con Canvas 2D en
-`textures.ts` y cacheadas por clave. No hay un solo archivo de imagen de
+`textures.ts`, `materials/` y los auxiliares de escenarios, cacheadas por clave.
+No hay un solo archivo de imagen de
 material en el repositorio: si quieres un material nuevo, se dibuja con código.
 
 ---

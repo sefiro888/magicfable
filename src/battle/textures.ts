@@ -1,4 +1,5 @@
 import { CanvasTexture, NoColorSpace, SRGBColorSpace } from 'three';
+import { stoneMaps } from './materials/stoneMaterial';
 
 /**
  * Texturas procedurales del Santuario. Todo se genera en un canvas local:
@@ -1763,45 +1764,21 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
   const random = seededRandom(tileSeed(style, variant));
 
   if (style === 'stone') {
-    // Caliza tallada y pulida: cálida, con vetas finas y esquinas desportilladas.
-    const base = context.createLinearGradient(0, 0, size, size);
-    base.addColorStop(0, '#cfc6b2');
-    base.addColorStop(0.55, '#bdb3a0');
-    base.addColorStop(1, '#a99f8d');
-    context.fillStyle = base;
-    context.fillRect(0, 0, size, size);
-    for (let vein = 0; vein < 5; vein += 1) {
-      context.strokeStyle = `rgba(122, 114, 100, ${0.14 + random() * 0.18})`;
-      context.lineWidth = 0.6 + random() * 1.8;
-      context.beginPath();
-      let vx = random() * size;
-      let vy = 0;
-      context.moveTo(vx, vy);
-      while (vy < size) {
-        vy += 12 + random() * 20;
-        vx += (random() - 0.5) * 34;
-        context.lineTo(vx, vy);
-      }
-      context.stroke();
+    // La junta y el bisel son geométricos. Una sombra pintada en un tercio
+    // de cada cara hacía que el tablero pareciese una colección de cojines.
+    const marble = stoneMaps('marble').map.image as HTMLCanvasElement;
+    const pattern = context.createPattern(marble, 'repeat');
+    if (pattern) {
+      context.save();
+      context.translate(size / 2, size / 2);
+      context.rotate(variant % 4 * Math.PI / 2);
+      context.translate(-size / 2 + variant * 73, -size / 2 + variant * 41);
+      context.fillStyle = pattern;
+      context.fillRect(-size * 3, -size * 3, size * 7, size * 7);
+      context.restore();
     }
-    for (let grain = 0; grain < 2200; grain += 1) {
-      const l = 150 + random() * 80;
-      context.fillStyle = `rgba(${l}, ${l - 6}, ${l - 20}, ${0.05 + random() * 0.12})`;
-      context.fillRect(random() * size, random() * size, 1 + random() * 2, 1 + random() * 2);
-    }
-    // Desportillado en una esquina distinta según la variante.
-    const corner = variant % 4;
-    const cx = corner === 0 || corner === 3 ? 0 : size;
-    const cy = corner < 2 ? 0 : size;
-    context.fillStyle = 'rgba(88, 82, 70, 0.5)';
-    context.beginPath();
-    context.moveTo(cx, cy);
-    context.lineTo(cx + (cx === 0 ? 1 : -1) * (16 + random() * 26), cy);
-    context.lineTo(cx, cy + (cy === 0 ? 1 : -1) * (14 + random() * 24));
-    context.closePath();
-    context.fill();
-    drawTileGroove(context, size, 0.4);
-    bakeEdgeShade(context, size, 0.36);
+    drawTileGroove(context, size, 0.16);
+    bakeEdgeShade(context, size, 0.045);
   } else if (style === 'basalt') {
     // Roca volcánica: fracturada en prismas, con rescoldo en las grietas.
     // El tono NO es negro puro a propósito: una losa casi negra multiplicada
@@ -2728,6 +2705,20 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
 
   const dip = (alpha: number) => `rgba(0, 0, 0, ${alpha})`;
   const rise = (alpha: number) => `rgba(255, 255, 255, ${alpha})`;
+
+  if (style === 'stone') {
+    // Mármol pulido: micrograno y una junta estrecha. La antigua normal
+    // hundía un canal enorme en los cuatro lados y abombaba toda la losa.
+    for (let grain = 0; grain < 2600; grain += 1) {
+      const level = 134 + random() * 12;
+      context.fillStyle = `rgb(${level}, ${level}, ${level})`;
+      context.fillRect(random() * size, random() * size, 1, 1);
+    }
+    context.strokeStyle = dip(0.28);
+    context.lineWidth = 1.1;
+    context.strokeRect(0.55, 0.55, size - 1.1, size - 1.1);
+    return;
+  }
 
   if (style === 'basalt') {
     // Grietas HUNDIDAS (aunque brillen por el rescoldo) y placas levantadas.

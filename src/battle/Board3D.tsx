@@ -8,6 +8,8 @@ import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from 
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
 import { GameIcon } from '../components/GameIcon'
+import { boardSlabGeometry } from './grid/boardSlabGeometry'
+import { stoneMaps } from './materials/stoneMaterial'
 import { DamageNumbers } from './DamageNumbers'
 import { FallenPieces } from './FallenPieces'
 import { RecentHits } from './RecentHits'
@@ -177,8 +179,8 @@ const isOwnHalf = (y: number, localPlayerId: PlayerId): boolean =>
  */
 const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: readonly string[]; readonly enemy: readonly string[] }>> = {
   stone: {
-    own: ['#ffeed2', '#f8e4c6', '#f2dcbe'],
-    enemy: ['#d8e2f7', '#ccd8f0', '#c6d3ee'],
+    own: ['#fff3df', '#f5e8d5', '#f1e4d1'],
+    enemy: ['#dee8f1', '#d3e0eb', '#cddbe7'],
   },
   // En la lava todo es cálido: el bando se marca con la BRASA, no con el frío.
   basalt: {
@@ -340,7 +342,9 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />
+      {terrainStyle === 'stone'
+        ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
+        : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       <meshStandardMaterial
         map={slab}
         // Mapa de NORMALES en vez del truco de usar el color como altura. Con
@@ -446,7 +450,7 @@ const ScorchMarks = memo(function ScorchMarks({ position, reducedMotion }: { pos
  * claro del bosque se lee como traído de fuera.
  */
 const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; readonly shaft: string; readonly crown: string }>> = {
-  stone: { base: '#3a3529', shaft: '#4a4436', crown: '#5d5541' },
+  stone: { base: '#78818a', shaft: '#8c949a', crown: '#a0a4a3' },
   basalt: { base: '#241a18', shaft: '#332422', crown: '#46312b' },
   // El Santuario conserva el azulado de siempre: era su escena de origen.
   moss: { base: '#161b28', shaft: '#1e2434', crown: '#2a3145' },
@@ -1046,7 +1050,7 @@ function Nexus({
   }, [health, collapse, terminal, playerId, schedule])
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
-  const stoneMap = masonryTexture()
+  const stoneMap = terrainStyle === 'stone' ? stoneMaps('limestone').map : masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
@@ -1087,7 +1091,10 @@ function Nexus({
       shock.current.scale.setScalar(0.6 + (1 - golpe) * 2.4)
       shock.current.visible = !collapse && golpe > 0.01
     }
-    if (nexusLight.current) nexusLight.current.intensity = collapse ? 0 : 3.5 + integrity * 1.5
+    // En mármol claro, la antigua intensidad 5 teñía todo el pedestal de oro
+    // plano. La energía queda en los cristales; la piedra sigue recibiendo sol.
+    if (nexusLight.current) nexusLight.current.intensity = collapse ? 0
+      : terrainStyle === 'stone' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
   })
 
   return (
