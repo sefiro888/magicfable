@@ -469,7 +469,9 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   ice: { base: '#576a73', shaft: '#6b7d84', crown: '#8c9da1' },
   forest: { base: '#646755', shaft: '#858573', crown: '#aaa28b' },
   tide: { base: '#53666b', shaft: '#728487', crown: '#92a2a0' },
-  forge: { base: '#706b5f', shaft: '#858477', crown: '#a1a08e' },
+  // El mapa ya aporta el bronce: multiplicarlo por gris oscuro duplicaba
+  // el tinte y borraba las caras del pedestal, sobre todo al deteriorarse.
+  forge: { base: '#b7b09c', shaft: '#c7c0ad', crown: '#d5cbb5' },
   glaze: { base: '#91978a', shaft: '#aeb8a8', crown: '#c2c9b6' },
   sandstone: { base: '#8e837e', shaft: '#b5a194', crown: '#c9b2a0' },
 }
@@ -1116,18 +1118,19 @@ function Nexus({
         <meshBasicMaterial color={mine ? '#ff9a5a' : '#8fdcff'} transparent opacity={0} depthWrite={false} side={DoubleSide} />
       </mesh>
       <group ref={structure}>
-      {/* Pedestal de tres niveles: base ancha, fuste y corona con almenas. */}
+      {/* El bronce rugoso del Gremio quedaba casi negro con intensidad1.
+          Recibe el mismo entorno2,2 que el hierro; no añadir emisión plana. */}
       <mesh position={[0, 0.04, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[0.98, 1.2, 0.22, 8]} />
-        <meshStandardMaterial map={stoneMap} bumpMap={nexusMetal?.bumpMap ?? stoneMap} roughnessMap={nexusMetal?.roughnessMap} bumpScale={0.035} color={stone.base} roughness={0.9} metalness={nexusMetal ? 0.55 : 0.04} emissive="#0a0e18" emissiveIntensity={nexusMetal ? 0 : 0.15} />
+        <meshStandardMaterial map={stoneMap} bumpMap={nexusMetal?.bumpMap ?? stoneMap} roughnessMap={nexusMetal?.roughnessMap} bumpScale={nexusMetal ? 0.012 : 0.035} color={stone.base} roughness={0.9} metalness={nexusMetal ? 0.55 : 0.04} envMapIntensity={nexusMetal ? 2.2 : 1} emissive="#0a0e18" emissiveIntensity={nexusMetal ? 0 : 0.15} />
       </mesh>
       <mesh position={[0, 0.26, 0]} castShadow>
         <cylinderGeometry args={[0.62, 0.82, 0.3, 8]} />
-        <meshStandardMaterial map={stoneMap} bumpMap={nexusMetal?.bumpMap ?? stoneMap} roughnessMap={nexusMetal?.roughnessMap} bumpScale={0.035} color={stone.shaft} roughness={0.82} metalness={nexusMetal ? 0.55 : 0.04} emissive="#0c1120" emissiveIntensity={nexusMetal ? 0 : 0.15} />
+        <meshStandardMaterial map={stoneMap} bumpMap={nexusMetal?.bumpMap ?? stoneMap} roughnessMap={nexusMetal?.roughnessMap} bumpScale={nexusMetal ? 0.012 : 0.035} color={stone.shaft} roughness={0.82} metalness={nexusMetal ? 0.55 : 0.04} envMapIntensity={nexusMetal ? 2.2 : 1} emissive="#0c1120" emissiveIntensity={nexusMetal ? 0 : 0.15} />
       </mesh>
       <mesh position={[0, 0.46, 0]} castShadow>
         <cylinderGeometry args={[0.74, 0.6, 0.12, 8]} />
-        <meshStandardMaterial map={stoneMap} roughnessMap={nexusMetal?.roughnessMap} color={stone.crown} roughness={0.7} metalness={nexusMetal ? 0.6 : 0.04} emissive={ringEmissive} emissiveIntensity={nexusMetal ? 0.08 : 0.15 + integrity * 0.2} />
+        <meshStandardMaterial map={stoneMap} roughnessMap={nexusMetal?.roughnessMap} color={stone.crown} roughness={0.7} metalness={nexusMetal ? 0.6 : 0.04} envMapIntensity={nexusMetal ? 2.2 : 1} emissive={ringEmissive} emissiveIntensity={nexusMetal ? 0.08 : 0.15 + integrity * 0.2} />
       </mesh>
       <NexusFractures damage={damage} />
       {/* Corona de esquirlas de cristal alrededor del borde del pedestal. */}

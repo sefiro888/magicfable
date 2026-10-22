@@ -15,11 +15,14 @@ const fragmentShader = `
     float seed=fract(sin(cell*12.9898+3.0)*43758.5453);
     float path=0.5+sin(vUv.y*22.0+cell*1.3)*0.12+sin(vUv.y*51.0+cell)*0.055;
     float d=abs(fract(vUv.x*16.0)-path);
-    float fissure=1.0-smoothstep(0.012,0.045,d);
-    float branches=1.0-smoothstep(0.008,0.026,abs(d-0.14+vUv.y*0.18));
+    // Las grietas subpíxel se rompían en motas doradas al alejar cámara.
+    // Cobertura por derivada conserva el trazo sin engrosar la geometría.
+    float aa=max(fwidth(d)*0.75,0.003);
+    float fissure=1.0-smoothstep(0.022-aa,0.022+aa,d);
+    float branches=1.0-smoothstep(0.014-aa,0.014+aa,abs(d-0.14+vUv.y*0.18));
     float exposed=smoothstep(seed*0.8,seed*0.8+0.12,uDamage);
     float lengthMask=1.0-smoothstep(0.3+uDamage*0.7,0.4+uDamage*0.7,vUv.y);
-    float alpha=(fissure+branches*0.45)*exposed*lengthMask;
+    float alpha=clamp(fissure+branches*0.45,0.0,1.0)*exposed*lengthMask;
     if(alpha<0.02) discard;
     float critical=smoothstep(0.48,0.95,uDamage);
     vec3 color=mix(vec3(0.025,0.018,0.015),vec3(0.95,0.22,0.055),critical);

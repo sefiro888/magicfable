@@ -6,6 +6,14 @@ cada cinco minutos. El usuario autorizó el 22 oct a las16:41 publicar el avance
 verificado para jugar y continuar hasta las20:00. Publicaciones posteriores
 requieren nueva petición; la automatización conserva su alcance local.
 
+Prioridad humana posterior (22 oct,19:00): mano inicial de10 cartas para ambos
+bandos, conservar el robo normal y reciclar/barajar el cementerio al agotarse
+el mazo. El usuario confirmó expresamente que no quiere rellenar la mano
+automáticamente y pidió publicar todo de nuevo tras verificar. Implementación
+y regresiones en curso; no duplicar procesos ni iniciar otro bloque visual
+hasta cerrar esta petición. El gate encontró colisión de ids de zombis al
+reciclar una carta infectada; se asigna id determinista por conversión.
+
 ## Dirección y orden
 
 Fantasía madura, materiales antiguos convincentes, iluminación con volumen,
@@ -77,6 +85,115 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | V |
 
 ## Bloque activo
+
+**19:46, pipeline49114 CERRADO en verde.**588/5 unitarias, build/lint,
+85/37 e2e completos,4/4 capturas de mano y48/48 escenarios:12 lugares en
+alta/baja a1920/1366, mano visible/recogida, fotos amplias y sondas de reflejo.
+Imágenes nativas de batalla de los12 revisadas, sin juntas ni cantos nuevos.
+Banda reduce11840 triángulos de la vista distante sin añadir mapas/luces.
+Bronce del Nexo y fisuras conservan volumen. Reglas guardadas en3f7b88d;
+se prepara checkpoint visual y push explícitamente pedido, seguido de CI
+y comprobación real de la web publicada. Ningún navegador local sigue activo.
+Las50 mejoras conservan39 avances y11 terminadas: todavía falta oficio y
+pulido de protagonistas/materiales y composición global; no declararlas50 V.
+Preservar sin añadir el PNG ajeno«ç».
+
+**19:36, reglas terminadas y guardadas en3f7b88d.**588/5 unitarias,
+build/lint y85/37 e2e completos verdes (7,2min). Pipeline49114 sigue ACTIVO:
+4 capturas de preparación/mano y después48 casos de12 escenarios. No editar
+aplicación ni abrir otro navegador. Falta revisar la matriz y publicar ambos
+bloques por la petición humana expresa;3f7b88d todavía no está en origin.
+Conservar el PNG ajeno«ç» fuera del commit. Las50 mejoras aún tienen39 A y11 V.
+
+**19:32, pipeline49114 sigue ACTIVO.**588/5, build/lint y5/5 foco/flujo/mano
+verdes; suite completa en progreso (game-flow y gesto táctil ya verdes).
+Después encadena4 capturas y48 escenarios. No tocar fuentes ni compilar.
+La prioridad sigue siendo publicar reglas y avance verificado; no abrir
+mejoras nuevas ni afirmar que las50 están terminadas.
+
+**19:27, centro pulsable del abanico.** Pipeline49114 ACTIVO: unitarias,
+build/lint,5 e2e de mano/flujo, suite completa,4 capturas y matriz48 escenarios.
+No duplicar ni editar fuentes.79559 se detuvo tras detectar un fallo REAL en
+game-flow: con10 cartas y50px de margen por lado, la siguiente carta tapaba
+el centro de la fuente; no se forzó el clic ni se relajó la prueba. Solape40
+hasta12 cartas deja el centro descubierto; manos mayores conservan compresión.
+Móvil recto evita títulos cortados por el carril. Reglas ya pasan588/5 y
+40 semillas; aún falta terminar estos gates antes de publicar por petición humana.
+
+**19:22, cierre de reglas y revisión global.** Pipeline79559 ACTIVO: unitarias,
+build/lint, suite completa con máximo1 fallo,4 capturas móvil/preparación y
+matriz48 casos de12 escenarios (alta/baja,1920/1366), en ese orden. No editar
+fuentes importadas, compilar ni duplicar Playwright mientras siga ejecutándose.
+62693 cerró4/4 y588/5 + build/lint verdes: gesto táctil real no juega ni arrastra
+fuentes, y foco alcanza ambos extremos. Corregidos1,7px de marco fuera con
+64px de resguardo. Revisión de foto encontró títulos ocultos al elevarse contra
+el recorte móvil: en móvil las cartas ahora quedan rectas y se superponen
+al seleccionar; escritorio conserva su abanico.35181 se detuvo de forma segura
+para este pulido antes de completar la suite. Ver los logs actuales, no contar
+una suite interrumpida como aprobada. Publicación solicitada aún pendiente.
+
+**19:16, acceso a las10 cartas en móvil.** Pipeline91078 ACTIVO:588/5,
+build/lint verdes; ahora30 e2e (móvil, arrastre, mulligan y reciclaje). No editar
+aplicación ni abrir otro navegador hasta que cierre. La anterior61268 cerró5/5:
+reciclaje real y persistencia1920/1366, presentación1920/1366/375 revisada.
+La captura móvil reveló extremos inaccesibles en el abanico largo: carril
+horizontal propio, escala con geometría de scroll coherente y gesto horizontal
+para consultar cartas; subir mantiene arrastre. Regresión de foco exige llegar
+a primera/última/primera carta dentro del viewport. Falta suite completa y
+matriz restante de panoramas antes de la publicación autorizada.
+
+**19:10, petición de mazo en verificación.** Mano inicial10 por bando; robo
+normal sin rellenar la mano, reciclaje determinista del cementerio solo al
+intentar robar con mazo vacío. Conserva instancias, fuentes y piezas; sin
+cementerio tampoco hay fatiga. Regresiones: robo ambos bandos, varios ciclos,
+efecto de robo múltiple, cambio de turno y mulligan de las10 cartas.
+Se encontraron ids repetidos de zombis en la semilla4 al reutilizar la misma
+unidad: conversiones y copias de Renacer reciben id único determinista.
+588 unitarias/5 omitidas verdes; simulación adicional con40 semillas verde.
+Pipeline4903 ACTIVO: build/lint y suite e2e completa con2 casos nuevos de
+reciclaje real/recarga a1920/1366. No tocar fuentes ni compilar hasta que cierre.
+Banda y bronce:56426 cerrado,579/5, build/lint y Gremio4/Solar4 verdes; imágenes
+nativas revisadas. Falta matriz de los otros10 escenarios antes de publicar
+todo por nueva autorización humana. No añadir el PNG ajeno«ç».
+
+### Historial de bloques
+
+**18:52, revisión real del bronce. Pipeline `56426` ACTIVO:** test/build/lint
+y matriz Gremio en tensión4 + Solar4; detener al primer fallo. NO editar
+aplicación, compilar ni duplicar navegador mientras siga activo.
+
+Revisión anterior: `93256` cerrado:579/5, build/lint y8/8
+matrices Gremio/Sol verdes. Banda sin cantos visibles, pero el bronce crítico
+seguía demasiado oscuro pese a entorno2,2. Se rechazó ese acabado: tinte gris
+oscuro multiplicaba dos veces el mapa de bronce; aclarado solo ese tinte y
+reducido su bump0,035→0,012. Fisuras subpíxel parecían motas doradas: cobertura
+por fwidth y alfa acotada mantienen trazos estables. Pendientes gates y nueva
+revisión antes de ampliar matriz global. Publicación7a7b74f sigue intacta.
+
+**18:48, segunda publicación CONFIRMADA.** `7a7b74f` en main/origin/main;
+Actions39816420383 build/deploy success, deployment7258035569 success.
+Portada, Sol, Bestiario y Escalinata responden200 en
+https://sefiro888.github.io/magicfable/ . Usuario avisado del enlace jugable.
+Última petición de subir cumplida; no publicar de nuevo automáticamente.
+Trabajo local siguiente ACTIVO en `93256`: banda panorámica ya conectada tras
+prototipo8/8 Sol/Jade revisado, y bronce del Nexo Gremio con entorno2,2 para
+que no resulte negro. Encadena test/build/lint y matriz Gremio en tensión4 +
+Solar4. NO editar aplicación, compilar ni duplicar Playwright mientras siga.
+Logs `band-bronze-foundry-20261022.log`, `band-final-sol-20261022.log`.
+Después revisar imágenes, completar otros10 escenarios y suite completa
+antes de checkpoint. No hay helper experimental sobrante: eliminado su propio
+archivo no publicado tras integrar banda. Unidad geométrica permanece (579).
+No afirmar revisión nueva validada todavía. Conservar PNG ajeno«ç».
+
+**18:44, publicación pedida de nuevo por el usuario.** Push explícito realizado
+`a182100..7a7b74f` a main (5 commits: Jade, Escalinata, Sol/Bestiario, invitado/
+patios y oficio/clima/daño). Solo checkpoint verificado578/5 y82/37 e2e.
+Actions `39816420383` en progreso para SHA7a7b74fe36de1b95ae14273150ed47f00b8a6d9e.
+Pendiente confirmar deploy y recursos nuevos200 antes de informar disponible.
+Prototipo de banda panorámica SIN publicar:579/5, build/lint y8/8 comparaciones
+Sol/Jade verdes (`6432` cerrado). Fotos nativas comparadas: mejora de verticales
+sin cantos visibles; aún no integrado. No otras suites activas. Preservar PNG
+ajeno «ç», no añadirlo. Continuar hasta20:00 tras verificar publicación.
 
 **18:39, oficio/clima/daño validados.** `99650` cerrado:578/5, build/lint,
 82/37 e2e en5,5min verdes. Impactos4/4 con golpes3/8 y margen DOM estricto;

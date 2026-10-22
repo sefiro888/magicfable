@@ -36,6 +36,19 @@ El oro envejecido de interfaz usa `#b99754`; el pergamino frío, `#d8ccb2`; la p
 
 ## Escenarios 3D
 
+### Horizonte compartido
+
+Las pinturas distantes usan una banda cilíndrica abierta centrada en la
+posición mundial de cámara, sin acompañar su giro. La esfera anterior curvaba
+las columnas; la banda conserva generatrices verticales y pierde ambos
+extremos dentro de la imagen. La costura reflejada y el desvanecido evitan
+cantos al orbitar. La cámara del invitado gira las piezas, no el decorado.
+
+La banda pasa de 12.096 a 256 triángulos. En la misma captura de Ciudadela alta
+a 1366 × 768, la escena pasa de 301.666 a 289.826 con 365 llamadas y 44 texturas:
+reduce geometría sin añadir luces, capturas ni mapas. Son recuentos del
+renderizador, no una medición de FPS. Alta y baja conservan la composición.
+
 ### Duna: Tribunal luminoso de arenisca
 
 Imperio funerario intacto, solemne y vivo según el dosier. El pilono conserva
