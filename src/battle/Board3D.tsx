@@ -342,7 +342,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      {terrainStyle === 'stone'
+      {terrainStyle === 'stone' || terrainStyle === 'basalt'
         ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       <meshStandardMaterial
@@ -451,7 +451,7 @@ const ScorchMarks = memo(function ScorchMarks({ position, reducedMotion }: { pos
  */
 const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; readonly shaft: string; readonly crown: string }>> = {
   stone: { base: '#78818a', shaft: '#8c949a', crown: '#a0a4a3' },
-  basalt: { base: '#241a18', shaft: '#332422', crown: '#46312b' },
+  basalt: { base: '#505563', shaft: '#646a77', crown: '#7c808a' },
   // El Santuario conserva el azulado de siempre: era su escena de origen.
   moss: { base: '#161b28', shaft: '#1e2434', crown: '#2a3145' },
   sand: { base: '#4a3d28', shaft: '#5d4d33', crown: '#75603f' },
@@ -1050,7 +1050,7 @@ function Nexus({
   }, [health, collapse, terminal, playerId, schedule])
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
-  const stoneMap = terrainStyle === 'stone' ? stoneMaps('limestone').map : masonryTexture()
+  const stoneMap = terrainStyle === 'stone' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
@@ -1091,10 +1091,10 @@ function Nexus({
       shock.current.scale.setScalar(0.6 + (1 - golpe) * 2.4)
       shock.current.visible = !collapse && golpe > 0.01
     }
-    // En mármol claro, la antigua intensidad 5 teñía todo el pedestal de oro
+    // En mármol y basalto renovado, la intensidad 5 teñía el pedestal de oro
     // plano. La energía queda en los cristales; la piedra sigue recibiendo sol.
     if (nexusLight.current) nexusLight.current.intensity = collapse ? 0
-      : terrainStyle === 'stone' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
+      : terrainStyle === 'stone' || terrainStyle === 'basalt' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
   })
 
   return (

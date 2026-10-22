@@ -14,7 +14,7 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **10** |
 | Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 555 en verde, 5 omitidos |
+| Tests | 557 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
@@ -22,7 +22,7 @@ en el commit local `2134dc9`, pendiente de despliegue. Verificación de navegado
 78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `90321`: 78 e2e verdes, 37 omitidas. El campo ampliado
+Última pasada completa `28204`: 78 e2e verdes, 37 omitidas (22 oct, 08:01). El campo ampliado
 saturaba el rasterizado por CPU con tres navegadores. La configuración usa
 dos, sin ampliar límites de comprobación. No compilar a la vez que WebGL.
 El campo renderiza bajo demanda con movimiento reducido o tras un modal
@@ -37,11 +37,17 @@ inferiores, plaza que sostiene las cuatro esquinas del tablero, mármol con
 bisel físico y Nexo de caliza. Revisión de calidad alta/baja y mano visible/
 recogida a ambas resoluciones en `e2e/scenery-renewal.spec.ts` (opcional).
 Vista distante original integrada y documentada en `docs/arte-escenarios.md`.
-Última suite con esta vista: `41994`, 77 verdes y un caso que buscaba un
-aviso de 1,2 s después de una orden de teclado de 3 s. Observación instalada
-antes del golpe; `71625` verifica ese caso y las dos interfaces con dos
-navegadores (tres verdes). Las 78 activas están verificadas, aunque la última
-pasada única limpia sigue siendo `90321` (antes de la vista panorámica).
+Caldera renovada: meseta fracturada que sostiene las esquinas, roca
+instanciada asimétrica, yunque continuo de cuerno horizontal, lava con canales
+entre costras, vapor por capas, paisaje original y luz cálida/fría localizada.
+Losas de basalto con bisel físico y normales suaves; Nexo conserva color de
+piedra. Matriz visual alta/baja y mano visible/recogida a ambas resoluciones,
+con poses amplias de foto. 557 unitarias, build/lint y suite completa 78/37
+verdes. Caldera/Ciudadela son avances validados pendientes del pulido global.
+Siguiente: Santuario. Panorama original ya preparado, sin integrar; también
+`ReflectiveWater.tsx` y `megalithGeometry.ts` sin importar, compilados/lintados
+pero todavía no revisados en WebGL. Ver registro antes de continuar.
+
 
 **Renovación visual en curso hasta el 22 oct 2026 a las 20:00 Europe/Madrid.**
 Leer también `docs/RENOVACION-VISUAL.md`: contiene las 50 tareas autorizadas,

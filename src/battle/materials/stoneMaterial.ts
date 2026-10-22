@@ -80,8 +80,11 @@ export function stoneMaps(finish: StoneFinish): StoneMaps {
         warmth = 0.023
       } else if (finish === 'basalt') {
         const crystal = Math.pow(clamp((grain - 0.6) / 0.4), 3)
-        value = 0.65 + broad * 0.1 + (grain - 0.5) * 0.13 + crystal * 0.13
-        relief = 0.5 + (medium - 0.5) * 0.16 + (grain - 0.5) * 0.3
+        // Fracturas estrechas de enfriamiento, separadas del micrograno. Sin
+        // ellas el andén grande parecía hormigón liso junto a la roca lejana.
+        const fault = Math.pow(1 - Math.abs(Math.sin(Math.PI * (u * 3 + v * 2 + (medium - 0.5) * 0.32))), 45)
+        value = 0.65 + broad * 0.1 + (grain - 0.5) * 0.13 + crystal * 0.13 - fault * 0.17
+        relief = 0.5 + (medium - 0.5) * 0.16 + (grain - 0.5) * 0.3 - fault * 0.22
         matte = 0.9 - crystal * 0.28
         warmth = -0.008
       } else {

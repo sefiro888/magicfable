@@ -57,6 +57,25 @@ con orientación mundial y transición al cielo. Evitar planos que revelen
 un borde de cartel al orbitar. Maestro, versiones optimizadas y prompt:
 [arte de escenarios](arte-escenarios.md).
 
+### Caldera: garganta volcánica
+
+Basalto frío gris carbón con caras fracturadas, masa geológica por debajo del
+magma y canales estrechos de lava entre costras oscuras. La colada cercana
+se desvanece hacia la garganta distante: no llenar el encuadre con un disco
+plano luminoso. Evitar vigas radiales, zunchos industriales y lavados naranja.
+Las formaciones de columnas tienen juntas, roturas y alturas asimétricas;
+los elementos cercanos preservan el centro de juego. El yunque es una masa
+continua de cintura curvada, mesa con hueco real y cuerno horizontal; la pieza
+al rojo y la herramienta apoyada se leen desde la cámara de batalla. Hierro
+con reflejo contenido, sin emisión general ni mapa de color que lo haga negro.
+
+La clave cálida contrasta con relleno frío. Vapor en capas con profundidad,
+brasa escasa y quietud real con movimiento reducido. Los Nexos mantienen
+la distinción ámbar/azul en cristal y retrato; la roca conserva su material.
+Las losas de basalto reciben bisel físico, junta estrecha y normales sin el
+antiguo abombamiento. Panorámica original y prompt documentados en
+[arte de escenarios](arte-escenarios.md). Pendiente pulido global comparado.
+
 ## Marco de carta
 
 ### Preparación de la batalla

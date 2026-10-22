@@ -23,7 +23,7 @@ global), **V** terminada y verificada.
 
 | Nº | Mejora | Estado |
 | --- | --- | --- |
-| 1 | Caldera: renovación integral | P |
+| 1 | Caldera: renovación integral | A |
 | 2 | Ciudadela: renovación integral | A |
 | 3 | Santuario: renovación integral | P |
 | 4 | Duna: renovación integral | P |
@@ -39,17 +39,17 @@ global), **V** terminada y verificada.
 | 14 | Composición y decorado desde cámara real | C |
 | 15 | Transición entre tablero y entorno | C |
 | 16 | Materiales de piedra | C |
-| 17 | Materiales metálicos | P |
+| 17 | Materiales metálicos | C |
 | 18 | Materiales de hielo | P |
 | 19 | Agua | P |
-| 20 | Lava | P |
+| 20 | Lava | A |
 | 21 | Arena, tierra y nieve | P |
 | 22 | Iluminación propia por escenario | C |
 | 23 | Sombras del escenario | C |
 | 24 | Sombras de contacto de cartas | V |
 | 25 | Reflejos apropiados al material | P |
 | 26 | Niebla y separación de planos | C |
-| 27 | Humo y vapor por capas | P |
+| 27 | Humo y vapor por capas | C |
 | 28 | Partículas ambientales | C |
 | 29 | Movimiento del entorno | C |
 | 30 | Evolución ambiental durante la partida | C |
@@ -75,6 +75,68 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**22 oct, 08:02. Bloque Caldera verificado.** Suite completa `28204`:
+**78 verdes/37 omitidas**, sin fallos. Unitarias `41316`: **557/5**; build
+final `6576`, lint final `51603`, verdes, incluidos los dos borradores sin
+importar. Matriz visual final `91240` cuatro verdes y capturas revisadas a
+1920×1080/1366×768, alta/baja, mano visible/oculta y dos poses de modo foto.
+#1 y #20 pasan a **A**, avance validado pendiente de pulido global: no dar
+por acabadas las 50. Metal/humo siguen C porque faltan otros escenarios.
+Guardar checkpoint local de Caldera, sin publicar ni hacer push.
+
+**Siguiente acción:** renovar Santuario. Leer `RunicSanctuary.tsx`; evitar el
+lago plano de radio 46 que taparía el nuevo paisaje, dolmen alto fuera de
+cámara y monolitos de caja. Panorámica original ya preparada (véase debajo y
+`docs/arte-escenarios.md`), no regenerarla. Dos archivos sin importar:
+`materials/ReflectiveWater.tsx` y `architecture/megalithGeometry.ts` quedaron
+compilados/lintados, **no verificados en WebGL**. Excluirlos del checkpoint
+actual. Integrar y probar primero el reflejo/GLSL real; si funciona, renovar
+piedra, grabados, dolmen protagonista, isla/agua/niebla y cámara. Mantener baja
+sin pasada de reflejo, alta/media con una sola captura compartida. No afirmar
+que #19/25 estén hechas hasta verlo. Sin verificaciones ni generaciones en
+curso; servidor propio 4173 en sesión `35243` conservado.
+
+**22 oct, 07:54.** Matriz final de Caldera `91240`: **cuatro verdes**,
+imágenes reales revisadas a ambas resoluciones, alta/baja, mano visible/oculta
+y dos poses de foto. GLSL sin errores. Basalto cercano con fractura fina,
+prismas asimétricos con juntas/cortes y Nexo menos lavado por luz local.
+Dos pruebas geométricas nuevas detectan esquinas sin apoyo, caras invertidas,
+hueco tapado y cuerno vertical. Gate `41316`: **557 verdes/5 omitidas**;
+build `69230`, lint `31056`, verdes. Batería e2e completa **`28204` en curso**,
+no editar fuentes importadas ni compilar hasta terminar. Último estado sin fallos.
+Registro de coste: alta 1920, 266 llamadas/66992 triángulos; baja 1366,
+134/35322. Revisar luego pulido global de roca cercana frente a pintura;
+la panorámica reflejada no es una pintura única de 360 grados.
+
+Preparación del siguiente bloque, **sin integrar**: panorama original de
+Santuario generado con imagegen y copiado a
+`tools/art-inbox/scenery/sanctuary-vista-v1.png`; prompt junto a él. Original
+`C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-56c310d6-f1a6-42f9-abb9-c57d1b910389.png`.
+Revisado como lago nocturno/ruinas/niebla, sin referencia de terceros.
+`src/battle/materials/ReflectiveWater.tsx` es otro **borrador sin importar**:
+reflejo planar único con resolución/frecuencia según calidad y liberación de
+recursos; baja sin pasada adicional. No está compilado ni validado en WebGL.
+Excluirlo del checkpoint de Caldera y verificar antes de usarlo. No afirmar
+que #19/25 estén implementadas. Otro borrador sin importar:
+`architecture/megalithGeometry.ts`, granito biselado/roto con base húmeda y
+variación de coronación. Ambos quedan fuera del checkpoint de Caldera. Servidor 4173 conservado. Sin generaciones activas.
+
+**22 oct, 07:43.** Caldera integrada, todavía en revisión artística. Meseta
+volcánica que sostiene las esquinas, estratos hasta debajo de la lava, prismas
+instanciados, yunque continuo con cuerno horizontal/hueco real, herramientas,
+metal y humo por capas. Panorámica original preparada ya optimizada en WebP
+alto/bajo; procedencia en `docs/arte-escenarios.md`.
+Build `73181` y lint `75869` verdes en la primera integración. Matriz `56574`:
+cuatro verdes y GLSL real sin errores, pero la imagen reveló lava demasiado
+extensa/luminosa y prismas regulares. No aceptarla como acabado final.
+Segunda revisión `5201` en ejecución: colada limitada/desvanecida al paisaje,
+canales más estrechos/oscuros, basalto con cantos fracturados y menor altura,
+metal sin mapa de color que lo volvía negro; corregido sentido exterior de
+triángulos de la meseta. Losas de basalto con bisel físico y junta estrecha,
+normal suave sin abombamiento. No editar fuentes importadas durante la sonda.
+Después revisar capturas y repetir gate final; no hay procesos de generación.
+Servidor propio 4173 conservado. Ningún push.
 
 **22 oct, 07:31.** Integración panorámica verificada. `41994`: 77 verdes/37
 omitidas y una observación transitoria fallida; caso corregido verificado en

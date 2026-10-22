@@ -1839,8 +1839,8 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       context.fillStyle = `rgba(150, 142, 138, ${(1 - borde) * 0.16 * random()})`;
       context.fillRect(ax, ay, 1 + random() * 3, 1 + random() * 3);
     }
-    drawTileGroove(context, size, 0.55);
-    bakeEdgeShade(context, size, 0.3);
+    drawTileGroove(context, size, 0.2);
+    bakeEdgeShade(context, size, 0.06);
   } else if (style === 'moss') {
     // Granito húmedo: frío, moteado, con musgo entrando por juntas y grietas.
     context.fillStyle = '#6a6f68';
@@ -2727,7 +2727,7 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
       const py = random() * size;
       const radius = 26 + random() * 54;
       const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
-      gradient.addColorStop(0, rise(0.3));
+      gradient.addColorStop(0, rise(0.07));
       gradient.addColorStop(1, rise(0));
       context.fillStyle = gradient;
       context.fillRect(px - radius, py - radius, radius * 2, radius * 2);
@@ -2869,7 +2869,7 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
 
   // La junta del borde es lo MÁS hundido de la losa en todos los materiales:
   // es donde acaba la piedra. Se dibuja al final para que nada la pise.
-  const grooveWidth = Math.max(3, size * 0.03);
+  const grooveWidth = style === 'basalt' ? 1.25 : Math.max(3, size * 0.03);
   context.strokeStyle = dip(0.9);
   context.lineWidth = grooveWidth;
   context.strokeRect(grooveWidth / 2, grooveWidth / 2, size - grooveWidth, size - grooveWidth);
@@ -2903,7 +2903,7 @@ export const boardTileNormal = (style: BoardTileStyle, variant: number): CanvasT
   };
   // Cuánto relieve aparente. Por material: la arena ondula suave, la roca
   // partida y la piedra tallada marcan mucho más.
-  const strength = { stone: 2.6, basalt: 3.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2, forge: 3.6, glaze: 2.2, sandstone: 3 }[style];
+  const strength = { stone: 2.6, basalt: 1.4, moss: 2.4, sand: 1.6, ice: 2.2, forest: 3, tide: 3.2, forge: 3.6, glaze: 2.2, sandstone: 3 }[style];
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const dx = (sample(x + gap, y) - sample(x - gap, y)) / 255;
