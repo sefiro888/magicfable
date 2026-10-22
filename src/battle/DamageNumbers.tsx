@@ -27,8 +27,9 @@ const scaleFor = (amount: number): number => Math.min(2.1, 1 + amount * 0.16)
 
 /** Cuánto dura la subida del número, en milisegundos. Debe casar con el CSS. */
 const FLOAT_MS = 1200
-/** Altura sobre la casilla a la que aparece, por encima de la chapa de la unidad. */
-const SPAWN_HEIGHT = 1.0
+/** A1,0 el número atravesaba la chapa; a1,7 el golpe grande aún la rozaba
+ * 5,6px a1366. A2,0 conserva margen sin desplazar nombres ni estadísticas. */
+const SPAWN_HEIGHT = 2.0
 
 let nextId = 0
 

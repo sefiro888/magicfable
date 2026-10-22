@@ -19,10 +19,10 @@ export function solarReliefMaps() {
     const mosaic = r > 0.73 && r < 0.84 && Math.sin(a * 40) > 0.2
     const grain = Math.sin(x * 123.7 + y * 279.1) * 43758.5
     const noise = grain - Math.floor(grain), i = (y * size + x) * 4
-    const base = mosaic ? [75, 126, 119] : [175, 157, 126]
-    color[i] = base[0]! * (cut ? 0.59 : 0.91 + noise * 0.1)
-    color[i + 1] = base[1]! * (cut ? 0.59 : 0.91 + noise * 0.1)
-    color[i + 2] = base[2]! * (cut ? 0.59 : 0.91 + noise * 0.1)
+    const base = mosaic ? [75, 126, 119] : [219, 213, 193]
+    color[i] = base[0]! * (cut ? 0.82 : 0.91 + noise * 0.1)
+    color[i + 1] = base[1]! * (cut ? 0.82 : 0.91 + noise * 0.1)
+    color[i + 2] = base[2]! * (cut ? 0.82 : 0.91 + noise * 0.1)
     height[i] = height[i + 1] = height[i + 2] = (cut ? 68 : mosaic ? 142 : 128) + noise * 12
     rough[i] = rough[i + 1] = rough[i + 2] = mosaic ? 125 + noise * 22 : 218 + noise * 20
     color[i + 3] = height[i + 3] = rough[i + 3] = 255

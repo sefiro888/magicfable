@@ -37,11 +37,11 @@ global), **V** terminada y verificada.
 | 10 | Escalinata: pulido integral | A |
 | 11 | Escenario propio de Quinto Sol | A |
 | 12 | Escenario propio de Bestiario | A |
-| 13 | Elemento protagonista por escenario | C |
+| 13 | Elemento protagonista por escenario | A |
 | 14 | Composición y decorado desde cámara real | A |
 | 15 | Transición entre tablero y entorno | A |
-| 16 | Materiales de piedra | C |
-| 17 | Materiales metálicos | C |
+| 16 | Materiales de piedra | A |
+| 17 | Materiales metálicos | A |
 | 18 | Materiales de hielo | A |
 | 19 | Agua | A |
 | 20 | Lava | A |
@@ -54,7 +54,7 @@ global), **V** terminada y verificada.
 | 27 | Humo y vapor por capas | A |
 | 28 | Partículas ambientales | A |
 | 29 | Movimiento del entorno | A |
-| 30 | Evolución ambiental durante la partida | C |
+| 30 | Evolución ambiental durante la partida | A |
 | 31 | Marcos de las cartas desplegadas | V |
 | 32 | Integración de iluminación de las piezas | V |
 | 33 | Diferenciación de unidades y estructuras | V |
@@ -64,7 +64,7 @@ global), **V** terminada y verificada.
 | 37 | Escudos y protecciones | V |
 | 38 | Contagio, maldición y quemaduras | A |
 | 39 | Desgaste de piezas dañadas | V |
-| 40 | Solapamiento de nombres y estadísticas | A |
+| 40 | Solapamiento de nombres y estadísticas | V |
 | 41 | Anticipación, impacto y recuperación | A |
 | 42 | Familias visuales de ataque | A |
 | 43 | Recorrido de hechizos | A |
@@ -77,6 +77,79 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | V |
 
 ## Bloque activo
+
+**18:39, oficio/clima/daño validados.** `99650` cerrado:578/5, build/lint,
+82/37 e2e en5,5min verdes. Impactos4/4 con golpes3/8 y margen DOM estricto;
+Solar4/4, tensión Gremio/Caldera/Fiordo12/12 y curación real2/2. Imágenes
+revisadas en ambas resoluciones. Guardar checkpoint local sin push, excluyendo
+los3 prototipos panorámicos aún no verificados y el PNG ajeno «ç» de la raíz.
+#40 pasa V; #13/16/17/30 pasan A (avances con pulido global pendiente).
+No hay verificaciones activas. Siguiente: comparar esfera/cilindro sin cambiar
+aplicación, y corregir bronce demasiado oscuro del Nexo del Gremio en revisión
+de materiales. No afirmar50 terminadas. Fecha límite20:00 CEST.
+
+**18:35, matrices corregidas verdes.** `99650`:578/5, build/lint verdes;
+impactos grandes8 Sol y normales3 Santuario4/4, Solar4/4, tensión alta
+Gremio/Caldera/Fiordo12/12. Suite completa119 casos activa, sin fallos hasta
+ahora (82activas/37omitidas esperadas). Revisados daño grande Sol1366 sin
+solape, oficio Solar1920/1366, tensión Gremio1366/Caldera1920/Fiordo1366.
+NO editar aplicación ni compilar mientras siga99650.
+Preparados SIN importar tres archivos para comparar distorsión del panorama:
+`panoramaBandGeometry.ts`, `.test.ts`, `e2e/helpers/panoramaBandProbe.ts`.
+Prototipo cilíndrico (verticales rectas, radio50, alturas−8..−70 respecto a
+cámara), máscara propia, helper restaura geometría/texturas tras captura.
+Aún NO conectado ni probado; excluir esos3 del checkpoint Solar/Clima578.
+Su prueba llevaría workspace579 cuando se valide. Tras cierre guardar bloque
+actual y luego comparar esfera/banda en Sol/Jade a ambas resoluciones antes
+de cambiar proyección del juego. No aceptar una banda con cantos visibles.
+
+**18:29, pipeline de reparación `99650` ACTIVO.** `20760` cerró578/5,
+build/lint verdes con altura2,0. Se quitó además acelerar humo multiplicando
+el reloj por presión (saltarían las fases al curar); evoluciona densidad y
+mantiene advección continua. `99650` repite test/build/lint de esa fuente final
+y encadena impactos grandes Sol2/normales Santuario2 con aserción sin relajar,
+Solar4, tensión alta Gremio/Caldera/Fiordo12 y suite completa (esperada82/37,
+incluye las2 nuevas curaciones reales). Se detiene al primer fallo.
+Logs `damage-label-*-fixed-20261022.log`, `solar-craft-20261022.log`,
+`climate-tension-*.log`, `solar-climate-full-20261022.log`.
+NO editar aplicación, compilar/lint ni lanzar otro navegador mientras99650
+siga activo. `5019` y `81036` están cerradas. `aa71673` último checkpoint.
+Revisar imágenes reales; luego registrar/guardar sin push. Deadline20:00 CEST.
+Tras este bloque queda principalmente distorsión panorámica en foto y pulido
+de protagonistas/materiales; #30/#40 aún no V hasta revisión y gates finales.
+
+**18:27, ajuste por evidencia.** `5019` se detuvo correctamente: clima2/2
+verde, impacto grande1920 verde;1366 detectó caja del número5,6px sobre nombre.
+La imagen confirma mejora pero margen insuficiente. Altura2,0 sustituye1,7,
+sin relajar aserción. Revisadas también nuevas molduras/calendario/cuenco en
+captura de fallo: relieve y pared reales presentes. Repetir gate y pipeline;
+no continuar sobre ese fallo ni declarar #40 cerrado. No hay navegador activo.
+
+**18:25, verificación activa `5019`.** 578/5 unitarias (`4768`), build
+(`57609`) y lint (`72674`, más lint dirigido11336 tras flags QA) verdes.
+`5019` encadena: curación real/clima2, impactos grandes8 en Sol2 y normales3
+Santuario2 con separación DOM obligatoria; oficio Solar4; presión alta
+Gremio/Caldera/Fiordo12; suite completa sin flags. Se detiene al primer fallo.
+Logs `climate-healing-20261022.log`, `damage-label-*.log`,
+`solar-craft-20261022.log`, `climate-tension-*.log`, `solar-climate-full-20261022.log`.
+No editar aplicación importada, compilar/lint ni iniciar otro Playwright
+mientras siga activo. Revisar imágenes antes de aceptar, especialmente
+calendario claro/cuenco y margen de daño grande sobre nombre/estadísticas.
+Estado estable anterior en `aa71673`, sin push. El checkpoint nuevo aún NO
+validado y #30/#40 no terminados. Corte sigue20:00 CEST (UTC18:00).
+
+**18:24, oficio solar y clima integrados.** Checkpoint compartido `aa71673`,
+sin push. SolarCarvings/solarCraftGeometry conectados: cuenco de pared/labio
+reales, molduras de portal y cantos/pétalos físicos del calendario; piedra más
+clara y pigmentación de incisión menos impresa. Crestas ahora piedra neutra.
+BattleClimate conectado solo al escenario: lectura de turnos y Nexo más herido,
+máximos de comandantes reales. Vapor gana densidad acotada; horno gana calor;
+lava conserva presión incluso en pose reducida, sin animar ni cambiar nivel.
+Curar revierte presión. No nuevos focos, capturas o estado de reglas.
+Números de daño elevados1,0→1,7 para no atravesar chapas; sonda de impactos
+comprueba rectángulos DOM. Test causal nuevo cura con Bendición de la Luna y
+exige que horno se calme y siga quieto en reducido. Pendiente ejecutar en UI.
+Unitarias `4768`:578/5 verdes; build activo `57609`; después lint y matrices.
 
 **18:20, revisión compartida validada.** `81036`:4/4 impactos adicionales
 con COMBAT_HITS, ambos escenarios y resoluciones, sin errores. Revisados

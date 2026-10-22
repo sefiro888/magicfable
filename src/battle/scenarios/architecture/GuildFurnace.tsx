@@ -8,6 +8,7 @@ import type { GraphicsQuality } from '../../../store/preferences'
 import { forgedMetalMaps } from '../../materials/forgedMetal'
 import { kilnBrickMaps } from '../../materials/kilnBrick'
 import { usePageVisibility } from '../../usePageVisibility'
+import { useBattleStrain } from '../BattleClimate'
 import { furnaceArchStone, furnaceBodyGeometry } from './foundryGeometry'
 
 const clamp = new RoundedBoxGeometry(4.95, 0.15, 0.15, 2, 0.025)
@@ -43,6 +44,8 @@ function CoalBed({ quality }: { readonly quality: GraphicsQuality }) {
 export function GuildFurnace({ quality, reducedMotion, event }: {
   readonly quality: GraphicsQuality; readonly reducedMotion: boolean; readonly event?: AnimationEvent
 }) {
+  const strain = useBattleStrain()
+  const baseLight = 5.5 + strain * 2.5, baseFire = 1.2 + strain * 0.45
   const visible = usePageVisibility()
   const light = useRef<PointLight>(null), fire = useRef<MeshStandardMaterial>(null)
   const surge = useRef(0)
@@ -54,8 +57,8 @@ export function GuildFurnace({ quality, reducedMotion, event }: {
     if (!visible.current) return
     surge.current = Math.max(0, surge.current - delta * 0.65)
     const breath = reducedMotion ? 0 : Math.sin(clock.elapsedTime * 0.9) * 0.25 + surge.current * 1.5
-    if (light.current) light.current.intensity = 5.5 + breath
-    if (fire.current) fire.current.emissiveIntensity = 1.2 + breath * 0.15
+    if (light.current) light.current.intensity = baseLight + breath
+    if (fire.current) fire.current.emissiveIntensity = baseFire + breath * 0.15
   })
   return <group position={[0, -0.3, -6.9]}>
     <mesh name="foundry-furnace-body" castShadow={quality !== 'low'} receiveShadow={quality !== 'low'}>
@@ -80,12 +83,12 @@ export function GuildFurnace({ quality, reducedMotion, event }: {
       <planeGeometry args={[1.9, 2.03]} />
       <meshBasicMaterial color="#18110c" />
     </mesh>
-    <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh name="foundry-fire-bed" position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[1.66, 1.4]} />
-      <meshStandardMaterial ref={fire} color="#a94610" emissive="#ff6b18" emissiveIntensity={1.2} roughness={1} />
+      <meshStandardMaterial ref={fire} color="#a94610" emissive="#ff6b18" emissiveIntensity={baseFire} roughness={1} />
     </mesh>
     <CoalBed quality={quality} />
-    <pointLight ref={light} position={[0, 0.7, 0.65]} intensity={5.5} distance={5} color="#ffac59" decay={2} />
+    <pointLight name="foundry-fire-light" ref={light} position={[0, 0.7, 0.65]} intensity={baseLight} distance={5} color="#ffac59" decay={2} />
     <group position={[1.25, 3.05, -0.25]}>
       {[-1, 1].map((side) => <mesh key={side} position={[0, 0.3, side * 0.31]} castShadow={quality !== 'low'}>
         <primitive object={chimneyWall} attach="geometry" />

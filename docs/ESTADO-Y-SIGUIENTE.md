@@ -14,17 +14,17 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **12** |
 | Estilos de suelo del tablero | **10** (Sol comparte piedra; Bestiario, bosque) |
-| Tests | 575 en verde, 5 omitidos |
+| Tests | 578 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
 en `2134dc9`, publicada con el avance `a182100` por petición del usuario el22oct.
 Verificación de navegador:
-80 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
+82 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `46577`: 80 e2e verdes, 37 omitidas en9,3min
-(22 oct,18:16; variables de capturas opcionales limpias).
+Última pasada completa `99650`: 82 e2e verdes, 37 omitidas en5,5min
+(22 oct,18:39; variables de capturas opcionales limpias).
 Playwright usa un worker y `channel: chromium`: el shell
 antiguo imponía SwiftShader aunque había una AMD Radeon disponible. El nuevo
 headless aprovecha Direct3D11, mantiene calidad, tiempos y trazas completas.
@@ -108,11 +108,19 @@ luces permanecen fuera del grupo táctico del invitado, evitando que Jade tape
 el Nexo. Patios Jade/Sol con juntas de mampostería. Matriz16/16 de invitado,
 24/24 estados en12 escenarios y8/8 proyectiles/impactos claro/oscuro verdes,
 ambas resoluciones;575/5 unitarias, build/lint y80/37 e2e verdes.
-Siguiente: oficio solar, evolución ambiental persistente y separar números de
-daño de las estadísticas (solapan durante impacto). SolarCarvings,
-solarCraftGeometry y BattleClimate con sus pruebas son borradores sin conectar;
-excluirlos del checkpoint compartido. Sus3 pruebas aún no verificadas elevarían
-el workspace a578. El mapa panorámico aún admite corrección de distorsión.
+Oficio solar integrado: molduras, relieves físicos y cuenco de pared real;
+calendario claro con incisiones discretas. Clima derivado de turnos/vida real
+de Nexos: presión persistente en humo, lava y horno, reversible al curar y
+estática en reducido. Dos pruebas causales curan realmente con un hechizo y
+comprueban que el horno se calma sin moverse. Números de daño a2,0 unidades:
+golpes3/8 separados de chapas a ambas resoluciones.578/5, build/lint y82/37
+e2e verdes; Solar4/4 y tensión Gremio/Caldera/Fiordo12/12, imágenes revisadas.
+Siguiente: comparar proyección panorámica cilíndrica para reducir distorsión.
+panoramaBandGeometry(.test) y panoramaBandProbe son prototipos sin conectar,
+no verificados; excluir del checkpoint578 (su prueba elevaría workspace579).
+Conservar sin añadir el PNG ajeno sin extensión «ç» aparecido en la raíz.
+Pulido pendiente: metal del Nexo Gremio demasiado oscuro, protagonistas y
+composición global. Las50 mejoras todavía no están todas terminadas.
 Ver registro para evitar duplicar procesos.
 Leer el registro para sesiones activas; no duplicar verificaciones.
 

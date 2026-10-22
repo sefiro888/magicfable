@@ -359,3 +359,10 @@ El decorado conserva composición y luces desde ambos puestos: girar también
 el pabellón al mirar como invitado tapaba el Nexo próximo. Solo se orientan
 las piezas, casillas, Nexos y efectos tácticos. Los patios arquitectónicos de
 Jade/Sol llevan juntas a escala real; Bestiario conserva suelo natural.
+
+El clima responde al desgaste resuelto sin alterar reglas: más presión en el
+horno y los canales de lava, vapor algo más denso, sin cambiar nivel de agua
+ni velocidad por reloj multiplicado (provocaba saltos de fase al curar). En
+movimiento reducido se conserva el estado ambiental, pero no la oscilación.
+El calendario solar lleva cantos de relieve real y pigmentación de incisión
+discreta; el cuenco tiene labio, pared y fondo interiores, sin disco negro.

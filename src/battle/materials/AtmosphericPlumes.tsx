@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import type { Group, Sprite, SpriteMaterial } from 'three'
 import type { GraphicsQuality } from '../../store/preferences'
+import { useBattleStrain } from '../scenarios/BattleClimate'
 import { cloudTexture } from '../textures'
 import { usePageVisibility } from '../usePageVisibility'
 
@@ -22,6 +23,10 @@ export function AtmosphericPlumes({ vents, quality, reducedMotion }: {
   readonly quality: GraphicsQuality
   readonly reducedMotion: boolean
 }) {
+  const strain = useBattleStrain()
+  // Cambiar la velocidad multiplicando el reloj saltaba de fase al curar.
+  // La presión modifica densidad; conserva la advección continua del vapor.
+  const density = 1 + strain * 0.28
   const group = useRef<Group>(null)
   const visible = usePageVisibility()
   const layers = quality === 'high' ? 4 : quality === 'medium' ? 3 : 1
@@ -40,7 +45,7 @@ export function AtmosphericPlumes({ vents, quality, reducedMotion }: {
       const width = vent.spread * (0.35 + age * 0.9)
       sprite.scale.set(width, width * (1.1 + age * 0.4), 1)
       const material = sprite.material as SpriteMaterial
-      material.opacity = Math.pow(Math.sin(age * Math.PI), 0.8) * vent.density / Math.pow(layers, 0.4)
+      material.opacity = Math.pow(Math.sin(age * Math.PI), 0.8) * vent.density * density / Math.pow(layers, 0.4)
       material.rotation = Math.sin(age * 2 + vent.seed) * 0.12
     })
   })
@@ -49,7 +54,7 @@ export function AtmosphericPlumes({ vents, quality, reducedMotion }: {
     return <sprite key={index} position={[vent.position[0], vent.position[1] + phase * vent.height, vent.position[2]]}
       scale={[width, width * (1.1 + phase * 0.4), 1]}>
       <spriteMaterial map={cloudTexture()} color={vent.color} transparent depthWrite={false}
-        opacity={Math.pow(Math.sin(phase * Math.PI), 0.8) * vent.density / Math.pow(layers, 0.4)} />
+        opacity={Math.pow(Math.sin(phase * Math.PI), 0.8) * vent.density * density / Math.pow(layers, 0.4)} />
     </sprite>
   })}</group>
 }

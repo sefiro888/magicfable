@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { DataTexture, LinearFilter, LinearMipmapLinearFilter, NoColorSpace, RepeatWrapping, RGBAFormat, ShaderMaterial, UniformsLib, UniformsUtils } from 'three'
 import type { GraphicsQuality } from '../../store/preferences'
+import { useBattleStrain } from '../scenarios/BattleClimate'
 import { usePageVisibility } from '../usePageVisibility'
 
 let field: DataTexture | undefined
@@ -100,6 +101,7 @@ export function LavaSurface({ quality, reducedMotion, flare, radius = 13, level 
   readonly radius?: number
   readonly level?: number
 }) {
+  const strain = useBattleStrain()
   const visible = usePageVisibility()
   const surface = useRef<ShaderMaterial>(null)
   const material = useMemo(() => new ShaderMaterial({
@@ -112,7 +114,7 @@ export function LavaSurface({ quality, reducedMotion, flare, radius = 13, level 
   useFrame(({ clock }) => {
     if (!visible.current || !surface.current) return
     surface.current.uniforms.uTime!.value = reducedMotion ? 0 : clock.elapsedTime
-    surface.current.uniforms.uFlare!.value = reducedMotion ? 0 : Math.min(1, Math.max(0, flare.current))
+    surface.current.uniforms.uFlare!.value = Math.min(1, strain * 0.4 + (reducedMotion ? 0 : Math.max(0, flare.current)))
   })
   return <mesh position={[0, level, 0]} rotation={[-Math.PI / 2, 0, 0]}>
     <circleGeometry args={[radius, quality === 'low' ? 32 : 64]} />

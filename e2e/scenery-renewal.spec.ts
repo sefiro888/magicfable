@@ -16,7 +16,7 @@ const scenarios = ['aether-citadel', 'sanctuary', 'caldera', 'duna', 'fimbul', '
 const scenario = scenarios.find((id) => id === process.env.SCENERY) ?? 'aether-citadel'
 const names = { 'aether-citadel': 'ciudadela', sanctuary: 'santuario', caldera: 'caldera', duna: 'duna',
   fimbul: 'fiordo', grove: 'claro', shore: 'rompiente', foundry: 'gremio', 'jade-court': 'jade', 'wheel-ghat': 'escalinata', 'solar-court': 'sol', 'bestiary-ravine': 'bestiario' } as const
-const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '')
+const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '') + (process.env.SCENERY_TENSION ? '-tension' : '')
 const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium']
   : process.env.SCENERY_QUALITY === 'high' ? ['high'] : process.env.SCENERY_QUALITY === 'low' ? ['low'] : ['high', 'low']
 const landmarks: Partial<Record<typeof scenario, readonly (readonly [number, number, number])[]>> = {
@@ -48,8 +48,9 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         currentHealth: CARD_BY_ID[cardId]!.health ?? 1, attackModifier: 0, movedThisTurn: false,
         attackedThisTurn: false, enteredOnTurn: 0, statuses: [],
       })
-      const match: MatchState = { ...base, turn: 9, phase: 'main', animations: [], terrain: [],
-        players: { ...base.players, player: { ...base.players.player, mulliganTaken: true } },
+      const tension = Boolean(process.env.SCENERY_TENSION)
+      const match: MatchState = { ...base, turn: tension ? 24 : 9, phase: 'main', animations: [], terrain: [],
+        players: { ...base.players, player: { ...base.players.player, mulliganTaken: true, nexusHealth: tension ? 8 : base.players.player.nexusHealth } },
         board: [piece('own-west', 'sabueso-brasa', 1, 5), piece('own-east', 'oso-forestal', 6, 5),
           piece('rival-west', 'centinela-cristal', 1, 2, true), piece('rival-east', 'leviatan-de-las-simas', 6, 2, true)],
       }

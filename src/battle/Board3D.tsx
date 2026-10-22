@@ -43,6 +43,7 @@ import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
 import { NexusRupture } from './NexusRupture'
 import { useVisualTimers } from './useVisualTimers'
+import { battleStrain, BattleClimateProvider } from './scenarios/BattleClimate'
 import { ScenarioAtmosphere } from './scenarios/ScenarioAtmosphere'
 import { NexusFocus } from './NexusFocus'
 
@@ -1498,6 +1499,10 @@ function Scene(props: Board3DProps) {
       {/* El tejado de Jade tapaba el Nexo del invitado al girar también el
           decorado. La arquitectura conserva la composición de cámara; solo
           el contenido táctico cambia de orientación para cada jugador. */}
+      <BattleClimateProvider strain={battleStrain(props.state.turn, [
+        { health: props.state.players.player.nexusHealth, maxHealth: COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35 },
+        { health: props.state.players.ai.nexusHealth, maxHealth: COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35 },
+      ])}>
       <group name="scenario-stage">
       <Suspense fallback={<LoadingStage />}>
         {props.scenario === 'aether-citadel' ? (
@@ -1527,6 +1532,7 @@ function Scene(props: Board3DProps) {
         )}
       </Suspense>
       </group>
+      </BattleClimateProvider>
       <group name="battle-view" rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
       <RitualSeal cell={{ x: 3, y: 4 }} tone="#ffffff" durationMs={1} reducedMotion={false} warmup />
       {CELL_POSITIONS.map((position) => {

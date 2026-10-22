@@ -4,6 +4,7 @@ import { stoneMaps } from '../../materials/stoneMaterial'
 import { CourtyardGround } from './CourtyardGround'
 import { jadeTerraceGeometry } from './jadeGeometry'
 import { masonryBlockGeometry } from './stoneGeometry'
+import { SolarCalendarCarving, SolarPortalTrim, SolarVessel } from './SolarCarvings'
 import { solarShrineGeometry } from './solarCourtGeometry'
 
 const shrineRoof = masonryBlockGeometry(2.5, 0.2, 2.05)
@@ -40,6 +41,7 @@ export function SolarCourtArchitecture({ quality }: { readonly quality: Graphics
           <primitive object={solarShrineGeometry()} attach="geometry" />
           <meshStandardMaterial {...limestone} color="#d2c6ad" bumpScale={0.018} roughness={0.86} />
         </mesh>
+        <SolarPortalTrim quality={quality} />
         <mesh position={[0, 0.51, -0.8]}><planeGeometry args={[0.7, 1.03]} /><meshStandardMaterial color="#1e2526" roughness={1} /></mesh>
         {[-0.42, 0.42].map((edge) => <mesh key={edge} geometry={jamb} position={[edge, 0.53, 0.91]} castShadow={quality !== 'low'}>
           <meshStandardMaterial {...limestone} color="#53867d" roughness={0.7} bumpScale={0.018} />
@@ -55,23 +57,20 @@ export function SolarCourtArchitecture({ quality }: { readonly quality: Graphics
           <meshStandardMaterial color={i % 2 ? '#bcac7f' : '#317f7b'} roughness={0.65} />
         </mesh>)}
         {Array.from({ length: 9 }, (_, i) => <mesh key={`crest:${i}`} geometry={crest} position={[-0.96 + i * 0.24, 1.82, -0.14]} castShadow={quality !== 'low'}>
-          <meshStandardMaterial {...limestone} color={i % 2 ? '#af4a3d' : '#528b80'} roughness={0.77} bumpScale={0.015} />
+          <meshStandardMaterial {...limestone} color={i % 2 ? '#c6bda6' : '#b6aa91'} roughness={0.77} bumpScale={0.015} />
         </mesh>)}
       </group>)}
     </group>
     <group position={[-6.15, 1.04, -3.5]} rotation={[0, 0.15, 0]}>
       <mesh name="solar-calendar-relief" rotation={[Math.PI / 2, 0, 0]} castShadow={quality !== 'low'} receiveShadow={quality !== 'low'}>
         <cylinderGeometry args={[1.26, 1.26, 0.24, quality === 'low' ? 48 : 96]} />
-        <meshStandardMaterial {...solarReliefMaps()} color="#e0d5b7" bumpScale={0.055} roughness={0.85} />
+        <meshStandardMaterial {...solarReliefMaps()} color="#f4eee0" bumpScale={0.09} roughness={0.85} />
       </mesh>
+      <SolarCalendarCarving quality={quality} />
       <mesh geometry={calendarBase} position={[0, -1.4, 0]} castShadow={quality !== 'low'}>
         <meshStandardMaterial {...basalt} color="#78786e" roughness={0.9} bumpScale={0.025} />
       </mesh>
     </group>
-    <group position={[6.1, -0.4, -3.6]}>
-      <mesh castShadow={quality !== 'low'}><cylinderGeometry args={[0.64, 0.9, 0.5, 8]} /><meshStandardMaterial {...basalt} color="#63676a" roughness={0.62} bumpScale={0.025} /></mesh>
-      <mesh position={[0, 0.47, 0]} castShadow={quality !== 'low'}><cylinderGeometry args={[0.45, 0.37, 0.48, 16]} /><meshStandardMaterial {...limestone} color="#367a76" roughness={0.58} bumpScale={0.018} /></mesh>
-      <mesh position={[0, 0.76, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.4, 24]} /><meshStandardMaterial color="#242528" roughness={1} /></mesh>
-    </group>
+    <SolarVessel quality={quality} />
   </>
 }

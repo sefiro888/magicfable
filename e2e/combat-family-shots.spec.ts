@@ -73,7 +73,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       await page.clock.runFor(17)
       await page.screenshot({ path: `e2e/__shots__/ataque-${faction}${sceneSuffix}-${width}x${height}.png` })
       if (process.env.COMBAT_HITS && ['arcane', 'nature', 'order', 'forja'].includes(faction)) {
-        const hit: AnimationEvent = { ...event, id: `hit-${faction}`, type: 'damage', targetCardId: targetCard.id, amount: 3 }
+        const hit: AnimationEvent = { ...event, id: `hit-${faction}`, type: 'damage', targetCardId: targetCard.id, amount: process.env.COMBAT_LARGE_HITS ? 8 : 3 }
         await page.evaluate(async ({ hit, storeUrl }) => {
           const module = await import(storeUrl) as { useMatchStore: typeof MatchStoreHook }
           module.useMatchStore.setState({ currentEvent: hit, pendingAnimations: [] })
@@ -82,6 +82,11 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         await page.clock.runFor(100)
         await page.clock.fastForward(500)
         await page.clock.runFor(17)
+        const number = await page.locator('[data-color="damage"]').boundingBox()
+        const label = await page.locator('[class*="labelInner"]').filter({ hasText: targetCard.name }).boundingBox()
+        expect(number).not.toBeNull()
+        expect(label).not.toBeNull()
+        expect(number!.y + number!.height).toBeLessThanOrEqual(label!.y - 2)
         await page.screenshot({ path: `e2e/__shots__/impacto-${faction}${sceneSuffix}-${width}x${height}.png` })
       }
       expect(errors, `render de ${faction}`).toEqual([])
