@@ -8,6 +8,7 @@ import type { GraphicsQuality } from '../src/store/preferences'
 import { glacierBankPoint } from '../src/battle/scenarios/architecture/glacierBankGeometry'
 import { groveProbe } from './helpers/groveProbe'
 import { foundryProbe } from './helpers/foundryProbe'
+import { panoramaOffset, setPanoramaGuest } from './helpers/panoramaProbe'
 import { ghatProbe } from './helpers/ghatProbe'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
@@ -142,6 +143,20 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         expect(reflection.width).toBe(512)
         expect(reflection.after - reflection.before).toBeGreaterThan(4)
         expect(reflection.restored).toBeLessThanOrEqual(reflection.before + 2)
+      }
+      if (process.env.RUN_PANORAMA_SHOTS) {
+        const host = await panoramaOffset(page, url)
+        expect(host.distance).toBeLessThan(0.000001)
+        try {
+          const guest = await setPanoramaGuest(page, url, true)
+          expect(guest.distance).toBeLessThan(0.000001)
+          expect(guest.stagePoint).toEqual(host.stagePoint)
+          expect(guest.boardPoint[0]).toBeCloseTo(-host.boardPoint[0]!, 5)
+          expect(guest.boardPoint[2]).toBeCloseTo(-host.boardPoint[2]!, 5)
+          await page.screenshot({ path: `e2e/__shots__/${prefix}-invitado-${width}x${height}-${quality}.png` })
+        } finally {
+          expect((await setPanoramaGuest(page, url, false)).distance).toBeLessThan(0.000001)
+        }
       }
       expect(errors).toEqual([])
     })

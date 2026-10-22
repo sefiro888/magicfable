@@ -354,3 +354,8 @@ vanos auténticos, calendario inciso sobrio. Evitar lava y pirámides de juguete
 Bestiario: caliza estratificada y hueso mineralizado con fisuras longitudinales,
 articulaciones romas y apoyos enterrados. Sin bloques rectangulares ni colmillos
 plásticos; terreno natural, cartas y estadísticas legibles sobre verde apagado.
+
+El decorado conserva composición y luces desde ambos puestos: girar también
+el pabellón al mirar como invitado tapaba el Nexo próximo. Solo se orientan
+las piezas, casillas, Nexos y efectos tácticos. Los patios arquitectónicos de
+Jade/Sol llevan juntas a escala real; Bestiario conserva suelo natural.

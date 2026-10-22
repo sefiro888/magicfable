@@ -1,5 +1,6 @@
 import { DataTexture, LinearFilter, NoColorSpace, PlaneGeometry, RGBAFormat } from 'three'
 import type { GraphicsQuality } from '../../../store/preferences'
+import { pavingMaps } from '../../materials/pavingMaterial'
 import { stoneMaps, type StoneFinish } from '../../materials/stoneMaterial'
 
 let ground: PlaneGeometry | undefined, mask: DataTexture | undefined
@@ -34,14 +35,15 @@ function edgeMask() {
 
 /** El patio sostiene la arquitectura cercana y se pierde gradualmente en el
  * paisaje. Una máscara independiente evita repetir su borde con la piedra. */
-export function CourtyardGround({ quality, finish, tint }: {
+export function CourtyardGround({ quality, finish, tint, paved = false }: {
   readonly quality: GraphicsQuality
   readonly finish: StoneFinish
   readonly tint: string
+  readonly paved?: boolean
 }) {
   return <mesh position={[0, -0.54, 0]} receiveShadow={quality !== 'low'}>
     <primitive object={groundGeometry()} attach="geometry" />
-    <meshStandardMaterial {...stoneMaps(finish)} color={tint} bumpScale={0.018}
+    <meshStandardMaterial {...(paved ? pavingMaps(finish) : stoneMaps(finish))} color={tint} bumpScale={0.018}
       roughness={0.95} alphaMap={edgeMask()} transparent depthWrite={false} />
   </mesh>
 }

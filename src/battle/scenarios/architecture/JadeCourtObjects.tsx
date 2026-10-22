@@ -21,7 +21,7 @@ const vessel = new LatheGeometry([
 export function JadeCourtFloor({ quality }: { readonly quality: GraphicsQuality }) {
   const stone = stoneMaps('limestone')
   return <>
-    <CourtyardGround quality={quality} finish="limestone" tint="#9ca79e" />
+    <CourtyardGround paved quality={quality} finish="limestone" tint="#9ca79e" />
     <mesh name="jade-stone-terrace" receiveShadow={quality !== 'low'}>
       <primitive object={jadeTerraceGeometry()} attach="geometry" />
       <meshStandardMaterial {...stone} color="#929e92" bumpScale={0.016} roughness={0.55} metalness={0.02} />

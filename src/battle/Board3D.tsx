@@ -1495,8 +1495,10 @@ function Scene(props: Board3DProps) {
           hijos de este grupo, así que el punto de vista real no se mueve. */}
       <MaterialEnvironment quality={props.quality} />
       <ScenarioAtmosphere scenario={props.scenario} />
-      <group rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
-      <RitualSeal cell={{ x: 3, y: 4 }} tone="#ffffff" durationMs={1} reducedMotion={false} warmup />
+      {/* El tejado de Jade tapaba el Nexo del invitado al girar también el
+          decorado. La arquitectura conserva la composición de cámara; solo
+          el contenido táctico cambia de orientación para cada jugador. */}
+      <group name="scenario-stage">
       <Suspense fallback={<LoadingStage />}>
         {props.scenario === 'aether-citadel' ? (
           <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
@@ -1524,6 +1526,9 @@ function Scene(props: Board3DProps) {
           <SanctuaryScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         )}
       </Suspense>
+      </group>
+      <group name="battle-view" rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
+      <RitualSeal cell={{ x: 3, y: 4 }} tone="#ffffff" durationMs={1} reducedMotion={false} warmup />
       {CELL_POSITIONS.map((position) => {
         const key = cellKey(position)
         return (

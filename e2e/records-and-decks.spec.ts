@@ -18,7 +18,7 @@ test('abandonar una partida cuenta como derrota en el historial', async ({ page 
   test.setTimeout(60_000)
   await page.goto('/battle?seed=4242')
   await page.getByRole('button', { name: 'Conservar las cinco' }).click()
-  await page.getByRole('button', { name: '← Abandonar el Santuario' }).click()
+  await page.getByRole('button', { name: '← Abandonar batalla' }).click()
   await expect(page.getByRole('heading', { name: '¿Abandonar esta crónica?' })).toBeVisible()
   await page.getByRole('button', { name: 'Abandonar', exact: true }).click()
   await expect(page).toHaveURL(/\/play$/)
@@ -32,7 +32,7 @@ test('repetir una partida desde el historial navega con la misma semilla', async
   test.setTimeout(60_000)
   await page.goto('/battle?seed=7777')
   await page.getByRole('button', { name: 'Conservar las cinco' }).click()
-  await page.getByRole('button', { name: '← Abandonar el Santuario' }).click()
+  await page.getByRole('button', { name: '← Abandonar batalla' }).click()
   await page.getByRole('button', { name: 'Abandonar', exact: true }).click()
   await expect(page).toHaveURL(/\/play$/)
 

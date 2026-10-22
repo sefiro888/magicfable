@@ -14,7 +14,7 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Comandantes | 22 |
 | Escenarios 3D | **12** |
 | Estilos de suelo del tablero | **10** (Sol comparte piedra; Bestiario, bosque) |
-| Tests | 574 en verde, 5 omitidos |
+| Tests | 575 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
@@ -23,8 +23,8 @@ Verificación de navegador:
 80 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `78543`: 80 e2e verdes, 37 omitidas en 8 minutos
-(22 oct,17:45; variables de capturas opcionales limpias).
+Última pasada completa `46577`: 80 e2e verdes, 37 omitidas en9,3min
+(22 oct,18:16; variables de capturas opcionales limpias).
 Playwright usa un worker y `channel: chromium`: el shell
 antiguo imponía SwiftShader aunque había una AMD Radeon disponible. El nuevo
 headless aprovecha Direct3D11, mantiene calidad, tiempos y trazas completas.
@@ -103,9 +103,16 @@ inciso y mosaicos; garganta estratificada con costillas minerales cerradas.
 Alta/baja, media y alta reducida revisadas a ambas resoluciones. Catálogo único
 de 12 escenarios en Jugar/Ajustes, asignación automática y persistencia probadas.
 574/5 unitarias, build/lint y 80/37 e2e verdes. Falta pulido global.
-Siguiente: centrar el paisaje también en la vista del invitado y revisar patios.
-Borradores panoramaPosition/panoramaProbe/pavingMaterial sin conectar; la prueba
-preparada del primero eleva el workspace a575, pero no este checkpoint.
+Revisión compartida: panorama centrado en coordenadas mundiales; decorado y
+luces permanecen fuera del grupo táctico del invitado, evitando que Jade tape
+el Nexo. Patios Jade/Sol con juntas de mampostería. Matriz16/16 de invitado,
+24/24 estados en12 escenarios y8/8 proyectiles/impactos claro/oscuro verdes,
+ambas resoluciones;575/5 unitarias, build/lint y80/37 e2e verdes.
+Siguiente: oficio solar, evolución ambiental persistente y separar números de
+daño de las estadísticas (solapan durante impacto). SolarCarvings,
+solarCraftGeometry y BattleClimate con sus pruebas son borradores sin conectar;
+excluirlos del checkpoint compartido. Sus3 pruebas aún no verificadas elevarían
+el workspace a578. El mapa panorámico aún admite corrección de distorsión.
 Ver registro para evitar duplicar procesos.
 Leer el registro para sesiones activas; no duplicar verificaciones.
 

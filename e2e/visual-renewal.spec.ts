@@ -7,7 +7,7 @@ const piece = (instanceId: string, cardId: string, x: number, y: number, extra: 
   attackModifier: 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [], ...extra,
 })
 
-const scenarios = process.env.RUN_MATERIAL_SHOTS ? ['aether-citadel', 'caldera', 'fimbul'] as const : ['aether-citadel'] as const
+const scenarios = process.env.RUN_GLOBAL_MATERIAL_SHOTS ? ['aether-citadel', 'sanctuary', 'caldera', 'duna', 'fimbul', 'grove', 'shore', 'foundry', 'jade-court', 'wheel-ghat', 'solar-court', 'bestiary-ravine'] as const : process.env.RUN_MATERIAL_SHOTS ? ['aether-citadel', 'caldera', 'fimbul'] as const : ['aether-citadel'] as const
 for (const scenario of scenarios) {
 for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
   test(`acabados y estados de las piezas en ${scenario} a ${width} × ${height}`, async ({ page }) => {

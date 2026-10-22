@@ -20,7 +20,7 @@ const jamb = masonryBlockGeometry(0.15, 1.08, 0.14)
 export function SolarCourtArchitecture({ quality }: { readonly quality: GraphicsQuality }) {
   const limestone = stoneMaps('limestone'), basalt = stoneMaps('basalt')
   return <>
-    <CourtyardGround quality={quality} finish="limestone" tint="#c3b8a1" />
+    <CourtyardGround paved quality={quality} finish="limestone" tint="#c3b8a1" />
     <mesh name="solar-stucco-terrace" receiveShadow={quality !== 'low'}>
       <primitive object={jadeTerraceGeometry()} attach="geometry" />
       <meshStandardMaterial {...limestone} color="#bdb29b" bumpScale={0.018} roughness={0.88} />

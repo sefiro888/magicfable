@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { BackSide, DataTexture, LinearFilter, MirroredRepeatWrapping, NoColorSpace, RGBAFormat, SRGBColorSpace } from 'three'
 import type { Mesh } from 'three'
+import { centerPanoramaAtCamera } from './panoramaPosition'
 import { withBase } from '../../../utils/assets'
 
 let mask: DataTexture | undefined
@@ -48,8 +49,10 @@ export function DistantVista({ image }: {
     return color
   }, [loaded])
   useEffect(() => () => texture.dispose(), [texture])
-  useFrame(({ camera }) => { dome.current?.position.copy(camera.position) })
-  return <mesh ref={dome} renderOrder={-20}>
+  useFrame(({ camera }) => {
+    if (dome.current) centerPanoramaAtCamera(dome.current, camera)
+  })
+  return <mesh ref={dome} name="scenario-distant-vista" renderOrder={-20}>
     <sphereGeometry args={[69, 96, 64]} />
     <meshBasicMaterial map={texture} alphaMap={edgeMask()} side={BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
   </mesh>

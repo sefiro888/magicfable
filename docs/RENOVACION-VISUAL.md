@@ -38,32 +38,32 @@ global), **V** terminada y verificada.
 | 11 | Escenario propio de Quinto Sol | A |
 | 12 | Escenario propio de Bestiario | A |
 | 13 | Elemento protagonista por escenario | C |
-| 14 | Composición y decorado desde cámara real | C |
-| 15 | Transición entre tablero y entorno | C |
+| 14 | Composición y decorado desde cámara real | A |
+| 15 | Transición entre tablero y entorno | A |
 | 16 | Materiales de piedra | C |
 | 17 | Materiales metálicos | C |
-| 18 | Materiales de hielo | C |
-| 19 | Agua | C |
+| 18 | Materiales de hielo | A |
+| 19 | Agua | A |
 | 20 | Lava | A |
-| 21 | Arena, tierra y nieve | C |
-| 22 | Iluminación propia por escenario | C |
-| 23 | Sombras del escenario | C |
+| 21 | Arena, tierra y nieve | A |
+| 22 | Iluminación propia por escenario | A |
+| 23 | Sombras del escenario | A |
 | 24 | Sombras de contacto de cartas | V |
-| 25 | Reflejos apropiados al material | C |
-| 26 | Niebla y separación de planos | C |
-| 27 | Humo y vapor por capas | C |
-| 28 | Partículas ambientales | C |
-| 29 | Movimiento del entorno | C |
+| 25 | Reflejos apropiados al material | A |
+| 26 | Niebla y separación de planos | A |
+| 27 | Humo y vapor por capas | A |
+| 28 | Partículas ambientales | A |
+| 29 | Movimiento del entorno | A |
 | 30 | Evolución ambiental durante la partida | C |
-| 31 | Marcos de las cartas desplegadas | A |
-| 32 | Integración de iluminación de las piezas | A |
-| 33 | Diferenciación de unidades y estructuras | A |
+| 31 | Marcos de las cartas desplegadas | V |
+| 32 | Integración de iluminación de las piezas | V |
+| 33 | Diferenciación de unidades y estructuras | V |
 | 34 | Presencia de cartas únicas | A |
 | 35 | Entradas por facción | A |
-| 36 | Congelación sobre las piezas | A |
-| 37 | Escudos y protecciones | A |
+| 36 | Congelación sobre las piezas | V |
+| 37 | Escudos y protecciones | V |
 | 38 | Contagio, maldición y quemaduras | A |
-| 39 | Desgaste de piezas dañadas | A |
+| 39 | Desgaste de piezas dañadas | V |
 | 40 | Solapamiento de nombres y estadísticas | A |
 | 41 | Anticipación, impacto y recuperación | A |
 | 42 | Familias visuales de ataque | A |
@@ -72,11 +72,113 @@ global), **V** terminada y verificada.
 | 45 | Destrucciones por facción | A |
 | 46 | Deterioro de Nexos | A |
 | 47 | Caída del Nexo | A |
-| 48 | Interfaz de batalla | A |
-| 49 | Inspección de cartas | A |
-| 50 | Presentación de escenario y comandantes | A |
+| 48 | Interfaz de batalla | V |
+| 49 | Inspección de cartas | V |
+| 50 | Presentación de escenario y comandantes | V |
 
 ## Bloque activo
+
+**18:20, revisión compartida validada.** `81036`:4/4 impactos adicionales
+con COMBAT_HITS, ambos escenarios y resoluciones, sin errores. Revisados
+impacto metálico Sol1366 y cristal Santuario1920. Junto a `46577` (80/37,
+9,3min), 575/5 y build/lint, permite guardar checkpoint compartido sin push.
+Revisión global de marcos/luz/estructuras/congelación/escudo/desgaste y UI/
+inspección/presentación cerrada: #31,32,33,36,37,39,48,49,50 pasan V. Nombres
+estadísticas (#40) sigue A: el número flotante -3 invade la chapa al impactar;
+corregir antes de darlo por terminado. #14–29 indicados A conservan pulido.
+No afirmar50 completas: quedan distorsión, protagonistas, materiales y clima.
+Cinco archivos borrador Solar/Climate excluidos. Sin procesos e2e activos.
+
+**18:17, gate compartido cerrado.** `46577`:80/37 e2e verdes en9,3min;
+575/5, build/lint previos verdes. Sonda adicional activa `81036` para impactos
+reales con COMBAT_HITS=1 y cuatro materiales en Sol/Santuario, ambas resoluciones.
+Aún no editar fuentes importadas ni compilar. Preparado también SIN importar
+`BattleClimate.tsx` y `.test.ts`: presión visual derivada de turno y Nexo más
+herido, máximos reales, cura reversible, sin estado de reglas nuevo. Excluir
+estos dos y los tres borradores Solar del checkpoint compartido575. Tras
+integrar ambos, el workspace esperado será578, pendiente ejecutar pruebas.
+
+**18:14, suite completa sin incidencias.** `46577` sigue activo (hasta84).
+No se ha duplicado ni alterado aplicación. Solar/Fiordo invitado1366 y
+proyectiles Furia/Santuario1366 y Forja/Sol1366 revisados; no oclusiones nuevas.
+Preparación siguiente de oficio solar completada en tres archivos no importados:
+`solarCraftGeometry.ts`, `.test.ts`, `SolarCarvings.tsx`. Preservarlos, excluir
+los tres del checkpoint compartido. No están verificados aún.
+Tras gate completo: sonda impactos con COMBAT_HITS=1, actualizar ESTADO575/5
+y guardar checkpoint compartido. Luego integrar oficio solar, aclarar el
+calendario (evitar aspecto impreso marrón), sustituir el falso cuenco por
+pared real y enriquecer molduras; revisar ambas resoluciones/calidades.
+Evolución ambiental: pendiente diseñar respuesta persistente desde turno y
+vida de Nexos resueltos (sin tocar motor). Evitar cambiar niveles de agua o
+oscurecer cartas. Posible presión acotada en vapor/horno, con pose estática
+reducida y sin nuevas capturas ni luces; aún NO implementado.
+
+**18:10, continuidad.** `46577`:16/16 matrices de invitado y4/4 familias
+proyectiles en Sol/Santuario verdes; suite completa activa, sin fallos hasta
+ahora. OJO: no se activó `COMBAT_HITS`, por tanto impactos NO revisados en ese
+bloque; hacer sonda corta con ese flag después del cierre. Revisadas vistas
+invitado Sol/Fiordo1366 y vuelo arcano Sol1920. Preparados SIN importar:
+`solarCraftGeometry.ts`, su prueba y `SolarCarvings.tsx` (cuenco con pared/labio
+reales, molduras del portal y relieve físico del calendario). Excluir del
+checkpoint compartido; aún no compilar/probar estos borradores. El workspace
+contará576 cuando se valide la prueba nueva, checkpoint compartido575.
+No editar fuentes importadas ni duplicar procesos mientras46577 esté activo.
+
+**18:02, continuidad sin duplicar procesos.** `46577` sigue activo: Jade4/4
+verde, Sol iniciado. Revisadas fotos corregidas Jade invitado1366/baja y
+1920/alta orbital: tejado queda detrás y Nexo cercano completamente visible.
+La separación de decorado resuelve la oclusión observada. Aún pendientes
+los otros escenarios, combate y suite completa encadenados en esa sesión.
+No editar aplicación ni compilar; conservar todos los cambios y el servidor.
+
+**18:00, pipeline activo `46577`.** 575/5 unitarias (`94017`), build (`73596`)
+y lint (`61496`) verdes tras separar decorado y táctica y corregir salida.
+`80586` cerrado: 8 capturas Sol/Jade verdes +24 estados en12 escenarios,
+contactos nativos revisados a ambas resoluciones (incluidos frío/noche/mediodía).
+`46577` ahora repite invitado corregido en Jade/Sol/Ciudadela/Fiordo, alta/baja
+ambas resoluciones (16), luego familias de ataque/impacto en Sol/Santuario a
+ambas resoluciones (4), y suite completa con variables opcionales limpias.
+Se detiene al primer fallo. Logs `tools/captures/global-guest-fixed-*.log`,
+`global-combat-*.log` y `global-guest-full-20261022.log`.
+NO modificar aplicación importada, compilar/lint o iniciar otro Playwright
+mientras sigue activa. Revisar fotos invitado1366: el tejado debe quedarse
+atrás y no tapar el Nexo cercano. Después fotos de combate claro/oscuro y gate
+completo antes del checkpoint, sin push. Hora límite sigue20:00 (UTC18:00).
+Siguiente bloque tras cierre: detalle del protagonista solar y evolución
+ambiental persistente; quedan mejoras parciales, no declarar las50 terminadas.
+
+**17:57, revisión cruzada cerrada y corrección de invitado.** `80586`: Sol4/4,
+Jade4/4 y piezas/estados/selección en los12 escenarios24/24. La revisión de
+invitado encontró un defecto real: tejado de Jade sobre Nexo cercano. Separada
+arquitectura/luz en `scenario-stage`, solo táctica en `battle-view` gira180°.
+Sonda exige decorado inmóvil y coordenadas tácticas invertidas. Rotación
+React real usa ese mismo grupo. Rótulo de salida ahora «Abandonar batalla»,
+antes decía Santuario incluso en el resto. Pendientes build/lint/test y repetir
+matriz invitado, después suite completa. No publicar automáticamente.
+
+**Hallazgo global prioritario (17:54).** La foto de invitado Jade1366/baja
+muestra el tejado trasladado al primer plano y tapando el Nexo: no basta
+centrar el paisaje. Tras cerrar `80586`, sacar el decorado/luz de escenario
+fuera del grupo que gira el contenido jugable; nombrar escenario y grupo
+jugable para verificar posiciones reales. Solo cartas/celdas/Nexos/efectos
+cambian180°, la composición arquitectónica debe mantenerse desde ambos lados.
+Adaptar panoramaProbe para girar `battle-view`, nunca Scene, y revisar fotos
+invitado de Jade/Sol/otros protagonistas. Suite completa después del arreglo.
+
+**17:52, revisión compartida en curso.** Sol/Bestiario guardados `d4f9ad9`,
+sin push. Conectado centrado mundial del paisaje para invitado: la cámara
+está fuera del grupo rotado; convertir mundo→local evita desplazar la cúpula.
+Prueba con padre trasladado/girado y cámara anidada, 575/5 verdes. Build/lint
+verdes. Patios de Jade/Sol con juntas y variación de bloque en mapas propios,
+Bestiario conserva grava natural. Matriz activa `80586`: Sol4/4; Jade en curso,
+luego24 pruebas de piezas/estados/selección en12 escenarios a ambas resoluciones.
+No modificar aplicación importada, compilar ni duplicar Playwright hasta cerrar.
+Fotos Sol/Jade1920 y Sol invitado orbital revisadas; falta1366/baja y repaso
+conjunto de estados. Después suite completa antes del checkpoint compartido.
+La prueba invitado exige centro mundial=cámara al girar180° y al restaurar.
+Pendiente: más detalle de protagonistas cercanos (especialmente Sol), distorsión
+esférica del paisaje en foto, evolución ambiental persistente y pulido global.
+No confundir composición validada con acabado final; #1–23 siguen avances.
 
 **17:45, Sol/Bestiario validados.** Suite completa `78543`: 80 activas verdes,
 37 omitidas en 8 minutos. Matrices alta/baja, media y alta reducida a ambas
@@ -1219,7 +1321,7 @@ Borrador de sellos ampliado con 16 vocabularios geométricos y sonda visual
 `e2e/ritual-shots.spec.ts` (`RUN_RITUAL_SHOTS=1`), ambos todavía sin integrar
 ni validar visualmente. No lanzar esa sonda hasta conectar el sello en EventEffects.
 
-## Siguiente acción concreta
+## Archivo de los primeros bloques (ya completados)
 
 Tercer bloque en curso: `RitualSeal` ya integrado en `EventEffects`, sustituye
 la columna genérica por un trazado por capas y motas. Tiene 16 perfiles de forma

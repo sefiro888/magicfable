@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { CARDS, STARTER_DECKS, createMatch, type AnimationEvent, type BoardPiece } from '../src/game'
 import type { useMatchStore as MatchStoreHook } from '../src/store/match'
+import { SCENARIO_OPTIONS } from '../src/battle/scenarioCatalog'
 import { matchStoreUrl } from './helpers/matchStoreUrl'
+
+const scenario = SCENARIO_OPTIONS.find((option) => option.value !== 'auto' && option.value === process.env.COMBAT_SCENERY)?.value ?? 'aether-citadel'
+const sceneSuffix = scenario === 'aether-citadel' ? '' : `-${scenario}`
 
 test.skip(!process.env.RUN_COMBAT_FAMILIES, 'revisión de familias de combate bajo demanda')
 
@@ -16,16 +20,16 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       players: { ...base.players, player: { ...base.players.player, mulliganTaken: true, hand: [] } } }
     await page.clock.install()
     await page.setViewportSize({ width, height })
-    await page.addInitScript((saved) => {
+    await page.addInitScript(({ saved, scenario }) => {
       localStorage.setItem('cronicas-nexo-howto-visto', '1')
       localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: {
-        selectedDeckId: 'furia-caldera', scenario: 'aether-citadel', muted: true,
+        selectedDeckId: 'furia-caldera', scenario, muted: true,
         graphicsQuality: 'high', reducedMotion: false, animationSpeed: 1,
       }, version: 7 }))
       localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: {
         match: saved, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
       }, version: 2 }))
-    }, match)
+    }, { saved: match, scenario })
     const storeRequest = matchStoreUrl(page)
     await page.goto('/battle')
     const storeUrl = await storeRequest
@@ -67,7 +71,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       // fotografíe el final del efecto aunque se pidiera a mitad del vuelo.
       await page.clock.fastForward(1100)
       await page.clock.runFor(17)
-      await page.screenshot({ path: `e2e/__shots__/ataque-${faction}-${width}x${height}.png` })
+      await page.screenshot({ path: `e2e/__shots__/ataque-${faction}${sceneSuffix}-${width}x${height}.png` })
       if (process.env.COMBAT_HITS && ['arcane', 'nature', 'order', 'forja'].includes(faction)) {
         const hit: AnimationEvent = { ...event, id: `hit-${faction}`, type: 'damage', targetCardId: targetCard.id, amount: 3 }
         await page.evaluate(async ({ hit, storeUrl }) => {
@@ -78,7 +82,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         await page.clock.runFor(100)
         await page.clock.fastForward(500)
         await page.clock.runFor(17)
-        await page.screenshot({ path: `e2e/__shots__/impacto-${faction}-${width}x${height}.png` })
+        await page.screenshot({ path: `e2e/__shots__/impacto-${faction}${sceneSuffix}-${width}x${height}.png` })
       }
       expect(errors, `render de ${faction}`).toEqual([])
     }

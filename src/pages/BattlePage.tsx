@@ -802,7 +802,7 @@ export function BattlePage() {
         >
           {/* Dos rótulos: el largo se recorta a «ABANDONA…» en móvil, que no
               dice nada. Ahí se usa el corto entero en vez de un texto a medias. */}
-          <span className={styles.exitLong}>← Abandonar el Santuario</span>
+          <span className={styles.exitLong}>← Abandonar batalla</span>
           <span className={styles.exitShort}>← Salir</span>
         </button>
         <div className={styles.turn}>
