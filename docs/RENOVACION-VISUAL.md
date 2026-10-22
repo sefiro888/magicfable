@@ -87,6 +87,14 @@ global), **V** terminada y verificada.
 
 ## Bloque activo
 
+**20:00, bloque CERRADO por la fecha límite acordada.** Automatización
+`renovaci-n-visual-de-cr-nicas-del-nexo` eliminada. No queda ningún proceso
+de prueba o captura activo ni parche de juego sin verificar. Código publicado
+y comprobado en481a373; revisión artística local en el checkpoint posterior.
+Estado final:11 tareas V y39 avances A. Pendientes concretos y sonda del cielo
+en `docs/REVISION-VISUAL-2026-10-22.md`. No continuar ni publicar automáticamente
+después de esta hora; esperar nuevas instrucciones del usuario. Preservar«ç».
+
 **19:58, revisión artística de cierre local.** Ver
 `docs/REVISION-VISUAL-2026-10-22.md`: las50 no están terminadas (11 V/39 A).
 La foto orbital de Ciudadela revela un arco de cielo en primer plano. Sonda

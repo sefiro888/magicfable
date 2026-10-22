@@ -7,6 +7,11 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 
 ## 1. Dónde está el proyecto ahora
 
+**Bloque automático cerrado el22oct a las20:00 Europe/Madrid.**
+Automatización eliminada; avances y pendientes guardados localmente.
+No reanudar ni publicar sin nuevas instrucciones. Código jugable publicado
+en481a373; el checkpoint posterior solo contiene revisión y cierre.
+
 **Prioridad humana del22oct a las19:00:** mano inicial10, conservar robo
 normal y reciclar/barajar el cementerio al agotarse el mazo; sin autorrellenar
 mano ni recuperar piezas/fuentes en juego. Implementado en3f7b88d:588 unitarias,85 e2e/37 omitidas, build/lint
