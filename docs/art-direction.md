@@ -244,6 +244,12 @@ Los WebP no deben incluir marco, nombre, coste ni símbolos de interfaz. Peso ob
 
 ## Criterios de escenarios renovados
 
+Escalinata: arenisca rosada neutra, río índigo y pequeñas lámparas de aceite.
+Rueda tallada con ocho radios unidos a cubo y llanta, vanos reales y pétalos.
+Escaleras descendentes y cimientos bajo agua. Una captura planar de512/256px,
+ninguna en baja. Evitar paneles rectangulares de agua, apoyos flotantes,
+grandes halos y el baño naranja que borra la diferencia de piedra y río.
+
 Jade: laca cinabrio, celadón y caliza con amanecer cálido/sombra fría.
 Aleros continuos de cuatro faldones con caballete, tejas de relieve físico,
 apoyos dougong y puerta de hueco circular con dovelas, sin pagodas cónicas.
@@ -276,6 +282,8 @@ sin captura. Evitar prismas de cristal repetidos, auroras como paneles y
 superficies blancas emisivas. Panorama original en `docs/arte-escenarios.md`.
 La atmósfera de todos los escenarios se aplica a Scene: unir niebla/fondo al
 grupo giratorio no los hacía efectivos y abría negro al salir de la pintura.
+
+## Convención de nombres
 
 - Arte: `public/assets/cards/art/<card-id>.webp`.
 - Respaldo: `public/assets/cards/art/<card-id>.svg`.

@@ -34,7 +34,7 @@ global), **V** terminada y verificada.
 | 7 | Rompiente: pulido integral | A |
 | 8 | Gremio: pulido integral | A |
 | 9 | Jade: pulido integral | A |
-| 10 | Escalinata: pulido integral | P |
+| 10 | Escalinata: pulido integral | A |
 | 11 | Escenario propio de Quinto Sol | P |
 | 12 | Escenario propio de Bestiario | P |
 | 13 | Elemento protagonista por escenario | C |
@@ -77,6 +77,60 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**17:19, Escalinata validada como avance.** `13695` cerrado:78/37 e2e verdes
+en6,3min, media/alta reducida ambas resoluciones verdes. Imágenes nativas
+revisadas. Reflejo real0→693→0,512px; uno en alta/media, ninguno en baja.
+Movimiento de lámparas y quietud reducida comprobados.571/5, build/lint verdes.
+Guardar checkpoint local sin push. Falta pulido global: enriquecer arquitectura
+y continuidad del río sin perder legibilidad. Siguiente: escenarios propios
+Sol y Bestiario, preparados sin importar. No hay navegadores de prueba activos.
+
+**17:16, continuidad sin duplicar verificación.** `13695` sigue ejecutando
+suite completa de Escalinata; hasta70 sin fallos. Alta/media/alta reducida ya
+verdes; imágenes nativas de media y reducida revisadas en ambas resoluciones.
+Sonda de reflejo real de la cúpula0→693→0,512px, también reducida. No editar
+aplicación ni compilar hasta finalizar. Aún no marcar #10=A ni hacer commit.
+Durante la espera se prepararon SIN importar: SolarCourtArchitecture,
+solarCourtGeometry, solarRelief; BestiaryRemains y bestiaryGeometry; pruebas
+geométricas de vano solar y cierre de costilla. NO están compilados/probados.
+Todo queda en archivos recuperables; excluir esos módulos/tests y cuatro
+WebP sol/bestiary del checkpoint de Escalinata. Después integrarlos en sus
+propios bloques. Escenarios propios requieren ScenarioId, presentación,
+atmósfera, selector de Jugar/Ajustes, resolución de facción y Board3D. Mantener
+motor puro, catálogo/mazos sin cambios. Hay un selector antiguo de Ajustes con
+solo tres escenarios: unificarlo con el catálogo completo al integrar nuevos.
+Se conserva servidor4173 PID38452. Publicación ya verificada, no nuevo push.
+
+**17:11, Escalinata en verificación final.** Sesión activa `13695`: alta con
+sonda de reflejo real, media, alta reducida y suite completa encadenadas; se
+detiene al primer fallo. Logs `tools/captures/escalinata-final-high-20261022.log`
+y `escalinata-full-hardware-20261022.log`. NO editar fuentes importadas,
+compilar/lint ni iniciar otro Playwright mientras siga activa. Servidor4173
+PID38452 conservado. Matriz corregida `90465`: cuatro verdes alta/baja; imágenes
+revisadas. Se rechazó el primer río como panel rectangular y apoyos flotantes:
+ahora se desvanece antes de los cantos, terraza y basamentos llegan bajo agua,
+mapas de piedra en unidades reales, paleta rosada menos naranja. Unitarias
+`6262`:571/5; build `89943`, lint `62086` verdes tras retoque de UV y fuentes.
+Antes de #10=A revisar fotos finales/media/reducida y cierre completo.
+Publicación solicitada ya cumplida: `a182100`, Pages verificado200 y Actions
+success. Jade posterior validado y guardado `08ad9d9`, sin push. No publicar
+automáticamente otro bloque. Siguiente: integrar escenarios propios Sol y
+Bestiario. Paisajes de ambos preparados y documentados; `solarRelief.ts` es
+borrador SIN importar (excluir sus4WebP y módulo del commit de Escalinata).
+Después revisión global: distorsión y traslación de DistantVista con invitado,
+detalle de materiales/arquitectura, contraste de efectos en escenarios y
+composición conjunta. Las50 siguen incompletas, no cerrar automatización aún.
+
+**17:04, Escalinata integrada en primera revisión.** Jade guardado en `08ad9d9`
+sin push. Nuevo ghat con siete peldaños hacia río índigo con un reflejo planar,
+rueda tallada continua de ocho radios y vanos reales, chhatri de columnas
+perfiladas y cúpula curva, lámparas pequeñas flotando por ambos márgenes y
+bruma localizada. Ya no hay bump2m, disco de terraza ni gigantescos halos.
+Unitarias `55087`:571/5; build `76402` y lint `59512` verdes (un import de
+tipo corregido). Matriz alta/baja en curso; no editar aplicación ni compilar.
+Sol y Bestiario tienen paisajes originales preparados con procedencia completa,
+sin integrar. Excluir sus cuatro WebP del checkpoint de Escalinata.
 
 **17:00, Jade validado como avance local.** `16510`: media/alta reducida en
 ambas resoluciones y suite completa78/37 verdes en6,4min. Capturas nativas

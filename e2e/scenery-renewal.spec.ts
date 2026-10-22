@@ -8,6 +8,7 @@ import type { GraphicsQuality } from '../src/store/preferences'
 import { glacierBankPoint } from '../src/battle/scenarios/architecture/glacierBankGeometry'
 import { groveProbe } from './helpers/groveProbe'
 import { foundryProbe } from './helpers/foundryProbe'
+import { ghatProbe } from './helpers/ghatProbe'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
 const scenarios = ['aether-citadel', 'sanctuary', 'caldera', 'duna', 'fimbul', 'grove', 'shore', 'foundry', 'jade-court', 'wheel-ghat'] as const
@@ -18,6 +19,7 @@ const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '')
 const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium']
   : process.env.SCENERY_QUALITY === 'high' ? ['high'] : process.env.SCENERY_QUALITY === 'low' ? ['low'] : ['high', 'low']
 const landmarks: Partial<Record<typeof scenario, readonly (readonly [number, number, number])[]>> = {
+  'wheel-ghat': [[-6.15, 2.42, -3.5], [6.15, 2.3, -3.6]],
   'jade-court': [[0, 2.32, -6.3], [-6.25, 2.3, -3.9], [6.15, 1, -3.5]],
   foundry: [[0, 2.05, -6], [-6.2, 1.55, -3.4]],
   shore: [[5.9, 2.48, -5.6], [-7.1, 2, -5.5]],
@@ -67,6 +69,13 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       const camera = await cameraSnapshot(page, url)
       expect(camera.background).not.toBeNull()
       expect(camera.fog).not.toBeNull()
+      if (scenario === 'wheel-ghat') {
+        const before = await ghatProbe(page, url)
+        await page.waitForTimeout(350)
+        const after = await ghatProbe(page, url)
+        if (reduced) expect(after).toEqual(before)
+        else expect(after).not.toEqual(before)
+      }
       if (scenario === 'foundry') {
         const before = await foundryProbe(page, url)
         await page.waitForTimeout(350)
@@ -87,7 +96,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         if (reduced) expect(after.matrix).toEqual(before.matrix)
         else expect(after.matrix).not.toEqual(before.matrix)
       }
-      if (scenario === 'sanctuary' || scenario === 'fimbul' || scenario === 'shore') {
+      if (scenario === 'sanctuary' || scenario === 'fimbul' || scenario === 'shore' || scenario === 'wheel-ghat') {
         const water = await waterConfiguration(page, url)
         expect(water.enabled).toBe(quality === 'low' ? 0 : 1)
         expect(water.size).toBe(quality === 'high' ? 512 : quality === 'medium' ? 256 : 0)
@@ -125,8 +134,8 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         await page.waitForTimeout(500)
         await page.screenshot({ path: `e2e/__shots__/${prefix}-foto-orbita.png` })
       }
-      if ((scenario === 'sanctuary' || scenario === 'fimbul' || scenario === 'shore') && width === 1920 && quality === 'high') {
-        const reflection = await reflectionProbe(page, url, scenario === 'fimbul' ? 'fimbul-bank--1' : scenario === 'shore' ? 'shore-sea-arch' : 'sanctuary-stone-11')
+      if ((scenario === 'sanctuary' || scenario === 'fimbul' || scenario === 'shore' || scenario === 'wheel-ghat') && width === 1920 && quality === 'high') {
+        const reflection = await reflectionProbe(page, url, scenario === 'fimbul' ? 'fimbul-bank--1' : scenario === 'shore' ? 'shore-sea-arch' : scenario === 'wheel-ghat' ? 'ghat-chhatri-roof' : 'sanctuary-stone-11')
         writeFileSync(`tools/captures/${prefix}-reflection.json`, JSON.stringify(reflection, null, 2))
         expect(reflection.width).toBe(512)
         expect(reflection.after - reflection.before).toBeGreaterThan(4)

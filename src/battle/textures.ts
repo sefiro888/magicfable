@@ -1970,9 +1970,9 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
     // Arenisca rosada. Ni el ocre pálido de Duna ni el gris del Santuario: la
     // piedra de estos templos tira a salmón.
     const base = context.createLinearGradient(0, 0, size, size);
-    base.addColorStop(0, '#c99a76');
-    base.addColorStop(0.5, '#b98a68');
-    base.addColorStop(1, '#a97a5c');
+    base.addColorStop(0, '#b9aba0');
+    base.addColorStop(0.5, '#ad9b90');
+    base.addColorStop(1, '#9d8a81');
     context.fillStyle = base;
     context.fillRect(0, 0, size, size);
 
@@ -2083,8 +2083,8 @@ export const boardTileTexture = (style: BoardTileStyle, variant: number): Canvas
       context.fillRect(hx - radius, hy - radius, radius * 2, radius * 2);
     }
 
-    drawTileGroove(context, size, 0.46);
-    bakeEdgeShade(context, size, 0.34);
+    drawTileGroove(context, size, 0.18);
+    bakeEdgeShade(context, size, 0.06);
   } else if (style === 'glaze') {
     // Loseta vidriada de la Corte de Jade. Es la unica del juego que no imita
     // un material NATURAL ni uno FABRICADO EN BRUTO, sino una pieza de
@@ -2853,7 +2853,7 @@ const drawTileHeight = (style: BoardTileStyle, variant: number, size: number, co
 
   // La junta del borde es lo MÁS hundido de la losa en todos los materiales:
   // es donde acaba la piedra. Se dibuja al final para que nada la pise.
-  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' || style === 'tide' || style === 'forge' || style === 'glaze' ? 1.25 : Math.max(3, size * 0.03);
+  const grooveWidth = style === 'basalt' || style === 'moss' || style === 'sand' || style === 'ice' || style === 'forest' || style === 'tide' || style === 'forge' || style === 'glaze' || style === 'sandstone' ? 1.25 : Math.max(3, size * 0.03);
   context.strokeStyle = dip(0.9);
   context.lineWidth = grooveWidth;
   context.strokeRect(grooveWidth / 2, grooveWidth / 2, size - grooveWidth, size - grooveWidth);

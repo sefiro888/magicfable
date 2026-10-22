@@ -178,11 +178,13 @@ Sin descarga durante partida.
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Garganta del Bestiario, a mature tactical fantasy card game. Spectacular primeval ravine where colossal legendary creatures once passed, viewed from high above looking DOWN approximately 37 degrees, no sky or horizon. Massive deeply stratified dark green-grey limestone cliffs, a huge naturally weathered ancient ivory-colored rib arch and broken mineralized horn emerging from rock in upper and outer thirds, immense claw-scratched stone surfaces, scale-like overlapping geological plates, subdued reed beds and a deep slow dark green stream. Bone and horn anatomically coherent, weathered with fine cracks and mineral patina, no gore or human remains; awe and natural history rather than haunted graveyard. Sparse ancient low vegetation, rugged open ravine, not a dense forest, not a frozen fjord, no manmade temple or fortress. Central and lower half spacious subdued slate-grey limestone flats and fine damp gravel, leave visual room for a separate tactical board in front; no foreground platform, arena, table, game board or cards. Strong pale overcast directional light grazing ivory and rock, deep green-black recesses, restrained old amber mineral accents, atmospheric mist separating four planes. Mature naturalist painterly cinematic realism, convincing immense scale and observed geology, sophisticated dark fantasy compatible with a finely illuminated medieval bestiary. Original design, no references, artist imitation or franchise. No visible living creatures, people, characters, UI, text, logos, watermarks or borders. Avoid cartoon dragon skulls, simplistic low-poly cones, floating giant bones, bright neon green, toy props, blood, grotesque horror, glowing magic everywhere, jungle ruins, visible sky, horizon or tourist postcard frontal view.
 ```
 
-## Escalinata — panorámica v1 preparada
+## Escalinata — panorámica v1
 
 Generada con imagegen integrado el22oct2026 sin referencias, marcas ni artistas.
 Revisada: ghat monumental de arenisca rosada, río índigo y lámparas contenidas,
-sin cielo ni figuras. Preparación sin integrar ni validar en el juego.
+sin cielo ni figuras. Integrada con ghat, rueda tallada, lámparas y río nativos.
+Alta/media/baja y alta reducida revisadas en ambas resoluciones; reflejo real
+0→693→0,571/5, build/lint y78/37 e2e verdes. Falta pulido global.
 Original conservado en
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f904a577-d751-47a4-a233-6e073e6b91a4.png`.
 Maestro intacto copiado a `tools/art-inbox/scenery/wheel-vista-v1.png` y prompt

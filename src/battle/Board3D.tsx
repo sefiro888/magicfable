@@ -193,12 +193,11 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#f2ecd2', '#e8e2c4', '#ded9bb'],
     enemy: ['#cbdaea', '#bfcfe2', '#b6c6da'],
   },
-  // Sobre arenisca rosada el propio tira al azafrán y el rival al índigo del
-  // monzón, que son los dos colores que ya viven en esta facción. El índigo va
-  // saturado a conciencia: la piedra es cálida y se come los azules flojos.
+  // La piedra rosada ya calienta el bando propio: un tinte azafrán fuerte
+  // convertía toda la terraza en óxido. El rival conserva el índigo del río.
   sandstone: {
-    own: ['#ffd9a0', '#f7cd94', '#eec089'],
-    enemy: ['#9aa4d8', '#8d97ce', '#828cc4'],
+    own: ['#efddc9', '#e7d1bd', '#d8c3b1'],
+    enemy: ['#adb3c8', '#a0a9c3', '#949db6'],
   },
   // Sobre celadón el reto es que los dos bandos se sigan leyendo como esmalte
   // verde. El propio tira al oro de la greca y el rival al azul de la
@@ -344,7 +343,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
     >
-      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' || terrainStyle === 'glaze'
+      {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' || terrainStyle === 'glaze' || terrainStyle === 'sandstone'
         ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       <meshStandardMaterial
@@ -463,7 +462,7 @@ const NEXUS_STONE: Readonly<Record<BoardTileStyle, { readonly base: string; read
   tide: { base: '#53666b', shaft: '#728487', crown: '#92a2a0' },
   forge: { base: '#706b5f', shaft: '#858477', crown: '#a1a08e' },
   glaze: { base: '#91978a', shaft: '#aeb8a8', crown: '#c2c9b6' },
-  sandstone: { base: '#3a2a20', shaft: '#54402e', crown: '#6e563c' },
+  sandstone: { base: '#8e837e', shaft: '#b5a194', crown: '#c9b2a0' },
 }
 
 
@@ -1054,7 +1053,7 @@ function Nexus({
   const z = nexusWorldZ(playerId)
   const stone = NEXUS_STONE[terrainStyle]
   const nexusMetal = terrainStyle === 'forge' ? forgedMetalMaps('bronze') : undefined
-  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' || terrainStyle === 'forest' || terrainStyle === 'glaze' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' ? stoneMaps('sandstone').map : terrainStyle === 'ice' || terrainStyle === 'tide' ? stoneMaps('granite').map : nexusMetal?.map ?? masonryTexture()
+  const stoneMap = terrainStyle === 'stone' || terrainStyle === 'moss' || terrainStyle === 'forest' || terrainStyle === 'glaze' ? stoneMaps('limestone').map : terrainStyle === 'basalt' ? stoneMaps('basalt').map : terrainStyle === 'sand' || terrainStyle === 'sandstone' ? stoneMaps('sandstone').map : terrainStyle === 'ice' || terrainStyle === 'tide' ? stoneMaps('granite').map : nexusMetal?.map ?? masonryTexture()
   const color = mine ? '#f2a24a' : '#58c9ff'
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
@@ -1097,7 +1096,7 @@ function Nexus({
     }
     // La intensidad 5 teñía las piedras renovadas de un oro plano. La energía queda en los cristales; la piedra sigue recibiendo sol.
     if (nexusLight.current) nexusLight.current.intensity = collapse ? 0
-      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' || terrainStyle === 'glaze' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
+      : terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' || terrainStyle === 'glaze' || terrainStyle === 'sandstone' ? 0.65 + integrity * 0.35 + golpe * 1.4 : 3.5 + integrity * 1.5
   })
 
   return (
