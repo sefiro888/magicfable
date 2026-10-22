@@ -13,7 +13,7 @@ test('arrastrar una unidad de la mano al tablero la despliega', async ({ page })
   // con mano aleatoria fallaba de vez en cuando sin que hubiera nada roto.
   await page.goto('/battle?seed=1311657807')
   await page.getByRole('button', { name: /Entendido, a jugar/i }).click()
-  const keep = page.getByRole('button', { name: /Conservar las cinco/i })
+  const keep = page.getByRole('button', { name: /Conservar las diez/i })
   await keep.click()
   await expect(keep).toBeHidden()
   // La primera partida siempre muestra el coach. Exigir un clic normal detecta

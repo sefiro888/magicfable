@@ -36,10 +36,13 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
     : player.hand
   // El solape y la rotación se comprimen con la mano llena para que el abanico
   // no invada el tablero ni se salga del carril inferior.
-  const overlap = count <= 4 ? 20 : count <= 6 ? 32 : count <= 8 ? 42 : 50
+  // Con diez cartas, 50 px por lado tapaban incluso el centro pulsable de
+  // la siguiente carta. Hasta doce todavía caben con un centro descubierto.
+  const overlap = count <= 4 ? 20 : count <= 6 ? 32 : count <= 12 ? 40 : 50
   const maxRotation = Math.min(3.4, 20 / Math.max(1, count))
   const liftStep = Math.min(3.6, 20 / Math.max(1, count))
   return (
+    <div className={styles.handViewport} data-testid="hand-scroll-rail">
     <div className={styles.hand} aria-label="Tu mano" data-reduced-motion={reducedMotion || undefined}>
       {orderedHand.map((instance, index) => {
         const card = CARD_BY_ID[instance.cardId]
@@ -93,6 +96,7 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
           </div>
         )
       })}
+    </div>
     </div>
   )
 })

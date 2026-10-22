@@ -297,7 +297,7 @@ export const useMatchStore = create<MatchStore>()(
     set({
       ...initialState,
       match: cleaned,
-      history: ['La escaramuza comienza. Robas cinco cartas.'],
+      history: ['La escaramuza comienza. Robas diez cartas.'],
       healthHistory: [healthSnapshot(cleaned)],
       selectedHandId: undefined,
       selectedPieceId: undefined,
@@ -313,7 +313,7 @@ export const useMatchStore = create<MatchStore>()(
     set({
       ...initialState,
       match: cleaned,
-      history: ['La escaramuza comienza. Robas cinco cartas.'],
+      history: ['La escaramuza comienza. Robas diez cartas.'],
       healthHistory: [healthSnapshot(cleaned)],
       selectedHandId: undefined,
       selectedPieceId: undefined,

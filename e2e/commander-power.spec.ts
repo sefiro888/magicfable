@@ -13,7 +13,7 @@ test('el poder del comandante se lanza una vez y se agota', async ({ page }) => 
     }))
   })
   await page.goto('/battle?seed=1311657807')
-  await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+  await page.getByRole('button', { name: /Conservar las diez/i }).click()
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
 
   const poder = page.getByRole('button', { name: /Erupción de la Caldera/i })

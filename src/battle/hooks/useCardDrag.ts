@@ -42,14 +42,14 @@ export const useCardDrag = ({ onDrop, onDragStart, onDragEnd }: CardDragOptions)
   const [draggingId, setDraggingId] = useState<string>()
   const [pointer, setPointer] = useState<{ x: number; y: number }>()
   /** Gesto en curso: id de la carta y punto donde se pulsó. */
-  const gesture = useRef<{ instanceId: string; startX: number; startY: number; dragging: boolean } | undefined>(undefined)
+  const gesture = useRef<{ instanceId: string; startX: number; startY: number; dragging: boolean; touch: boolean } | undefined>(undefined)
   /** Marca de «el último gesto fue un arrastre», para descartar el clic posterior. */
   const dragged = useRef(false)
 
   const start = useCallback((instanceId: string, event: React.PointerEvent) => {
     // Solo el botón principal: el secundario abre la inspección de la carta.
     if (event.button !== 0) return
-    gesture.current = { instanceId, startX: event.clientX, startY: event.clientY, dragging: false }
+    gesture.current = { instanceId, startX: event.clientX, startY: event.clientY, dragging: false, touch: event.pointerType === 'touch' }
   }, [])
 
   useEffect(() => {
@@ -58,6 +58,12 @@ export const useCardDrag = ({ onDrop, onDragStart, onDragEnd }: CardDragOptions)
       if (!current) return
       const distance = Math.hypot(event.clientX - current.startX, event.clientY - current.startY)
       if (!current.dragging && distance < DRAG_THRESHOLD) return
+      // El barrido lateral consulta la mano larga; subir hacia el tablero
+      // conserva el arrastre de cartas y no compite con el scroll nativo.
+      if (!current.dragging && current.touch && Math.abs(event.clientX - current.startX) > Math.abs(event.clientY - current.startY)) {
+        gesture.current = undefined
+        return
+      }
       if (!current.dragging) {
         current.dragging = true
         setDraggingId(current.instanceId)

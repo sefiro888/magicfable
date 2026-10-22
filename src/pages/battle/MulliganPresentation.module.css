@@ -15,7 +15,7 @@ section.prepared > small { color: #b7a37c; font-size: 9px; letter-spacing: .2em;
 section.prepared h2 { margin: 7px 0 8px; color: #f0e3c9; font-size: 30px; line-height: 1.15; }
 section.prepared > .instruction { max-width: 70ch; margin: 0 auto; color: #bdb6a9; font-size: 12px; line-height: 1.5; }
 section.prepared > .hint { margin-top: 10px !important; padding: 8px 12px; border-radius: 2px; font-size: 12px; line-height: 1.5; }
-.prepared .cards { flex-wrap: wrap; gap: 12px; margin: 18px 0; }
+.prepared .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 132px)); justify-content: center; gap: 12px; margin: 18px 0; }
 .prepared .card { width: 132px; padding-bottom: 8px; border-color: #a18c5a59; background: linear-gradient(#20232b, #10151d); box-shadow: 0 5px 14px #0004; }
 .prepared .card img { height: 100px; filter: saturate(.9); }
 .prepared .card strong { height: 35px; padding: 7px 6px 0; color: #ede2cb; font-size: 12px; line-height: 1.2; }
@@ -40,8 +40,8 @@ section.prepared > .hint { margin-top: 10px !important; padding: 8px 12px; borde
   section.prepared > small { font-size: 8px; }
   section.prepared > .instruction { font-size: 11px; }
   section.prepared > .hint { font-size: 11px; padding: 6px 8px; }
-  .prepared .cards { gap: 8px; margin-block: 12px; }
-  .prepared .card { width: calc(33.333% - 6px); max-width: 154px; padding-bottom: 6px; }
+  .prepared .cards { grid-template-columns: repeat(3, minmax(0, 154px)); gap: 8px; margin-block: 12px; }
+  .prepared .card { width: 100%; max-width: 154px; padding-bottom: 6px; }
   .prepared .card img { height: 76px; }
   .prepared .card strong { height: auto; min-height: 2.5em; padding: 5px 4px 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 11px; }
   .prepared .card span { font-size: 8px; }

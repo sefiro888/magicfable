@@ -38,7 +38,7 @@ test('una partida a medias se puede continuar desde la portada', async ({ page }
   test.setTimeout(120_000)
   await page.addInitScript(() => localStorage.setItem('cronicas-nexo-howto-visto', '1'))
   await page.goto('/battle?seed=1311657807')
-  await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+  await page.getByRole('button', { name: /Conservar las diez/i }).click()
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
   // Despliega algo: una partida en el turno 1 y sin nada en el tablero no
   // cuenta como «a medias», para no ofrecer continuar lo que no ha empezado.

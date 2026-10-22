@@ -194,7 +194,7 @@ test.describe('en la batalla', () => {
     })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/battle?seed=1311657807')
-    await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+    await page.getByRole('button', { name: /Conservar las diez/i }).click()
     await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
     await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
     await page.waitForTimeout(2500)
@@ -221,7 +221,7 @@ test.describe('en la batalla', () => {
     })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/battle?seed=1311657807')
-    await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+    await page.getByRole('button', { name: /Conservar las diez/i }).click()
     await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
     await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
     await page.waitForTimeout(2500)
@@ -299,9 +299,9 @@ test('en móvil, el constructor de mazos sigue enseñando el coste de cada carta
 /**
  * El mulligan es la primera pantalla de cada partida y en el móvil salía rota.
  *
- * Cinco tarjetas de 132 px no caben en una fila de 375, así que flex las
+ * Diez tarjetas de 132 px no caben en una fila de 375, así que flex las
  * encogía a 62 y el nombre se partía en tres líneas que se salían de la
- * tarjeta y se pisaban con la etiqueta de estado. En dos filas (3+2) cada una
+ * tarjeta y se pisaban con la etiqueta de estado. Con tres columnas cada una
  * recupera ancho.
  */
 for (const ancho of [375, 390]) {
@@ -315,7 +315,7 @@ for (const ancho of [375, 390]) {
     })
     await page.setViewportSize({ width: ancho, height: ancho === 375 ? 812 : 844 })
     await page.goto('/battle?seed=1311657807')
-    await expect(page.getByRole('button', { name: /Conservar las cinco/i })).toBeVisible({ timeout: 25_000 })
+    await expect(page.getByRole('button', { name: /Conservar las diez/i })).toBeVisible({ timeout: 25_000 })
     await page.waitForTimeout(1200)
 
     const cartas = await page.evaluate(() => {
@@ -332,7 +332,7 @@ for (const ancho of [375, 390]) {
           }
         })
     })
-    expect(cartas).toHaveLength(5)
+    expect(cartas).toHaveLength(10)
     for (const carta of cartas) {
       expect(carta.ancho, 'tarjeta demasiado estrecha').toBeGreaterThan(70)
       expect(carta.desborda, 'el nombre se sale de la tarjeta').toBe(false)

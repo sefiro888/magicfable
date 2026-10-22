@@ -30,7 +30,7 @@ const STEPS: readonly Step[] = [
   {
     n: '1',
     title: 'Canaliza Esencia',
-    body: 'Cada turno puedes jugar una fuente de Esencia de tu mano. La Esencia es el maná que paga tus cartas, así que juega una fuente siempre que puedas.',
+    body: 'Empiezas con 10 cartas y robas una al comenzar tu turno. Si el mazo se agota, se baraja tu cementerio para seguir robando. Cada turno puedes jugar una fuente de Esencia: es el maná que paga tus cartas.',
   },
   {
     n: '2',

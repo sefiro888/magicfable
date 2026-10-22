@@ -22,7 +22,7 @@ test('captura el tablero para revisión visual', async ({ page }) => {
   const howTo = page.getByRole('button', { name: /Entendido, a jugar/i })
   await howTo.waitFor({ state: 'visible', timeout: 15000 })
   await howTo.click()
-  const keep = page.getByRole('button', { name: /Conservar las cinco/i })
+  const keep = page.getByRole('button', { name: /Conservar las diez/i })
   await keep.waitFor({ state: 'visible', timeout: 15000 })
   await keep.click()
   await expect(keep).toBeHidden()

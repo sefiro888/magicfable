@@ -83,7 +83,7 @@ for (const tamano of TAMANOS) {
     await page.addInitScript(() => localStorage.setItem('cronicas-nexo-howto-visto', '1'))
     await page.setViewportSize({ width: tamano.width, height: tamano.height })
     await page.goto('/battle?seed=1311657807')
-    await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+    await page.getByRole('button', { name: /Conservar las diez/i }).click()
     await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
     await page.waitForTimeout(3000)
     await page.screenshot({ path: `e2e/__shots__/movil${tamano.nombre}-batalla.png` })

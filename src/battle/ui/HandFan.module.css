@@ -1,3 +1,4 @@
+.handViewport { height: 100%; min-width: 0; position: relative; }
 .hand { height: 100%; min-width: 0; position: relative; display: flex; justify-content: center; align-items: flex-start; padding: 4px 12px 0; overflow: visible; }
 .fanCard {
   position: relative;
@@ -66,9 +67,16 @@
   .fanCard[data-selected='true'] { transform: rotate(0deg) translateY(-36px) scale(1.07); }
 }
 
-/* ── Móvil: la mano entera se escala para caber en vertical ── */
+/* Con diez cartas, centrar un abanico más ancho que el móvil ocultaba ambos
+   extremos sin forma de alcanzarlos. El carril desplaza solo la mano y zoom
+   conserva su altura y la geometría de desplazamiento en el mismo espacio. */
 @media (max-width: 760px) {
-  .hand { transform: scale(0.74); transform-origin: 50% 100%; }
+  .handViewport { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; touch-action: pan-x; scrollbar-width: thin; scrollbar-color: #8e7b51 #0c1018; }
+  /* 52 px dejaban el primer marco 1,7 px fuera al crecer por foco. */
+  .hand { width: max-content; min-width: calc(100% / .74); height: calc(100% / .74); zoom: .74; padding-inline: 64px; }
+  /* Levantar la carta contra un carril recortado escondía su nombre. En móvil
+     se consulta deslizando y la seleccionada se superpone a sus vecinas. */
+  .handViewport .fanCard { transform: translateY(6px); transition: none; }
 }
 
 /* ── Táctil: sin ratón no hay ":hover" que levante la carta para leerla, así

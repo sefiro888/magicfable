@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 test('abandonar una partida cuenta como derrota en el historial', async ({ page }) => {
   test.setTimeout(60_000)
   await page.goto('/battle?seed=4242')
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await page.getByRole('button', { name: '← Abandonar batalla' }).click()
   await expect(page.getByRole('heading', { name: '¿Abandonar esta crónica?' })).toBeVisible()
   await page.getByRole('button', { name: 'Abandonar', exact: true }).click()
@@ -31,7 +31,7 @@ test('abandonar una partida cuenta como derrota en el historial', async ({ page 
 test('repetir una partida desde el historial navega con la misma semilla', async ({ page }) => {
   test.setTimeout(60_000)
   await page.goto('/battle?seed=7777')
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await page.getByRole('button', { name: '← Abandonar batalla' }).click()
   await page.getByRole('button', { name: 'Abandonar', exact: true }).click()
   await expect(page).toHaveURL(/\/play$/)
@@ -78,7 +78,7 @@ test('importar el código de otra facción se rechaza con el nombre del mazo due
 test('el glosario se abre desde la batalla y se cierra con Escape', async ({ page }) => {
   test.setTimeout(60_000)
   await page.goto('/battle?seed=101')
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await page.getByRole('button', { name: 'Glosario de términos' }).click()
   await expect(page.getByRole('heading', { name: 'Glosario de términos' })).toBeVisible()
   await expect(page.getByText('Impulso').first()).toBeVisible()
@@ -89,7 +89,7 @@ test('el glosario se abre desde la batalla y se cierra con Escape', async ({ pag
 test('una victoria en el primer turno celebra los logros recién desbloqueados', async ({ page }) => {
   test.setTimeout(60_000)
   await page.goto('/battle?seed=555')
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await page.keyboard.press('Control+Shift+D')
   const nexusHit = page.getByRole('button', { name: '-5 al Nexo rival' })
   // Nexo a 35 de vida, -5 por clic: hacen falta 7 clics para llegar a 0.
@@ -105,7 +105,7 @@ test('una victoria en el primer turno celebra los logros recién desbloqueados',
 test('«Volver al inicio» no deja la partida terminada a medias para la siguiente', async ({ page }) => {
   test.setTimeout(60_000)
   await page.goto('/battle?seed=555')
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await page.keyboard.press('Control+Shift+D')
   const nexusHit = page.getByRole('button', { name: '-5 al Nexo rival' })
   // Nexo a 35 de vida, -5 por clic: hacen falta 7 clics para llegar a 0.
@@ -119,7 +119,7 @@ test('«Volver al inicio» no deja la partida terminada a medias para la siguien
   await expect(page).toHaveURL(/\/$/)
   await page.goto('/battle?seed=555')
   await expect(page.getByRole('heading', { name: 'Tu mano inicial' })).toBeVisible()
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await expect(page.getByText('Turno 1 · Principal')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Victoria' })).toBeHidden()
 })
@@ -127,7 +127,7 @@ test('«Volver al inicio» no deja la partida terminada a medias para la siguien
 test('el panel del rival muestra su vida, esencia, mano, mazo y descarte', async ({ page }) => {
   test.setTimeout(60_000)
   await page.goto('/battle?seed=555')
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await page.locator('[class*="_enemySummary_"]').click()
   await expect(page.getByRole('dialog', { name: 'Datos del rival' })).toBeVisible()
   const panel = page.getByRole('dialog', { name: 'Datos del rival' })
@@ -144,7 +144,7 @@ test('el panel propio en móvil está oculto por defecto y se abre con ⛨', asy
   test.setTimeout(60_000)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/battle?seed=555')
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   // Oculto por defecto: la vida y la esencia ya se ven en el tablero y la píldora inferior.
   await expect(page.getByText('Vida del Nexo')).toBeHidden()
   // El aria-label cambia entre "Ver tus datos…" y "Ocultar tus datos" según el

@@ -43,7 +43,7 @@ describe('store de partida: descripciones del historial', () => {
 
   it('startMatch anota el saludo inicial', () => {
     useMatchStore.getState().startMatch(STARTER_DECKS[0]!.id, 0)
-    expect(useMatchStore.getState().history).toEqual(['La escaramuza comienza. Robas cinco cartas.'])
+    expect(useMatchStore.getState().history).toEqual(['La escaramuza comienza. Robas diez cartas.'])
   })
 
   it('startMatch nunca elige la propia facción como rival, y varía entre semillas', () => {

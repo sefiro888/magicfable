@@ -48,7 +48,7 @@ test('capturas del terreno', async ({ page }) => {
   const board = page.getByTestId('battle-board')
   await expect(board).toBeVisible({ timeout: 25_000 })
   // La partida sembrada arranca en el mulligan: lo despacho para ver el tablero.
-  const mulligan = page.getByRole('button', { name: /conservar las cinco/i })
+  const mulligan = page.getByRole('button', { name: /conservar las diez/i })
   await mulligan.click({ timeout: 20_000 })
   await expect(mulligan).toBeHidden()
   await page.waitForTimeout(3000)

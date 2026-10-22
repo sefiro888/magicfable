@@ -23,7 +23,7 @@ test('caras de la ficha', async ({ page }) => {
   })
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/battle?seed=1311657807')
-  await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+  await page.getByRole('button', { name: /Conservar las diez/i }).click()
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
   await page.keyboard.press('Control+Shift+KeyD')
   const essence = page.getByRole('button', { name: '+1 Esencia' })

@@ -94,13 +94,15 @@ const makePiece = (
 };
 
 describe('inicio, robo y mulligan', () => {
-  it('crea manos reproducibles de cinco cartas sin alterar los mazos definidos', () => {
+  it('crea manos reproducibles de diez cartas sin alterar los mazos definidos', () => {
     const first = freshMatch(90210);
     const second = freshMatch(90210);
     expect(first.players.player.hand).toEqual(second.players.player.hand);
     expect(first.players.ai.hand).toEqual(second.players.ai.hand);
-    expect(first.players.player.hand).toHaveLength(5);
-    expect(first.players.player.deck).toHaveLength(45);
+    expect(first.players.player.hand).toHaveLength(10);
+    expect(first.players.player.deck).toHaveLength(40);
+    expect(first.players.ai.hand).toHaveLength(10);
+    expect(first.players.ai.deck).toHaveLength(40);
     expect(first.players.player.nexusHealth).toBe(35);
     expect(first.players.ai.nexusHealth).toBe(35);
   });
@@ -111,10 +113,10 @@ describe('inicio, robo y mulligan', () => {
     const result = applyAction(state, { type: 'draw', playerId: 'player' });
     expect(result.ok).toBe(true);
     expect(result.state.players.player.hand.at(-1)).toEqual(top);
-    expect(result.state.players.player.deck).toHaveLength(44);
+    expect(result.state.players.player.deck).toHaveLength(39);
     expect(result.state.phase).toBe('main');
     expect(result.state.animations.at(-1)?.type).toBe('draw');
-    expect(state.players.player.hand).toHaveLength(5);
+    expect(state.players.player.hand).toHaveLength(10);
   });
 
   it('impide robar manualmente fuera de la fase de robo', () => {
@@ -122,19 +124,123 @@ describe('inicio, robo y mulligan', () => {
     const result = applyAction(state, { type: 'draw', playerId: 'player' });
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe('wrong-phase');
-    expect(result.state.players.player.hand).toHaveLength(5);
+    expect(result.state.players.player.hand).toHaveLength(10);
   });
 
-  it('robar con el mazo vacío no hace nada: ni carta ni daño al Nexo', () => {
+  it('sin mazo ni cementerio no añade cartas ni daña el Nexo', () => {
     const state: MatchState = { ...withPlayer(freshMatch(), 'player', { deck: [], nexusHealth: 24 }), phase: 'draw' };
     const first = applyAction(state, { type: 'draw', playerId: 'player' });
     expect(first.ok).toBe(true);
     expect(first.state.players.player.nexusHealth).toBe(24);
-    expect(first.state.players.player.hand).toHaveLength(5); // no se añade carta alguna
+    expect(first.state.players.player.hand).toHaveLength(10); // no se añade carta alguna
     expect(first.state.winner).toBeUndefined();
 
     const second = applyAction({ ...first.state, activePlayer: 'player', phase: 'draw' }, { type: 'draw', playerId: 'player' });
     expect(second.state.players.player.nexusHealth).toBe(24); // sigue sin penalización, por más veces que se intente
+  });
+
+  it.each(['player', 'ai'] as const)('recicla el cementerio de %s con barajado reproducible y sin tocar las piezas ni las fuentes', (playerId) => {
+    const discard = Array.from({ length: 8 }, (_, index) => handCard('sabueso-brasa', `fallen-${index}`));
+    const base = withPlayer(freshMatch(), playerId, { deck: [], hand: [], discard, resources: resources('fury', 2) });
+    const state: MatchState = { ...base, phase: 'draw', activePlayer: playerId,
+      board: [makePiece('alive', 'sabueso-brasa', playerId, { x: 3, y: 4 })] };
+    const first = applyAction(state, { type: 'draw', playerId });
+    const replay = applyAction(state, { type: 'draw', playerId });
+    expect(first.ok).toBe(true);
+    expect(first.state).toEqual(replay.state);
+    const after = first.state.players[playerId];
+    expect(after.hand).toHaveLength(1);
+    expect(after.deck).toHaveLength(7);
+    expect(after.discard).toEqual([]);
+    const recovered = [...after.hand, ...after.deck];
+    expect(recovered.map((card) => card.instanceId).sort()).toEqual(discard.map((card) => card.instanceId).sort());
+    expect(recovered).not.toEqual(discard);
+    expect(first.state.board).toBe(state.board);
+    expect(after.resources).toBe(state.players[playerId].resources);
+    expect(first.state.players[playerId === 'player' ? 'ai' : 'player']).toBe(state.players[playerId === 'player' ? 'ai' : 'player']);
+    expect(state.players[playerId].discard).toEqual(discard);
+    expect(state.players[playerId].deck).toEqual([]);
+    expect(first.state.animations.at(-1)?.targetId).toBe(after.hand[0]?.instanceId);
+  });
+
+  it('agota el mazo antes de reciclar y no rellena una mano vacía automáticamente', () => {
+    const top = handCard('sabueso-brasa', 'last-in-deck');
+    const fallen = handCard('gigante-magma', 'fallen');
+    const state = withPlayer(freshMatch(), 'player', { hand: [], deck: [top], discard: [fallen] });
+    const first = applyAction({ ...state, phase: 'draw' }, { type: 'draw', playerId: 'player' });
+    expect(first.state.players.player.hand).toEqual([top]);
+    expect(first.state.players.player.discard).toEqual([fallen]);
+    const second = applyAction({ ...first.state, phase: 'draw' }, { type: 'draw', playerId: 'player' });
+    expect(second.state.players.player.hand).toEqual([top, fallen]);
+    expect(second.state.players.player.discard).toEqual([]);
+    expect(second.state.players.player.deck).toEqual([]);
+  });
+
+  it('un efecto de robo múltiple cruza el final del mazo sin duplicar la unidad que lo provoca', () => {
+    const archive = handCard('archivo-viviente', 'archive');
+    const top = handCard('fuente-arcana', 'last');
+    const fallen = handCard('eco-cronomante', 'used-spell');
+    const state = withPlayer(freshMatch(), 'player', { hand: [archive], deck: [top], discard: [fallen], resources: resources('arcane', 6) });
+    const result = applyAction(state, { type: 'play-card', playerId: 'player', cardInstanceId: archive.instanceId, position: { x: 3, y: 7 } });
+    expect(result.ok).toBe(true);
+    expect(result.state.players.player.hand).toEqual([top, fallen]);
+    expect(result.state.players.player.deck).toEqual([]);
+    expect(result.state.players.player.discard).toEqual([]);
+    expect(result.state.board.map((piece) => piece.instanceId)).toEqual([archive.instanceId]);
+    expect(result.state.players.player.resources).toHaveLength(6);
+  });
+
+  it('permite reciclar durante varios ciclos conservando las mismas instancias', () => {
+    const cards = Array.from({ length: 3 }, (_, index) => handCard('sabueso-brasa', `reused-${index}`));
+    let state = withPlayer(freshMatch(), 'player', { hand: [], deck: [], discard: cards });
+    for (let cycle = 0; cycle < 3; cycle += 1) {
+      for (let draw = 0; draw < cards.length; draw += 1) {
+        const result = applyAction({ ...state, phase: 'draw' }, { type: 'draw', playerId: 'player' });
+        expect(result.ok).toBe(true);
+        state = result.state;
+      }
+      expect(state.players.player.hand.map((card) => card.instanceId).sort()).toEqual(cards.map((card) => card.instanceId).sort());
+      expect(state.players.player.deck).toEqual([]);
+      state = withPlayer(state, 'player', { hand: [], discard: state.players.player.hand });
+    }
+  });
+
+  it('el cambio de turno recicla el cementerio rival y roba solamente una carta', () => {
+    const cards = [handCard('fuente-arcana', 'used-source'), handCard('eco-cronomante', 'used-echo')];
+    const state = withPlayer(freshMatch(), 'ai', { hand: [], deck: [], discard: cards });
+    const result = applyAction(state, { type: 'end-turn', playerId: 'player' });
+    expect(result.ok).toBe(true);
+    expect(result.state.activePlayer).toBe('ai');
+    expect(result.state.players.ai.hand).toHaveLength(1);
+    expect(result.state.players.ai.deck).toHaveLength(1);
+    expect(result.state.players.ai.discard).toEqual([]);
+    expect([...result.state.players.ai.hand, ...result.state.players.ai.deck].map((card) => card.instanceId).sort()).toEqual(cards.map((card) => card.instanceId).sort());
+  });
+
+  it('una carta infectada recuperada genera otro zombi sin duplicar el anterior', () => {
+    const victim = makePiece('recycled-victim', 'sabueso-brasa', 'ai', { x: 3, y: 2 },
+      { statuses: [{ kind: 'infected', infectorId: 'player' }] });
+    const initial: MatchState = { ...freshMatch(), board: [makePiece('attacker', 'gigante-magma', 'player', { x: 3, y: 3 }), victim] };
+    const first = applyAction(initial, { type: 'attack-piece', playerId: 'player', attackerId: 'attacker', defenderId: victim.instanceId });
+    expect(first.ok).toBe(true);
+    // La misma carta vuelve a entrar tras recuperarse; su primer zombi sigue vivo.
+    const returned: MatchState = { ...withPlayer(first.state, 'ai', { discard: [] }),
+      board: [...first.state.board.map((piece) => ({ ...piece, attackedThisTurn: false })), { ...victim, position: { x: 4, y: 3 } }] };
+    const second = applyAction(returned, { type: 'attack-piece', playerId: 'player', attackerId: 'attacker', defenderId: victim.instanceId });
+    expect(second.ok).toBe(true);
+    const zombies = second.state.board.filter((piece) => piece.cardId === 'zombi-contagiado');
+    expect(zombies).toHaveLength(2);
+    expect(new Set(zombies.map((piece) => piece.instanceId)).size).toBe(2);
+    expect(second.state.players.ai.discard.map((card) => card.instanceId)).toEqual([victim.instanceId]);
+  });
+
+  it.each(['player', 'ai'] as const)('permite cambiar las diez cartas iniciales de %s conservando las 50 instancias', (playerId) => {
+    const state = freshMatch();
+    const result = mulliganOpeningHand(state, playerId, state.players[playerId].hand.map((card) => card.instanceId));
+    expect(result.ok).toBe(true);
+    expect(result.state.players[playerId].hand).toHaveLength(10);
+    expect(result.state.players[playerId].deck).toHaveLength(40);
+    expect(new Set([...result.state.players[playerId].hand, ...result.state.players[playerId].deck].map((card) => card.instanceId)).size).toBe(50);
   });
 
   it('el robo automático de endTurn con el mazo vacío tampoco daña el Nexo ni termina la partida', () => {
@@ -153,7 +259,7 @@ describe('inicio, robo y mulligan', () => {
     const two = mulliganOpeningHand(state, 'player', selected);
     expect(one.ok).toBe(true);
     expect(one.state.players.player.hand).toEqual(two.state.players.player.hand);
-    expect(one.state.players.player.hand).toHaveLength(5);
+    expect(one.state.players.player.hand).toHaveLength(10);
     const allIds = [...one.state.players.player.hand, ...one.state.players.player.deck].map((card) => card.instanceId);
     expect(new Set(allIds).size).toBe(50);
     expect(mulliganOpeningHand(one.state, 'player', []).ok).toBe(false);

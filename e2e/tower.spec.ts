@@ -21,7 +21,7 @@ test('la Torre encadena pisos conservando la Vida', async ({ page }) => {
 
   // Se gana el piso con el panel de desarrollo (baja el Nexo rival a cero).
   await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
-  await page.getByRole('button', { name: /Conservar las cinco/i }).click()
+  await page.getByRole('button', { name: /Conservar las diez/i }).click()
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
   await page.keyboard.press('Control+Shift+KeyD')
   // «-5 al Nexo rival» siete veces lo deja a cero (35 de Vida).

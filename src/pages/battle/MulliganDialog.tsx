@@ -49,7 +49,7 @@ export function MulliganDialog({ hand, selectedIds, onToggle, onConfirm, ownComm
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
   }
   const sources = hand.filter((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana').length
-  const balanced = sources >= 2 && sources <= 4
+  const balanced = sources >= 3 && sources <= 5
 
   return (
     <div className={styles.resultBackdrop}>
@@ -66,8 +66,8 @@ export function MulliganDialog({ hand, selectedIds, onToggle, onConfirm, ownComm
           Tienes <strong>{sources}</strong> {sources === 1 ? 'fuente' : 'fuentes'} de Esencia.
           {balanced
             ? ' Buen equilibrio para empezar.'
-            : sources < 2
-              ? ' Con menos de dos te costará pagar tus jugadas.'
+            : sources < 3
+              ? ' Con menos de tres te costará pagar tus jugadas.'
               : ' Muchas fuentes: considera buscar unidades o hechizos.'}
         </p>
         <div className={`${styles.mulliganCards} ${presentation.cards}`}>
@@ -92,7 +92,7 @@ export function MulliganDialog({ hand, selectedIds, onToggle, onConfirm, ownComm
           })}
         </div>
         <button ref={confirm} className={`${styles.confirmMulligan} ${presentation.confirm}`} onClick={onConfirm}>
-          {selectedIds.length > 0 ? `Cambiar ${selectedIds.length} ${selectedIds.length === 1 ? 'carta' : 'cartas'}` : 'Conservar las cinco'}
+          {selectedIds.length > 0 ? `Cambiar ${selectedIds.length} ${selectedIds.length === 1 ? 'carta' : 'cartas'}` : 'Conservar las diez'}
         </button>
       </section>
     </div>

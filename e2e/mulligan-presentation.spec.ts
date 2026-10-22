@@ -32,10 +32,10 @@ for (const [width, height, reducedMotion] of [[1920, 1080, false], [1366, 768, f
     await expect(dialog.getByRole('heading', { name: COMMANDER_BY_ID[match.players.ai.commanderId]!.name, exact: true })).toBeVisible()
     await expect(dialog.getByRole('heading', { name: 'Patio del Gremio', exact: true })).toBeVisible()
     const cards = dialog.locator('button[class*="mulliganCard"]')
-    await expect(cards).toHaveCount(5)
+    await expect(cards).toHaveCount(10)
     await expect(cards.first()).toBeFocused()
     await page.keyboard.press('Shift+Tab')
-    const keep = dialog.getByRole('button', { name: 'Conservar las cinco', exact: true })
+    const keep = dialog.getByRole('button', { name: 'Conservar las diez', exact: true })
     await expect(keep).toBeFocused()
     await page.waitForTimeout(1100)
     await expect(keep).toBeFocused()
@@ -54,6 +54,19 @@ for (const [width, height, reducedMotion] of [[1920, 1080, false], [1366, 768, f
     await dialog.getByRole('button', { name: 'Cambiar 1 carta', exact: true }).click()
     await expect(dialog).toBeHidden()
     await expect(page.getByTestId('battle-board')).toBeVisible()
+    await expect(page.locator('[class*="fanCard"]')).toHaveCount(10)
+    if (width < 760) {
+      const rail = page.getByTestId('hand-scroll-rail')
+      const handCards = page.locator('[class*="fanCard"] > [data-card-id]')
+      for (const index of [0, 9, 0]) {
+        await handCards.nth(index).focus()
+        const box = (await handCards.nth(index).boundingBox())!
+        expect(box.x).toBeGreaterThanOrEqual(0)
+        expect(box.x + box.width).toBeLessThanOrEqual(width)
+      }
+      expect(await rail.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+    }
+    if (process.env.RUN_SHOTS) await page.screenshot({ path: `e2e/__shots__/mano-diez-${width}x${height}.png` })
     if (process.env.RUN_SHOTS) {
       await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
       const camera = await cameraSnapshot(page, fiberUrl)

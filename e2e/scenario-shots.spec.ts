@@ -22,7 +22,7 @@ for (const scenario of SCENARIOS) {
     }, scenario)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/battle?seed=1311657807')
-    const keep = page.getByRole('button', { name: /Conservar las cinco/i })
+    const keep = page.getByRole('button', { name: /Conservar las diez/i })
     await keep.waitFor({ state: 'visible', timeout: 20000 })
     await keep.click()
     await expect(page.getByTestId('battle-board')).toBeVisible()

@@ -29,7 +29,7 @@ import type {
   SpellTarget,
 } from './types';
 
-export const OPENING_HAND_SIZE = 5;
+export const OPENING_HAND_SIZE = 10;
 
 export interface ValidAttacks {
   readonly pieceIds: readonly string[];
@@ -171,9 +171,19 @@ export const createMatch = (
 };
 
 const drawInternal = (state: MatchState, playerId: PlayerId): MatchState => {
-  const player = state.players[playerId];
+  const current = state.players[playerId];
+  // El cementerio conserva las instancias originales: reciclarlo no puede
+  // duplicar unidades desplegadas ni fuentes que siguen pagando las jugadas.
+  // nextId distingue cada robo y mantiene la baraja reproducible en replays/PvP.
+  const player = current.deck.length === 0 && current.discard.length > 0
+    ? {
+      ...current,
+      deck: shuffleSeeded(current.discard, deriveSeed(state.seed, state.nextId * 2 + (playerId === 'ai' ? 1 : 0))),
+      discard: [],
+    }
+    : current;
   const card = player.deck[0];
-  // Mazo vacío: no hay penalización por fatiga, simplemente no se roba nada.
+  // Sin cartas recuperables tampoco hay fatiga ni se inventan nuevas copias.
   if (!card) return state;
   const next = withPlayer(state, playerId, {
     ...player,
@@ -575,7 +585,9 @@ const damagePieceDetailed = (
       );
       if (zombieCard) {
         const zombiePiece: BoardPiece = {
-          instanceId: `${target.instanceId}-plaga-zombie`,
+          // La carta original puede reciclarse y volver a contagiarse mientras
+          // su zombi anterior sigue existiendo: cada conversión necesita id propio.
+          instanceId: `${target.instanceId}-plaga-zombie-${next.nextId}`,
           cardId: 'zombi-contagiado',
           owner: infection.infectorId,
           position: target.position,
@@ -670,7 +682,7 @@ const damagePieceDetailed = (
         next = withPlayer(next, owner, {
           ...next.players[owner],
           hand: [...next.players[owner].hand, {
-            instanceId: `${target.instanceId}-renacer`,
+            instanceId: `${target.instanceId}-renacer-${next.nextId}`,
             cardId: target.cardId,
             bonusAttack: bonus,
             bonusHealth: bonus,

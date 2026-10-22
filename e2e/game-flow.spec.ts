@@ -49,7 +49,7 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
   // compitiendo por la CPU, los 5 s por defecto se quedan cortos.
   await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
   await expect(page.getByRole('heading', { name: 'Tu mano inicial' })).toBeVisible()
-  await page.getByRole('button', { name: 'Conservar las cinco' }).click()
+  await page.getByRole('button', { name: 'Conservar las diez' }).click()
   await expect(page.getByText('Turno 1 · Principal')).toBeVisible()
   await page.getByRole('button', { name: /Fuente de Furia\. Esencia — Fuente\./ }).first().click()
   await expect(page.getByText('1 / 1').first()).toBeVisible()

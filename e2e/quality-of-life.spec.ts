@@ -4,7 +4,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 const enterBattle = async (page: Page, seed?: number, skipTutorial = true) => {
   await page.goto(seed === undefined ? '/battle' : `/battle?seed=${seed}`)
   await page.getByRole('button', { name: /Entendido, a jugar/i }).click()
-  const keep = page.getByRole('button', { name: /Conservar las cinco/i })
+  const keep = page.getByRole('button', { name: /Conservar las diez/i })
   await keep.click()
   await expect(keep).toBeHidden()
   // El coach interactivo solo sale la primera vez: si no está, no hay que

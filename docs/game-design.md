@@ -30,9 +30,9 @@ Los comandantes quedan fuera del mazo. Las otras cuatro facciones —Naturaleza,
 
 ## Preparación y objetivo
 
-- Cada jugador comienza con su Nexo a 25, un mazo barajado mediante semilla y una mano inicial.
+- Cada jugador comienza con la Vida del Nexo de su comandante, un mazo de 50 cartas barajado mediante semilla y una mano inicial de 10 cartas.
 - El jugador humano despliega en la fila más cercana a su lado; la IA, en la opuesta.
-- Se gana al reducir el Nexo rival a 0. Si el mazo se agota, el slice evita bloquear la partida; una política definitiva de fatiga queda para balance posterior.
+- Se gana al reducir el Nexo rival a 0. Cuando un robo encuentra el mazo vacío, se baraja el cementerio para formar un nuevo mazo y se roba normalmente. Solo se recuperan cartas usadas o destruidas: las de la mano, las fuentes y las piezas en juego permanecen donde están. Si tampoco hay cementerio, ese robo no añade cartas ni causa fatiga. Vaciar la mano no la rellena automáticamente.
 - El resumen final muestra ganador, turnos, daño y cartas jugadas, además de repetir o volver al menú.
 
 ## Tablero y combate

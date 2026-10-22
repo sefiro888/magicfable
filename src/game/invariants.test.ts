@@ -72,7 +72,8 @@ const checkInvariants = (state: MatchState, contexto: string) => {
       ...player.resources.map((resource) => resource.instanceId),
       ...enJuego,
     ]
-    expect(new Set(todas).size, `${contexto}: ${id} tiene la misma carta en dos zonas`).toBe(todas.length)
+    const duplicadas = todas.filter((cardId, index) => todas.indexOf(cardId) !== index)
+    expect(duplicadas, `${contexto}: ${id} tiene la misma carta en dos zonas`).toEqual([])
   }
 
   // Ni una sola carta duplicada en todo el juego: el mismo instanceId no puede
