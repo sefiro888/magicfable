@@ -144,10 +144,12 @@ reducida también revisadas a ambas resoluciones. Gate563/5, build/lint y
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Claro del Bosque in Crónicas del Nexo, a mature tactical fantasy card game. An immense ancient temperate forest sanctuary viewed from high above looking DOWN approximately 37 degrees. Vast gnarled oak and beech buttress roots, weathered bark, trunks extending out of frame, mature layered broadleaf canopy, luxuriant but believable ferns, bracken, damp moss, fallen leaves, wet dark earth and broken ancient limestone paving being slowly reclaimed. One immense natural hollow in a far ancient root buttress gives the background a sacred focal silhouette; no face, eyes or anthropomorphic tree. Refined warm shafts of late-morning sunlight entering through gaps in foliage, dappled shadows, cool green-grey depth and a little golden airborne pollen, subtle layered ground mist. Composition: strongest roots and monumental tree forms concentrated in upper third and outer thirds, central and lower half mostly spacious shadowed leaf-litter clearing and sparse paving traces, leaving visual room for a separate board placed in front. No visible sky or horizon, elevated downward-looking view, not a frontal forest postcard. At least four atmospheric layers; beautiful fine botanical detail and material texture without confetti-like visual noise. Mature cinematic painterly realism compatible with refined fantasy card illustrations, majestic forest antiquity rather than cute fairy woodland. Rich muted olive, deep bark brown, warm stone and restrained sunlit yellow-green. Original design, no artist imitation, no franchise, no reference images. No foreground platform, arena, game board, table, cards, UI, characters, animals, monsters, readable text, logos, watermark or border. Avoid cartoon mushrooms, glowing blue crystals, purple fairy lights, giant mushrooms, giant flowers, neon green fog everywhere, tropical jungle, repeated cylinder trunks, low-poly shrubs, simple cone trees, round lollipop canopies, uniformly bright green ground, literal laser sun beams.
 ```
 
-## Quinto Sol — panorámica v1 preparada
+## Quinto Sol — panorámica v1
 
 Generada con imagegen integrado el22oct2026, sin referencias, artistas ni marcas.
-Revisada como paisaje original; aún sin integrar ni validar en la partida.
+Integrada y revisada en partida: alta/baja, media y alta reducida a ambas
+resoluciones, foto amplia y órbita. Bloque conjunto: 574/5 unitarias, build/lint
+y 80/37 e2e verdes. Avance validado pendiente del pulido global.
 Original conservado en
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-a392b1f3-806e-462d-98e3-36f77f418621.png`.
 Maestro intacto en `tools/art-inbox/scenery/sol-vista-v1.png`, prompt adyacente.
@@ -161,10 +163,12 @@ Sin descarga durante partida.
 Use case: stylized-concept. Asset type: original ultra-wide panoramic matte painting for Patio del Quinto Sol, a mature tactical fantasy card game. Spectacular intact living Mexica ceremonial city at high noon, viewed from high above looking DOWN about 37 degrees, no visible sky or horizon. Monumental sharply stepped temple terraces with twin sanctuaries in the upper third, clean warm lime stucco over volcanic stone, architectural bands of cochineal red and deep turquoise mosaic, polished obsidian accents, finely carved feathered serpent balustrades, a restrained carved calendar disk, sparse amate ritual banners and quetzal green details. Inspired by material culture but an original fictional city, not a reconstruction of any named site. Mature solemn solar cosmology, inhabited and maintained but no people in this environmental asset. No ruined jungle city, no Egyptian pyramids, no lava or volcanic eruption. Architecture concentrated in upper third and outer thirds. Central and lower half spacious subdued warm pale stucco paving and grey volcanic stone foundations, leave visual room for a separate tactical board in front; no foreground game board, arena, table or circular platform. Powerful high sun and short precise shadows, cool blue-grey ambient in shade, rich but restrained turquoise and red architectural color with realistic stone wear. Refined cinematic painterly realism, four distance layers with subtle dusty air, impressive believable architectural scale and intricately crafted reliefs. Original design, no references, artist imitation or franchise. No figures, creatures, characters, cards, UI, text, logos, watermarks or border. Avoid toy block pyramids, cartoon skulls, blood, gore, neon magic, gigantic glowing sun disks, ruined temples covered in vines, orange color wash, foreground clutter, visible sky or tourist postcard frontal view.
 ```
 
-## Bestiario — panorámica v1 preparada
+## Bestiario — panorámica v1
 
 Generada con imagegen integrado el22oct2026, sin referencias, artistas ni marcas.
-Revisada como paisaje original; aún sin integrar ni validar en la partida.
+Integrada y revisada en partida: alta/baja, media y alta reducida a ambas
+resoluciones, foto amplia y órbita. Bloque conjunto: 574/5 unitarias, build/lint
+y 80/37 e2e verdes. Avance validado pendiente del pulido global.
 Original conservado en
 `C:/Users/sefir/.codex/generated_images/01a15f74-4873-70a2-aef0-32c6e37aa3d4/exec-f4f0d9d5-e590-4434-be12-2aec481993df.png`.
 Maestro intacto en `tools/art-inbox/scenery/bestiary-vista-v1.png`, prompt adyacente.

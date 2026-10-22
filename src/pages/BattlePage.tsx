@@ -188,7 +188,7 @@ export function BattlePage() {
     match ? COMMANDER_BY_ID[match.players[ME].commanderId]?.faction : undefined,
   )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).
-  useSoundtrack(scenario, Boolean(match))
+  useSoundtrack(scenario === 'solar-court' ? 'duna' : scenario === 'bestiary-ravine' ? 'grove' : scenario, Boolean(match))
 
   /**
    * Resultado del piso de Torre. Se apunta una sola vez por partida: el

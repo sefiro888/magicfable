@@ -35,8 +35,8 @@ global), **V** terminada y verificada.
 | 8 | Gremio: pulido integral | A |
 | 9 | Jade: pulido integral | A |
 | 10 | Escalinata: pulido integral | A |
-| 11 | Escenario propio de Quinto Sol | P |
-| 12 | Escenario propio de Bestiario | P |
+| 11 | Escenario propio de Quinto Sol | A |
+| 12 | Escenario propio de Bestiario | A |
 | 13 | Elemento protagonista por escenario | C |
 | 14 | Composición y decorado desde cámara real | C |
 | 15 | Transición entre tablero y entorno | C |
@@ -77,6 +77,75 @@ global), **V** terminada y verificada.
 | 50 | Presentación de escenario y comandantes | A |
 
 ## Bloque activo
+
+**17:45, Sol/Bestiario validados.** Suite completa `78543`: 80 activas verdes,
+37 omitidas en 8 minutos. Matrices alta/baja, media y alta reducida a ambas
+resoluciones verdes y revisadas; 574 unitarias del bloque, build/lint verdes.
+Se guarda checkpoint local de los 12 escenarios y catálogo compartido.
+Continúa revisión global; no nueva publicación automática.
+
+**17:39, suite activa sin fallos.** `78543` por comprobaciones de Nexos;
+media/alta reducida de ambos escenarios revisadas en imágenes nativas a ambas
+resoluciones. Sin modificar aplicación ni lanzar otra verificación. Preparado
+sin importar `materials/pavingMaterial.ts`: juntas de bloques en mapas propios
+de color/altura/rugosidad para patios Jade/Sol; no aplicarlo al terreno natural
+de Bestiario. Pendiente compilar y comparar antes/después en revisión global.
+Excluir también este borrador del checkpoint Sol/Bestiario. PanoramaPosition
+y panoramaProbe siguen sin conectar. Cerrar primero80/37 y guardar escenarios.
+
+**17:34, continuidad.** Sesión `78543` ejecuta media/alta reducida de Sol y
+Bestiario y después suite completa. No duplicar procesos ni editar fuentes
+importadas/compilar hasta su cierre. `89245` terminó con ocho capturas verdes
+y dos pruebas de selector verdes; imágenes corregidas de ambos escenarios
+revisadas a ambas resoluciones. Preparado SIN importar e2e/helpers/panoramaProbe.ts
+para girar el grupo real y medir centrado mundial del paisaje en vista invitada.
+Junto a panoramaPosition.ts/test, excluirlo del checkpoint de escenarios.
+Falta revisar media/reducida y resultado80activos/37omitidos esperado tras
+añadir dos pruebas de selector. Las50 siguen incompletas; automatización vigente
+hasta20:00. Publicación anterior ya comprobada, no push nuevo.
+
+**17:32, Sol/Bestiario superan revisión corregida.** `89245`: ocho verdes
+alta/baja ambas resoluciones, fotos nativas revisadas. Dos pruebas de catálogo
+común/persistencia entre Ajustes y Jugar verdes.575/5, build/lint verdes.
+Sol341calls55726tri y Bestiario253calls50074tri en pase principal (sin sumar
+reflejos/sombras). Arquitectura y materiales siguen admitiendo pulido global.
+Media/alta reducida de ambos sitios y suite completa encadenadas en curso,
+detienen al primer fallo. No editar fuentes importadas ni compilar durante
+el proceso. Log final sol-bestiario-full-hardware-20261022.log.
+Antes de11/12=A revisar imágenes de media/reducida y el cierre completo.
+Después checkpoint sin push excluyendo panoramaPosition.ts/test sin conectar.
+Si se excluye esa prueba del commit quedan574 unitarias del bloque;575 es la
+cuenta del workspace actual. Siguiente: corrección del paisaje para invitado y
+pulido compartido, conservando el avance recuperable de los doce escenarios.
+
+**17:29, segunda revisión Sol/Bestiario.** Primera matriz `33022` pasó ocho
+casos, pero las imágenes mostraron templos demasiado simples y rocas como
+bloques: no se aceptó ese acabado. Sol gana escalinata elevada, jambas de
+mosaico y crestería; remate proyectado en y66, dentro de cámara segura, tras
+acercar el conjunto. Bestiario sustituye bloques por roca estratificada
+irregular y los colmillos lisos por hueso de base articular, punta roma,
+mineralización y grietas capilares propias. `89466`:575/5 (incluye una prueba
+de centrado panorámico preparada sin conectar); build `46293`, lint `1680`
+verdes. Nueva matriz alta/baja de ambos sitios, seguida de dos pruebas del
+selector compartido, en sesión `89245`; no editar fuentes ni compilar durante ella.
+Quedan media/alta reducida y suite completa antes de validar11/12.
+Global preparado sin integrar: panoramaPosition.ts y su test. Centra en
+coordenadas del padre para corregir el giro de invitado; aún NO está conectado
+en DistantVista ni verificado en navegador. Mantenerlo pendiente.
+
+**17:22, Sol/Bestiario integrados para primera revisión.** Escalinata guardada
+en `8ba2671`, sin push. Nuevos IDs solar-court/bestiary-ravine, presentación,
+atmósfera y selección automática por facción. Los selectores de Jugar y Ajustes
+comparten ahora catálogo: Ajustes solo tenía tres sitios. Dos e2e de persistencia
+del selector añadidos; aún sin ejecutar. Se conservan diez estilos de losa:
+Sol comparte piedra clara, Bestiario suelo forestal; son doce escenarios.
+Ambiente sonoro propio pendiente: reutilizan Duna/Bosque sin cambiar el audio.
+Solar: estuco, santuarios gemelos con vano profundo, mosaico y disco tallado.
+Bestiario: caliza y costillas continuas afinadas y cerradas, con piedras bajas.
+`14908`:574/5, build `18168`, lint `74854` verdes. Primera matriz alta/baja
+de Sol seguida de Bestiario en curso, detiene al primer fallo; no editar fuentes
+importadas ni compilar durante ella. Revisar imágenes reales antes de aceptar.
+No marcar11/12=A y no publicar. Tras revisión: media/reducida y suite completa.
 
 **17:19, Escalinata validada como avance.** `13695` cerrado:78/37 e2e verdes
 en6,3min, media/alta reducida ambas resoluciones verdes. Imágenes nativas

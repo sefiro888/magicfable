@@ -1,3 +1,4 @@
+import { SCENARIO_OPTIONS as SCENARIOS } from '../battle/scenarioCatalog'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CARD_BY_ID, COMMANDER_BY_ID, COMMANDERS, FACTION_BY_ID, STARTER_DECKS, commanderForDeck } from '../game'
@@ -53,19 +54,6 @@ const DIFFICULTIES: readonly { value: AiDifficulty; label: string; hint: string 
   { value: 'hard', label: 'Difícil', hint: 'Estudia el tablero entero antes de mover.' },
 ]
 
-const SCENARIOS: readonly { value: ScenarioId; label: string; hint: string }[] = [
-  { value: 'auto', label: 'Según tu facción', hint: 'Cada facción pelea en su casa: la Caldera arde, Duna abrasa, el Santuario es de noche.' },
-  { value: 'aether-citadel', label: 'Aether Citadel', hint: 'Plaza de mármol al amanecer, sobre un mar de nubes.' },
-  { value: 'sanctuary', label: 'Santuario de las Runas', hint: 'Círculo de monolitos en una isla, de noche.' },
-  { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Plataforma de hierro sobre un lago de lava.' },
-  { value: 'duna', label: 'Necrópolis de Duna', hint: 'Patio de arenisca abierto al desierto, a mediodía.' },
-  { value: 'fimbul', label: 'Fiordo de Fimbul', hint: 'Lago helado bajo la aurora, en plena noche polar.' },
-  { value: 'wheel-ghat', label: 'Escalinata de la Rueda', hint: 'El ghat de un templo al amanecer, con la gran rueda de piedra y las lámparas bajando por el agua.' },
-  { value: 'jade-court', label: 'Corte de Jade', hint: 'El patio de una corte celestial al amanecer, con la puerta de la luna y los aleros curvos.' },
-  { value: 'foundry', label: 'Patio del Gremio', hint: 'La explanada de una fundición al anochecer, con el horno encendido y el metal corriendo por su canal.' },
-  { value: 'shore', label: 'Rompiente de Nerith', hint: 'La roca que el mar descubre al bajar la marea, con el faro barriendo al fondo.' },
-  { value: 'grove', label: 'Claro del Bosque', hint: 'Losas antiguas bajo el dosel, con el sol entrando a trozos.' },
-]
 
 export function PlayPage() {
   const navigate = useNavigate()

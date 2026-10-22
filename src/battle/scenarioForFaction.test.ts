@@ -24,4 +24,12 @@ describe('escenario según la facción', () => {
   it('sin facción todavía (la partida aún no existe) cae en un escenario válido', () => {
     expect(resolveScenario('auto', undefined)).toBe('aether-citadel')
   })
+
+  it('Sol y Bestiario tienen casa propia sin desplazar a Furia ni Fimbul', () => {
+    expect(resolveScenario('auto', 'sol')).toBe('solar-court')
+    expect(resolveScenario('auto', 'bestiario')).toBe('bestiary-ravine')
+    expect(resolveScenario('auto', 'fury')).toBe('caldera')
+    expect(resolveScenario('auto', 'fimbul')).toBe('fimbul')
+    expect(resolveScenario('fimbul', 'bestiario')).toBe('fimbul')
+  })
 })

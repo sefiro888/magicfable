@@ -17,4 +17,6 @@ export const SCENARIO_PRESENTATION: Readonly<Record<Exclude<ScenarioId, 'auto'>,
   foundry: { name: 'Patio del Gremio', setting: 'Fundición · Anochecer', accent: '#d9a877' },
   'jade-court': { name: 'Corte de Jade', setting: 'Palacio celestial · Amanecer', accent: '#c0bf8e' },
   'wheel-ghat': { name: 'Escalinata de la Rueda', setting: 'Ghat sagrado · Alba', accent: '#dfb17b' },
+  'solar-court': { name: 'Patio del Quinto Sol', setting: 'Recinto solar · Mediodía', accent: '#9bc5b0' },
+  'bestiary-ravine': { name: 'Garganta del Bestiario', setting: 'Caliza y vestigios colosales · Bruma', accent: '#c7c6a4' },
 }

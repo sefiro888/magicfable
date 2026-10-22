@@ -12,19 +12,19 @@ continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 | Facciones jugables | **16** |
 | Cartas | **424** (90 de NEX-01, 24 de NEX-02 y 31 por cada set de NEX-03 a NEX-12) |
 | Comandantes | 22 |
-| Escenarios 3D | **10** |
-| Estilos de suelo del tablero | **10** (uno por escenario) |
-| Tests | 571 en verde, 5 omitidos |
+| Escenarios 3D | **12** |
+| Estilos de suelo del tablero | **10** (Sol comparte piedra; Bestiario, bosque) |
+| Tests | 574 en verde, 5 omitidos |
 
 El gate local (`npm run test`, `npm run build`, `npm run lint`) pasa limpio.
 La mejora de reposicionamiento de la IA descrita en el punto 10 está guardada
 en `2134dc9`, publicada con el avance `a182100` por petición del usuario el22oct.
 Verificación de navegador:
-78 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
+80 pruebas activas en verde y 37 omitidas (capturas bajo demanda), con los hechizos
 dirigidos probados a 1920 × 1080 y 1366 × 768. Se actualizaron dos expectativas
 antiguas de la galería para que su recuento y altura acompañen al catálogo actual.
-Última pasada completa `13695`: 78 e2e verdes,37 omitidas en6,3min
-(22 oct,17:19; variables de capturas opcionales limpias).
+Última pasada completa `78543`: 80 e2e verdes, 37 omitidas en 8 minutos
+(22 oct,17:45; variables de capturas opcionales limpias).
 Playwright usa un worker y `channel: chromium`: el shell
 antiguo imponía SwiftShader aunque había una AMD Radeon disponible. El nuevo
 headless aprovecha Direct3D11, mantiene calidad, tiempos y trazas completas.
@@ -98,8 +98,14 @@ perfilada sobre columnas y lámparas flotantes. Se rechazó el primer río
 rectangular y se rehízo con desvanecido antes del borde; cimientos sumergidos.
 Alta/media/baja y alta reducida revisadas a ambas resoluciones. Reflejo real
 0→693→0,512px;571/5, build/lint y78/37 e2e verdes. Falta pulido global.
-Siguiente: escenarios propios Sol/Bestiario. Arquitectura y paisajes preparados
-sin importar; procedencia documentada. Excluirlos del checkpoint de Escalinata.
+Sol y Bestiario integrados: templos gemelos con puertas reales, calendario
+inciso y mosaicos; garganta estratificada con costillas minerales cerradas.
+Alta/baja, media y alta reducida revisadas a ambas resoluciones. Catálogo único
+de 12 escenarios en Jugar/Ajustes, asignación automática y persistencia probadas.
+574/5 unitarias, build/lint y 80/37 e2e verdes. Falta pulido global.
+Siguiente: centrar el paisaje también en la vista del invitado y revisar patios.
+Borradores panoramaPosition/panoramaProbe/pavingMaterial sin conectar; la prueba
+preparada del primero eleva el workspace a575, pero no este checkpoint.
 Ver registro para evitar duplicar procesos.
 Leer el registro para sesiones activas; no duplicar verificaciones.
 
@@ -120,20 +126,22 @@ comandante y las 31 cartas con su descripción. **Son la fuente de la verdad
 para el arte y el tono**; si algo del código contradice al dosier, suele ser
 que el código tomó un atajo, y está anotado en el comentario.
 
-### Los 10 escenarios y quién juega en cada uno
+### Los 12 escenarios y quién juega en cada uno
 
 | Escenario | Archivo | Suelo | Facciones |
 | --- | --- | --- | --- |
 | Aether Citadel | `AetherCitadel.tsx` | `stone` | Arcano, Orden, Olimpo |
 | Santuario de las Runas | `RunicSanctuary.tsx` * | `moss` | Sombra, Vacío |
-| Fragua de la Caldera | `CalderaScenario.tsx` | `basalt` | Furia, Quinto Sol |
+| Fragua de la Caldera | `CalderaScenario.tsx` | `basalt` | Furia |
 | Necrópolis de Duna | `DunaNecropolis.tsx` | `sand` | Duna, Plaga |
-| Fiordo de Fimbul | `FimbulFjord.tsx` | `ice` | Fimbul, Bestiario |
+| Fiordo de Fimbul | `FimbulFjord.tsx` | `ice` | Fimbul |
 | Claro del Bosque | `VerdantGrove.tsx` | `forest` | Naturaleza |
 | Rompiente de Nerith | `TidalShore.tsx` | `tide` | Marea |
 | Patio del Gremio | `ForgeYard.tsx` | `forge` | Forja |
 | Corte de Jade | `JadeCourt.tsx` | `glaze` | Jade |
 | Escalinata de la Rueda | `WheelGhat.tsx` | `sandstone` | Samsara |
+| Patio del Quinto Sol | `SolarCourt.tsx` | `stone` | Quinto Sol |
+| Garganta del Bestiario | `BestiaryRavine.tsx` | `forest` | Bestiario |
 
 \* `SanctuaryScenario.tsx` es solo un envoltorio de una línea sobre
 `RunicSanctuary.tsx`. No es código muerto, pero tampoco hace nada: si tocas ese

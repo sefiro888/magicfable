@@ -1,3 +1,4 @@
+import { SCENARIO_OPTIONS } from '../battle/scenarioCatalog'
 import { playSynthCue, resumeAudio } from '../services/audio'
 import { usePreferences, type AiDifficulty, type GraphicsQuality, type ScenarioId } from '../store/preferences'
 import styles from './SettingsPage.module.css'
@@ -8,11 +9,6 @@ const DIFFICULTY_OPTIONS: readonly { value: AiDifficulty; label: string; hint: s
   { value: 'hard', label: 'Difícil', hint: 'Estudia el tablero entero antes de mover y escoge el cambio que más le conviene.' },
 ]
 
-const SCENARIO_OPTIONS: readonly { value: ScenarioId; label: string; hint: string }[] = [
-  { value: 'aether-citadel', label: 'Aether Citadel', hint: 'Cielo de amanecer despejado, sin distracciones alrededor del tablero.' },
-  { value: 'sanctuary', label: 'Santuario de las Runas', hint: 'Arena nocturna procedural original.' },
-  { value: 'caldera', label: 'Fragua de la Caldera', hint: 'Las runas quebradas envueltas en brasa y fuego.' },
-]
 
 const QUALITY_OPTIONS: readonly { value: GraphicsQuality; label: string; hint: string }[] = [
   { value: 'low', label: 'Bajo', hint: 'Sin sombras ni partículas; máxima fluidez.' },

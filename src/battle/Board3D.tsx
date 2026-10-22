@@ -76,6 +76,12 @@ const TidalShore = lazy(() =>
 const VerdantGrove = lazy(() =>
   import('./scenarios/VerdantGrove').then((m) => ({ default: m.VerdantGrove })),
 )
+const SolarCourt = lazy(() =>
+  import('./scenarios/SolarCourt').then((m) => ({ default: m.SolarCourt })),
+)
+const BestiaryRavine = lazy(() =>
+  import('./scenarios/BestiaryRavine').then((m) => ({ default: m.BestiaryRavine })),
+)
 
 interface Board3DProps {
   state: MatchState
@@ -288,6 +294,8 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   foundry: 'forge',
   'jade-court': 'glaze',
   'wheel-ghat': 'sandstone',
+  'solar-court': 'stone',
+  'bestiary-ravine': 'forest',
 }
 
 /**
@@ -1506,6 +1514,10 @@ function Scene(props: Board3DProps) {
           <ForgeYard quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'shore' ? (
           <TidalShore quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'solar-court' ? (
+          <SolarCourt quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
+        ) : props.scenario === 'bestiary-ravine' ? (
+          <BestiaryRavine quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'grove' ? (
           <VerdantGrove quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : (

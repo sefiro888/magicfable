@@ -11,14 +11,16 @@ import { foundryProbe } from './helpers/foundryProbe'
 import { ghatProbe } from './helpers/ghatProbe'
 
 test.skip(!process.env.RUN_SCENERY_SHOTS, 'revisión de escenarios bajo demanda')
-const scenarios = ['aether-citadel', 'sanctuary', 'caldera', 'duna', 'fimbul', 'grove', 'shore', 'foundry', 'jade-court', 'wheel-ghat'] as const
+const scenarios = ['aether-citadel', 'sanctuary', 'caldera', 'duna', 'fimbul', 'grove', 'shore', 'foundry', 'jade-court', 'wheel-ghat', 'solar-court', 'bestiary-ravine'] as const
 const scenario = scenarios.find((id) => id === process.env.SCENERY) ?? 'aether-citadel'
 const names = { 'aether-citadel': 'ciudadela', sanctuary: 'santuario', caldera: 'caldera', duna: 'duna',
-  fimbul: 'fiordo', grove: 'claro', shore: 'rompiente', foundry: 'gremio', 'jade-court': 'jade', 'wheel-ghat': 'escalinata' } as const
+  fimbul: 'fiordo', grove: 'claro', shore: 'rompiente', foundry: 'gremio', 'jade-court': 'jade', 'wheel-ghat': 'escalinata', 'solar-court': 'sol', 'bestiary-ravine': 'bestiario' } as const
 const prefix = names[scenario] + (process.env.SCENERY_REDUCED ? '-quieto' : '')
 const qualities: readonly GraphicsQuality[] = process.env.SCENERY_QUALITY === 'medium' ? ['medium']
   : process.env.SCENERY_QUALITY === 'high' ? ['high'] : process.env.SCENERY_QUALITY === 'low' ? ['low'] : ['high', 'low']
 const landmarks: Partial<Record<typeof scenario, readonly (readonly [number, number, number])[]>> = {
+  'solar-court': [[-6.15, 2.3, -3.5], [-1.45, 2.48, -6.14], [1.45, 2.48, -6.14]],
+  'bestiary-ravine': [[-5.85, 2.33, -3.6], [5.92, 1.91, -4.2]],
   'wheel-ghat': [[-6.15, 2.42, -3.5], [6.15, 2.3, -3.6]],
   'jade-court': [[0, 2.32, -6.3], [-6.25, 2.3, -3.9], [6.15, 1, -3.5]],
   foundry: [[0, 2.05, -6], [-6.2, 1.55, -3.4]],

@@ -16,6 +16,8 @@ const ATMOSPHERE: Readonly<Record<Exclude<ScenarioId, 'auto'>, Atmosphere>> = {
   foundry: { background: '#25292c', fog: ['#4d5151', 20, 55] },
   'jade-court': { background: '#647b87', fog: ['#8dabad', 22, 60] },
   'wheel-ghat': { background: '#344966', fog: ['#6e87a3', 22, 60] },
+  'solar-court': { background: '#b5b9ae', fog: ['#c5c6b6', 24, 63] },
+  'bestiary-ravine': { background: '#49574f', fog: ['#83958b', 22, 58] },
 }
 
 /** Debe ser hijo directo de Scene, fuera del grupo que gira para el invitado.

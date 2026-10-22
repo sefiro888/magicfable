@@ -348,3 +348,9 @@ Prefijo común sugerido para todos: **Ilustración original para juego de cartas
 - No hay texto, firma, marco, logotipo ni iconos de interfaz incrustados.
 - Existe separación clara de valores entre sujeto y fondo.
 - El WebP y el SVG comparten exactamente el mismo `card-id`.
+
+Quinto Sol: estuco calizo, mosaicos turquesa y cochinilla, templos gemelos con
+vanos auténticos, calendario inciso sobrio. Evitar lava y pirámides de juguete.
+Bestiario: caliza estratificada y hueso mineralizado con fisuras longitudinales,
+articulaciones romas y apoyos enterrados. Sin bloques rectangulares ni colmillos
+plásticos; terreno natural, cartas y estadísticas legibles sobre verde apagado.
