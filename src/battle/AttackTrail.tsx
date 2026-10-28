@@ -128,7 +128,8 @@ export function AttackTrail({ from, to, tone, faction, durationMs, melee }: Atta
             otro color; un núcleo alargado deja leer el sentido de viaje. */}
         <mesh scale={[0.09, 0.09, 0.24]}>
           <icosahedronGeometry args={[1, 1]} />
-          <meshStandardMaterial color="#b6f2ee" emissive={tone} emissiveIntensity={0.65} roughness={0.2} metalness={0.08} />
+          <meshStandardMaterial color="#8edbd9" emissive={tone} emissiveIntensity={0.5} roughness={0.16} metalness={0.04}
+            transparent opacity={0.72} depthWrite={false} />
         </mesh>
         <sprite scale={[0.24, 0.24, 1]}>
           <spriteMaterial map={glowTexture('arcane')} color={tone} transparent blending={AdditiveBlending} depthWrite={false} />

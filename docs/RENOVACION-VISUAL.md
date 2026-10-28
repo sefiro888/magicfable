@@ -124,6 +124,14 @@ Capturas de ocho familias 2/2 verdes; Furia y Marea se distinguían casi solo
 por color en 1366. Núcleo alargado de Marea 2/2 capturas verdes: silueta
 distinta visible a 1366, aunque el aspecto acuático requiere más pulido.
 Unitarias 589/5, lint y build verdes; E2E completo 85/37 verde.
+Siguiente: revisar estelas e impactos en el escenario oscuro y evaluar que el
+nuevo proyectil de Marea se distinga con iluminación, efectos y movimiento
+reducido; el punto 42 sigue parcial hasta integrar todas las familias.
+Capturas de cuatro familias sobre Santuario oscuro 2/2 verdes: el proyectil de
+Marea se distingue, pero parecía sólido. Material translúcido revisado en 1366,
+capturas 2/2 verdes. Unitarias 589/5, lint y build verdes; E2E 85/37 verde.
+En movimiento reducido los trayectos de ataque y hechizo no se montan, según
+EventEffects; el test existente de movimiento reducido pasó en E2E.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,
