@@ -118,6 +118,12 @@ foto 1920 y conectado a los apoyos. Unitarias 589/5, lint y build verdes. Juego 
 revisados a ambas resoluciones; E2E 85/37 verde. Sonda de reflejo del Santuario
 1/1 verde (cambio de píxeles 0→14→0, resolución 512).
 El basamento aún resulta geométrico; mantener Santuario como parcial.
+Siguiente bloque: diferenciar visualmente los ataques por familia; revisar
+proyectiles e impactos existentes y capturar una línea base antes de editar.
+Capturas de ocho familias 2/2 verdes; Furia y Marea se distinguían casi solo
+por color en 1366. Núcleo alargado de Marea 2/2 capturas verdes: silueta
+distinta visible a 1366, aunque el aspecto acuático requiere más pulido.
+Unitarias 589/5, lint y build verdes; E2E completo 85/37 verde.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,

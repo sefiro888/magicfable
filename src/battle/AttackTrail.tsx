@@ -123,7 +123,17 @@ export function AttackTrail({ from, to, tone, faction, durationMs, melee }: Atta
       </mesh> : style === 'crystal' ? <mesh scale={[0.085, 0.085, 0.2]}>
         <octahedronGeometry />
         <meshStandardMaterial color="#d9f3ff" metalness={0.25} roughness={0.16} emissive={tone} emissiveIntensity={1.2} />
-      </mesh> : <sprite scale={[0.32, 0.42, 1]}>
+      </mesh> : style === 'tide' ? <group>
+        {/* La cabeza de Marea antes era la misma bola que la de Furia con
+            otro color; un núcleo alargado deja leer el sentido de viaje. */}
+        <mesh scale={[0.09, 0.09, 0.24]}>
+          <icosahedronGeometry args={[1, 1]} />
+          <meshStandardMaterial color="#b6f2ee" emissive={tone} emissiveIntensity={0.65} roughness={0.2} metalness={0.08} />
+        </mesh>
+        <sprite scale={[0.24, 0.24, 1]}>
+          <spriteMaterial map={glowTexture('arcane')} color={tone} transparent blending={AdditiveBlending} depthWrite={false} />
+        </sprite>
+      </group> : <sprite scale={[0.32, 0.42, 1]}>
         <spriteMaterial map={glowTexture(style === 'shadow' ? 'shadow' : style === 'ember' ? 'ember' : style === 'vine' ? 'nature' : style === 'radiant' || style === 'sand' ? 'gold' : 'arcane')}
           color={tone} transparent blending={AdditiveBlending} depthWrite={false} />
       </sprite>}
