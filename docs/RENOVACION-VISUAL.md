@@ -3,15 +3,28 @@
 ## Retoma del 28 de octubre de 2026
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
-Primer bloque en curso: radio del cielo de Ciudadela ajustado de 70 a 105 para
-evitar el recorte del panorama en modo foto. Cambio aún pendiente de revisión
-visual y del gate completo; pruebas unitarias iniciadas en la sesión 93863.
+Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para
+evitar el recorte del panorama en modo foto.
 Las unitarias terminaron: 588 aprobadas y 5 omitidas; build y lint pasaron.
 E2E finalizó con 85 pruebas aprobadas y 37 omitidas. La pose de foto que
 mostraba el arco se revisó a 1920×1080 y 1366×768: el panorama ya no queda
 recortado en esa pose. El arreglo está verificado localmente, sin publicar;
 Ciudadela sigue pendiente de pulido artístico global. Próximo bloque: revisar
 materiales y composición de arquitectura, sin añadir decorado que tape tablero.
+
+Prueba descartada: molduras y pilastras de la ciudad inferior compilaban pero
+en la captura amplia de 1920 apenas se distinguían. Se retiraron; no se cuentan
+como mejora. Próximo bloque: examinar la cámara de juego y trabajar sobre las
+superficies visibles de la basílica, contrastando capturas antes y después.
+Captura de juego a 1920 realizada: la arquitectura principal y el entablamento
+son visibles, mientras el frente de ciudad inferior queda parcialmente oculto.
+Priorizar relieve y materiales de la estructura principal sin tapar el Nexo.
+
+Nuevo bloque parcial: friso articulado de la basílica, visible en la cámara de
+juego a 1920 y 1366 y en modo foto a 1920. Unitarias 588/5, lint, build y
+E2E 85/37 verdes. Es un avance pequeño: Ciudadela no está finalizada.
+Siguiente: trabajar el aspecto del arco y apoyos visibles con relieve y
+materiales de piedra, evitando que el detalle distraiga de las cartas.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,

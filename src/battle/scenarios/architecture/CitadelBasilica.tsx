@@ -38,6 +38,11 @@ export function CitadelBasilica({ quality }: { readonly quality: GraphicsQuality
     for (let index = 0; index < 24; index += 1) {
       block([-4.5 + index * 0.39, 1.52, BACK + 0.48], [0.12, 0.13, 0.16], 0.96)
     }
+    // Un friso articulado rompe la gran losa uniforme que domina el encuadre
+    // de juego; los relieves bajos no invaden el espacio visual del Nexo.
+    for (let index = 0; index < 12; index += 1) {
+      block([-4.29 + index * 0.78, 1.68, BACK + 0.565], [0.51, 0.14, 0.06], 0.83)
+    }
     // Los laterales se adelantan: altos en los flancos sin cruzar casillas.
     for (const side of [-1, 1]) {
       block([side * 5.22, -0.88, -2.65], [1.28, 0.35, 3.1])
