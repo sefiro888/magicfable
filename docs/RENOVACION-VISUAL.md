@@ -76,6 +76,13 @@ familias: 2/2 capturas verdes. Se ensayó un arco alrededor del proyectil,
 pero a 1366 parecía una órbita planetaria ajena al lenguaje del juego; retirado.
 La comparación es sintética y falta comprobar hechizos reales y movimiento,
 así que el recorrido sigue parcial. La sonda admite `COMBAT_SPELLS=1`.
+Nuevo prototipo de hechizo: dos filamentos sobre la estela existente y mayor
+anchura, sin mallas adicionales y sin modificar destino ni duración. Capturas
+sintéticas de cuatro familias 2/2 verdes en Santuario y 2/2 en Ciudadela;
+Sombra a 1366 y Arcano a 1920 revisados. Unitarias 592/5, build/lint verdes.
+E2E completo 85 verdes/41 omitidas, incluidos hechizos reales dirigidos de
+Marea a ambas resoluciones y movimiento reducido. La dirección de #43 sigue
+parcial: falta revisar más facciones y el movimiento en una partida poblada.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para

@@ -328,7 +328,7 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
         : event.targetId ? NEXUS_POSITION[event.targetId] : undefined
       // El viaje anuncia el lanzamiento; el impacto pertenece al evento de
       // daño ya resuelto, evitando que la víctima estalle antes del proyectil.
-      return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={false} /> : null
+      return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={false} spell /> : null
     }
     case 'damage':
       return event.to ? (

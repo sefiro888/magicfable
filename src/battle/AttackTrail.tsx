@@ -19,6 +19,7 @@ interface AttackTrailProps {
   readonly faction?: FactionId
   readonly durationMs: number
   readonly melee: boolean
+  readonly spell?: boolean
 }
 
 const vertexShader = `
@@ -40,6 +41,7 @@ const fragmentShader = `
   uniform float uProgress;
   uniform float uStyle;
   uniform vec3 uTone;
+  uniform float uSpell;
   void main() {
     float behind=uProgress-vUv.x;
     if(behind<0.0 || behind>0.35) discard;
@@ -52,6 +54,9 @@ const fragmentShader = `
     // sobre fondos oscuros; mantener el pulso sin transparencia negativa.
     if(uStyle==4.0) strand*=0.55+0.45*sin(vUv.x*45.0+vUv.y*12.56);
     if(uStyle==5.0) strand*=step(0.45,fract(sin(vUv.x*987.0+vUv.y*735.0)*1287.0));
+    // Un hechizo deja dos filamentos continuos, no el mismo rastro compacto
+    // del proyectil físico. Se dibujan en el tubo existente, sin más mallas.
+    if(uSpell>0.5) strand=max(strand*0.45, pow(0.5+0.5*cos(vUv.y*12.56),12.0)*0.85);
     vec3 light=mix(uTone,uTone+vec3(0.3),pow(tail,7.0)*0.25);
     gl_FragColor=vec4(light,tail*fade*strand*0.9);
     #include <tonemapping_fragment>
@@ -61,10 +66,10 @@ const fragmentShader = `
 
 /** El rastro ocupa el camino recorrido, no un anillo que persigue a una bola.
  * La cabeza y la estela tienen material y ritmo propios, sin tapar el tablero. */
-export function AttackTrail({ from, to, tone, faction, durationMs, melee }: AttackTrailProps) {
+export function AttackTrail({ from, to, tone, faction, durationMs, melee, spell = false }: AttackTrailProps) {
   const style = faction ? STYLES[faction] : 'radiant'
   const styleIndex = ['ember', 'crystal', 'vine', 'radiant', 'shadow', 'sand', 'tide', 'metal'].indexOf(style)
-  const radius = style === 'shadow' ? 0.085 : style === 'tide' ? 0.075 : 0.055
+  const radius = (style === 'shadow' ? 0.085 : style === 'tide' ? 0.075 : 0.055) * (spell ? 1.6 : 1)
   const [fromX, fromZ] = from
   const [toX, toZ] = to
   const start = useRef<number | null>(null)
@@ -84,7 +89,7 @@ export function AttackTrail({ from, to, tone, faction, durationMs, melee }: Atta
     new Vector3(toX, 0.85, toZ),
     )
   }, [fromX, fromZ, toX, toZ, style])
-  const uniforms = useMemo(() => ({ uProgress: { value: 0 }, uStyle: { value: styleIndex }, uRadius: { value: radius }, uTone: { value: new Color(tone) } }), [styleIndex, tone, radius])
+  const uniforms = useMemo(() => ({ uProgress: { value: 0 }, uStyle: { value: styleIndex }, uRadius: { value: radius }, uTone: { value: new Color(tone) }, uSpell: { value: spell ? 1 : 0 } }), [styleIndex, tone, radius, spell])
   const position = useMemo(() => new Vector3(), [])
   const tangent = useMemo(() => new Vector3(), [])
   useFrame(() => {
