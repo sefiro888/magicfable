@@ -25,6 +25,22 @@ juego a 1920 y 1366 y en modo foto a 1920. Unitarias 588/5, lint, build y
 E2E 85/37 verdes. Es un avance pequeño: Ciudadela no está finalizada.
 Siguiente: trabajar el aspecto del arco y apoyos visibles con relieve y
 materiales de piedra, evitando que el detalle distraiga de las cartas.
+Se probó y descartó una clave rectangular: desde juego parecía un bloque
+superpuesto. La mejora del arco requiere geometría de dovela integrada.
+También se descartó una dovela curva añadida: seguía pareciendo superpuesta
+en la captura. Evitar acumular pequeños adornos; pasar al siguiente bloque
+compartido de cartas y estados, y volver al arco con un rediseño completo.
+Revisión visual existente de hielo, infección, maldición y huella ígnea en
+ambas resoluciones: 2/2 verdes. En 1366 la diferencia de contagio y maldición
+depende demasiado del pequeño icono; el tratamiento de superficie apenas se
+lee. Siguiente bloque: reforzar la identidad de ambos bordes conservando arte
+y legibilidad, comparar capturas antes/después y verificar movimiento reducido.
+Prototipo de pátina de contagio e hilo de maldición: capturas 2/2 verdes y
+revisión de 1366; es un avance sutil, no finaliza el punto 38. Unitarias 588/5,
+lint, build y E2E 85/37 verdes. Movimiento reducido: capturas 2/2 verdes y
+revisión de 1366; archivo temporal eliminado. Siguiente: revisar las entradas
+por facción y el relieve de cartas únicas para mejorar su presencia sin tapar
+las ilustraciones. Contagio y maldición siguen pendientes de pulido global.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,

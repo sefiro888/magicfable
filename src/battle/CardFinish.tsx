@@ -165,10 +165,13 @@ const fragmentShader = `
     float frost = uFrozen*(1.0-smoothstep(0.025,0.19,edge + noise(uv*22.0)*0.055));
     float crystals = step(0.72,noise(uv*75.0))*frost;
     float veins = 1.0-smoothstep(0.025,0.09,abs(noise(uv*18.0)-0.5));
-    float infection = uInfected*border*veins*(0.65+sin(uTime*0.7)*0.08);
+    // En 1366 las venas finas se perdían: una pátina irregular en el borde
+    // conserva el centro de la ilustración y permite distinguir el contagio.
+    float infectionEdge = 1.0-smoothstep(0.045,0.16,edge + noise(uv*15.0)*0.025);
+    float infection = uInfected*infectionEdge*(0.24+veins*0.72)*(0.92+sin(uTime*0.7)*0.08);
     float cursePath = abs(edge-(0.04+noise(uv*vec2(9.0,18.0))*0.045));
-    float curseThread = (1.0-smoothstep(0.002,0.009,cursePath))*uCursed;
-    float curse = uCursed*border*(0.35+veins*0.45);
+    float curseThread = (1.0-smoothstep(0.003,0.015,cursePath))*uCursed;
+    float curse = uCursed*border*(0.48+veins*0.45);
     float charEdge = 1.0-smoothstep(0.035,0.13,edge+grain*0.025);
     float charred = uChar*charEdge;
     float emberLine = (1.0-smoothstep(0.003,0.016,abs(edge-(0.055+noise(uv*28.0)*0.035))))
