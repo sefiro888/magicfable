@@ -585,7 +585,7 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
@@ -931,7 +931,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
             propaga los data-* al div que crea, así que el atributo tiene que
             vivir aquí dentro para que el CSS pueda usarlo. */}
-        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={(piece.currentHealth >= 10 || (card.attack ?? 0) + piece.attackModifier >= 10) || undefined}>
+        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={stackSafe && (piece.currentHealth >= 10 || (card.attack ?? 0) + piece.attackModifier >= 10) || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats} data-unique={card.unique || undefined}>
           {card.unique && <span className={styles.uniqueMark} role="img" aria-label="Carta única">◆</span>}
@@ -1580,6 +1580,7 @@ function Scene(props: Board3DProps) {
             active={piece.owner === props.state.activePlayer}
             mine={piece.owner === props.localPlayerId}
             crowded={props.state.board.some((other) => other.instanceId !== piece.instanceId && Math.abs(other.position.x - piece.position.x) <= 2 && Math.abs(other.position.y - piece.position.y) <= 1)}
+            stackSafe={!props.state.board.some((other) => other.instanceId !== piece.instanceId && Math.abs(other.position.x - piece.position.x) <= 1 && Math.abs(other.position.y - piece.position.y) === 1)}
             onPiece={props.onPiece}
             onInspect={props.onInspectPiece}
             onHover={props.onHoverPiece}

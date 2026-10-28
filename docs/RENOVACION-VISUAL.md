@@ -87,6 +87,15 @@ cada una a ambas resoluciones. Capturas 1366 de selección y combinación
 mixta revisadas: cifras separadas, aunque la chapa cubre más parte del arte;
 faltan disposiciones más densas y otras cámaras antes de cerrar el punto.
 Unitarias 592/5, build y lint verdes; E2E completo 85 verdes/41 omitidas.
+La matriz nueva de ocho fichas mostró que apilar en dos filas ocultaba cifras
+de la fila posterior. Se restringe ahora el apilado si existe una ficha en una
+fila contigua próxima; el caso de dos fichas laterales conserva la mejora.
+La sonda densa documenta el solapamiento aún pendiente a 1366 como fallo
+esperado; 1920 pasa en esta posición. No se ha resuelto el caso general ni las
+cámaras giradas. Unitarias 592/5, build/lint verdes; E2E completo 85 verdes y
+43 omitidas. Eliminar todo el margen entre iconos tampoco resolvió el caso denso
+de 1366 y reducía la separación visual; ensayo retirado. La solución pendiente
+requiere medir posiciones proyectadas o una vista alternativa, sin tapar cifras.
 Para #43 se amplió la sonda de trayectorias para simular hechizos de cuatro
 familias: 2/2 capturas verdes. Se ensayó un arco alrededor del proyectil,
 pero a 1366 parecía una órbita planetaria ajena al lenguaje del juego; retirado.
