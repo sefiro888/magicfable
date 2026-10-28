@@ -31,6 +31,17 @@ la sonda inyecta el evento y no reemplaza una comprobación de muerte real.
 Unitarias 589/5, build y lint verdes. E2E completo: 85 verdes y 39 omitidas
 (incluye la sonda opcional nueva). Capturas de Forja a 1920 y 1366 revisadas.
 Queda contrastar otros escenarios y destrucciones reales antes de cerrar #45.
+Combate real tras el ajuste: 1/1 verde a 1280; la destrucción por familias y
+otros escenarios siguen pendientes. El avance de luz se guardó en `9ad3d80`.
+Se probó una trayectoria helicoidal para Marea y ascendente para Sombra sin
+añadir partículas: capturas 2/2 verdes, pero en 1366 la diferencia apenas se
+percibe y sigue dependiendo del color. Prototipo retirado. Antes de insistir,
+comparar secuencias completas con pieza en caída y diseñar siluetas distintivas
+que se lean a velocidad real; #45 continúa parcial.
+También se ensayaron esquirlas de metal y cristal más alargadas; la captura de
+Forja a 1366 seguía dominada por motas y el material no se distinguía. Retirado
+tras 2/2 capturas verdes. El siguiente diseño debe jerarquizar fragmentos y
+resplandor juntos, no ampliar por separado partículas que ya quedan ocultas.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para
