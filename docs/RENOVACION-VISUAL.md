@@ -57,6 +57,20 @@ gradualmente para reducir los cortes rectos. Unitarias 588/5, lint y build
 verdes; capturas orbitales 1920 y 1366 revisadas. E2E 85/37 verde.
 La orilla sigue teniendo aspecto redondeado y separada del tablero: se necesita
 más integración y detalle; no considerar Fiordo terminado por este ajuste.
+La misma vista orbital muestra el barco separado de la placa; revisar su
+anclaje y la orilla de forma conjunta antes de desplazarlo o añadir nieve.
+Desplazarlo a z=-6,9 se descartó: en la vista orbital se pega al Nexo rival y
+amenaza su legibilidad. La unión exige un ensanche de hielo, no acercar casco.
+Se descartó un primer ensanche de placa: la rotación de la geometría coloca el
+signo de la coordenada longitudinal invertido y salió al lado contrario del
+barco. Antes de repetir, contrastar las coordenadas en mundo y forma/reflejo.
+En el lado correcto, el ensanche rectangular del hielo tapó parte del casco y
+pareció una plataforma artificial; también descartado. Necesita geometría
+de ribera independiente y transición orgánica, no ampliar toda la placa.
+Añadida regresión geométrica para que ambos extremos permanezcan bajo el lago
+y el centro conserve relieve; 3/3 pruebas específicas verdes. Pendiente gate
+completo: unitarias 589/5, lint y build verdes. E2E 85/37 ya pasó sobre la
+misma geometría.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,

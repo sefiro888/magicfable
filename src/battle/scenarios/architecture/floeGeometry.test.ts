@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import { Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three'
 import { BOARD_WORLD_HALF } from '../../grid/gridCoordinates'
 import { floeGeometry } from './floeGeometry'
-import { glacierBankGeometry } from './glacierBankGeometry'
+import { glacierBankGeometry, glacierBankPoint } from './glacierBankGeometry'
 
 it('la placa sostiene la diagonal del tablero y su nieve no invade las casillas', () => {
   const material = new MeshBasicMaterial()
@@ -22,6 +22,16 @@ it('la placa sostiene la diagonal del tablero y su nieve no invade las casillas'
   }
   expect(new Raycaster(new Vector3(4.5, 1, 0), down).intersectObject(snow).length).toBeGreaterThan(0)
   material.dispose()
+})
+
+it('los extremos de ambas orillas se sumergen y el centro conserva relieve', () => {
+  for (const side of [-1, 1]) {
+    for (const across of [0, 0.25, 0.5, 0.75, 1]) {
+      expect(glacierBankPoint(side, across, 0)[1]).toBeLessThan(-0.76)
+      expect(glacierBankPoint(side, across, 1)[1]).toBeLessThan(-0.76)
+    }
+    expect(glacierBankPoint(side, 0.5, 0.5)[1]).toBeGreaterThan(-0.76)
+  }
 })
 
 it('ambas orillas de hielo exponen su cara superior en alta y baja', () => {
