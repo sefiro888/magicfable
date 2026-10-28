@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test'
 import { CARDS, STARTER_DECKS, createMatch, type AnimationEvent, type BoardPiece, type FactionId } from '../src/game'
 import type { useMatchStore as MatchStoreHook } from '../src/store/match'
 import { matchStoreUrl } from './helpers/matchStoreUrl'
+import { SCENARIO_OPTIONS } from '../src/battle/scenarioCatalog'
+
+const scenario = SCENARIO_OPTIONS.find((option) => option.value !== 'auto' && option.value === process.env.DESTRUCTION_SCENERY)?.value ?? 'sanctuary'
 
 test.skip(!process.env.RUN_DESTRUCTION_SHOTS, 'revisión visual de destrucciones bajo demanda')
 
@@ -16,16 +19,16 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       players: { ...base.players, player: { ...base.players.player, mulliganTaken: true, hand: [] } } }
     await page.clock.install()
     await page.setViewportSize({ width, height })
-    await page.addInitScript((saved) => {
+    await page.addInitScript(({ saved, scenario }) => {
       localStorage.setItem('cronicas-nexo-howto-visto', '1')
       localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: {
-        selectedDeckId: 'furia-caldera', scenario: 'sanctuary', muted: true,
+        selectedDeckId: 'furia-caldera', scenario, muted: true,
         graphicsQuality: 'high', reducedMotion: false, animationSpeed: 1,
       }, version: 7 }))
       localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: {
         match: saved, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
       }, version: 2 }))
-    }, match)
+    }, { saved: match, scenario })
     const storeRequest = matchStoreUrl(page)
     await page.goto('/battle')
     const storeUrl = await storeRequest
@@ -55,10 +58,10 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       await page.clock.runFor(100)
       await page.clock.fastForward(250)
       await page.clock.runFor(17)
-      await page.screenshot({ path: `e2e/__shots__/destruccion-inicio-${faction}-${width}x${height}.png` })
+      await page.screenshot({ path: `e2e/__shots__/destruccion-inicio-${scenario}-${faction}-${width}x${height}.png` })
       await page.clock.fastForward(450)
       await page.clock.runFor(17)
-      await page.screenshot({ path: `e2e/__shots__/destruccion-${faction}-${width}x${height}.png` })
+      await page.screenshot({ path: `e2e/__shots__/destruccion-${scenario}-${faction}-${width}x${height}.png` })
       expect(errors, `render de ${faction}`).toEqual([])
     }
   })

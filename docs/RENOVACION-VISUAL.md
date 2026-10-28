@@ -48,6 +48,15 @@ Corregido localmente al reconocer el regreso de la pieza, con regresión del
 ciclo morir/reaparecer/morir. Unitarias 590/5, build y lint verdes; capturas de
 destrucción 2/2 verdes y revisadas a ambas resoluciones. E2E completo 85 verdes,
 39 omitidas. Sin verificaciones activas. Sigue pendiente la dirección de #45.
+Nuevo prototipo coordinado para piezas metálicas y cristalinas: menos pavesas
+brillantes y fragmentos algo mayores, manteniendo instanciado y sin partículas
+extra. Se redujo el tamaño de cristal tras observar que tapaba el arte. Sonda
+2/2 verde, imágenes de cristal a 1920/1366 y Forja a 1366 revisadas; falta
+comparar una muerte real y un escenario claro. Unitarias 592/5, build y lint
+verdes. E2E completo 85 verdes y 39 omitidas. La comparación de Ciudadela 2/2
+verde se revisó a 1366 para metal y cristal; combate real 1/1 verde a 1280.
+Lint de la sonda actualizada verde. Es un avance localizado: falta dirección
+para el resto de materiales y facciones; no marcar #44/45 terminados.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para

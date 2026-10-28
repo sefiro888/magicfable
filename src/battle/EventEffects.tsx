@@ -12,7 +12,7 @@ import {
 import { glowTexture, type GlowTint } from './textures'
 import { RitualSeal } from './RitualSeal'
 import { AttackTrail } from './AttackTrail'
-import { ImpactDebris } from './ImpactDebris'
+import { ImpactDebris, materialOf } from './ImpactDebris'
 
 /** Color y textura de brillo por facción — a juego con `accentColor` en `factions.ts`. */
 const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonly glow: GlowTint }>> = {
@@ -199,16 +199,18 @@ function FreezeBloom({ cell, timing }: { cell: Position; timing: TimedProps }) {
 }
 
 /** Ascuas que ascienden cuando una carta es destruida. */
-function DestroyEmbers({ cell, tone, timing }: { cell: Position; tone: string; timing: TimedProps }) {
+function DestroyEmbers({ cell, tone, timing, cardId }: { cell: Position; tone: string; timing: TimedProps; cardId?: string }) {
   const progress = useProgress(timing)
   const group = useRef<Group>(null)
   const ring = useRef<Mesh>(null)
   const flash = useRef<PointLight>(null)
   const texture = useMemo(() => glowFor(tone), [tone])
+  const material = materialOf(cardId)
+  const physical = material === 'metal' || material === 'crystal'
   // Más pavesas y con reparto irregular: nueve en ángulos regulares se leían
   // como una fuente ordenada, no como algo que revienta.
   const seeds = useMemo(
-    () => Array.from({ length: 16 }, (_, index) => {
+    () => Array.from({ length: physical ? 7 : 16 }, (_, index) => {
       const angle = index * 2.399 + (index % 3) * 0.4
       const reach = 0.26 + (index % 5) * 0.12
       return {
@@ -218,7 +220,7 @@ function DestroyEmbers({ cell, tone, timing }: { cell: Position; tone: string; t
         size: 0.2 + (index % 3) * 0.09,
       }
     }),
-    [],
+    [physical],
   )
   useFrame(() => {
     const value = progress.current
@@ -255,7 +257,7 @@ function DestroyEmbers({ cell, tone, timing }: { cell: Position; tone: string; t
       <group ref={group}>
         {seeds.map((_, index) => (
           <sprite key={index}>
-            <spriteMaterial map={texture} transparent blending={AdditiveBlending} depthWrite={false} />
+            <spriteMaterial map={texture} transparent opacity={physical ? 0.55 : 1} blending={AdditiveBlending} depthWrite={false} />
           </sprite>
         ))}
       </group>
@@ -343,7 +345,7 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       return event.to ? <FreezeBloom cell={event.to} timing={timing} /> : null
     case 'destroy':
       return event.to ? <>
-        <DestroyEmbers cell={event.to} tone={tone} timing={timing} />
+        <DestroyEmbers cell={event.to} tone={tone} timing={timing} cardId={event.cardId} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} destruction />}
       </> : null
     case 'nexus-damage': {

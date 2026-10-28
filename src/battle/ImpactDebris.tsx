@@ -5,7 +5,7 @@ import type { InstancedMesh, MeshStandardMaterial } from 'three'
 import { CARD_BY_ID } from '../game'
 
 type HitMaterial = 'stone' | 'metal' | 'crystal' | 'organic' | 'spirit'
-const materialOf = (cardId?: string): HitMaterial => {
+export const materialOf = (cardId?: string): HitMaterial => {
   const card = cardId ? CARD_BY_ID[cardId] : undefined
   if (!card) return 'stone'
   if (/Autómata|Máquina|Armadura/.test(card.subtype ?? '') || card.faction === 'forja') return 'metal'
@@ -43,7 +43,10 @@ export function ImpactDebris({ at, cardId, durationMs, destruction = false }: {
       transform.position.set(seed.x * reach, Math.max(0.11, 0.45 + t * seed.speed * 1.4 - t * t * 0.7), seed.z * reach)
       transform.rotation.set(t * 4 + index, index * 1.7, t * 3 + index)
       const size = seed.size * (1 - Math.max(0, (t - 0.65) / 0.35)) * (destruction ? 1.6 : 1)
-      transform.scale.set(size, size * (material === 'metal' ? 0.35 : 0.75), size * (material === 'crystal' ? 2.1 : 1))
+      // Las esquirlas metálicas y cristalinas necesitan una silueta legible
+      // desde la cámara de juego, sin añadir más llamadas de render.
+      const emphasis = destruction ? material === 'metal' ? 2 : material === 'crystal' ? 1.4 : 1 : 1
+      transform.scale.set(size * emphasis, size * emphasis * (material === 'metal' ? 0.35 : 0.75), size * emphasis * (material === 'crystal' ? 2.1 : 1))
       transform.updateMatrix()
       mesh.setMatrixAt(index, transform.matrix)
     })
