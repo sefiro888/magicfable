@@ -71,6 +71,45 @@ Añadida regresión geométrica para que ambos extremos permanezcan bajo el lago
 y el centro conserve relieve; 3/3 pruebas específicas verdes. Pendiente gate
 completo: unitarias 589/5, lint y build verdes. E2E 85/37 ya pasó sobre la
 misma geometría.
+Revisión de combate real 1/1 verde. Las capturas a 1280 muestran que durante
+el ataque la ficha y su chapa pueden solaparse con la defensora, dificultando
+leer quién recibe el golpe. Analizar desplazamiento y ubicación de chapas en
+ambas resoluciones, con ataques adyacentes y a distancia; no corregirlo
+ocultando información ni alterando el resultado resuelto por el motor.
+Prototipo: separar horizontalmente chapas propias y enemigas cuando ambas
+están expandidas y próximas. Captura de combate real en sesión 72329; verificar
+que no se atribuyan cifras a otra ficha y que no invadan otras casillas. Falta
+gate completo y revisión a 1920 y 1366 antes de conservarlo.
+Captura inicial a 1280 separa correctamente atacante y objetivo. En curso
+revisión de ambas resoluciones en sesión 72602 mediante archivos temporales
+e2e/combate-1920-temporal.spec.ts y e2e/combate-1366-temporal.spec.ts;
+eliminarlos tras recoger las capturas. No ejecutar otro proceso WebGL aún.
+El primer intento alteró por error las claves locales al cambiar nombres de
+capturas y falló la preparación; corregido. Reintento en sesión 90912.
+El segundo intento pasó pero la prueba original sobrescribía las resoluciones
+con 1280×800; se corrigió el temporal y se relanzó en sesión 24309. No contar
+esas imágenes anteriores como revisión de las resoluciones requeridas.
+Reintento correcto 2/2 verde; 1366 revisado: nombres y cifras se separan en el
+duelo. Archivos temporales eliminados. Captura 1920 también revisada; faltan
+condiciones con varias unidades. Unitarias 589/5, lint y build verdes; E2E
+85/37 verde. Comparación con varias unidades y selección en sesión 91881;
+verificar especialmente que ninguna chapa desplazada parezca de otra ficha.
+Comparación 2/2 verde pero la ficha seleccionada sin rival próximo desplaza su
+chapa innecesariamente y puede confundirse con una casilla vecina. Prototipo
+descartado: hace falta resolver la colisión real por posiciones de pantalla y
+conectar cada chapa a su ficha, no desplazar todas según el bando.
+Inspección de Santuario a 1920 en cámara real: los monolitos sí emplean perfil
+erosionado y runas, pero se leen como bloques oscuros y la portada queda poco
+integrada. Priorizar composición y contraste localizado sin aclarar todo el
+tablero ni tapar las casillas; contrastar captura de juego antes/después.
+Se descartó luz puntual frontal: aclaraba más el Nexo y suelo que la portada.
+La solución requiere luz orientada o material específico de la estructura,
+comprobando su efecto en ambas caras y sin sacrificar la atmósfera.
+Prototipo de piedra ligeramente más clara solo en la portada: captura 1920 de
+juego revisada; efecto moderado, sin alterar el suelo. Unitarias 589/5, lint y
+build verdes; juego a 1366 y modo foto a 1920 revisados. E2E 85/37 verde.
+En la órbita, los apoyos de la portada parecen suspendidos: necesita una
+cimentación visible integrada con el lago; este ajuste no termina Santuario.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,

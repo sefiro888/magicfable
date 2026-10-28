@@ -57,15 +57,15 @@ const STONES = [
 
 type Pulse = { readonly current: number }
 
-function InscribedStone({ width, height, depth, seed, pulse, reducedMotion, quality, broken = false }: {
+function InscribedStone({ width, height, depth, seed, pulse, reducedMotion, quality, broken = false, color = '#7d8b8c' }: {
   width: number; height: number; depth: number; seed: number; pulse: Pulse;
-  reducedMotion: boolean; quality: GraphicsQuality; broken?: boolean
+  reducedMotion: boolean; quality: GraphicsQuality; broken?: boolean; color?: string
 }) {
   const maps = stoneMaps('granite')
   return <>
     <mesh name={`sanctuary-stone-${seed}`} castShadow={quality !== 'low'} receiveShadow={quality !== 'low'}>
       <primitive object={megalithGeometry(width, height, depth, seed, broken)} attach="geometry" />
-      <meshStandardMaterial {...maps} color="#7d8b8c" bumpScale={0.035} roughness={0.94} vertexColors metalness={0.015} />
+      <meshStandardMaterial {...maps} color={color} bumpScale={0.035} roughness={0.94} vertexColors metalness={0.015} />
     </mesh>
     {!broken && <RuneInscription width={width} height={height} depth={depth} seed={seed}
       pulse={pulse} reducedMotion={reducedMotion} />}
@@ -113,13 +113,13 @@ function Dolmen({ quality, pulse, reducedMotion }: SanctuaryProps & { pulse: Pul
   return <group position={[0, -1.8, -7.5]}>
     {[-1.7, 1.7].map((x, index) => <group key={x} position={[x, 0, 0]} rotation={[0, index ? -0.04 : 0.03, index ? -0.025 : 0.025]}>
       <InscribedStone width={0.85} height={2.7} depth={0.95} seed={61 + index * 6}
-        pulse={pulse} reducedMotion={reducedMotion} quality={quality} />
+        pulse={pulse} reducedMotion={reducedMotion} quality={quality} color="#a0aaa7" />
     </group>)}
     {[[-0.97, 2.9, 0.68, 73], [1.49, 1.96, 0.61, 79]].map(([x, width, height, seed]) =>
       <mesh key={seed} position={[x!, 2.63, 0]} rotation={[0, 0.008, x! > 0 ? -0.026 : 0.013]}
         castShadow={quality !== 'low'} receiveShadow={quality !== 'low'}>
         <primitive object={megalithGeometry(width!, height!, 1.12, seed!, true)} attach="geometry" />
-        <meshStandardMaterial {...maps} color="#87928d" bumpScale={0.04} roughness={0.94} vertexColors />
+        <meshStandardMaterial {...maps} color="#a0aaa7" bumpScale={0.04} roughness={0.94} vertexColors />
       </mesh>)}
     {/* El velo es bruma recortada, no una lámina rectangular luminosa. */}
     <mesh ref={veil} position={[0, 1.85, 0.08]}>
