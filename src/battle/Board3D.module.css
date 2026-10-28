@@ -61,6 +61,10 @@
    dos cifras vecinas se tapaban. Recortar espacio ornamental mantiene la letra. */
 .labelInner[data-compact] .cardStats { gap: 1px; }
 .labelInner[data-compact] .cardStats > span:not(.uniqueMark) { min-width: 0; gap: 2px; padding-inline: 1px; }
+/* Dos dígitos a texto grande aún invadían la casilla vecina. Apilar solo esa
+   chapa la mantiene junto a su ficha sin reducir la fuente ni desplazarla. */
+.labelInner[data-crowded][data-wide] .cardStats { flex-direction: column; align-items: center; }
+.labelInner[data-crowded][data-wide] .cardStats > span:not(.uniqueMark) { min-width: 0; gap: 2px; padding-inline: 1px; }
 /* El distintivo vive entre las cifras y la pieza: la corona del marco puede
    quedar oculta por la chapa y ensancharla invadía las casillas vecinas. */
 .cardStats .uniqueMark {

@@ -931,7 +931,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
             propaga los data-* al div que crea, así que el atributo tiene que
             vivir aquí dentro para que el CSS pueda usarlo. */}
-        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined}>
+        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={(piece.currentHealth >= 10 || (card.attack ?? 0) + piece.attackModifier >= 10) || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats} data-unique={card.unique || undefined}>
           {card.unique && <span className={styles.uniqueMark} role="img" aria-label="Carta única">◆</span>}

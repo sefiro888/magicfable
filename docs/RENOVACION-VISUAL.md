@@ -80,6 +80,13 @@ completo 85 verdes/41 omitidas. Ensayo de cifras de dos dígitos y texto al
 140 %: 1920 verde, 1366 aún solapa; se retiró el parámetro experimental de la
 sonda. Se necesita distribución por colisiones reales, no mover indiscriminadamente
 las chapas. El ajuste guardado resuelve el caso probado de cifras simples.
+Nuevo prototipo: si una ficha con cifras de dos dígitos está rodeada, su chapa
+apila ataque y vida para no invadir a la vecina, incluso al seleccionarla.
+Dos dígitos en ambas fichas y combinación mixta, texto al 140 %, 2/2 verdes
+cada una a ambas resoluciones. Capturas 1366 de selección y combinación
+mixta revisadas: cifras separadas, aunque la chapa cubre más parte del arte;
+faltan disposiciones más densas y otras cámaras antes de cerrar el punto.
+Unitarias 592/5, build y lint verdes; E2E completo 85 verdes/41 omitidas.
 Para #43 se amplió la sonda de trayectorias para simular hechizos de cuatro
 familias: 2/2 capturas verdes. Se ensayó un arco alrededor del proyectil,
 pero a 1366 parecía una órbita planetaria ajena al lenguaje del juego; retirado.

@@ -12,9 +12,12 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 42)
     const cards = [false, true].map((unique) => CARDS.find((card) => card.faction === 'fury' && card.type === 'unit' && Boolean(card.unique) === unique)!)
     expect(cards.every(Boolean)).toBe(true)
-    const board: BoardPiece[] = cards.map((card, index) => ({ instanceId: `probe-${index}`, cardId: card.id,
-      owner: 'player', position: { x: index === 0 ? 3 : 4, y: 4 }, currentHealth: card.health ?? 1,
-      attackModifier: 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [] }))
+    const board: BoardPiece[] = cards.map((card, index) => {
+      const wide = process.env.UNIQUE_WIDE_STATS === 'both' || (process.env.UNIQUE_WIDE_STATS === 'mixed' && index === 1)
+      return { instanceId: `probe-${index}`, cardId: card.id,
+        owner: 'player', position: { x: index === 0 ? 3 : 4, y: 4 }, currentHealth: wide ? 12 : card.health ?? 1,
+        attackModifier: wide ? 10 : 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 0, statuses: [] }
+    })
     const match = { ...base, turn: 5, terrain: [], board,
       players: { ...base.players, player: { ...base.players.player, mulliganTaken: true, hand: [] } } }
     await page.setViewportSize({ width, height })
@@ -40,12 +43,18 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     expect(markBox.x).toBeGreaterThanOrEqual(normalStats.x + normalStats.width)
     expect(uniqueAttack.x).toBeGreaterThanOrEqual(normalStats.x + normalStats.width)
     await page.waitForTimeout(1800)
-    await page.screenshot({ path: `e2e/__shots__/marco-unico${process.env.UNIQUE_LARGE_TEXT ? '-texto-grande' : ''}-${width}x${height}.png` })
+    await page.screenshot({ path: `e2e/__shots__/marco-unico${process.env.UNIQUE_LARGE_TEXT ? '-texto-grande' : ''}${process.env.UNIQUE_WIDE_STATS ? `-${process.env.UNIQUE_WIDE_STATS}` : ''}-${width}x${height}.png` })
     await page.keyboard.press('ArrowUp')
     await page.keyboard.press('ArrowRight')
     await page.keyboard.press('Enter')
     await expect(mark).toBeVisible()
     await expect(mark.locator('xpath=../..')).toHaveAttribute('data-selected', 'true')
+    if (process.env.UNIQUE_WIDE_STATS === 'both') {
+      const selectedAttack = (await page.locator('[data-selected] [class*="attackStat"]').boundingBox())!
+      const neighbourHealth = (await page.locator('[class*="labelInner"]').filter({ hasText: cards[0]!.name }).locator('[class*="healthStat"], [class*="damagedStat"]').boundingBox())!
+      expect(selectedAttack.x).toBeGreaterThanOrEqual(neighbourHealth.x + neighbourHealth.width)
+    }
+    await page.screenshot({ path: `e2e/__shots__/marco-unico-seleccion${process.env.UNIQUE_WIDE_STATS ? `-${process.env.UNIQUE_WIDE_STATS}` : ''}-${width}x${height}.png` })
     expect(errors).toEqual([])
   })
 }
