@@ -110,6 +110,14 @@ juego revisada; efecto moderado, sin alterar el suelo. Unitarias 589/5, lint y
 build verdes; juego a 1366 y modo foto a 1920 revisados. E2E 85/37 verde.
 En la órbita, los apoyos de la portada parecen suspendidos: necesita una
 cimentación visible integrada con el lago; este ajuste no termina Santuario.
+Primer basamento de piedra descartado: desde la órbita permanecía oculto y no
+resolvía la suspensión aparente. Medir el nivel del agua y apoyos antes de
+rehacerlo; no contar un objeto invisible como mejora.
+Segundo prototipo: basamento elevado por encima del lago (-0,72) visible en
+foto 1920 y conectado a los apoyos. Unitarias 589/5, lint y build verdes. Juego y foto
+revisados a ambas resoluciones; E2E 85/37 verde. Sonda de reflejo del Santuario
+1/1 verde (cambio de píxeles 0→14→0, resolución 512).
+El basamento aún resulta geométrico; mantener Santuario como parcial.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,

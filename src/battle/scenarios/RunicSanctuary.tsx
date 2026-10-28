@@ -111,6 +111,12 @@ function Dolmen({ quality, pulse, reducedMotion }: SanctuaryProps & { pulse: Pul
     if (light.current) light.current.intensity = 2.4 + (reducedMotion ? 0 : pulse.current * 1.5)
   })
   return <group position={[0, -1.8, -7.5]}>
+    {/* El lago está a y=-0,72: la corona de este zócalo queda por encima
+        del agua para que la portada no parezca flotar al girar la cámara. */}
+    <mesh position={[0, 0.85, 0]} receiveShadow={quality !== 'low'} castShadow={quality !== 'low'}>
+      <primitive object={megalithGeometry(5.1, 0.58, 1.65, 69, true)} attach="geometry" />
+      <meshStandardMaterial {...maps} color="#637879" bumpScale={0.035} roughness={0.96} vertexColors />
+    </mesh>
     {[-1.7, 1.7].map((x, index) => <group key={x} position={[x, 0, 0]} rotation={[0, index ? -0.04 : 0.03, index ? -0.025 : 0.025]}>
       <InscribedStone width={0.85} height={2.7} depth={0.95} seed={61 + index * 6}
         pulse={pulse} reducedMotion={reducedMotion} quality={quality} color="#a0aaa7" />
