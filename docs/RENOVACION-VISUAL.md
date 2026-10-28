@@ -63,6 +63,14 @@ nombres compactos (pueden estar ocultos). Se ensanchó el marco central de la
 única y se comparó a 1366, pero seguía sin distinguirse claramente; prototipo
 retirado. Conservar la sonda para rediseñar jerarquía de silueta y chapa; #34
 sigue parcial. Las estadísticas contiguas requieren respetar su espacio.
+Nuevo distintivo junto a las estadísticas de la única, con etiqueta accesible
+y sin ensanchar la chapa: sonda 2/2 verde, comprobación de distancia a las cifras
+vecinas e imágenes 1920/1366 revisadas. Es un avance de legibilidad, no una
+renovación completa del marco. Unitarias 592/5, build y lint verdes; E2E
+completo 85 verdes/41 omitidas. Sonda con texto al 140 % y selección de la
+única 2/2 verde. A 1366 las cifras contiguas se solapan con texto grande,
+problema previo que requiere resolver la disposición de etiquetas sin atribuir
+una cifra a otra pieza. El nuevo distintivo no corrige ese problema; #34 parcial.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para

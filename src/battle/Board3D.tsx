@@ -933,7 +933,8 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
             vivir aquí dentro para que el CSS pueda usarlo. */}
         <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
-        <div className={styles.cardStats}>
+        <div className={styles.cardStats} data-unique={card.unique || undefined}>
+          {card.unique && <span className={styles.uniqueMark} role="img" aria-label="Carta única">◆</span>}
           {card.attack !== undefined && <span className={styles.attackStat} aria-label={`Ataque ${Math.max(0, card.attack + piece.attackModifier)}`}><GameIcon name="attack" /> {Math.max(0, card.attack + piece.attackModifier)}</span>}
           <span className={damaged ? styles.damagedStat : styles.healthStat} aria-label={`Vida ${piece.currentHealth}`}><GameIcon name="health" /> {piece.currentHealth}</span>
         </div>

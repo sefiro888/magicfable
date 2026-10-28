@@ -41,7 +41,7 @@
   border: 1px solid rgba(188, 153, 95, 0.65);
   border-radius: 2px;
 }
-.cardStats { display: flex; justify-content: center; gap: 3px; margin-top: 3px; }
+.cardStats { display: flex; justify-content: center; gap: 3px; margin-top: 3px; position: relative; }
 .cardStats span {
   display: inline-flex;
   align-items: center;
@@ -57,6 +57,21 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+/* El distintivo vive entre las cifras y la pieza: la corona del marco puede
+   quedar oculta por la chapa y ensancharla invadía las casillas vecinas. */
+.cardStats .uniqueMark {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 0;
+  padding: 0 3px;
+  color: #ffe4a0;
+  border-color: #d9ae5b;
+  font-size: calc(10px * var(--label-scale, 1));
+  line-height: 1;
+}
+.cardStats[data-unique] > span:not(.uniqueMark) { border-color: #d9ae5b; }
 .cardStatuses { display: flex; justify-content: center; gap: 4px; margin-top: 3px; }
 .cardStatuses span {
   padding: 1px 5px;

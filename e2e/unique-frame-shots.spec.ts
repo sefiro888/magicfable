@@ -18,22 +18,32 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     const match = { ...base, turn: 5, terrain: [], board,
       players: { ...base.players, player: { ...base.players.player, mulliganTaken: true, hand: [] } } }
     await page.setViewportSize({ width, height })
-    await page.addInitScript((saved) => {
+    await page.addInitScript(({ saved, largeText }) => {
       localStorage.setItem('cronicas-nexo-howto-visto', '1')
       localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: {
         selectedDeckId: 'furia-caldera', scenario: 'aether-citadel', muted: true,
-        graphicsQuality: 'high', reducedMotion: true,
+        graphicsQuality: 'high', reducedMotion: true, boardTextScale: largeText ? 1.4 : 1,
       }, version: 7 }))
       localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: {
         match: saved, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
       }, version: 2 }))
-    }, match)
+    }, { saved: match, largeText: Boolean(process.env.UNIQUE_LARGE_TEXT) })
     await page.goto('/battle')
     await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25000 })
     await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
     for (const card of cards) await expect(page.locator('[class*="cardName"]').filter({ hasText: card.name })).toBeAttached({ timeout: 15000 })
+    const mark = page.getByRole('img', { name: 'Carta única' })
+    await expect(mark).toHaveCount(1)
+    const markBox = (await mark.boundingBox())!
+    const normalStats = (await page.locator('[class*="labelInner"]').filter({ hasText: cards[0]!.name }).locator('[class*="cardStats"] > span').last().boundingBox())!
+    expect(markBox.x).toBeGreaterThanOrEqual(normalStats.x + normalStats.width)
     await page.waitForTimeout(1800)
-    await page.screenshot({ path: `e2e/__shots__/marco-unico-${width}x${height}.png` })
+    await page.screenshot({ path: `e2e/__shots__/marco-unico${process.env.UNIQUE_LARGE_TEXT ? '-texto-grande' : ''}-${width}x${height}.png` })
+    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('Enter')
+    await expect(mark).toBeVisible()
+    await expect(mark.locator('xpath=../..')).toHaveAttribute('data-selected', 'true')
     expect(errors).toEqual([])
   })
 }
