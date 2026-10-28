@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { piecesDying } from './FallenPieces'
+import { newDyingPieces, piecesDying } from './FallenPieces'
 import type { AnimationEvent, BoardPiece } from '../game'
 
 const pieza = (instanceId: string): BoardPiece => ({
@@ -56,5 +56,15 @@ describe('piezas que acaban de morir', () => {
   it('varias muertes a la vez se devuelven todas', () => {
     const muertas = piecesDying(conocidas('a', 'b', 'c'), [pieza('c')], [evento('destroy', 'a'), evento('destroy', 'b')])
     expect(muertas).toHaveLength(2)
+  })
+
+  it('anima de nuevo la misma carta si vuelve al tablero y muere otra vez', () => {
+    const known = conocidas('a')
+    const handled = new Set<string>()
+    const death = [evento('destroy', 'a')]
+    expect(newDyingPieces(known, [], death, handled)).toHaveLength(1)
+    expect(newDyingPieces(known, [], death, handled)).toHaveLength(0)
+    expect(newDyingPieces(known, [pieza('a')], [], handled)).toHaveLength(0)
+    expect(newDyingPieces(known, [], death, handled)).toHaveLength(1)
   })
 })

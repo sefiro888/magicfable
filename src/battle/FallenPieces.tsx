@@ -66,6 +66,22 @@ export const piecesDying = (
   return muertas
 }
 
+/** La misma carta puede regresar del descarte: su siguiente muerte también
+ * necesita una caída, pero los renders repetidos de la misma muerte no. */
+export const newDyingPieces = (
+  known: ReadonlyMap<string, BoardPiece>,
+  board: readonly BoardPiece[],
+  events: readonly AnimationEvent[],
+  handled: Set<string>,
+): readonly BoardPiece[] => {
+  for (const piece of board) handled.delete(piece.instanceId)
+  return piecesDying(known, board, events).filter((piece) => {
+    if (handled.has(piece.instanceId)) return false
+    handled.add(piece.instanceId)
+    return true
+  })
+}
+
 /**
  * Una ficha derribada: se vence hacia atrás como un standee al que tiran, se
  * hunde en la casilla y se apaga, con un fogonazo en el momento del golpe.
@@ -186,9 +202,7 @@ export const FallenPieces = memo(function FallenPieces({
   useEffect(() => {
     const map = lastKnown.current
     const nuevas: Fallen[] = []
-    for (const piece of piecesDying(map, board, [...(event ? [event] : []), ...pendingEvents])) {
-      if (handled.current.has(piece.instanceId)) continue
-      handled.current.add(piece.instanceId)
+    for (const piece of newDyingPieces(map, board, [...(event ? [event] : []), ...pendingEvents], handled.current)) {
       nuevas.push({
         id: `fallen-${nextId++}`,
         instanceId: piece.instanceId,

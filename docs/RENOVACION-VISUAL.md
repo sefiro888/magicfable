@@ -42,6 +42,12 @@ También se ensayaron esquirlas de metal y cristal más alargadas; la captura de
 Forja a 1366 seguía dominada por motas y el material no se distinguía. Retirado
 tras 2/2 capturas verdes. El siguiente diseño debe jerarquizar fragmentos y
 resplandor juntos, no ampliar por separado partículas que ya quedan ocultas.
+Hallazgo de integración: una carta reciclada conserva su identificador y la
+lista de fichas ya caídas no lo olvidaba; al morir de nuevo se omitía su caída.
+Corregido localmente al reconocer el regreso de la pieza, con regresión del
+ciclo morir/reaparecer/morir. Unitarias 590/5, build y lint verdes; capturas de
+destrucción 2/2 verdes y revisadas a ambas resoluciones. E2E completo 85 verdes,
+39 omitidas. Sin verificaciones activas. Sigue pendiente la dirección de #45.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para
