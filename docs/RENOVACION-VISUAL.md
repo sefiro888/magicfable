@@ -57,6 +57,12 @@ verdes. E2E completo 85 verdes y 39 omitidas. La comparación de Ciudadela 2/2
 verde se revisó a 1366 para metal y cristal; combate real 1/1 verde a 1280.
 Lint de la sonda actualizada verde. Es un avance localizado: falta dirección
 para el resto de materiales y facciones; no marcar #44/45 terminados.
+Revisión conjunta de carta única y normal: nueva sonda opcional
+`e2e/unique-frame-shots.spec.ts` 2/2 verde tras corregir la expectativa de los
+nombres compactos (pueden estar ocultos). Se ensanchó el marco central de la
+única y se comparó a 1366, pero seguía sin distinguirse claramente; prototipo
+retirado. Conservar la sonda para rediseñar jerarquía de silueta y chapa; #34
+sigue parcial. Las estadísticas contiguas requieren respetar su espacio.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para
