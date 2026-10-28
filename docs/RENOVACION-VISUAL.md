@@ -124,6 +124,9 @@ Capturas de ocho familias 2/2 verdes; Furia y Marea se distinguían casi solo
 por color en 1366. Núcleo alargado de Marea 2/2 capturas verdes: silueta
 distinta visible a 1366, aunque el aspecto acuático requiere más pulido.
 Unitarias 589/5, lint y build verdes; E2E completo 85/37 verde.
+Comparación de Sombra en Ciudadela clara 2/2 verde; captura 1366 revisada, la
+estela es visible sin ocultar estadísticas. Queda diseño más distintivo por
+familia. Siguiente: revisar destrucciones y caída del Nexo desde eventos reales.
 Siguiente: revisar estelas e impactos en el escenario oscuro y evaluar que el
 nuevo proyectil de Marea se distinga con iluminación, efectos y movimiento
 reducido; el punto 42 sigue parcial hasta integrar todas las familias.
