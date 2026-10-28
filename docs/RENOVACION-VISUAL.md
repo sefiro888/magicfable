@@ -1,5 +1,18 @@
 # Renovación visual — registro de continuidad
 
+## Retoma del 28 de octubre de 2026
+
+El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
+Primer bloque en curso: radio del cielo de Ciudadela ajustado de 70 a 105 para
+evitar el recorte del panorama en modo foto. Cambio aún pendiente de revisión
+visual y del gate completo; pruebas unitarias iniciadas en la sesión 93863.
+Las unitarias terminaron: 588 aprobadas y 5 omitidas; build y lint pasaron.
+E2E finalizó con 85 pruebas aprobadas y 37 omitidas. La pose de foto que
+mostraba el arco se revisó a 1920×1080 y 1366×768: el panorama ya no queda
+recortado en esa pose. El arreglo está verificado localmente, sin publicar;
+Ciudadela sigue pendiente de pulido artístico global. Próximo bloque: revisar
+materiales y composición de arquitectura, sin añadir decorado que tape tablero.
+
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,
 cada cinco minutos. El usuario autorizó el 22 oct a las16:41 publicar el avance

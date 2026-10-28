@@ -49,7 +49,8 @@ function DawnAtmosphere({ quality, reducedMotion, turn }: { readonly quality: Gr
 
 
     <mesh ref={sky} rotation={[0, -2.2, 0]}>
-      <sphereGeometry args={[70, 64, 32]} />
+      {/* El radio anterior cortaba el panorama en las vistas amplias de foto. */}
+      <sphereGeometry args={[105, 64, 32]} />
       <meshBasicMaterial map={citadelSkyTexture()} side={BackSide} fog={false} toneMapped={false} />
     </mesh>
     <ambientLight intensity={0.25} color="#bcc6dc" />
