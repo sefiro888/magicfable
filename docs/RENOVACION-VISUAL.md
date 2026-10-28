@@ -23,6 +23,14 @@ Santuario a ambas resoluciones, 2/2 verdes. Primer montaje descartado: el reloj
 avanzaba antes de inyectar el evento y fotografiaba el tablero vacío; corregido
 y captura de Sombra a 1366 revisada, con anillo y motas visibles. Falta poner
 una ficha real en escena y comparar materiales/instantes antes de aplicar cambios.
+La sonda ahora incorpora una pieza y dos instantes: 2/2 verdes, imagen inicial
+de Forja revisada a 1366. Prototipo local reduce la luz de destrucción de 22
+a 8 para no blanquear el arte; repetición 2/2 verde y comparación visual en
+1366. Es parcial, faltan gate completo y contraste con otras facciones/escenas;
+la sonda inyecta el evento y no reemplaza una comprobación de muerte real.
+Unitarias 589/5, build y lint verdes. E2E completo: 85 verdes y 39 omitidas
+(incluye la sonda opcional nueva). Capturas de Forja a 1920 y 1366 revisadas.
+Queda contrastar otros escenarios y destrucciones reales antes de cerrar #45.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para

@@ -241,7 +241,8 @@ function DestroyEmbers({ cell, tone, timing }: { cell: Position; tone: string; t
       ;(ring.current.material as MeshBasicMaterial).opacity = Math.max(0, 1 - anillo) * 0.7
     }
     // Destello: solo en el primer tercio, si no parece una hoguera encendida.
-    if (flash.current) flash.current.intensity = Math.max(0, 1 - value * 3) * 22
+    // Un fogonazo de 22 blanqueaba la ilustración incluso con la cámara normal.
+    if (flash.current) flash.current.intensity = Math.max(0, 1 - value * 3) * 8
   })
   if (timing.reducedMotion) return null
   return (
@@ -250,7 +251,7 @@ function DestroyEmbers({ cell, tone, timing }: { cell: Position; tone: string; t
         <ringGeometry args={[0.28, 0.42, 32]} />
         <meshBasicMaterial color={tone} transparent opacity={0.7} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
       </mesh>
-      <pointLight ref={flash} position={[0, 0.5, 0]} color={tone} intensity={22} distance={4.2} decay={2} />
+      <pointLight ref={flash} position={[0, 0.5, 0]} color={tone} intensity={8} distance={4.2} decay={2} />
       <group ref={group}>
         {seeds.map((_, index) => (
           <sprite key={index}>
