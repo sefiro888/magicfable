@@ -36,7 +36,9 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     await expect(mark).toHaveCount(1)
     const markBox = (await mark.boundingBox())!
     const normalStats = (await page.locator('[class*="labelInner"]').filter({ hasText: cards[0]!.name }).locator('[class*="cardStats"] > span').last().boundingBox())!
+    const uniqueAttack = (await page.locator('[class*="labelInner"]').filter({ hasText: cards[1]!.name }).locator('[class*="attackStat"]').boundingBox())!
     expect(markBox.x).toBeGreaterThanOrEqual(normalStats.x + normalStats.width)
+    expect(uniqueAttack.x).toBeGreaterThanOrEqual(normalStats.x + normalStats.width)
     await page.waitForTimeout(1800)
     await page.screenshot({ path: `e2e/__shots__/marco-unico${process.env.UNIQUE_LARGE_TEXT ? '-texto-grande' : ''}-${width}x${height}.png` })
     await page.keyboard.press('ArrowUp')

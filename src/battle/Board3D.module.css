@@ -57,6 +57,10 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+/* En filas juntas el texto ampliado conservaba el relleno ancho de la chapa:
+   dos cifras vecinas se tapaban. Recortar espacio ornamental mantiene la letra. */
+.labelInner[data-compact] .cardStats { gap: 1px; }
+.labelInner[data-compact] .cardStats > span:not(.uniqueMark) { min-width: 0; gap: 2px; padding-inline: 1px; }
 /* El distintivo vive entre las cifras y la pieza: la corona del marco puede
    quedar oculta por la chapa y ensancharla invadía las casillas vecinas. */
 .cardStats .uniqueMark {

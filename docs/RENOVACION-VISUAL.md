@@ -71,6 +71,15 @@ completo 85 verdes/41 omitidas. Sonda con texto al 140 % y selección de la
 única 2/2 verde. A 1366 las cifras contiguas se solapan con texto grande,
 problema previo que requiere resolver la disposición de etiquetas sin atribuir
 una cifra a otra pieza. El nuevo distintivo no corrige ese problema; #34 parcial.
+Prototipo para cifras compactas: reduce solo márgenes, conserva el tamaño de
+texto y los iconos. Sonda con dos fichas contiguas y texto al 140 % comprueba
+que las cifras no se solapen: 2/2 verde; captura 1366 revisada. Texto normal
+2/2 verde. Falta probar cifras de dos dígitos y más posiciones: no considerar
+cerrado el solapamiento general. Unitarias 592/5, build y lint verdes; E2E
+completo 85 verdes/41 omitidas. Ensayo de cifras de dos dígitos y texto al
+140 %: 1920 verde, 1366 aún solapa; se retiró el parámetro experimental de la
+sonda. Se necesita distribución por colisiones reales, no mover indiscriminadamente
+las chapas. El ajuste guardado resuelve el caso probado de cifras simples.
 Para #43 se amplió la sonda de trayectorias para simular hechizos de cuatro
 familias: 2/2 capturas verdes. Se ensayó un arco alrededor del proyectil,
 pero a 1366 parecía una órbita planetaria ajena al lenguaje del juego; retirado.
