@@ -71,6 +71,11 @@ completo 85 verdes/41 omitidas. Sonda con texto al 140 % y selección de la
 única 2/2 verde. A 1366 las cifras contiguas se solapan con texto grande,
 problema previo que requiere resolver la disposición de etiquetas sin atribuir
 una cifra a otra pieza. El nuevo distintivo no corrige ese problema; #34 parcial.
+Para #43 se amplió la sonda de trayectorias para simular hechizos de cuatro
+familias: 2/2 capturas verdes. Se ensayó un arco alrededor del proyectil,
+pero a 1366 parecía una órbita planetaria ajena al lenguaje del juego; retirado.
+La comparación es sintética y falta comprobar hechizos reales y movimiento,
+así que el recorrido sigue parcial. La sonda admite `COMBAT_SPELLS=1`.
 
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para

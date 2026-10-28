@@ -50,7 +50,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       const targetCard = faction === 'forja' ? CARDS.find((candidate) => candidate.faction === 'forja' && candidate.type === 'unit' && candidate.subtype === 'Autómata')!
         : CARDS.find((candidate) => candidate.id === (faction === 'nature' ? 'oso-forestal' : faction === 'order' ? 'torre-horizonte' : 'centinela-cristal'))!
       const target: BoardPiece = { ...piece, instanceId: 'target', cardId: targetCard.id, currentHealth: targetCard.health ?? targetCard.resistance ?? 1, owner: 'ai', position: { x: 3, y: 3 } }
-      const event: AnimationEvent = { id: `attack-${faction}`, type: 'attack', actorId: piece.instanceId,
+      const event: AnimationEvent = { id: `attack-${faction}`, type: process.env.COMBAT_SPELLS ? 'spell' : 'attack', actorId: piece.instanceId,
         targetId: target.instanceId, from: piece.position, to: target.position,
         cardId: card.id, faction, durationMs: 3000 }
       await page.clock.resume()
@@ -71,7 +71,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       // fotografíe el final del efecto aunque se pidiera a mitad del vuelo.
       await page.clock.fastForward(1100)
       await page.clock.runFor(17)
-      await page.screenshot({ path: `e2e/__shots__/ataque-${faction}${sceneSuffix}-${width}x${height}.png` })
+      await page.screenshot({ path: `e2e/__shots__/${process.env.COMBAT_SPELLS ? 'hechizo' : 'ataque'}-${faction}${sceneSuffix}-${width}x${height}.png` })
       if (process.env.COMBAT_HITS && ['arcane', 'nature', 'order', 'forja'].includes(faction)) {
         const hit: AnimationEvent = { ...event, id: `hit-${faction}`, type: 'damage', targetCardId: targetCard.id, amount: process.env.COMBAT_LARGE_HITS ? 8 : 3 }
         await page.evaluate(async ({ hit, storeUrl }) => {
