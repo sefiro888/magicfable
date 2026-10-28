@@ -48,7 +48,9 @@ const fragmentShader = `
     float strand=0.15+0.85*pow(0.5+0.5*cos(vUv.y*18.85+vUv.x*28.0),4.0);
     if(uStyle==0.0) strand*=0.7+0.22*sin(vUv.x*93.0-uProgress*40.0+sin(vUv.y*7.0+vUv.x*17.0)*3.0);
     if(uStyle==1.0 || uStyle==7.0) strand*=step(0.16,fract(vUv.x*21.0));
-    if(uStyle==4.0) strand*=0.4+0.6*sin(vUv.x*45.0+vUv.y*12.56);
+    // El seno negativo borraba segmentos enteros de la estela de Sombra
+    // sobre fondos oscuros; mantener el pulso sin transparencia negativa.
+    if(uStyle==4.0) strand*=0.55+0.45*sin(vUv.x*45.0+vUv.y*12.56);
     if(uStyle==5.0) strand*=step(0.45,fract(sin(vUv.x*987.0+vUv.y*735.0)*1287.0));
     vec3 light=mix(uTone,uTone+vec3(0.3),pow(tail,7.0)*0.25);
     gl_FragColor=vec4(light,tail*fade*strand*0.9);
@@ -62,7 +64,7 @@ const fragmentShader = `
 export function AttackTrail({ from, to, tone, faction, durationMs, melee }: AttackTrailProps) {
   const style = faction ? STYLES[faction] : 'radiant'
   const styleIndex = ['ember', 'crystal', 'vine', 'radiant', 'shadow', 'sand', 'tide', 'metal'].indexOf(style)
-  const radius = style === 'tide' ? 0.075 : 0.055
+  const radius = style === 'shadow' ? 0.085 : style === 'tide' ? 0.075 : 0.055
   const [fromX, fromZ] = from
   const [toX, toZ] = to
   const start = useRef<number | null>(null)

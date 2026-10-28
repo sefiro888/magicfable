@@ -132,6 +132,18 @@ Marea se distingue, pero parecía sólido. Material translúcido revisado en 136
 capturas 2/2 verdes. Unitarias 589/5, lint y build verdes; E2E 85/37 verde.
 En movimiento reducido los trayectos de ataque y hechizo no se montan, según
 EventEffects; el test existente de movimiento reducido pasó en E2E.
+Siguiente: en Santuario oscuro el proyectil de Sombra es un punto pequeño
+y su estela apenas contrasta (captura 1366); reforzar su silueta sin convertir
+la oscuridad en un destello que tape piezas, comparar también sobre Ciudadela.
+Prototipo de núcleo oscuro facetado 2/2 verde, pero el contorno de alambre se
+veía como un marcador geométrico ajeno a la fantasía del juego; descartado.
+El proyectil de Sombra sigue pendiente de un lenguaje visual más orgánico.
+Bruma en capas 2/2 verde pero en 1366 apenas se distingue y añade dos sprites;
+descartada por escasa mejora frente a su coste. Sombra necesita un rediseño
+de trayectoria y lenguaje, no acumular luces débiles.
+Estela de Sombra sin nuevas partículas: evita valores de alpha negativos y
+aumenta su radio. Capturas 2/2 verdes, 1366 oscuro revisado; detalle parcial.
+Unitarias 589/5, lint y build verdes; E2E completo 85/37 verde.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,
