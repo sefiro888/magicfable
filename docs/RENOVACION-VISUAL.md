@@ -41,6 +41,22 @@ lint, build y E2E 85/37 verdes. Movimiento reducido: capturas 2/2 verdes y
 revisión de 1366; archivo temporal eliminado. Siguiente: revisar las entradas
 por facción y el relieve de cartas únicas para mejorar su presencia sin tapar
 las ilustraciones. Contagio y maldición siguen pendientes de pulido global.
+Revisión de entradas por facción 2/2 verde; imágenes de Furia y Vacío a 1366
+revisadas: ambos sellos se distinguen principalmente por color, por lo que
+falta examinar movimiento en varios instantes antes de decidir una mejora.
+Pendiente comparar carta única y normal con la misma cámara y resolución.
+Comparaciones 2/2 verdes: el marco único apenas destaca a 1366. La ampliación
+pequeña de corona y esquinas tampoco resolvió el problema; se descartó y se
+eliminó la prueba temporal. Se necesita un diseño más reconocible sin tapar
+estadísticas ni ilustración; no marcar el punto 34 como terminado.
+Prototipo de perfiles laterales: pruebas 2/2 verdes pero casi imperceptible a
+1366, se descartó y se retiró la prueba temporal. La solución necesita una
+revisión más amplia de silueta y jerarquía visual, no adornos diminutos.
+Nuevo bloque parcial Fiordo: extremos de los bancos descienden bajo el lago
+gradualmente para reducir los cortes rectos. Unitarias 588/5, lint y build
+verdes; capturas orbitales 1920 y 1366 revisadas. E2E 85/37 verde.
+La orilla sigue teniendo aspecto redondeado y separada del tablero: se necesita
+más integración y detalle; no considerar Fiordo terminado por este ajuste.
 
 Autorizada el 21 de octubre de 2026. Fecha límite: **22 de octubre de 2026,
 20:00 Europe/Madrid**. Automatización: `renovaci-n-visual-de-cr-nicas-del-nexo`,

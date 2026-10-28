@@ -6,7 +6,11 @@ export function glacierBankPoint(side: number, u: number, t: number): readonly [
   const ridge = Math.pow(Math.sin(u * Math.PI), 0.72)
   const fracture = Math.sin(t * 21 + u * 5 + side) * 0.11
     + Math.sin(t * 43 - u * 9) * 0.045
-  const y = -0.86 + ridge * (0.48 + 1.22 * Math.pow(1 - t, 1.3) + fracture)
+  // Sin hundir los extremos, la cámara orbital mostraba un corte vertical
+  // recto de nieve e hielo. El perfil se sumerge gradualmente en el lago.
+  const endFade = Math.min(1, t / 0.15, (1 - t) / 0.15)
+  const softenedEnd = endFade * endFade * (3 - 2 * endFade)
+  const y = -0.86 + ridge * softenedEnd * (0.48 + 1.22 * Math.pow(1 - t, 1.3) + fracture)
   return [side * (4.85 + u * 3.1 * (1 - t * 0.46) + Math.sin(t * 13 + side) * 0.1), y, -6 + t * 10.4]
 }
 
