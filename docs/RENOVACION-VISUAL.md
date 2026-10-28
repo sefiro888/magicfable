@@ -2,6 +2,28 @@
 
 ## Retoma del 28 de octubre de 2026
 
+Retoma posterior: el usuario pide fases largas que agrupen varias mejoras y
+continuar hasta completar el listado. La automatización vuelve a estar activa;
+sus avisos no deben interrumpir una fase en curso. El avance hasta `83a4c8b`
+se subió a GitHub; las siguientes publicaciones requieren nueva petición.
+Primer objetivo conjunto: revisar ataques, impactos y destrucciones por familia
+y caída del Nexo mediante eventos reales, a ambas resoluciones, antes de
+integrar y verificar un bloque coherente. Los 39 puntos parciales siguen abiertos.
+Revisión inicial: prueba de caída de ambos Nexos 2/2 verde a 1920 y 1366;
+captura de ruptura rival a 1366 revisada. Combate real 1/1 verde (1280):
+captura de impacto revisada. La destrucción ya recibe la facción y el tipo de
+pieza, pero sus pavesas mantienen una trayectoria común; falta contrastar
+familias y materiales en capturas antes de rediseñarla. Ningún punto cerrado.
+Comparación de impactos Arcano/Naturaleza/Orden/Forja en Santuario: 1366 verde;
+1920 pasó al repetirlo tras un `ERR_NETWORK_CHANGED` durante la primera carga.
+Captura Forja a 1366 revisada: el golpe es legible pero el material apenas se
+distingue. Revisar el instante y la escala de fragmentos antes de cambiarlos.
+Sonda opcional nueva `e2e/destruction-shots.spec.ts`: seis facciones sobre
+Santuario a ambas resoluciones, 2/2 verdes. Primer montaje descartado: el reloj
+avanzaba antes de inyectar el evento y fotografiaba el tablero vacío; corregido
+y captura de Sombra a 1366 revisada, con anillo y motas visibles. Falta poner
+una ficha real en escena y comparar materiales/instantes antes de aplicar cambios.
+
 El usuario autorizó continuar hasta el 29 de octubre a las 19:00 Europe/Madrid.
 Primer bloque completado: radio del cielo de Ciudadela ajustado de 70 a 105 para
 evitar el recorte del panorama en modo foto.
