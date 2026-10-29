@@ -7,6 +7,8 @@ import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../ga
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import { runoAttackBonus } from '../game/kalevala'
 import { formationAttackBonus } from '../game/tercios'
+import type { MovementHazard } from '../game/movementHazard'
+import { MovementHazardMarker } from './grid/MovementHazardMarker'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
 import { GameIcon } from '../components/GameIcon'
@@ -93,6 +95,7 @@ interface Board3DProps {
   localPlayerId: PlayerId
   selectedPieceId?: string
   validCells: readonly Position[]
+  movementHazards?: ReadonlyMap<string, MovementHazard>
   /**
    * Qué significan las casillas iluminadas ahora mismo. Antes «mover aquí» y
    * «desplegar aquí» compartían el mismo azul, aunque son acciones distintas
@@ -265,7 +268,8 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
  * los realces de "casilla válida" (que son fijos) sin llamar más la atención
  * que la propia jugada; con movimiento reducido se queda quieto.
  */
-const CursorMarker = memo(function CursorMarker({ position, reducedMotion }: { position: Position; reducedMotion: boolean }) {
+const CursorMarker = memo(function CursorMarker({ position, reducedMotion, hazard }: { position: Position; reducedMotion: boolean; hazard?: MovementHazard }) {
+  const color = hazard ? hazard.deaths > 0 ? '#ff554a' : '#ffbc4a' : '#ffe27a'
   const ring = useRef<Mesh>(null)
   useFrame(({ clock }) => {
     if (!ring.current || reducedMotion) return
@@ -276,11 +280,11 @@ const CursorMarker = memo(function CursorMarker({ position, reducedMotion }: { p
     <group position={[boardX(position.x), 0.16, boardZ(position.y)]}>
       <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[TILE_SIZE * 0.46, TILE_SIZE * 0.56, 4, 1, Math.PI / 4]} />
-        <meshBasicMaterial color="#ffe27a" transparent opacity={0.95} depthWrite={false} depthTest={false} side={DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={0.95} depthWrite={false} depthTest={false} side={DoubleSide} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <ringGeometry args={[0, TILE_SIZE * 0.5, 24]} />
-        <meshBasicMaterial color="#ffd25a" transparent opacity={0.16} depthWrite={false} depthTest={false} side={DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={hazard ? .32 : .16} depthWrite={false} depthTest={false} side={DoubleSide} />
       </mesh>
     </group>
   )
@@ -333,7 +337,7 @@ function MarbleTileMaterial({ variant, material }: { variant: number; material: 
   return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={maps[variant]} />
 }
 
-const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -356,8 +360,9 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
   const rough = boardTileRoughness(terrainStyle, variant)
   const normal = boardTileNormal(terrainStyle, variant)
   const tint = ZONE_TINTS_BY_STYLE[terrainStyle][zone][(position.x * 7 + position.y * 13) % 3]!
-  const color = valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint
-  const emissive = valid
+  const hazardColor = hazard ? hazard.deaths > 0 ? '#ff5c52' : '#ffc04d' : undefined
+  const color = hazardColor ?? (valid ? (hovered ? '#ffe9a8' : validColor) : scorched ? '#c96a4a' : hovered && !occupied ? '#ffe9c0' : tint)
+  const emissive = hazard ? (hazard.deaths > 0 ? '#a91e19' : '#8a4e0a') : valid
     ? validEmissive
     : scorched ? '#7a2c12'
     : hovered && !occupied ? '#4a3c22'
@@ -372,7 +377,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
     map: slab, normalMap: normal, roughnessMap: rough, emissiveMap: slab,
     color, roughness: 1, metalness: terrainStyle === 'forge' ? 0.58 : 0.05,
     envMapIntensity: terrainStyle === 'forge' ? 2.2 : 1, emissive,
-    emissiveIntensity: valid ? 1.15 : scorched ? 1 : hovered ? 0.62 : threatened ? 0.7 : deployRow ? 0.38 : 0,
+    emissiveIntensity: hazard ? 1.3 : valid ? 1.15 : scorched ? 1 : hovered ? 0.62 : threatened ? 0.7 : deployRow ? 0.38 : 0,
   }
   return (
     <mesh
@@ -391,6 +396,7 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       {terrainStyle === 'stone' ? <Suspense fallback={<meshStandardMaterial {...material} />}>
         <MarbleTileMaterial variant={variant} material={material} />
       </Suspense> : <meshStandardMaterial {...material} />}
+      {hazard && <MovementHazardMarker hazard={hazard} surfaceY={height / 2 + .016} />}
       <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
       {scorched && <ScorchMarks position={position} reducedMotion={reducedMotion} />}
     </mesh>
@@ -1560,6 +1566,7 @@ function Scene(props: Board3DProps) {
             key={key}
             position={position}
             valid={validSet.has(key)}
+            hazard={props.photoMode ? undefined : props.movementHazards?.get(key)}
             occupied={occupiedSet.has(key)}
             scorched={scorchedSet.has(key)}
             rubble={rubbleSet.has(key)}
@@ -1576,7 +1583,7 @@ function Scene(props: Board3DProps) {
           />
         )
       })}
-      {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} />}
+      {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} hazard={props.movementHazards?.get(cellKey(props.cursorCell))} />}
       <Midline terrainStyle={terrainStyle} />
       <BoardAtmosphere terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
       {/* Y encima, lo que se mueve con dirección: la brasa sube, la nieve cae

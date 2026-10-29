@@ -40,6 +40,16 @@
 /* ── Arena: el tablero es el protagonista ─────────────────────────────────── */
 .arena { position: absolute; inset: 60px 0 210px; }
 .boardFrame { --scene-bleed: 206px; position: absolute; inset: 0 206px; }
+.movementHazardWarning { position: absolute; z-index: 24; top: 12px; left: 50%; transform: translateX(-50%); width: min(540px, 94%); box-sizing: border-box; padding: 12px 16px; border: 1px solid #d69d44; border-left: 5px solid #ffbd52; background: #201809f5; color: #ffdeb0; box-shadow: 0 8px 30px #0008; pointer-events: none; }
+.movementHazardWarning[data-fatal] { border-color: #ce5f55; border-left-color: #ff6157; background: #2b0e10f5; color: #ffe1d7; }
+.movementHazardWarning strong { display: block; font-size: 15px; }
+.movementHazardWarning p { margin: 5px 0; font-size: 12px; line-height: 1.45; }
+.movementHazardWarning small { display: block; color: #c5b7ab; font-size: 10px; }
+@media (max-width: 760px), (max-height: 500px) {
+  .movementHazardWarning { z-index: 35; top: 8px; width: calc(100% - 20px); padding: 9px 11px; }
+  .movementHazardWarning strong { font-size: 13px; }
+  .movementHazardWarning p { font-size: 11px; }
+}
 .leftPanel, .rightPanel { position: absolute; z-index: 20; top: 12px; width: 186px; border: 1px solid var(--line); background: rgba(11,13,20,.84); box-shadow: 0 18px 45px rgba(0,0,0,.3); }
 .leftPanel { backdrop-filter: blur(12px); }
 /* rightPanel solo lleva backdrop-filter en desktop (ver media query de abajo,

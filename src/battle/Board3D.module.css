@@ -1,5 +1,7 @@
 .viewport { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #1a1e2a, #05070d 75%); }
 .fallback { height: 100%; display: grid; place-items: center; color: var(--muted); }
+.cellHazard { display: inline-block; padding: 3px 5px; border: 2px solid #ffba4c; border-radius: 3px; background: #281b09f5; color: #ffe2ad; font: 900 15px/1.1 sans-serif; white-space: nowrap; box-shadow: 0 2px 8px #000b; pointer-events: none; }
+.cellHazard[data-fatal] { border-color: #ff776a; background: #3a0c10f5; color: #fff0da; }
 /* Chapa de la unidad. Subida de tamaño respecto a la primera versión: en una
    captura real del tablero el nombre a 10px y las cifras a 11px eran ilegibles
    a la distancia de cámara del juego. */

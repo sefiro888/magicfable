@@ -27,3 +27,15 @@ Los originales de las ilustraciones permanecen en tools/art-inbox, ignorados por
 - Diálogos tácticos y de Chispa con arte, controles amplios, foco visible y adaptación móvil.
 - 17 pruebas de interacción adicionales: Farnesio y empujes, Último Cuadro, Canto, Rocroi, Motín, Sampo, escudos y curaciones. Gate: 689 unitarias correctas/5 omitidas; compilación y lint correctos; 97 e2e correctos/43 sondas opcionales omitidas. Capturas de diálogos revisadas en escritorio y móvil.
 - Nueva prioridad humana: hacer inequívocas las casillas con daño y riesgo mortal antes de colocar o mover una unidad. En preparación, sin publicar.
+
+## Cierre solicitado por el usuario: aviso del suelo y pausa
+
+El usuario aclaró que jugaba con Tercios contra Fractura del Vacío y perdía Vida sin un ataque. Se reprodujo una muerte al mover un Piquero herido fuera del apoyo de Farnesio: pierde los dos puntos extra de Vida de Formación. No se dispone del registro de su partida para afirmar que fuese exactamente ese caso.
+
+- Los destinos que restan Vida al mover se muestran sobre el suelo en ámbar; los que causan una muerte, en rojo con grietas y calavera. El azul de movimiento no tapa el peligro.
+- Se ensaya el movimiento real del motor sin alterar la partida: incluye la unidad que se mueve, otras aliadas que pierden apoyo y caídas en cadena. Se informa qué pieza pierde Formación y muere.
+- No se añadió daño por pisar lava ni se confundió el hollín decorativo con una trampa. El prototipo anterior de avisos de ataques se apartó sin integrarlo en `tools/art-inbox/prototipo-avisos-alcance/`, con extensión de borrador de texto para no interferir con las pruebas.
+- Verificación: 697 unitarias correctas y 5 omitidas; compilación y lint correctos. Primera pasada de interfaz afectada: 41 correctas y un fallo de carga por ERR_NETWORK_CHANGED en battle-ui a 1366; repetición aislada correcta 2/2 a ambas resoluciones. Sin errores de juego reproducibles ni pruebas pendientes. Las siete comprobaciones de suelo en Ciudadela, Caldera y Fiordo a 1920 × 1080 y 1366 × 768, y Caldera en móvil pasaron. Capturas revisadas en escritorio y móvil.
+- Cambio guardado localmente, sin publicar. El usuario pidió parar después de cerrar este aviso; las 50 mejoras y las demás revisiones siguen pendientes hasta que pida continuar.
+
+Estado de continuidad: PAUSA solicitada por el usuario tras cerrar este aviso. No retomar las 50 mejoras ni publicar hasta una nueva petición humana.

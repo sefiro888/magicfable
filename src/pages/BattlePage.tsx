@@ -25,6 +25,8 @@ import {
   type Position,
 } from '../game'
 import { Board3D } from '../battle/Board3D'
+import { previewMovementHazard, type MovementHazard } from '../game/movementHazard'
+import { MovementHazardWarning } from './battle/MovementHazardWarning'
 import { useAiTurn } from '../battle/hooks/useAiTurn'
 import { useCardDrag } from '../battle/hooks/useCardDrag'
 import { useBoardCursor } from '../battle/hooks/useBoardCursor'
@@ -166,7 +168,7 @@ export function BattlePage() {
   const playDraggedRef = useRef<((instanceId: string, position: Position) => void) | undefined>(undefined)
   const onCellHover = useCallback((position?: Position) => {
     hoveredCellRef.current = position
-    if (draggingRef.current) setHoveredCell(position)
+    setHoveredCell((previous) => previous?.x === position?.x && previous?.y === position?.y ? previous : position)
   }, [])
   const drag = useCardDrag({
     onDrop: useCallback((instanceId: string) => {
@@ -350,6 +352,15 @@ export function BattlePage() {
     return [...getValidDeploymentPositions(match, ME)]
   }, [match, selectedCard, ME])
   const validCells = selectedCard ? deployCells : moves
+  const movementHazards = useMemo<ReadonlyMap<string, MovementHazard>>(() => {
+    const hazards = new Map<string, MovementHazard>()
+    if (!match || !selectedPiece || selectedCard || match.activePlayer !== ME || match.winner) return hazards
+    for (const position of moves) {
+      const hazard = previewMovementHazard(match, ME, selectedPiece.instanceId, position)
+      if (hazard) hazards.set(`${position.x},${position.y}`, hazard)
+    }
+    return hazards
+  }, [match, selectedPiece, selectedCard, ME, moves])
   const mana = summarizeMana(player?.resources ?? [])
   const rivalMana = summarizeMana(rival?.resources ?? [])
   const payment = match && selectedCard
@@ -848,6 +859,7 @@ export function BattlePage() {
             localPlayerId={ME}
             selectedPieceId={store.selectedPieceId}
             validCells={validCells}
+            movementHazards={movementHazards}
             cellIntent={selectedCard ? 'deploy' : 'move'}
             colorblindMode={preferences.colorblindMode}
             boardTextScale={preferences.boardTextScale}
@@ -874,6 +886,7 @@ export function BattlePage() {
           {/* Voz del cursor de teclado para lectores de pantalla: el tablero 3D
               es un lienzo WebGL, así que su contenido no existe como texto. */}
           <p className={styles.srOnly} role="status" aria-live="polite">{boardCursor.announcement}</p>
+          {!photoMode && !queueBusy && !inspected && <MovementHazardWarning hazards={movementHazards} focused={hoveredCell ?? boardCursor.cell} />}
           {director.banner && <div className={styles.turnBanner} role="status">{director.banner}</div>}
           {director.eventBanner && (
             <div key={director.eventBanner} className={styles.eventBanner} data-kind={director.eventBannerKind} role="status">
