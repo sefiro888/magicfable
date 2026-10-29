@@ -162,6 +162,34 @@ comandante y las 31 cartas con su descripción. **Son la fuente de la verdad
 para el arte y el tono**; si algo del código contradice al dosier, suele ser
 que el código tomó un atajo, y está anotado en el comentario.
 
+### Segunda oleada: cinco facciones diseñadas, sin integrar (29 oct 2026)
+
+Dosier completo con las 31 cartas y los prompts de arte, **pero nada de esto
+está en el motor todavía** y no hay que integrarlo sin que el usuario lo pida.
+Van en el orden que él fijó:
+
+| Facción | Dosier | Mecánicas propias | Arte |
+| --- | --- | --- | --- |
+| Inmortales | `FACCION_INMORTALES.md` | **Relevo**: al morir vuelve ya, misma casilla, stats base, una vez | 3 de 32 |
+| Goblins | `FACCION_GOBLINS.md` | **Chispa** (moneda donde las dos caras sirven) y **Petardazo** | — |
+| Tercios | `FACCION_TERCIOS.md` | **Formación** (+1/+2 con 2 aliadas adyacentes) y **Descarga** | — |
+| Circo | `FACCION_CIRCO.md` | **Acrobacia** (atraviesa casillas ocupadas) y **Público** | — |
+| Kalevala | `FACCION_KALEVALA.md` | **Runo** (contadores que no se gastan) y **Canto** (hunde, no mata) | — |
+
+Dos cosas que afectan al equilibrio general y conviene tener presentes antes de
+implementarlas:
+
+- **Canto, de Kalevala, es el primer antídoto de Relevo y de Samsara.** Hundir
+  no es matar, así que no dispara nada de lo que se activa al morir. Si se
+  implementa, hay que revisar el banco de pruebas: Samsara está arriba del 70 %
+  en parte porque nadie la castiga.
+- **Formación, de Tercios, premia apelotonarse**, que es lo contrario de lo que
+  enseña el resto del juego. Cualquier daño de área la castiga mucho, así que su
+  balance dependerá de cuánto daño de área haya en el meta.
+
+Cada dosier lleva su propia nota técnica de implementación en la sección de
+mecánicas.
+
 **Si vas a escribir el dosier de una facción nueva, lee antes
 `docs/GUIA-PROMPTS-ARTE.md`.** Son las once reglas para escribir los prompts de
 arte, y cada una está ahí porque una tanda de ilustraciones se fue a la basura:
