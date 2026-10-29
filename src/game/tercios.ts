@@ -28,7 +28,7 @@ export const formationAttackBonus = (state: MatchState, piece: BoardPiece): numb
   const captains = active ? state.board.filter((ally) => ally.owner === piece.owner && ally.cardId === 'capitan-de-infanteria' && !ally.statuses.some((status) => status.kind === 'silenced')).length : 0;
   const corporals = state.board.filter((ally) => ally.owner === piece.owner && ally.cardId === 'cabo-de-escuadra' && !ally.statuses.some((status) => status.kind === 'silenced')
     && Math.abs(ally.position.x - piece.position.x) + Math.abs(ally.position.y - piece.position.y) === 1).length;
-  const flying = CARD_BY_ID[piece.cardId]?.keywords.includes('flying') || piece.grantedKeywords?.includes('flying');
+  const flying = !piece.statuses.some((status) => status.kind === 'silenced') && (CARD_BY_ID[piece.cardId]?.keywords.includes('flying') || piece.grantedKeywords?.includes('flying'));
   const pines = flying ? state.board.filter((ally) => ally.owner === piece.owner && ally.cardId === 'el-pino-que-llega-al-cielo').length : 0;
   return (active ? 1 : 0) + captains + corporals + pines;
 };
@@ -36,7 +36,7 @@ export const formationAttackBonus = (state: MatchState, piece: BoardPiece): numb
 export const continuousHealthBonus = (state: MatchState, piece: BoardPiece): number => {
   const card = CARD_BY_ID[piece.cardId];
   if (card?.type !== 'unit') return 0;
-  const flying = card.keywords.includes('flying') || piece.grantedKeywords?.includes('flying');
+  const flying = !piece.statuses.some((status) => status.kind === 'silenced') && (card.keywords.includes('flying') || piece.grantedKeywords?.includes('flying'));
   return formationHealthBonus(state, piece) + state.board.filter((ally) => ally.owner === piece.owner &&
     (ally.cardId === 'fragua-de-ilmarinen' ||
       (ally.cardId === 'el-pino-que-llega-al-cielo' && flying) ||

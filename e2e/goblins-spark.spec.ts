@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { STARTER_DECKS, applyAction, createMatch, type MatchState } from '../src/game';
 
-for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
+for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) {
   test(`Goblins resuelve y guarda una Chispa real a ${width} × ${height}`, async ({ page }) => {
     const goblins = STARTER_DECKS.find((deck) => deck.faction === 'goblins')!;
     const base = createMatch(goblins, STARTER_DECKS[1]!, 42);
@@ -21,6 +21,12 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     await page.goto('/battle');
     const dialog = page.getByRole('dialog', { name: 'Resolver Chispa' });
     await expect(dialog).toBeVisible({ timeout: 25000 });
+    const bounds = await dialog.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
+    await page.screenshot({ path: `e2e/__shots__/goblins-dialogo-${width}x${height}.png` });
     const face = rolled.state.pendingSpark!.faces[0]!;
     await dialog.getByRole('radio', { name: face === 'cara' ? 'Cara' : 'Cruz', exact: true }).check();
     await page.keyboard.press('e');

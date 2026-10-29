@@ -91,6 +91,7 @@ export const actionHintFor = (context: ActionHintContext): string | undefined =>
 
 /** Líneas de la vista previa de daño al pasar el cursor sobre una ficha objetivo. */
 export const attackPiecePreviewLines = (preview: AttackPiecePreview): readonly string[] => {
+  if (preview.sinksDefender) return ['Canto: hunde la unidad temporalmente', 'Sin daño ni contragolpe'];
   const lines: string[] = []
   lines.push(preview.defenderDies ? `💀 Destruye (−${preview.damageToDefender})` : `−${preview.damageToDefender} → ${preview.defenderHealthAfter} Vida`)
   if (preview.retaliationToAttacker > 0) {

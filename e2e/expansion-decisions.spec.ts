@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { CARD_BY_ID, STARTER_DECKS, applyAction, createMatch, type BoardPiece, type MatchState } from '../src/game';
 
 for (const faction of ['tercios', 'kalevala'] as const) {
-  for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
+  for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) {
     test(`${faction}: resuelve dos elecciones distintas a ${width} × ${height}`, async ({ page }) => {
       const deck = STARTER_DECKS.find((candidate) => candidate.faction === faction)!;
       const base = createMatch(deck, STARTER_DECKS[0]!, 42);
@@ -28,6 +28,14 @@ for (const faction of ['tercios', 'kalevala'] as const) {
       await page.goto('/battle');
       const dialog = page.getByRole('dialog', { name: 'Elección táctica' });
       await expect(dialog).toBeVisible({ timeout: 25000 });
+      const bounds = await dialog.boundingBox();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+      expect(bounds!.y).toBeGreaterThanOrEqual(0);
+      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
+      await dialog.getByRole('combobox', { name: 'Unidad de la elección' }).focus();
+      await page.keyboard.press('Shift+Tab');
+      await expect(dialog.getByRole('button').last()).toBeFocused();
       await dialog.getByRole('combobox', { name: 'Unidad de la elección' }).selectOption('unidad-0');
       await page.screenshot({ path: `e2e/__shots__/${faction}-eleccion-${width}x${height}.png` });
       await dialog.getByRole('button', { name: 'Confirmar selección' }).click();

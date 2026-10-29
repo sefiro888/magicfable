@@ -13,7 +13,7 @@ import {
   decisionOptions,
 } from './engine';
 import { planManaPayment } from './mana';
-import { runoAttackBonus } from './kalevala';
+import { attackSinksDefender, runoAttackBonus } from './kalevala';
 import { sparkEffects } from './goblins';
 import { dischargeLine, formationAttackBonus, hasDischarge } from './tercios';
 import type {
@@ -258,7 +258,9 @@ const pieceValue = (piece: BoardPiece): number => {
 /** Daño que reparte `piece` al atacar, con sus modificadores ya aplicados. */
 const attackPower = (state: MatchState, piece: BoardPiece, target?: Position): number => {
   const source = CARD_BY_ID[piece.cardId];
-  const definition = source && piece.sparkFace ? { ...source, effects: sparkEffects(source.effects, piece.sparkFace) } : source;
+  const definition = source && piece.statuses.some((status) => status.kind === 'silenced')
+    ? { ...source, effects: [] }
+    : source && piece.sparkFace ? { ...source, effects: sparkEffects(source.effects, piece.sparkFace) } : source;
   if (!definition || definition.attack === undefined) return 0;
   const onAttackBuff = definition.effects.find((effect) => effect.kind === 'buff-self-on-attack');
   const dischargeBonus = target && hasDischarge(state, piece) && dischargeLine(state, piece, target).throughAlly
@@ -277,6 +279,9 @@ const attackPower = (state: MatchState, piece: BoardPiece, target?: Position): n
  * atacar», que es justo lo que hace la normal.
  */
 const tradeValue = (state: MatchState, attacker: BoardPiece, defender: BoardPiece): number => {
+  // La retirada es temporal: conserva valor táctico, pero no equivale a
+  // destruir definitivamente ni permite contar un contragolpe inexistente.
+  if (attackSinksDefender(state, attacker, defender)) return pieceValue(defender) * 0.65;
   const attackerCard = CARD_BY_ID[attacker.cardId];
   const damage = attackPower(state, attacker, defender.position);
   const defenderDies = damage >= defender.currentHealth;

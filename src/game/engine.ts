@@ -5,7 +5,7 @@ import { activeEffects, canPayOffering, isUnderJudgement, offeringCost, offering
 import { pushAll, pushOne, tidePhase } from './marea';
 import { assemblyBonus, countStructures, isAutomaton, isForgeStructure, structureEntryBonus, windUpAutomata } from './forja';
 import { isChallenge, isFurious } from './fimbul';
-import { gainRuno, returnSunkenUnits, runoAttackBonus, runoFromSpell, sinkUnit } from './kalevala';
+import { attackSinksDefender, gainRuno, returnSunkenUnits, runoAttackBonus, runoFromSpell, sinkUnit } from './kalevala';
 import { grantPetardazoAll, sparkEffects, startSpark, type SparkFace } from './goblins';
 import { continuousHealthBonus, dischargeLine, formationActive, formationAttackBonus, hasDischarge, hasFormation } from './tercios';
 import { payMana, restoreMana } from './mana';
@@ -241,6 +241,13 @@ const pieceDefinition = (piece: BoardPiece): CardDefinition | undefined => {
   const card = CARD_BY_ID[piece.cardId];
   if (card && piece.statuses.some((status) => status.kind === 'silenced')) return { ...card, effects: [], keywords: [] };
   return card && piece.sparkFace ? { ...card, effects: sparkEffects(card.effects, piece.sparkFace) } : card;
+};
+/** El daño permanente de Tuonela y las mejoras de Vida cambian el máximo,
+ * no solo la cifra actual: curar contra la carta impresa los borraba. */
+const maximumPieceHealth = (piece: BoardPiece): number => {
+  const card = pieceDefinition(piece);
+  return Math.max(0, (card?.health ?? card?.resistance ?? piece.currentHealth)
+    + (piece.formationHealthApplied ?? 0) + (piece.permanentHealthBonus ?? 0) - (piece.permanentHealthPenalty ?? 0));
 };
 const pieceAt = (state: MatchState, position: Position): BoardPiece | undefined =>
   state.board.find((piece) => piece.position.x === position.x && piece.position.y === position.y);
@@ -710,7 +717,7 @@ const damagePieceDetailed = (
     });
     // Devorador Entrópico: drena la Resistencia de una estructura enemiga destruida como Vida propia.
     for (const devourer of structureResistanceDrain) {
-      const maxHealth = (pieceDefinition(devourer)?.health ?? devourer.currentHealth) + (devourer.formationHealthApplied ?? 0);
+      const maxHealth = maximumPieceHealth(devourer);
       next = updatePiece(next, devourer.instanceId, (piece) => ({
         ...piece, currentHealth: Math.min(maxHealth, piece.currentHealth + (dyingDefinition?.resistance ?? 0)),
       }));
@@ -1071,7 +1078,7 @@ const resolveSpell = (
       }));
       next = stabilizeFormation(next);
     } else if (effect.kind === 'heal-unit' && targetPiece) {
-      const maximum = (pieceDefinition(targetPiece)?.health ?? targetPiece.currentHealth) + (targetPiece.formationHealthApplied ?? 0) + (targetPiece.permanentHealthBonus ?? 0) - (targetPiece.permanentHealthPenalty ?? 0);
+      const maximum = maximumPieceHealth(targetPiece);
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({ ...piece, currentHealth: Math.max(piece.currentHealth, Math.min(maximum, piece.currentHealth + effect.amount)) }));
       if (effect.nexusRunoThreshold !== undefined && (next.players[caster].runo ?? 0) >= effect.nexusRunoThreshold) next = healNexus(next, caster, effect.amount);
     } else if (effect.kind === 'silence-unit' && targetPiece) {
@@ -1131,7 +1138,7 @@ const resolveSpell = (
       // Marea — la sal escuece sobre lo ya abierto: si el objetivo llega herido
       // (menos Vida de la que tiene la carta), el daño sube.
       const targetDefinition = pieceDefinition(targetPiece);
-      const alreadyWounded = targetDefinition ? targetPiece.currentHealth < (targetDefinition.health ?? targetDefinition.resistance ?? 0) + (targetPiece.formationHealthApplied ?? 0) : false;
+      const alreadyWounded = targetDefinition ? targetPiece.currentHealth < maximumPieceHealth(targetPiece) : false;
       const woundBonus = alreadyWounded
         ? card.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'bonus-damage-wounded-target')
         : undefined;
@@ -2571,7 +2578,7 @@ const applyOnAttackExtras = (
   if (firstAttackHeal?.kind === 'passive') {
     const attackerPiece = next.board.find((piece) => piece.instanceId === attackerId);
     if (attackerPiece && !attackerPiece.firstAttackHealUsed) {
-      const maxHealth = (pieceDefinition(attackerPiece)?.health ?? attackerPiece.currentHealth) + (attackerPiece.formationHealthApplied ?? 0);
+      const maxHealth = maximumPieceHealth(attackerPiece);
       next = updatePiece(next, attackerId, (piece) => ({
         ...piece, firstAttackHealUsed: true, currentHealth: Math.min(maxHealth, piece.currentHealth + (firstAttackHeal.value ?? 1)),
       }));
@@ -2685,7 +2692,7 @@ export const attackPiece = (
   });
   const defenderPosition = defender.position;
   const defenderCard = pieceDefinition(defender);
-  if (defenderCard?.type === 'unit' && (state.players[playerId].runo ?? 0) >= 9 && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'attack-canto-at-nine')) {
+  if (attackSinksDefender(state, attacker, defender)) {
     return success(enqueue(stabilizeFormation(sinkUnit(next, defender)), { type: 'spell', actorId: attackerId, targetId: defenderId, to: defender.position, cardId: card.id, effectId: 'kalevala-canto', durationMs: 400 }));
   }
   const hit = damagePieceDetailed(next, defenderId, amount, playerId, card.vfx.impactEffect, attacker.position, card);
@@ -3043,6 +3050,7 @@ export const attackNexus = (
 };
 
 export interface AttackPiecePreview {
+  readonly sinksDefender?: boolean;
   readonly damageToDefender: number;
   readonly defenderHealthAfter: number;
   readonly defenderDies: boolean;
@@ -3075,6 +3083,11 @@ export const previewAttackPiece = (
   const card = pieceDefinition(attacker);
   const defenderCard = pieceDefinition(defender);
   if (!card || card.attack === undefined) return undefined;
+  if (attackSinksDefender(state, attacker, defender)) return {
+    sinksDefender: true, damageToDefender: 0, defenderHealthAfter: defender.currentHealth,
+    defenderDies: false, retaliationToAttacker: 0, attackerHealthAfter: attacker.currentHealth,
+    attackerDies: false, pierceOverkill: 0,
+  };
   const amount = computeAttackAmount(state, attacker, card, defender);
   const hit = damagePieceDetailed(state, defenderId, amount, attacker.owner, card.vfx.impactEffect, attacker.position, card);
   const defenderHealthAfter = Math.max(0, defender.currentHealth - hit.dealt);
@@ -3190,7 +3203,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
           .filter((piece) => {
             if (piece.owner !== playerId) return false;
             const definition = pieceDefinition(piece);
-            return definition?.type === 'unit' && piece.currentHealth < (definition.health ?? 0) + (piece.formationHealthApplied ?? 0);
+            return definition?.type === 'unit' && piece.currentHealth < maximumPieceHealth(piece);
           })
           .slice()
           .sort((a, b) => a.currentHealth - b.currentHealth)[0];
@@ -3368,7 +3381,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
       } else if (effect.id === 'metamorphosis-grow-if-wounded' && card.type === 'unit') {
         // Hidra de Lerna (Olimpo): si sigue en pie herida al final del turno, +N/+N. Se repite cada turno.
         const self = next.board.find((piece) => piece.instanceId === structure.instanceId);
-        if (self && self.currentHealth > 0 && self.currentHealth < (card.health ?? 0) + (self.formationHealthApplied ?? 0)) {
+        if (self && self.currentHealth > 0 && self.currentHealth < maximumPieceHealth(self)) {
           next = updatePiece(next, self.instanceId, (piece) => ({
             ...piece,
             attackModifier: piece.attackModifier + value,
@@ -3460,10 +3473,7 @@ const resolveExpansionStart = (state: MatchState, owner: PlayerId): MatchState =
         if (next.board.filter((piece) => piece.owner === owner && pieceDefinition(piece)?.type === 'unit').length >= 3) next = resolveDrawAndDiscard(next, owner, value, 0);
       } else if (effect.id === 'start-heal-unit' || effect.id === 'start-repair-structure' || effect.id === 'start-heal-and-form') {
         const structure = effect.id === 'start-repair-structure';
-        const maximum = (piece: BoardPiece): number => {
-          const card = pieceDefinition(piece);
-          return (structure ? card?.resistance ?? 0 : card?.health ?? 0) + (piece.formationHealthApplied ?? 0);
-        };
+        const maximum = maximumPieceHealth;
         const target = next.board.filter((piece) => piece.owner === owner && pieceDefinition(piece)?.type === (structure ? 'structure' : 'unit') && piece.currentHealth < maximum(piece))
           .sort((a, b) => (maximum(b) - b.currentHealth) - (maximum(a) - a.currentHealth) || a.instanceId.localeCompare(b.instanceId))[0];
         if (target) {

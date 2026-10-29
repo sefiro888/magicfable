@@ -7,6 +7,14 @@ import type { BoardPiece, MatchState, PlayerId, Position } from './types';
  * también a las unidades que entren después de lanzar los hechizos. */
 export const runoAttackBonus = (counters: number): number => Math.floor(Math.max(0, counters) / 3);
 
+/** El ataque sustituido por Canto no causa daño ni contragolpe. Compartir
+ * esta condición evita que la previsión y la IA anuncien una muerte falsa. */
+export const attackSinksDefender = (state: MatchState, attacker: BoardPiece, defender: BoardPiece): boolean =>
+  (state.players[attacker.owner].runo ?? 0) >= 9
+  && CARD_BY_ID[defender.cardId]?.type === 'unit'
+  && !attacker.statuses.some((status) => status.kind === 'silenced')
+  && Boolean(CARD_BY_ID[attacker.cardId]?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'attack-canto-at-nine'));
+
 /** Väinämöinen suma un contador adicional solo al primer hechizo del turno;
  * el número anterior de hechizos evita que un segundo vuelva a activarlo. */
 export const runoFromSpell = (spellsAlreadyCast: number, hasVainamoinen: boolean): number =>

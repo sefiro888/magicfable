@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { CARD_BY_ID, COMMANDER_BY_ID, decisionOptions, type GameAction, type MatchState } from '../../game';
+import { withBase } from '../../utils/assets';
 import styles from '../BattlePage.module.css';
 
 const descriptions = { formation: 'Concede Formación', move: 'Elige una unidad y su destino', sink: 'Elige una unidad para Canto', line: 'Elige la fila o columna' };
@@ -23,6 +24,7 @@ export function TacticalDialog({ match, onChoose }: { readonly match: MatchState
   const destination = destinations.find((option) => `${option.to!.x},${option.to!.y}` === selectedDestination) ?? destinations[0];
   const line = options.find((option) => `${option.axis}-${option.index}` === selectedLine) ?? options[0];
   const sourceName = CARD_BY_ID[decision.sourceCardId]?.name ?? COMMANDER_BY_ID[decision.sourceCardId]?.name ?? 'Elección táctica';
+  const sourceArt = CARD_BY_ID[decision.sourceCardId]?.art.webp ?? COMMANDER_BY_ID[decision.sourceCardId]?.art.webp;
   const trapFocus = (event: KeyboardEvent<HTMLElement>) => {
     event.stopPropagation();
     if (event.key !== 'Tab') return;
@@ -33,21 +35,24 @@ export function TacticalDialog({ match, onChoose }: { readonly match: MatchState
     }
   };
   return <div className={styles.resultBackdrop}>
-    <section ref={dialog} className={styles.scry} role="dialog" aria-modal="true" aria-label="Elección táctica" onKeyDown={trapFocus}>
-      <small>{sourceName}</small><h2>{descriptions[decision.kind]}</h2>
-      {decision.remaining > 1 && <p>Puedes seleccionar hasta {decision.remaining} unidades distintas.</p>}
-      {decision.kind === 'line' ? <label>Zona <select aria-label="Fila o columna" value={`${line?.axis}-${line?.index}`} onChange={(event) => setSelectedLine(event.target.value)}>
+    <section ref={dialog} className={`${styles.scry} ${styles.decisionDialog}`} role="dialog" aria-modal="true" aria-label="Elección táctica" onKeyDown={trapFocus}>
+      <header className={styles.decisionHeader}>
+        {sourceArt && <img src={withBase(sourceArt)} alt="" />}
+        <div><small>{sourceName}</small><h2>{descriptions[decision.kind]}</h2></div>
+      </header>
+      {decision.remaining > 1 && <p className={styles.decisionRules}>Puedes seleccionar hasta {decision.remaining} unidades distintas.</p>}
+      {decision.kind === 'line' ? <label className={styles.decisionField}>Zona <select aria-label="Fila o columna" value={`${line?.axis}-${line?.index}`} onChange={(event) => setSelectedLine(event.target.value)}>
         {options.map((option) => <option key={`${option.axis}-${option.index}`} value={`${option.axis}-${option.index}`}>{option.axis === 'row' ? 'Fila' : 'Columna'} {(option.index ?? 0) + 1}</option>)}
-      </select></label> : <label>Unidad <select aria-label="Unidad de la elección" value={pieceId ?? ''} onChange={(event) => setSelectedPiece(event.target.value)}>
+      </select></label> : <label className={styles.decisionField}>Unidad <select aria-label="Unidad de la elección" value={pieceId ?? ''} onChange={(event) => setSelectedPiece(event.target.value)}>
         {pieceIds.map((id) => { const piece = match.board.find((unit) => unit.instanceId === id)!; return <option key={id} value={id}>{CARD_BY_ID[piece.cardId]?.name} · casilla {piece.position.x + 1}, {piece.position.y + 1}</option>; })}
       </select></label>}
-      {decision.kind === 'move' && <label>Destino <select aria-label="Destino de la unidad" value={destination?.to ? `${destination.to.x},${destination.to.y}` : ''} onChange={(event) => setSelectedDestination(event.target.value)}>
+      {decision.kind === 'move' && <label className={styles.decisionField}>Destino <select aria-label="Destino de la unidad" value={destination?.to ? `${destination.to.x},${destination.to.y}` : ''} onChange={(event) => setSelectedDestination(event.target.value)}>
         {destinations.map((option) => <option key={`${option.to!.x},${option.to!.y}`} value={`${option.to!.x},${option.to!.y}`}>Casilla {option.to!.x + 1}, {option.to!.y + 1}</option>)}
       </select></label>}
-      <button className={styles.confirmMulligan} disabled={!options.length} onClick={() => onChoose({ type: 'resolve-choice', playerId: decision.owner, decisionId: decision.id,
+      <div className={styles.decisionActions}><button className={styles.confirmMulligan} disabled={!options.length} onClick={() => onChoose({ type: 'resolve-choice', playerId: decision.owner, decisionId: decision.id,
         ...(decision.kind === 'line' ? line : decision.kind === 'move' ? destination : { pieceId }),
       })}>Confirmar selección</button>
-      {(decision.optional || !options.length) && <button onClick={() => onChoose({ type: 'resolve-choice', playerId: decision.owner, decisionId: decision.id, skip: true })}>Continuar sin otra selección</button>}
+      {(decision.optional || !options.length) && <button className={styles.decisionSkip} onClick={() => onChoose({ type: 'resolve-choice', playerId: decision.owner, decisionId: decision.id, skip: true })}>Continuar sin otra selección</button>}</div>
     </section>
   </div>;
 }
