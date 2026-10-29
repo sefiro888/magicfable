@@ -24,6 +24,33 @@ alimentar, anticipar, desafiar, excederse.
 | Tercios | formar | `FACCION_TERCIOS.md` |
 | Circo | saltar / exhibirse | `FACCION_CIRCO.md` |
 | Kalevala | cantar | `FACCION_KALEVALA.md` |
+| Los Siete (guaraní) | adueñarse del terreno | `FACCION_GUARANI.md` |
+
+## Aparcada, pedida expresamente para más adelante
+
+**La Veda / los cazadores** (29 oct 2026) — *cazar*. Ambiente de terror de
+ciencia ficción: el cazador de trofeos que te estudia desde los árboles y el
+parásito que te usa de incubadora. Dos mecánicas ya pensadas:
+
+- **Acecho**: entra oculta, no puede ser atacada ni bloquea, se revela al
+  atacar. Nadie tiene información oculta en el tablero todavía.
+- **Marcar**: señalas una unidad enemiga como presa; contra ella pegas el
+  doble y contra el resto la mitad, y **cuando tu presa muere nace una cría
+  tuya en su casilla**. El recurso principal de la facción es el ejército del
+  rival.
+
+Se ancla en el mundo entrando por donde entra el Vacío, para no meter ciencia
+ficción ni naves. Estética: selva nocturna, vapor, visión de calor en naranja
+sobre azul, trofeos de hueso limpio, obsidiana. Limpio y seco, no supurante,
+para no pisar a Enjambre ni a Plaga.
+
+**Aviso para quien la retome**: el usuario quería las criaturas de las
+películas tal cual. Eso no se hace — son diseños protegidos y `AGENTS.md`
+prohíbe arte de terceros sin licencia— y además los generadores lo rechazan.
+Lo que sí funciona, y está probado, es cargar el **ambiente** y dar a las
+criaturas un diseño propio: cráneo de hueso partido y cuernos curvados en vez
+de la cabeza alargada lisa; placa lisa con una ranura y crestas óseas en vez de
+máscara con rastas.
 
 ## Descartadas
 
