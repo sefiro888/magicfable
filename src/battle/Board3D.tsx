@@ -1,14 +1,15 @@
 import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-three/drei'
-import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
+import { Canvas, type ThreeElements, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three'
-import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight } from 'three'
+import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, SRGBColorSpace, Vector2, Vector3 } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight, Texture } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
 import { GameIcon } from '../components/GameIcon'
 import { boardSlabGeometry } from './grid/boardSlabGeometry'
+import { BoardRim } from './grid/BoardRim'
 import { stoneMaps } from './materials/stoneMaterial'
 import { forgedMetalMaps } from './materials/forgedMetal'
 import { DamageNumbers } from './DamageNumbers'
@@ -308,6 +309,28 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
 const tileVariantFor = (position: Position): number =>
   (position.x * 5 + position.y * 11) % BOARD_TILE_VARIANTS
 
+const marbleVariants = new WeakMap<Texture, readonly Texture[]>()
+function MarbleTileMaterial({ variant, material }: { variant: number; material: ThreeElements['meshStandardMaterial'] }) {
+  const source = useTexture(withBase('/assets/terrain/marmol-ciudadela-v1.webp'))
+  const maps = useMemo(() => {
+    let cached = marbleVariants.get(source)
+    if (!cached) {
+      cached = Array.from({ length: BOARD_TILE_VARIANTS }, (_, index) => {
+        const map = source.clone()
+        map.colorSpace = SRGBColorSpace
+        map.anisotropy = 4
+        map.repeat.set(0.48, 0.48)
+        map.offset.set((index % 3) * 0.26, Math.floor(index / 3) * 0.52)
+        map.needsUpdate = true
+        return map
+      })
+      marbleVariants.set(source, cached)
+    }
+    return cached
+  }, [source])
+  return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={maps[variant]} />
+}
+
 const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
@@ -343,6 +366,12 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
   // el canto lateral capta luz rasante y separa mejor una casilla de la
   // siguiente en vez de leerse como un plano pintado.
   const height = valid ? 0.16 : 0.11
+  const material: ThreeElements['meshStandardMaterial'] = {
+    map: slab, normalMap: normal, roughnessMap: rough, emissiveMap: slab,
+    color, roughness: 1, metalness: terrainStyle === 'forge' ? 0.58 : 0.05,
+    envMapIntensity: terrainStyle === 'forge' ? 2.2 : 1, emissive,
+    emissiveIntensity: valid ? 1.15 : scorched ? 1 : hovered ? 0.62 : threatened ? 0.7 : deployRow ? 0.38 : 0,
+  }
   return (
     <mesh
       position={[boardX(position.x), 0, boardZ(position.y)]}
@@ -355,30 +384,11 @@ const BoardCell = memo(function BoardCell({ position, valid, occupied, scorched,
       {terrainStyle === 'stone' || terrainStyle === 'basalt' || terrainStyle === 'moss' || terrainStyle === 'sand' || terrainStyle === 'ice' || terrainStyle === 'forest' || terrainStyle === 'tide' || terrainStyle === 'forge' || terrainStyle === 'glaze' || terrainStyle === 'sandstone'
         ? <primitive attach="geometry" object={boardSlabGeometry(height)} />
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
-      <meshStandardMaterial
-        map={slab}
-        // Mapa de NORMALES en vez del truco de usar el color como altura. Con
-        // `bumpMap={slab}` la piedra daba por bueno que «oscuro = hundido», y
-        // eso salía mal de forma visible: las grietas con rescoldo del basalto
-        // son lo más CLARO de la losa, así que sobresalían en vez de hundirse,
-        // y en el bosque las hojas oscuras se leían como agujeros.
-        normalMap={normal}
-        roughnessMap={rough}
-        // El resplandor de estado (jugable, amenazada, abrasada…) sigue el
-        // DIBUJO de la piedra en vez de ser un baño uniforme. Sin esto, una
-        // casilla resaltada se convertía en un rectángulo de plástico verde
-        // liso que borraba la textura y el relieve justo en las casillas que
-        // más se miran — se veía clarísimo al seleccionar una carta.
-        emissiveMap={slab}
-        color={color}
-        roughness={1}
-        // Sin mapa de entorno, subir `metalness` no refleja nada: solo apaga
-        // la componente difusa y deja la losa negra. Se queda casi a cero.
-        metalness={terrainStyle === 'forge' ? 0.58 : 0.05}
-        envMapIntensity={terrainStyle === 'forge' ? 2.2 : 1}
-        emissive={emissive}
-        emissiveIntensity={valid ? 1.15 : scorched ? 1 : hovered ? 0.62 : threatened ? 0.7 : deployRow ? 0.38 : 0}
-      />
+      {/* La normal se genera aparte: el color claro de una veta no debe
+          convertirse en un relieve falso. El resplandor conserva el dibujo. */}
+      {terrainStyle === 'stone' ? <Suspense fallback={<meshStandardMaterial {...material} />}>
+        <MarbleTileMaterial variant={variant} material={material} />
+      </Suspense> : <meshStandardMaterial {...material} />}
       <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
       {scorched && <ScorchMarks position={position} reducedMotion={reducedMotion} />}
     </mesh>
@@ -1538,6 +1548,7 @@ function Scene(props: Board3DProps) {
       </group>
       </BattleClimateProvider>
       <group name="battle-view" rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
+      <BoardRim style={terrainStyle} />
       <RitualSeal cell={{ x: 3, y: 4 }} tone="#ffffff" durationMs={1} reducedMotion={false} warmup />
       {CELL_POSITIONS.map((position) => {
         const key = cellKey(position)

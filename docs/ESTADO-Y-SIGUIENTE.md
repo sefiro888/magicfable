@@ -432,11 +432,26 @@ más la lista sin playtesting humano.
 
 ### Bloqueado, esperando al dueño del proyecto
 
-- **Facción Enjambre.** El dosier está (`docs/FACCION_ENJAMBRE.md` + PDF) y el
-  arte también, en `tools/art-inbox/enjambre-ilustraciones`, **pero los 32
-  archivos tienen nombres genéricos** (`exec-<uuid>.png`) en vez del id de cada
-  carta, que es como venían las demás facciones. Hasta que se renombren no se
-  puede importar. El dueño dijo que lo haría él.
+- **Facción Enjambre — «La Corte de Quitina».** El dosier está
+  (`docs/FACCION_ENJAMBRE.md` + PDF) y el arte ya está **renombrado** en
+  `tools/art-inbox/enjambre-ilustraciones`: llegó como `exec-<uuid>.png`, sin
+  metadatos y con la misma marca de tiempo en los 32 archivos, así que hubo que
+  identificarlos mirándolos contra los prompts del dosier.
+
+  Al hacerlo salieron tres cosas:
+
+  1. **Faltan dos ilustraciones**: `enjambre-devorador` y `tejedora-abismal`.
+     Hasta que existan, la facción no se puede dar de alta entera.
+  2. **Dos imágenes eran versiones repetidas**, del retrato de la reina y de la
+     fuente. Se han apartado como `vespira-madre-de-mil-alt.png` y
+     `fuente-enjambre-alt.png` en vez de borrarlas; si se prefiere la otra
+     versión, es intercambiar los nombres.
+  3. **El dosier llama `plaga` a una de las cartas**, y ya hay una facción
+     entera llamada Plaga. Técnicamente no choca (los ids de carta y los de
+     facción son espacios distintos, y `plaga` está libre), pero se lee fatal.
+     Conviene renombrarla al integrarla — `plaga-de-langostas` describe la
+     ilustración mejor y evita el equívoco. Si se cambia, hay que cambiar
+     también el nombre del archivo de arte.
 
 ### Decisiones firmes (no re-litigar)
 

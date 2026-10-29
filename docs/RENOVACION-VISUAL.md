@@ -2,6 +2,14 @@
 
 ## Retoma del 28 de octubre de 2026
 
+Prioridad explícita del 29 de octubre: renovar las casillas y superficie del
+tablero de forma claramente perceptible, realista y profesional, conservando
+legibilidad, piezas y rendimiento. Revisar materiales, geometría y unión con
+cada entorno en cámara de juego; contrastar antes/después a ambas resoluciones.
+El cambio previo de expiración de hollín bajo render a demanda está incompleto
+y sin verificar en `CardFinish.tsx` y `burnAppearance.ts`; conservarlo y
+terminar sus pruebas antes de integrarlo como trabajo final.
+
 Retoma posterior: el usuario pide fases largas que agrupen varias mejoras y
 continuar hasta completar el listado. La automatización vuelve a estar activa;
 sus avisos no deben interrumpir una fase en curso. El avance hasta `83a4c8b`

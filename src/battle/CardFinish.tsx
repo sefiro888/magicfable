@@ -1,10 +1,10 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { BoxGeometry, Color, DoubleSide, ExtrudeGeometry, MeshStandardMaterial, OctahedronGeometry, Path, Shape, Vector2, type ShaderMaterial } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { boardTileRoughness, masonryTexture } from './textures'
 import type { AnimationEvent } from '../game'
-import { isScorchImpact, scorchAppearance } from './burnAppearance'
+import { isScorchImpact, SCORCH_DURATION_MS, scorchAppearance } from './burnAppearance'
 
 // La ventana queda abierta: una placa completa con brillo sobre el arte
 // lavaba las ilustraciones y hacía indistinguibles cartas de facciones distintas.
@@ -196,11 +196,21 @@ export function CardSurfaceWear({ damage, frozen, infected, cursed, impact, redu
 }) {
   const materials = useRef<(ShaderMaterial | null)[]>([])
   const burn = useRef<{ id: string; startedAt: number } | null>(null)
+  const frameloop = useThree((state) => state.frameloop)
+  const invalidate = useThree((state) => state.invalidate)
   useEffect(() => {
     if (impact && isScorchImpact(impact) && burn.current?.id !== impact.id) {
       burn.current = { id: impact.id, startedAt: performance.now() }
     }
-  }, [impact])
+    if (!burn.current || frameloop === 'always') return undefined
+    // Con render bajo demanda no llegan fotogramas al extinguirse el hollín;
+    // pedir uno al final evita que la marca quede congelada indefinidamente.
+    const remaining = SCORCH_DURATION_MS - (performance.now() - burn.current.startedAt)
+    if (remaining <= 0) { invalidate(); return undefined }
+    const timer = window.setTimeout(invalidate, remaining + 20)
+    invalidate()
+    return () => window.clearTimeout(timer)
+  }, [impact, frameloop, invalidate])
   const uniforms = useMemo(() => ({
     uDamage: { value: Math.max(0, Math.min(1, damage)) }, uFrozen: { value: frozen ? 1 : 0 },
     uInfected: { value: infected ? 1 : 0 }, uTime: { value: 0 }, uFrost: { value: new Color('#a7d6e5') },

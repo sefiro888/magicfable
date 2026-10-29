@@ -8,7 +8,7 @@ const slabs = new Map<number, RoundedBoxGeometry>()
 export function boardSlabGeometry(height: number) {
   let geometry = slabs.get(height)
   if (!geometry) {
-    geometry = new RoundedBoxGeometry(TILE_SIZE, height, TILE_SIZE, 1, 0.012)
+    geometry = new RoundedBoxGeometry(TILE_SIZE, height, TILE_SIZE, 2, 0.035)
     slabs.set(height, geometry)
   }
   return geometry
