@@ -26,6 +26,9 @@ const showcase: Record<string, readonly string[]> = {
   plaga: ['titan-de-la-plaga', 'zombi-contagiado', 'golem-de-carne-cosida'],
   marea: ['leviatan-de-las-simas', 'coloso-de-marea', 'oraculo-de-las-mareas'],
   forja: ['coloso-de-la-fundicion', 'titan-de-cuerda', 'reloj-del-gremio'],
+  goblins: ['maquina-andante', 'el-gran-petardo', 'ingeniera-jefa'],
+  tercios: ['piquero-de-flandes', 'el-gran-capitan', 'mosquetero-veterano'],
+  kalevala: ['aguila-de-pohjola', 'ilmarinen-el-herrero', 'louhi-senora-de-pohjola'],
 }
 
 const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
@@ -45,6 +48,9 @@ const DECK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   plaga: 'Infecta al ejército rival y quédate con lo que caiga: la horda crece de ambos lados del tablero.',
   forja: 'Empieza floja y se vuelve temible: cada fábrica que levantas da cuerda a tus autómatas. Si sobrevive al turno seis, gana.',
   marea: 'No mata: descoloca. Empuja al rival donde no quiere estar y cambia de plan según suba o baje el agua.',
+  goblins: 'Tienta a la suerte con Chispa y convierte cada baja en una explosión. Bromuro te deja elegir entre dos resultados.',
+  tercios: 'Mantén unidas tus filas: Formación refuerza tus tropas y Descarga permite disparar a través de tus aliados.',
+  kalevala: 'Acumula Runo con tus hechizos para fortalecer al ejército. El Canto hunde al enemigo y retrasa su regreso.',
 }
 
 /** Opciones del rival: el sorteo de siempre, o cualquiera de las demás facciones. */
