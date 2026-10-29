@@ -5,11 +5,13 @@
 - Integrados 93 diseños, 3 comandantes, 3 mazos legales de 50 cartas y las 96 ilustraciones originales facilitadas por el proyecto.
 - Conectadas Chispa, Petardazo, Formación, Descarga, Runo y Canto; decisiones manuales y decisiones de la IA usan las mismas opciones legales.
 - Verificación: 672 pruebas correctas y 5 omitidas; incluye 24 partidas completas en ambos asientos con las tres facciones. Compilación y lint correctos.
-- Pruebas de interfaz completas en curso. Chispa ya fue comprobada a 1920 × 1080 y 1366 × 768 en la ejecución anterior; repetir junto al conjunto actual.
+- Batería de interfaz cerrada: 88 pruebas correctas y 43 sondas opcionales omitidas, sin fallos. Incluye Chispa y batalla a 1920 × 1080 y 1366 × 768.
+- Selección de facción: 2 pruebas adicionales correctas; las tres tarjetas tienen ilustraciones, descripción, comandante, métricas y botón de entrada, como pidió el usuario. Capturas revisadas a ambas resoluciones.
+- Publicados 30a15d5 y dd28da9. Ambos despliegues correctos en GitHub Pages; se abrió una partida con cada facción desde la web publicada, sin errores de aplicación.
 
 ## Pendientes tras publicar esta versión de prueba
 
-- Cerrar la batería completa de interfaz y revisar decisiones tácticas de Tercios y Kalevala a ambas resoluciones.
+- Decisiones tácticas de Tercios y Kalevala verificadas con cuatro pruebas adicionales correctas a ambas resoluciones, incluidas dos selecciones distintas y persistencia del resultado. Captura de Canto revisada. Queda mejorar el acabado visual de los controles de estos diálogos dentro de la renovación.
 - Ampliar casos de interacción entre cartas particulares y facciones anteriores; revisar indicaciones de combate de Canto y estados silenciados.
 - Equilibrio: estas partidas comprueban funcionamiento, no demuestran equilibrio competitivo.
 - Continuar las 50 mejoras visuales, conservadas localmente y separadas de esta publicación. No declararlas terminadas.
