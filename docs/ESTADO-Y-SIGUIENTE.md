@@ -162,6 +162,13 @@ comandante y las 31 cartas con su descripción. **Son la fuente de la verdad
 para el arte y el tono**; si algo del código contradice al dosier, suele ser
 que el código tomó un atajo, y está anotado en el comentario.
 
+**Si vas a escribir el dosier de una facción nueva, lee antes
+`docs/GUIA-PROMPTS-ARTE.md`.** Son las once reglas para escribir los prompts de
+arte, y cada una está ahí porque una tanda de ilustraciones se fue a la basura:
+la dirección artística no viaja si no la escribes dentro del prompt, Gemini
+ignora las instrucciones de cámara, y una facción histórica sin bestias ni
+colosos no se sostiene al lado de Bestiario.
+
 ### Los 12 escenarios y quién juega en cada uno
 
 | Escenario | Archivo | Suelo | Facciones |

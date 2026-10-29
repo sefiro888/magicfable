@@ -36,6 +36,7 @@ va en inglés como es costumbre.
 - El WebP definitivo usa el mismo nombre y tiene prioridad automática sobre el
   SVG.
 - Actualiza `docs/art-direction.md` y las pruebas cuando añadas cartas.
+- Antes de escribir prompts de arte, lee `docs/GUIA-PROMPTS-ARTE.md`.
 
 ## Verificación mínima
 
