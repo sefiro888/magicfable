@@ -161,6 +161,9 @@ export const FACTIONS = [
     unlocked: true,
     themes: ['ensamblaje', 'estructuras', 'acumular'],
   },
+  { id: 'goblins', name: 'Goblins', description: 'El Gremio de la Chispa: ingenio, azar y explosiones en cadena.', color: '#71813b', accentColor: '#ffd34d', icon: 'spark', unlocked: true, themes: ['chispa', 'petardazo', 'chatarra'] },
+  { id: 'tercios', name: 'Tercios', description: 'El cuadro de picas: sostiene la formación y dispara por encima de tus aliados.', color: '#56392e', accentColor: '#d9b775', icon: 'pike', unlocked: true, themes: ['formación', 'descarga', 'asedio'] },
+  { id: 'kalevala', name: 'Kalevala', description: 'Los Cantores de Pohjola: acumula Runo y hunde al rival con Canto.', color: '#685438', accentColor: '#dfa448', icon: 'rune', unlocked: true, themes: ['runo', 'canto', 'ámbar'] },
 ] as const satisfies readonly FactionDefinition[];
 
 export const FACTION_BY_ID = Object.freeze({
@@ -180,6 +183,9 @@ export const FACTION_BY_ID = Object.freeze({
   plaga: FACTIONS[13],
   marea: FACTIONS[14],
   forja: FACTIONS[15],
+  goblins: FACTIONS[16],
+  tercios: FACTIONS[17],
+  kalevala: FACTIONS[18],
 }) satisfies Readonly<Record<FactionId, FactionDefinition>>;
 
 export const PLAYABLE_FACTIONS = FACTIONS.filter((faction) => faction.unlocked);

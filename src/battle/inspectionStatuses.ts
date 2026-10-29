@@ -9,6 +9,8 @@ export function inspectionStatuses(piece?: BoardPiece): readonly CardStatus[] {
     switch (status.kind) {
       case 'frozen': return 'frozen'
       case 'stunned': return 'stunned'
+      case 'silenced': return { id: 'silenced', label: 'Silenciada', tone: 'negative' }
+      case 'anchored': return { id: 'anchored', label: 'Inamovible', tone: 'positive' }
       case 'shielded': return { id: 'shielded', label: `Escudo ${status.amount}` }
       case 'cursed': return { id: 'cursed', label: `Maldición ${status.amount}`, icon: '☠', tone: 'negative' }
       case 'infected': return { id: 'infected', label: 'Infectada', icon: '☣', tone: 'negative' }

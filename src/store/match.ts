@@ -174,6 +174,7 @@ const actionDescription = (state: MatchState, action: GameAction, events: readon
     const instance = player.hand.find((card) => card.instanceId === action.cardInstanceId)
     const card = instance ? CARD_BY_ID[instance.cardId] : undefined
     const name = card?.name ?? 'Una carta'
+    if (card?.effects.some((effect) => effect.kind === 'spark')) return `${name}: se lanza la Chispa.`
     if (card && (card.type === 'unit' || card.type === 'structure')) return `${name} entra en juego.`
     // Hechizo inmediato: se anuncia como tal (el usuario pedía que quedara
     // claro que ES un hechizo, no solo "se resuelve") y con la cifra real de
@@ -183,6 +184,18 @@ const actionDescription = (state: MatchState, action: GameAction, events: readon
     const dealt = damageDealt(events)
     if (dealt > 0) return `${prefix}${name} inflige ${dealt} de daño${target ? ` a ${target}` : ''}.`
     return target ? `${prefix}${name} alcanza a ${target}.` : `${prefix}${name} se resuelve.`
+  }
+  if (action.type === 'resolve-choice') {
+    const decision = state.pendingDecisions?.[0]
+    const name = decision ? CARD_BY_ID[decision.sourceCardId]?.name ?? COMMANDER_BY_ID[decision.sourceCardId]?.name : undefined
+    return action.skip ? `${name ?? 'Elección'}: se continúa sin otra selección.` : `${name ?? 'Elección'}: se confirma la selección.`
+  }
+  if (action.type === 'choose-spark') {
+    const pending = state.pendingSpark
+    const instance = player.hand.find((card) => card.instanceId === pending?.cardInstanceId)
+    const name = instance ? CARD_BY_ID[instance.cardId]?.name : 'Chispa'
+    const dealt = damageDealt(events)
+    return `${name}: ${action.face}${dealt > 0 ? `, ${dealt} de daño` : ''}.`
   }
   if (action.type === 'move') return `${pieceName(state, action.pieceId)} se reposiciona.`
   if (action.type === 'attack-piece') {

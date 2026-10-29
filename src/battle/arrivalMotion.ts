@@ -6,6 +6,7 @@ const STYLES: Readonly<Record<FactionId, ArrivalStyle>> = {
   shadow: 'veil', void: 'veil', duna: 'weight', fimbul: 'weight',
   samsara: 'growth', jade: 'growth', olimpo: 'weight', sol: 'weight',
   bestiario: 'growth', plaga: 'growth', marea: 'tide', forja: 'weight',
+  goblins: 'weight', tercios: 'weight', kalevala: 'veil',
 }
 
 /** El sello abre primero el espacio; la pieza llega después y asienta antes

@@ -39,6 +39,9 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   // Furia es volcánica (el fuego manda) y Forja industrial (el fuego lo
   // mandan). Ahora tiene su patio.
   forja: 'foundry',
+  goblins: 'foundry',
+  tercios: 'aether-citadel',
+  kalevala: 'grove',
 }
 
 /**

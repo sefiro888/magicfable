@@ -22,6 +22,9 @@ export const ManaCostSchema = z
         plaga: z.number().int().nonnegative().optional(),
         marea: z.number().int().nonnegative().optional(),
         forja: z.number().int().nonnegative().optional(),
+        goblins: z.number().int().nonnegative().optional(),
+        tercios: z.number().int().nonnegative().optional(),
+        kalevala: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -55,7 +58,26 @@ export const CardSfxSchema = z
   .strict();
 
 export const CardEffectSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('spark'), face: z.enum(['cara', 'cruz']) }),
   z.object({ kind: z.literal('damage'), amount: z.number().int().positive(), target: z.enum(['enemy-piece', 'any-piece']) }),
+  z.object({ kind: z.literal('sink') }),
+  z.object({ kind: z.literal('gain-runo'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('damage-enemy-nexus'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('sink-low-health'), maximumHealth: z.number().int().positive() }),
+  z.object({ kind: z.literal('choose-formation'), count: z.number().int().positive() }),
+  z.object({ kind: z.literal('choose-moves'), count: z.number().int().positive(), distance: z.number().int().positive() }),
+  z.object({ kind: z.literal('choose-sinks'), count: z.number().int().positive(), adjacent: z.boolean() }),
+  z.object({ kind: z.literal('choose-line'), amount: z.number().int().positive(), enemiesOnly: z.boolean(), unitsOnly: z.boolean(), rowsOnly: z.boolean() }),
+  z.object({ kind: z.literal('grant-formation') }),
+  z.object({ kind: z.literal('formation-march') }),
+  z.object({ kind: z.literal('boost-discharge'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('forbid-own-attacks') }),
+  z.object({ kind: z.literal('formation-protection'), amount: z.number().int().positive() }),
+  z.object({ kind: z.literal('rocroi') }),
+  z.object({ kind: z.literal('mine-structure'), splash: z.number().int().positive() }),
+  z.object({ kind: z.literal('silence-unit') }),
+  z.object({ kind: z.literal('heal-unit'), amount: z.number().int().positive(), nexusRunoThreshold: z.number().int().nonnegative().optional() }),
+  z.object({ kind: z.literal('grant-petardazo-all') }),
   z.object({ kind: z.literal('damage-all-enemies'), amount: z.number().int().positive(), scorch: z.boolean().optional(), includeAllies: z.boolean().optional() }),
   z.object({ kind: z.literal('freeze'), duration: z.number().int().positive() }),
   z.object({ kind: z.literal('stun') }),

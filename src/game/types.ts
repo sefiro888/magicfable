@@ -1,4 +1,4 @@
-export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga', 'marea', 'forja'] as const;
+export const FACTION_IDS = ['fury', 'arcane', 'nature', 'order', 'shadow', 'void', 'duna', 'fimbul', 'samsara', 'jade', 'olimpo', 'sol', 'bestiario', 'plaga', 'marea', 'forja', 'goblins', 'tercios', 'kalevala'] as const;
 export type FactionId = (typeof FACTION_IDS)[number];
 
 export const CARD_TYPES = [
@@ -64,7 +64,26 @@ export interface CardSfx {
 }
 
 export type CardEffect =
+  | { readonly kind: 'spark'; readonly face: 'cara' | 'cruz' }
   | { readonly kind: 'damage'; readonly amount: number; readonly target: 'enemy-piece' | 'any-piece' }
+  | { readonly kind: 'sink' }
+  | { readonly kind: 'gain-runo'; readonly amount: number }
+  | { readonly kind: 'damage-enemy-nexus'; readonly amount: number }
+  | { readonly kind: 'sink-low-health'; readonly maximumHealth: number }
+  | { readonly kind: 'choose-formation'; readonly count: number }
+  | { readonly kind: 'choose-moves'; readonly count: number; readonly distance: number }
+  | { readonly kind: 'choose-sinks'; readonly count: number; readonly adjacent: boolean }
+  | { readonly kind: 'choose-line'; readonly amount: number; readonly enemiesOnly: boolean; readonly unitsOnly: boolean; readonly rowsOnly: boolean }
+  | { readonly kind: 'grant-formation' }
+  | { readonly kind: 'formation-march' }
+  | { readonly kind: 'boost-discharge'; readonly amount: number }
+  | { readonly kind: 'forbid-own-attacks' }
+  | { readonly kind: 'formation-protection'; readonly amount: number }
+  | { readonly kind: 'rocroi' }
+  | { readonly kind: 'mine-structure'; readonly splash: number }
+  | { readonly kind: 'silence-unit' }
+  | { readonly kind: 'heal-unit'; readonly amount: number; readonly nexusRunoThreshold?: number }
+  | { readonly kind: 'grant-petardazo-all' }
   | { readonly kind: 'damage-all-enemies'; readonly amount: number; readonly scorch?: boolean; readonly includeAllies?: boolean }
   | { readonly kind: 'freeze'; readonly duration: number }
   /** Aturde a la unidad señalada: no podrá atacar en su próximo turno, pero sí moverse. */
@@ -266,6 +285,7 @@ export interface Position {
 }
 
 export interface ResourceState {
+  readonly temporary?: boolean;
   readonly instanceId: string;
   readonly cardId: string;
   readonly faction: FactionId;
@@ -289,6 +309,8 @@ export interface CardInstance {
 }
 
 export type PieceStatus =
+  | { readonly kind: 'silenced'; readonly expiresOnTurn: number }
+  | { readonly kind: 'anchored'; readonly expiresOnTurn: number }
   | { readonly kind: 'frozen'; readonly expiresOnTurn: number }
   | { readonly kind: 'shielded'; readonly amount: number }
   /** Maldición Sombra: pierde 1 Vida al final de cada turno hasta que muere. */
@@ -339,6 +361,7 @@ export interface TerrainTile {
 }
 
 export interface BoardPiece {
+  readonly sparkFace?: 'cara' | 'cruz';
   readonly instanceId: string;
   readonly cardId: string;
   readonly owner: PlayerId;
@@ -370,6 +393,15 @@ export interface BoardPiece {
   readonly renacerSpent?: boolean;
   /** Olimpo — Metamorfosis: si esta unidad ya se transformó (Pegaso de Corinto, una vez). */
   readonly metamorphosed?: boolean;
+  /** Petardazo prestado; el temporal caduca al finalizar el turno del dueño. */
+  readonly grantedPetardazo?: 'turn' | 'permanent';
+  readonly grantedFormation?: boolean;
+  /** Vida temporal de Formación ya incorporada a currentHealth. */
+  readonly formationHealthApplied?: number;
+  readonly grantedDischarge?: boolean;
+  readonly formationMarch?: boolean;
+  readonly permanentHealthPenalty?: number;
+  readonly permanentHealthBonus?: number;
   readonly statuses: readonly PieceStatus[];
 }
 
@@ -420,6 +452,14 @@ export interface PlayerState {
   readonly hybris?: number;
   /** Quinto Sol — la Cuenta del Sol: sube con cada Sacrificio. NO se reinicia con el turno. */
   readonly sunCount?: number;
+  /** Kalevala — acumulado de Runo; no se gasta ni se reinicia al cambiar de turno. */
+  readonly runo?: number;
+  /** La primera Chispa del turno de Bromuro ya consumió su doble tirada. */
+  readonly sparkRolledThisTurn?: boolean;
+  readonly dischargeDamageBonusThisTurn?: number;
+  readonly attacksForbiddenThisTurn?: boolean;
+  readonly formationInvulnerableTurn?: number;
+  readonly rocroiEndDamage?: number;
   /** Quinto Sol: cuántas unidades propias se han sacrificado este turno (Señora de la Falda de Jade, Templo Mayor). */
   readonly sacrificesThisTurn?: number;
   /** Pasiva de Itzpapálotl: ya se aplicó el daño al Nexo enemigo por el primer Sacrificio de este turno. */
@@ -475,7 +515,12 @@ export interface AnimationEvent {
 }
 
 export interface MatchState {
+  readonly pendingDecisions?: readonly BoardDecision[];
+  readonly pendingSpark?: { readonly owner: PlayerId; readonly cardInstanceId: string; readonly position?: Position; readonly offering: boolean; readonly faces: readonly ('cara' | 'cruz')[] };
   readonly seed: number;
+  /** Estado aleatorio de Chispa; la semilla original sigue identificando la partida. */
+  readonly sparkRandomState?: number;
+  readonly combatRandomState?: number;
   readonly nextId: number;
   readonly activePlayer: PlayerId;
   readonly turn: number;
@@ -490,6 +535,21 @@ export interface MatchState {
   readonly startedAtTurn: number;
   /** Jade — el Mandato Celestial: un único favor que está en poder de un jugador, o de ninguno. */
   readonly mandate?: PlayerId;
+  /** Canto: piezas retiradas sin morir, pendientes del final del turno indicado. */
+  readonly sunkenUnits?: readonly SunkenUnit[];
+}
+
+export interface SunkenUnit {
+  readonly permanentHealthPenalty?: number;
+  readonly instanceId: string;
+  readonly cardId: string;
+  readonly owner: PlayerId;
+  readonly origin: Position;
+  readonly returnTurn: number;
+  readonly cantoDelayApplied?: boolean;
+  readonly renacerSpent?: boolean;
+  readonly metamorphosed?: boolean;
+  readonly firstAttackHealUsed?: boolean;
 }
 
 export type SpellTarget =
@@ -498,6 +558,8 @@ export type SpellTarget =
   | { readonly kind: 'none' };
 
 export type GameAction =
+  | { readonly type: 'resolve-choice'; readonly playerId: PlayerId; readonly decisionId: string; readonly pieceId?: string; readonly to?: Position; readonly axis?: 'row' | 'column'; readonly index?: number; readonly skip?: boolean }
+  | { readonly type: 'choose-spark'; readonly playerId: PlayerId; readonly face: 'cara' | 'cruz'; readonly target?: SpellTarget }
   | { readonly type: 'draw'; readonly playerId?: PlayerId }
   | { readonly type: 'play-resource'; readonly playerId: PlayerId; readonly cardInstanceId: string }
   | {
@@ -533,6 +595,23 @@ export interface ActionResult {
   readonly ok: boolean;
   readonly state: MatchState;
   readonly error?: GameError;
+}
+
+export interface BoardDecision {
+  readonly id: string;
+  readonly owner: PlayerId;
+  readonly sourceCardId: string;
+  readonly kind: 'formation' | 'move' | 'sink' | 'line';
+  readonly remaining: number;
+  readonly chosenIds: readonly string[];
+  readonly optional: boolean;
+  readonly distance?: number;
+  readonly anchor?: Position;
+  readonly adjacent?: boolean;
+  readonly amount?: number;
+  readonly enemiesOnly?: boolean;
+  readonly unitsOnly?: boolean;
+  readonly rowsOnly?: boolean;
 }
 
 export type GameErrorCode =

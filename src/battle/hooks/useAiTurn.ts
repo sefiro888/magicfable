@@ -31,6 +31,8 @@ export const useAiTurn = (options: AiTurnOptions): { reset: () => void } => {
   const activePlayer = useMatchStore((state) => state.match?.activePlayer)
   const turn = useMatchStore((state) => state.match?.turn)
   const winner = useMatchStore((state) => state.match?.winner)
+  const pendingSpark = useMatchStore((state) => state.match?.pendingSpark)
+  const pendingDecisions = useMatchStore((state) => state.match?.pendingDecisions)
   const pendingCount = useMatchStore((state) => state.pendingAnimations.length)
   const steps = useRef(0)
   /** Cartas que la IA ya intentó jugar sin éxito este turno: no se reintentan. */
@@ -68,7 +70,7 @@ export const useAiTurn = (options: AiTurnOptions): { reset: () => void } => {
       stateNow.setAiThinking(false)
     }, Math.max(140, delayMs / 3))
     return () => window.clearTimeout(timer)
-  }, [activePlayer, turn, winner, blocked, delayMs, difficulty, pendingCount, enabled])
+  }, [activePlayer, turn, winner, blocked, delayMs, difficulty, pendingCount, enabled, pendingSpark, pendingDecisions])
 
   const reset = () => {
     steps.current = 0

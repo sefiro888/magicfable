@@ -62,6 +62,8 @@ const isPushablePiece = (piece: BoardPiece): boolean => CARD_BY_ID[piece.cardId]
  * propiedad del tipo de unidad y no algo que se gane durante la partida.
  */
 export const isPushImmune = (piece: BoardPiece): boolean => {
+  if (piece.statuses.some((status) => status.kind === 'anchored')) return true;
+  if (piece.statuses.some((status) => status.kind === 'silenced')) return false;
   const card = CARD_BY_ID[piece.cardId];
   if (!card) return false;
   return card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'push-immune');
@@ -118,6 +120,7 @@ export const pushAll = (
   pusher: PlayerId,
   amount: number,
   toward: 'away' | 'pusher',
+  afterMove?: (state: MatchState) => MatchState,
 ): { readonly state: MatchState; readonly blocked: readonly string[] } => {
   const victimOwner: PlayerId = opponentOf(pusher);
   const direction = toward === 'away' ? retreatStep(pusher) : -retreatStep(pusher);
@@ -143,6 +146,7 @@ export const pushAll = (
         piece.instanceId === current.instanceId ? { ...piece, position: destination } : piece,
       ),
     };
+    if (afterMove) next = afterMove(next);
   }
   return { state: next, blocked };
 };

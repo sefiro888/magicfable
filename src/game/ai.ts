@@ -1,4 +1,4 @@
-import { distanceToCenter, distanceToEnemyNexusRow } from './board';
+import { distanceToCenter, distanceToEnemyNexusRow, nexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import { canPayOffering, offeringCost, offeringOf } from './duna';
 import { COMMANDER_BY_ID } from './decks';
@@ -10,8 +10,12 @@ import {
   getValidMoves,
   spellNeedsPiece,
   validSpellTargets,
+  decisionOptions,
 } from './engine';
 import { planManaPayment } from './mana';
+import { runoAttackBonus } from './kalevala';
+import { sparkEffects } from './goblins';
+import { dischargeLine, formationAttackBonus, hasDischarge } from './tercios';
 import type {
   BoardPiece,
   CardDefinition,
@@ -82,7 +86,7 @@ const cardScore = (card: CardDefinition, faction?: FactionId): number => {
   const cost = card.cost.generic + Object.values(card.cost.colored).reduce<number>((sum, value) => sum + (value ?? 0), 0);
   const boardValue = (card.attack ?? 0) * 2 + (card.health ?? card.resistance ?? 0);
   const removalValue = card.effects.reduce(
-    (sum, effect) => sum + (effect.kind === 'damage' ? effect.amount * 3 : effect.kind === 'freeze' ? 4 : effect.kind === 'draw' ? effect.amount * 2 : 0),
+    (sum, effect) => sum + (effect.kind === 'damage' ? effect.amount * 3 : effect.kind === 'freeze' || effect.kind === 'sink' ? 4 : effect.kind === 'draw' ? effect.amount * 2 : 0),
     0,
   );
   // Palabras clave que valen más de lo que dicen los números impresos: sin
@@ -130,8 +134,8 @@ const targetForCard = (state: MatchState, card: CardDefinition, me: PlayerId): S
       .sort((left, right) => left.instanceId.localeCompare(right.instanceId))[0];
     return movedAlly ? { kind: 'piece', pieceId: movedAlly.instanceId } : undefined;
   }
-  const friendlyBuff = card.effects.some(
-    (effect) => effect.kind === 'passive' && effect.id === 'target-attack-until-end',
+  const friendlyBuff = card.effects.some((effect) => effect.kind === 'heal-unit' || effect.kind === 'grant-formation') || card.effects.some(
+    (effect) => effect.kind === 'passive' && ['target-attack-until-end', 'target-permanent-buff', 'target-shield', 'target-petardazo'].includes(effect.id),
   );
   if (friendlyBuff) {
     const ally = state.board
@@ -252,12 +256,17 @@ const pieceValue = (piece: BoardPiece): number => {
 };
 
 /** Daño que reparte `piece` al atacar, con sus modificadores ya aplicados. */
-const attackPower = (piece: BoardPiece): number => {
-  const definition = CARD_BY_ID[piece.cardId];
+const attackPower = (state: MatchState, piece: BoardPiece, target?: Position): number => {
+  const source = CARD_BY_ID[piece.cardId];
+  const definition = source && piece.sparkFace ? { ...source, effects: sparkEffects(source.effects, piece.sparkFace) } : source;
   if (!definition || definition.attack === undefined) return 0;
   const onAttackBuff = definition.effects.find((effect) => effect.kind === 'buff-self-on-attack');
+  const dischargeBonus = target && hasDischarge(state, piece) && dischargeLine(state, piece, target).throughAlly
+    ? 2 + (definition.id === 'mosquetero-veterano' ? 1 : 0) : 0;
   return Math.max(0, definition.attack + piece.attackModifier +
-    (onAttackBuff?.kind === 'buff-self-on-attack' ? onAttackBuff.attack : 0));
+    (definition.type === 'unit' ? runoAttackBonus(state.players[piece.owner].runo ?? 0) : 0) +
+    formationAttackBonus(state, piece) + (onAttackBuff?.kind === 'buff-self-on-attack' ? onAttackBuff.attack : 0) + dischargeBonus +
+    (target && hasDischarge(state, piece) ? state.players[piece.owner].dischargeDamageBonusThisTurn ?? 0 : 0));
 };
 
 /**
@@ -267,13 +276,13 @@ const attackPower = (piece: BoardPiece): number => {
  * la IA difícil no lanza un 2/2 contra un Guardia 4/5 solo porque «podía
  * atacar», que es justo lo que hace la normal.
  */
-const tradeValue = (attacker: BoardPiece, defender: BoardPiece): number => {
+const tradeValue = (state: MatchState, attacker: BoardPiece, defender: BoardPiece): number => {
   const attackerCard = CARD_BY_ID[attacker.cardId];
-  const damage = attackPower(attacker);
+  const damage = attackPower(state, attacker, defender.position);
   const defenderDies = damage >= defender.currentHealth;
   // El contragolpe solo existe cuerpo a cuerpo y si la defensora tiene Ataque.
   const meleeRange = (attackerCard?.range ?? 1) === 1;
-  const retaliation = meleeRange ? attackPower(defender) : 0;
+  const retaliation = meleeRange ? attackPower(state, defender) : 0;
   const attackerDies = retaliation >= attacker.currentHealth;
   let value = defenderDies ? pieceValue(defender) : Math.min(damage, defender.currentHealth);
   if (attackerDies) value -= pieceValue(attacker);
@@ -332,10 +341,10 @@ const positionalValue = (state: MatchState, me: PlayerId): number => {
       continue;
     }
     const attacks = getValidAttacks(state, piece.instanceId);
-    let best = attacks.canAttackNexus ? attackPower(piece) * NEXUS_DAMAGE_WEIGHT : 0;
+    let best = attacks.canAttackNexus ? attackPower(state, piece, { x: piece.position.x, y: nexusRow(rivalOf(piece.owner)) }) * NEXUS_DAMAGE_WEIGHT : 0;
     for (const defenderId of attacks.pieceIds) {
       const defender = state.board.find((candidate) => candidate.instanceId === defenderId);
-      if (defender) best = Math.max(best, tradeValue(piece, defender));
+      if (defender) best = Math.max(best, tradeValue(state, piece, defender));
     }
     value += best;
   }
@@ -397,7 +406,7 @@ const chooseBestAttack = (state: MatchState, me: PlayerId): GameAction | undefin
     if (piece.owner !== me) continue;
     const attacks = getValidAttacks(state, piece.instanceId);
     if (attacks.canAttackNexus) {
-      const damage = attackPower(piece);
+      const damage = attackPower(state, piece, { x: piece.position.x, y: nexusRow(rivalOf(piece.owner)) });
       const lethal = damage >= enemy.nexusHealth;
       plans.push({
         action: { type: 'attack-nexus', playerId: me, attackerId: piece.instanceId },
@@ -411,7 +420,7 @@ const chooseBestAttack = (state: MatchState, me: PlayerId): GameAction | undefin
       if (!defender) continue;
       plans.push({
         action: { type: 'attack-piece', playerId: me, attackerId: piece.instanceId, defenderId },
-        value: tradeValue(piece, defender),
+        value: tradeValue(state, piece, defender),
         key: `piece-${piece.instanceId}-${defenderId}`,
       });
     }
@@ -510,6 +519,10 @@ const choosePowerAction = (state: MatchState, me: PlayerId): GameAction | undefi
   const tarde = state.turn >= POWER_PATIENCE_TURN;
 
   const efecto = (kind: string) => power.effects.find((candidate) => candidate.kind === kind);
+  const ownUnits = state.board.filter((piece) => piece.owner === me && CARD_BY_ID[piece.cardId]?.type === 'unit');
+  if (efecto('choose-sinks') && enemyUnits.length >= 2) return { type: 'commander-power', playerId: me };
+  if (efecto('formation-protection') && enemyUnits.length && ownUnits.filter((piece) => formationAttackBonus(state, piece) > 0).length >= 2) return { type: 'commander-power', playerId: me };
+  if (efecto('grant-petardazo-all') && ownUnits.length >= 2 && ownUnits.some((own) => enemyUnits.some((enemy) => Math.abs(own.position.x - enemy.position.x) + Math.abs(own.position.y - enemy.position.y) === 1))) return { type: 'commander-power', playerId: me };
   const barrido = efecto('damage-all-enemies');
   const cura = efecto('heal-nexus');
   const golpe = efecto('damage');
@@ -554,6 +567,49 @@ const choosePowerAction = (state: MatchState, me: PlayerId): GameAction | undefi
   return undefined;
 };
 
+const chooseBoardAction = (state: MatchState, me: PlayerId): GameAction | undefined => {
+  const decision = state.pendingDecisions?.[0];
+  if (!decision || decision.owner !== me) return undefined;
+  const score = (position: MatchState): number => position.winner ? (position.winner === me ? 1e6 : -1e6) :
+    position.board.reduce((sum, piece) => sum + ((CARD_BY_ID[piece.cardId]?.attack ?? 0) * 2 + piece.currentHealth
+      + formationAttackBonus(position, piece) * 2 - distanceToEnemyNexusRow(piece.owner, piece.position.y) * 0.15) * (piece.owner === me ? 1 : -1), 0)
+    + (position.players[me].nexusHealth - position.players[rivalOf(me)].nexusHealth) * 3;
+  const skip: GameAction = { type: 'resolve-choice', playerId: me, decisionId: decision.id, skip: true };
+  let best: { action: GameAction; value: number } | undefined = decision.optional ? { action: skip, value: score(state) } : undefined;
+  for (const option of decisionOptions(state, decision)) {
+    const action: GameAction = { type: 'resolve-choice', playerId: me, decisionId: decision.id, ...option };
+    const result = applyAction(state, action);
+    if (!result.ok) continue;
+    const value = score(result.state);
+    if (!best || value > best.value) best = { action, value };
+  }
+  return best?.action ?? skip;
+};
+
+const chooseSparkAction = (state: MatchState, me: PlayerId): GameAction | undefined => {
+  const pending = state.pendingSpark;
+  if (!pending || pending.owner !== me) return undefined;
+  const instance = state.players[me].hand.find((card) => card.instanceId === pending.cardInstanceId);
+  const card = instance ? CARD_BY_ID[instance.cardId] : undefined;
+  if (!card) return undefined;
+  let best: { action: GameAction; value: number } | undefined;
+  for (const face of [...new Set(pending.faces)]) {
+    const resolved = { ...card, effects: sparkEffects(card.effects, face) };
+    const targets = card.type === 'instant' ? validSpellTargets(state, me, resolved) : [];
+    const options: SpellTarget[] = targets.length ? targets.map((piece) => ({ kind: 'piece', pieceId: piece.instanceId })) : [{ kind: 'none' }];
+    for (const target of options) {
+      const action: GameAction = { type: 'choose-spark', playerId: me, face, target };
+      const result = applyAction(state, action);
+      if (!result.ok) continue;
+      const next = result.state;
+      const material = next.board.reduce((sum, piece) => sum + ((CARD_BY_ID[piece.cardId]?.attack ?? 0) * 2 + piece.currentHealth) * (piece.owner === me ? 1 : -1), 0);
+      const value = next.winner ? (next.winner === me ? 1e6 : -1e6) : material + (next.players[me].nexusHealth - next.players[rivalOf(me)].nexusHealth) * 3 + (next.players[me].hand.length - next.players[rivalOf(me)].hand.length) * 2;
+      if (!best || value > best.value) best = { action, value };
+    }
+  }
+  return best?.action;
+};
+
 export const chooseNextAiAction = (
   state: MatchState,
   skippedCardIds: ReadonlySet<string> = new Set(),
@@ -562,6 +618,8 @@ export const chooseNextAiAction = (
 ): GameAction => {
   const endTurn: GameAction = { type: 'end-turn', playerId: me };
   if (state.activePlayer !== me || state.phase === 'finished') return endTurn;
+  if (state.pendingSpark) return chooseSparkAction(state, me) ?? endTurn;
+  if (state.pendingDecisions?.length) return chooseBoardAction(state, me) ?? endTurn;
 
   const resource = state.players[me].hand.find((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana');
   if (resource && !state.players[me].resourcePlayedThisTurn && !skippedCardIds.has(resource.instanceId)) {
@@ -617,7 +675,7 @@ export const runAiTurn = (state: MatchState, me: PlayerId = 'ai'): MatchState =>
   let next = state;
   let actions = 0;
   const resource = next.players[me].hand.find((instance) => CARD_BY_ID[instance.cardId]?.type === 'mana');
-  if (resource && !next.players[me].resourcePlayedThisTurn) {
+  if (resource && !next.players[me].resourcePlayedThisTurn && !next.pendingSpark && !next.pendingDecisions?.length) {
     const result = applyAction(next, { type: 'play-resource', playerId: me, cardInstanceId: resource.instanceId });
     if (result.ok) {
       next = result.state;
@@ -627,6 +685,24 @@ export const runAiTurn = (state: MatchState, me: PlayerId = 'ai'): MatchState =>
 
   const skipped = new Set<string>();
   while (actions < MAX_AI_ACTIONS && next.phase !== 'finished') {
+    if (next.pendingDecisions?.length) {
+      const choice = chooseBoardAction(next, me);
+      if (!choice) break;
+      const chosen = applyAction(next, choice);
+      if (!chosen.ok) break;
+      next = chosen.state;
+      actions += 1;
+      continue;
+    }
+    if (next.pendingSpark) {
+      const choice = chooseSparkAction(next, me);
+      if (!choice) break;
+      const chosen = applyAction(next, choice);
+      if (!chosen.ok) break;
+      next = chosen.state;
+      actions += 1;
+      continue;
+    }
     const action = chooseCardAction(next, skipped, me);
     if (!action || action.type !== 'play-card') break;
     const result = applyAction(next, action);

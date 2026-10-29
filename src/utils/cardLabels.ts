@@ -17,6 +17,7 @@ export const FACTION_LABELS: Record<FactionId, string> = {
   plaga: 'Plaga',
   marea: 'Marea',
   forja: 'Forja',
+  goblins: 'Goblins', tercios: 'Tercios', kalevala: 'Kalevala',
 }
 
 export const TYPE_LABELS: Record<CardType, string> = {

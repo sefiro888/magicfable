@@ -14,6 +14,7 @@ const FORMS: Readonly<Record<FactionId, readonly [number, number, number, number
   jade: [4, 0.2, 0.4, 0], olimpo: [6, -0.2, 0, 1], sol: [12, 0, 0, 1],
   bestiario: [3, -0.8, 1, 1], plaga: [5, -0.4, 1, 1], marea: [3, 1.2, 1, 0],
   forja: [12, 0, 0, 0],
+  goblins: [5, 1, 0, 1], tercios: [4, 0, 0, 0], kalevala: [8, 1, 1, 0],
 }
 
 const vertexShader = `

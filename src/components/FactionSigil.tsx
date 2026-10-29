@@ -21,6 +21,7 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
   plaga: 'Plaga',
   marea: 'Marea',
   forja: 'Forja',
+  goblins: 'Goblins', tercios: 'Tercios', kalevala: 'Kalevala',
 };
 
 /**
@@ -32,6 +33,9 @@ export const FACTION_LABELS: Readonly<Record<FactionId, string>> = {
  * tema de su facción, en el mismo espíritu que un escudo o un anillo.
  */
 const CUSTOM_GLYPHS: Partial<Record<FactionId, (color: string) => ReactNode>> = {
+  goblins: (color) => <><path d="M20 26 H44 L49 49 Q32 61 15 49 Z" fill="none" stroke={color} strokeWidth="4" /><path d="M31 26 Q24 10 42 11 M44 5 L46 12 L54 14 L46 17 L44 24 L41 17 L34 14 L41 12 Z" fill="none" stroke={color} strokeWidth="3" /></>,
+  tercios: (color) => <g stroke={color} strokeWidth="4" fill="none"><path d="M15 55 L44 10 M49 55 L20 10 M32 55 V8" /><path d="M39 12 L48 6 L47 18 M16 18 L16 6 L25 12 M26 14 L32 5 L38 14" /></g>,
+  kalevala: (color) => <g stroke={color} strokeWidth="4" fill="none"><path d="M16 52 V13 Q32 25 48 13 V52 M16 27 Q32 40 48 27 M16 40 Q32 53 48 40" /><path d="M32 10 V56" /></g>,
   // Fimbul: el hacha del Desafío.
   fimbul: (color) => (
     <>

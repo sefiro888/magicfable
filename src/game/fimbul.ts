@@ -1,4 +1,6 @@
-import type { BoardPiece, CardDefinition } from './types';
+import { runoAttackBonus } from './kalevala';
+import { formationAttackBonus } from './tercios';
+import type { BoardPiece, CardDefinition, MatchState } from './types';
 
 /**
  * Fimbul, «El invierno que no termina»: sus dos mecánicas.
@@ -14,8 +16,9 @@ import type { BoardPiece, CardDefinition } from './types';
  */
 
 /** Ataque efectivo de una pieza: el de su carta más los modificadores en curso. */
-export const effectiveAttack = (piece: BoardPiece, card: CardDefinition): number =>
-  Math.max(0, (card.attack ?? 0) + piece.attackModifier);
+export const effectiveAttack = (piece: BoardPiece, card: CardDefinition, state?: MatchState): number =>
+  Math.max(0, (card.attack ?? 0) + piece.attackModifier +
+    (card.type === 'unit' && state ? runoAttackBonus(state.players[piece.owner].runo ?? 0) + formationAttackBonus(state, piece) : 0));
 
 /** ¿Se cumple Desafío? El defensor iguala o supera el Ataque del atacante. */
 export const isChallenge = (
@@ -23,7 +26,8 @@ export const isChallenge = (
   attackerCard: CardDefinition,
   defender: BoardPiece,
   defenderCard: CardDefinition,
-): boolean => effectiveAttack(defender, defenderCard) >= effectiveAttack(attacker, attackerCard);
+  state?: MatchState,
+): boolean => effectiveAttack(defender, defenderCard, state) >= effectiveAttack(attacker, attackerCard, state);
 
 /**
  * ¿Se cumple Furor? A la pieza le falta la mitad o más de su Vida máxima.
@@ -34,7 +38,7 @@ export const isChallenge = (
  */
 export const isFurious = (piece: BoardPiece, card: CardDefinition): boolean => {
   const max = (card.type === 'unit' ? card.health : card.resistance) ?? 0;
-  const bonus = piece.permanentAttackBonus ?? 0;
+  const bonus = (piece.permanentHealthBonus ?? piece.permanentAttackBonus ?? 0) + (piece.formationHealthApplied ?? 0) - (piece.permanentHealthPenalty ?? 0);
   if (max <= 0) return false;
   return piece.currentHealth * 2 <= max + bonus;
 };

@@ -1,0 +1,1891 @@
+[
+  {
+    "id": "fuente-goblin",
+    "name": "Fuente Chispeante",
+    "faction": "goblins",
+    "type": "mana",
+    "subtype": "Fuente",
+    "rarity": "common",
+    "cost": {
+      "generic": 0,
+      "colored": {}
+    },
+    "rules": "Agota esta fuente: genera 1 de Esencia Chispeante.",
+    "flavor": "Funciona. No preguntes por qué, que se enfada.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "pinche-de-polvora",
+    "name": "Pinche de pólvora",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "common",
+    "cost": {
+      "generic": 0,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Petardazo: al ser destruida, inflige 2 de daño a todas las unidades adyacentes, incluidas las aliadas.",
+    "flavor": "Su trabajo es llevar el barril. Solo eso. Llevarlo.",
+    "keywords": [],
+    "unique": false,
+    "attack": 1,
+    "health": 2,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "buscachatarra",
+    "name": "Buscachatarra",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Al entrar en juego, escruta 1.",
+    "flavor": "Lo que para ti es basura, para él es inventario.",
+    "keywords": [],
+    "unique": false,
+    "attack": 1,
+    "health": 3,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "artillero-chapucero",
+    "name": "Artillero chapucero",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Chispa — cara: inflige 1 de daño adicional al atacar. Cruz: tu unidad adyacente recibe 1.",
+    "flavor": "Dispara. Luego mira dónde ha dado.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 2,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "jinete-de-jabali",
+    "name": "Jinete de jabalí",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Impulso: puede moverse el turno en que entra en juego.",
+    "flavor": "El jabalí tampoco sabe a dónde van. Eso los une.",
+    "keywords": [],
+    "unique": false,
+    "attack": 3,
+    "health": 2,
+    "range": 1,
+    "movement": 3
+  },
+  {
+    "id": "mecanico-de-urgencia",
+    "name": "Mecánico de urgencia",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, una estructura aliada recupera 2 de Resistencia.",
+    "flavor": "No lo arregla. Lo deja funcionando, que no es lo mismo.",
+    "keywords": [],
+    "unique": false,
+    "attack": 1,
+    "health": 4,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "lanzabombas",
+    "name": "Lanzabombas",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Chispa — cara: al atacar inflige 1 a las unidades adyacentes al objetivo. Cruz: inflige 1 a las adyacentes a sí mismo.",
+    "flavor": "La diferencia entre las dos cosas es el viento.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 3,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "cuadrilla-de-sabotaje",
+    "name": "Cuadrilla de sabotaje",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Cuando ataca a una estructura, inflige 3 de daño adicional.",
+    "flavor": "Tres minutos. Les basta con tres minutos a solas con la pared.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 3,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "probador-voluntario",
+    "name": "Probador voluntario",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Petardazo. Golpe veloz.",
+    "flavor": "Nadie se ofreció. Él levantó la mano dos veces.",
+    "keywords": [
+      "swift-strike"
+    ],
+    "unique": false,
+    "attack": 3,
+    "health": 1,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "coheteador",
+    "name": "Coheteador",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Volador: puede atravesar fichas al moverse.",
+    "flavor": "Volar es fácil. Lo caro es aterrizar.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 2,
+    "range": 1,
+    "movement": 3
+  },
+  {
+    "id": "acorazado-de-latas",
+    "name": "Acorazado de latas",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Guardia: protege a las fichas aliadas frente a enemigos adyacentes.",
+    "flavor": "Pesa tanto que ya no puede quitárselo. Ha decidido que es una ventaja.",
+    "keywords": [],
+    "unique": false,
+    "attack": 1,
+    "health": 6,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "capataz-griton",
+    "name": "Capataz gritón",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Cuando ataca, tus otras unidades adyacentes ganan +1 de Ataque.",
+    "flavor": "No sabe arreglar nada. Sabe gritar, que a veces basta.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 4,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "ingeniera-jefa",
+    "name": "Ingeniera jefa",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Goblin",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Tus Chispas se lanzan dos veces: te quedas con el resultado que prefieras.",
+    "flavor": "La suerte es una variable. Ella la ha despejado.",
+    "keywords": [],
+    "unique": false,
+    "attack": 3,
+    "health": 4,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "maquina-andante",
+    "name": "Máquina andante",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Artefacto",
+    "rarity": "rare",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Petardazo: al ser destruida, inflige 2 de daño a todas las unidades adyacentes, incluidas las aliadas.",
+    "flavor": "Dos pilotos: uno para andar y otro para frenar. Discuten.",
+    "keywords": [],
+    "unique": false,
+    "attack": 5,
+    "health": 5,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "el-gran-petardo",
+    "name": "El gran petardo",
+    "faction": "goblins",
+    "type": "unit",
+    "subtype": "Artefacto",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "goblins": 3
+      }
+    },
+    "rules": "Petardazo. Cuando es destruido, inflige además 3 de daño al Nexo rival.",
+    "flavor": "Llevan dos generaciones construyéndolo. Nadie sabe para qué sirve hasta que muere.",
+    "keywords": [],
+    "unique": true,
+    "attack": 4,
+    "health": 7,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "chispazo",
+    "name": "Chispazo",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Conjuro",
+    "rarity": "common",
+    "cost": {
+      "generic": 0,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Chispa — cara: inflige 3 de daño a una unidad enemiga. Cruz: inflige 1 a todas las unidades enemigas.",
+    "flavor": "Apunta a uno. Da igual.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "a-ver-que-pasa",
+    "name": "A ver que pasa",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Conjuro",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Chispa — cara: roba 2 cartas. Cruz: roba 1 y una unidad aliada gana +2 de Ataque hasta el final del turno.",
+    "flavor": "La frase más repetida del gremio. También la última de varios.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "remiendo-rapido",
+    "name": "Remiendo rápido",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Conjuro",
+    "rarity": "common",
+    "cost": {
+      "generic": 0,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Una unidad aliada gana un escudo de 3.",
+    "flavor": "Con cinta basta. Con cinta siempre basta.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "doble-o-nada",
+    "name": "Doble o nada",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Ritual",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Chispa — cara: una unidad aliada gana +3/+3 permanentes. Cruz: gana +1/+1 permanentes y Petardazo.",
+    "flavor": "Siempre gana algo. Esa es la trampa.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "mecha-corta",
+    "name": "Mecha corta",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Conjuro",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Inflige 2 de daño a una unidad enemiga y la aturde.",
+    "flavor": "La cortó para que llegara antes. Llegó antes.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "rebusca-en-la-chatarra",
+    "name": "Rebusca en la chatarra",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Ritual",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Escruta 2 y roba 1 carta.",
+    "flavor": "Aquí hay de todo. El problema es encontrarlo dos veces.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "sabotaje",
+    "name": "Sabotaje",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Conjuro",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Destruye todas las estructuras enemigas.",
+    "flavor": "No lo tiraron abajo. Le quitaron el tornillo que importaba.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "invento-sin-probar",
+    "name": "Invento sin probar",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Ritual",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Chispa — cara: inflige 5 de daño a una unidad enemiga. Cruz: inflige 3 a esa unidad y 3 al Nexo rival.",
+    "flavor": "Lo bueno de no haberlo probado es que las dos cosas son novedad.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "fiesta-de-la-polvora",
+    "name": "Fiesta de la pólvora",
+    "faction": "goblins",
+    "type": "instant",
+    "subtype": "Cataclismo",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Inflige 3 de daño a todas las unidades, aliadas incluidas. Roba 1 carta por cada unidad aliada destruida así.",
+    "flavor": "Hubo heridos, hubo premios y hubo que mudar el taller. Repiten el año que viene.",
+    "keywords": [],
+    "unique": true
+  },
+  {
+    "id": "torreta-de-chatarra",
+    "name": "Torreta de chatarra",
+    "faction": "goblins",
+    "type": "structure",
+    "subtype": "Torreta",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, inflige 1 de daño a la unidad enemiga más cercana.",
+    "flavor": "Dispara sola. Al principio eso parecía bueno.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "taller-de-remiendos",
+    "name": "Taller de remiendos",
+    "faction": "goblins",
+    "type": "structure",
+    "subtype": "Taller",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, una unidad aliada dañada recupera 1 de Vida.",
+    "flavor": "Aquí se arregla todo. Peor, pero se arregla.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "barril-de-polvora",
+    "name": "Barril de pólvora",
+    "faction": "goblins",
+    "type": "structure",
+    "subtype": "Carga",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 0,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Petardazo. Cuando es destruido, inflige 4 de daño en vez de 2.",
+    "flavor": "No lo pongas ahí. No lo pongas ahí. Lo ha puesto ahí.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 2
+  },
+  {
+    "id": "montana-de-chatarra",
+    "name": "Montaña de chatarra",
+    "faction": "goblins",
+    "type": "structure",
+    "subtype": "Depósito",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, escruta 1.",
+    "flavor": "Está todo clasificado. En su cabeza.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 6
+  },
+  {
+    "id": "tobogan-de-tubos",
+    "name": "Tobogán de tubos",
+    "faction": "goblins",
+    "type": "structure",
+    "subtype": "Vía",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 1
+      }
+    },
+    "rules": "Tus unidades tienen +1 de Movimiento.",
+    "flavor": "Se entra por arriba y se sale por donde sea. Es parte de la diversión.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "maquina-de-la-suerte",
+    "name": "Máquina de la suerte",
+    "faction": "goblins",
+    "type": "structure",
+    "subtype": "Artefacto",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Tus Chispas se lanzan dos veces: te quedas con el resultado que prefieras.",
+    "flavor": "No hace trampas. Insiste, que es distinto.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 5
+  },
+  {
+    "id": "la-fabrica",
+    "name": "La fabrica",
+    "faction": "goblins",
+    "type": "structure",
+    "subtype": "Fábrica",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "goblins": 2
+      }
+    },
+    "rules": "Al comienzo de tu turno, una unidad aliada gana Petardazo.",
+    "flavor": "Producción récord. Siniestralidad también. El capataz enmarcó los dos gráficos.",
+    "keywords": [],
+    "unique": true,
+    "resistance": 6
+  },
+  {
+    "id": "fuente-tercios",
+    "name": "Esencia de Pólvora",
+    "faction": "tercios",
+    "type": "mana",
+    "subtype": "Fuente",
+    "rarity": "common",
+    "cost": {
+      "generic": 0,
+      "colored": {}
+    },
+    "rules": "Agota esta fuente: genera 1 de Esencia de Pólvora.",
+    "flavor": "Un barril cuesta lo que un hombre. El barril llega antes.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "piquero-de-flandes",
+    "name": "Piquero de Flandes",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Infantería",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Formación: gana +1 de Ataque y +2 de Vida mientras tenga dos unidades aliadas adyacentes.",
+    "flavor": "Cinco metros de fresno. No hace falta saber esgrima.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 4,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "arcabucero-bisono",
+    "name": "Arcabucero bisoño",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Arcabucero",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Descarga: inflige 2 de daño adicional cuando hay una unidad aliada entre ella y su objetivo.",
+    "flavor": "Bisoño: el que todavía cierra los ojos al disparar.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 2,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "rodelero",
+    "name": "Rodelero",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Infantería",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Sin habilidades adicionales.",
+    "flavor": "Cuando las picas se traban, alguien tiene que meterse debajo.",
+    "keywords": [],
+    "unique": false,
+    "attack": 3,
+    "health": 2,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "mosquetero-veterano",
+    "name": "Mosquetero veterano",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Arcabucero",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Descarga. Cuando ataca con Descarga, inflige 1 de daño adicional.",
+    "flavor": "Veinte años de servicio y una paga de catorce meses atrasada.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 3,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "cabo-de-escuadra",
+    "name": "Cabo de escuadra",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Infantería",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Formación. Tus unidades adyacentes tienen +1 de Ataque.",
+    "flavor": "Veinticinco hombres. Se sabe los veinticinco nombres.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 3,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "tambor-del-tercio",
+    "name": "Tambor del tercio",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Músico",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Tus unidades adyacentes tienen +1 de Movimiento.",
+    "flavor": "El cuadro no oye las órdenes. Oye el parche.",
+    "keywords": [],
+    "unique": false,
+    "attack": 1,
+    "health": 3,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "alferez-de-la-cruz",
+    "name": "Alférez de la cruz",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Infantería",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Formación. Tus unidades en Formación tienen +1 de Vida.",
+    "flavor": "El alférez no pelea. El alférez se queda de pie.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 4,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "coselete",
+    "name": "Coselete",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Infantería",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Guardia. Formación.",
+    "flavor": "Treinta kilos de hierro. Va en primera fila porque puede.",
+    "keywords": [
+      "guard"
+    ],
+    "unique": false,
+    "attack": 3,
+    "health": 5,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "gastador",
+    "name": "Gastador",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Zapador",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Perforar. Inflige el doble de daño a estructuras.",
+    "flavor": "Cobra doble. Se entiende por qué.",
+    "keywords": [
+      "pierce"
+    ],
+    "unique": false,
+    "attack": 2,
+    "health": 3,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "sargento-mayor",
+    "name": "Sargento mayor",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Oficial",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Al comienzo de tu turno, puedes mover una unidad aliada 1 casilla.",
+    "flavor": "El que convierte una orden en un sitio donde ponerse.",
+    "keywords": [],
+    "unique": false,
+    "attack": 3,
+    "health": 4,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "jinete-herreruelo",
+    "name": "Jinete herreruelo",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Jinete",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Descarga. Impulso.",
+    "flavor": "Dispara los dos pistoletes y se va. No se queda a ver.",
+    "keywords": [
+      "impulse"
+    ],
+    "unique": false,
+    "attack": 3,
+    "health": 2,
+    "range": 2,
+    "movement": 3
+  },
+  {
+    "id": "capitan-de-infanteria",
+    "name": "Capitán de infantería",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Oficial",
+    "rarity": "rare",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Formación. Tus unidades en Formación tienen +1/+1.",
+    "flavor": "Compró la compañía. Lleva once años pagándola con el cuerpo.",
+    "keywords": [],
+    "unique": false,
+    "attack": 3,
+    "health": 4,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "maestre-de-campo",
+    "name": "Maestre de campo",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Oficial",
+    "rarity": "rare",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Formación. Al entrar en juego, dos unidades aliadas ganan Formación.",
+    "flavor": "Manda tres mil hombres y conoce el nombre de cuatrocientos.",
+    "keywords": [],
+    "unique": false,
+    "attack": 4,
+    "health": 5,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "el-ultimo-cuadro",
+    "name": "El ultimo cuadro",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Infantería",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 3,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Formación. Mientras tenga dos o más unidades aliadas adyacentes, no puede ser destruida. Cuando una unidad aliada adyacente es destruida, gana +1/+1 permanentemente.",
+    "flavor": "Les pidieron rendición tres veces. Tres veces contestaron lo mismo.",
+    "keywords": [],
+    "unique": true,
+    "attack": 4,
+    "health": 7,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "el-gran-capitan",
+    "name": "El gran capitán",
+    "faction": "tercios",
+    "type": "unit",
+    "subtype": "Oficial",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 3,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Formación. Tus unidades en Formación ganan Descarga.",
+    "flavor": "No inventó la pica ni el arcabuz. Se le ocurrió ponerlos juntos.",
+    "keywords": [],
+    "unique": true,
+    "attack": 4,
+    "health": 6,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "descarga-cerrada",
+    "name": "Descarga cerrada",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Orden",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Inflige 2 de daño a todas las unidades enemigas de una misma fila o columna.",
+    "flavor": "Primera fila, fuego. Segunda fila, avanza.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "a-la-pica",
+    "name": "A la pica",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Orden",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 0
+      }
+    },
+    "rules": "Una unidad aliada gana Formación. Si ya la tenía, gana +2 de Vida.",
+    "flavor": "Calar picas es un solo movimiento. Hay que hacerlo todos a la vez.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "santiago-y-cierra-espana",
+    "name": "Santiago y cierra España",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Orden",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Tus unidades en Formación pueden moverse 1 casilla y atacar este turno.",
+    "flavor": "El grito no sirve de nada. Lo que sirve es que lo grite todo el mundo.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "cuerda-encendida",
+    "name": "Cuerda encendida",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Orden",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Tus unidades con Descarga infligen 2 de daño adicional este turno.",
+    "flavor": "De noche se ve el tercio antes de oírlo: doscientas brasas flotando.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "mina-bajo-la-muralla",
+    "name": "Mina bajo la muralla",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Cataclismo",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Destruye una estructura enemiga e inflige 3 de daño a las unidades adyacentes a ella.",
+    "flavor": "Cavaron cuarenta días. Duró un segundo y medio.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "motin-de-impagados",
+    "name": "Motín de impagados",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Ritual",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 0
+      }
+    },
+    "rules": "Roba 3 cartas. Tus unidades no pueden atacar este turno.",
+    "flavor": "No desertaron. Se quedaron en el campo, armados, esperando la paga.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "el-brulote",
+    "name": "El brulote",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Cataclismo",
+    "rarity": "rare",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Inflige 4 de daño a todas las unidades y estructuras de una fila.",
+    "flavor": "Llenaron un barco de pólvora y lo soltaron río abajo. Lo llamaron el infierno.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "rocroi",
+    "name": "Rocroi",
+    "faction": "tercios",
+    "type": "instant",
+    "subtype": "Cataclismo",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Tus unidades en Formación no pueden ser destruidas este turno. Al final del turno, inflige 2 de daño a todas las unidades enemigas adyacentes a una unidad tuya.",
+    "flavor": "Preguntaron cuántos quedaban. Contestaron: contad los muertos.",
+    "keywords": [],
+    "unique": true
+  },
+  {
+    "id": "trinchera",
+    "name": "Trinchera",
+    "faction": "tercios",
+    "type": "structure",
+    "subtype": "Fortificación",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Tus unidades adyacentes cuentan como una aliada adicional para Formación.",
+    "flavor": "Se gana más terreno con la pala que con la pica.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "camino-espanol",
+    "name": "Camino español",
+    "faction": "tercios",
+    "type": "structure",
+    "subtype": "Ruta",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Tus unidades tienen +1 de Movimiento.",
+    "flavor": "Mil kilómetros de Milán a Flandes, y ni un barco inglés en medio.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "fuerte-de-estrella",
+    "name": "Fuerte de estrella",
+    "faction": "tercios",
+    "type": "structure",
+    "subtype": "Fortificación",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Guardia. Tus unidades adyacentes tienen +1 de Vida.",
+    "flavor": "No tiene esquinas muertas. Eso es todo lo que tiene que tener.",
+    "keywords": [
+      "guard"
+    ],
+    "unique": false,
+    "resistance": 6
+  },
+  {
+    "id": "pagaduria",
+    "name": "Pagaduría",
+    "faction": "tercios",
+    "type": "structure",
+    "subtype": "Edificio",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, roba 1 carta. Si tienes menos de tres unidades en juego, no hace nada.",
+    "flavor": "La plata de las Indias llega hasta aquí. Hasta aquí.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "maestranza-de-artilleria",
+    "name": "Maestranza de artillería",
+    "faction": "tercios",
+    "type": "structure",
+    "subtype": "Taller",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Tus hechizos de Cataclismo infligen 1 de daño adicional.",
+    "flavor": "Cada cañón tiene nombre de mujer y un cura que lo bendijo.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 5
+  },
+  {
+    "id": "puente-sobre-el-escalda",
+    "name": "Puente sobre el Escalda",
+    "faction": "tercios",
+    "type": "structure",
+    "subtype": "Puente",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Tus unidades pueden moverse atravesando casillas ocupadas por aliadas.",
+    "flavor": "Dijeron que el río no se podía cerrar. Se cerró en siete meses.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 5
+  },
+  {
+    "id": "el-cuartel-de-invierno",
+    "name": "El cuartel de invierno",
+    "faction": "tercios",
+    "type": "structure",
+    "subtype": "Edificio",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "tercios": 2
+      }
+    },
+    "rules": "Al comienzo de tu turno, una unidad aliada dañada recupera 2 de Vida y, si no la tenía, gana Formación.",
+    "flavor": "Seis meses sin pelear. Es cuando se hace el tercio.",
+    "keywords": [],
+    "unique": true,
+    "resistance": 6
+  },
+  {
+    "id": "fuente-kalevala",
+    "name": "Esencia de Ámbar",
+    "faction": "kalevala",
+    "type": "mana",
+    "subtype": "Fuente",
+    "rarity": "common",
+    "cost": {
+      "generic": 0,
+      "colored": {}
+    },
+    "rules": "Agota esta fuente: genera 1 de Esencia de Ámbar.",
+    "flavor": "Resina de un árbol que ya no existe. Dentro hay un mosquito que vio el bosque antiguo.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "pescador-del-lago",
+    "name": "Pescador del lago",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Aldeano",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Sin habilidades adicionales.",
+    "flavor": "Sabe los nombres de los nueve vientos. Solo le hacen falta dos.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 3,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "cantor-de-aldea",
+    "name": "Cantor de aldea",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Cantor",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Al entrar en juego, ganas 1 contador de Runo.",
+    "flavor": "Se sabe cuatrocientos versos. Hay quien se sabe mil.",
+    "keywords": [],
+    "unique": false,
+    "attack": 1,
+    "health": 3,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "tejedora-de-patrones",
+    "name": "Tejedora de patrones",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Aldeano",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, escruta 1.",
+    "flavor": "En el dibujo de la manta está escrito lo que va a pasar. Si sabes leer mantas.",
+    "keywords": [],
+    "unique": false,
+    "attack": 1,
+    "health": 4,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "cazador-de-lapones",
+    "name": "Cazador de lapones",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Cazador",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Sin habilidades adicionales.",
+    "flavor": "Dispara una flecha. Si falla, tiene otras tres cosas que decirle al animal.",
+    "keywords": [],
+    "unique": false,
+    "attack": 2,
+    "health": 2,
+    "range": 2,
+    "movement": 2
+  },
+  {
+    "id": "ilmarinen-el-herrero",
+    "name": "Ilmarinen el herrero",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Herrero",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Al entrar en juego, roba 1 carta de estructura si tienes alguna en el mazo.",
+    "flavor": "Forjó el cielo cuando era joven. Dice que le quedó un poco torcido.",
+    "keywords": [],
+    "unique": false,
+    "attack": 3,
+    "health": 5,
+    "range": 1,
+    "movement": 1
+  },
+  {
+    "id": "lemminkainen",
+    "name": "Lemminkäinen",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Héroe",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Impulso. Cuando esta unidad es destruida, su dueño gana 2 contadores de Runo.",
+    "flavor": "Su madre lo recompuso del río, pieza por pieza. Volvió a salir al día siguiente.",
+    "keywords": [
+      "impulse"
+    ],
+    "unique": false,
+    "attack": 4,
+    "health": 3,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "doncella-del-arcoiris",
+    "name": "Doncella del arcoíris",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Espíritu",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Volador. No puede ser objetivo de hechizos enemigos.",
+    "flavor": "Teje sentada en el arco del cielo. Le han pedido matrimonio tres veces y se ha reído tres veces.",
+    "keywords": [
+      "flying"
+    ],
+    "unique": false,
+    "attack": 2,
+    "health": 3,
+    "range": 2,
+    "movement": 2
+  },
+  {
+    "id": "oso-otso",
+    "name": "Oso Otso",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Bestia",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Sin habilidades adicionales.",
+    "flavor": "No se le llama oso. Se le llama «el de la miel», «el del abrigo», «el abuelo». Nunca por su nombre.",
+    "keywords": [],
+    "unique": false,
+    "attack": 4,
+    "health": 4,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "cisne-de-tuonela",
+    "name": "Cisne de Tuonela",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Espíritu",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Volador. Mientras esté en juego, las unidades enemigas hundidas por Canto tardan un turno más en volver.",
+    "flavor": "Nada en el río de los muertos y nadie lo ha cazado nunca. Lo han intentado.",
+    "keywords": [
+      "flying"
+    ],
+    "unique": false,
+    "attack": 2,
+    "health": 5,
+    "range": 2,
+    "movement": 2
+  },
+  {
+    "id": "louhi-senora-de-pohjola",
+    "name": "Louhi señora de Pohjola",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Bruja",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Al comienzo de tu turno, si tienes 6 o más contadores de Runo, hunde una unidad enemiga adyacente (Canto).",
+    "flavor": "Tiene una hija, un país de piedra y una lista de cosas que le deben.",
+    "keywords": [],
+    "unique": false,
+    "attack": 3,
+    "health": 5,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "kullervo",
+    "name": "Kullervo",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Héroe",
+    "rarity": "rare",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Cuando destruye una unidad, inflige 2 de daño a una unidad aliada aleatoria.",
+    "flavor": "Todo lo que toca sale mal. Lo sabe. Sigue tocando cosas.",
+    "keywords": [],
+    "unique": false,
+    "attack": 5,
+    "health": 3,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "antero-vipunen",
+    "name": "Antero Vipunen",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Gigante",
+    "rarity": "rare",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Guardia. No puede moverse. Al comienzo de tu turno, ganas 2 contadores de Runo.",
+    "flavor": "Lleva tanto tiempo enterrado que le crece un abedul en el hombro. Se sabe las palabras que nadie recuerda y no piensa darlas gratis.",
+    "keywords": [
+      "guard"
+    ],
+    "unique": false,
+    "attack": 2,
+    "health": 8,
+    "range": 1,
+    "movement": 0
+  },
+  {
+    "id": "lucio-de-tuonela",
+    "name": "Lucio de Tuonela",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Bestia",
+    "rarity": "rare",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Perforar. Cuando esta unidad es destruida, roba 2 cartas.",
+    "flavor": "De su mandíbula se hizo el primer kantele. Esta es la segunda mandíbula.",
+    "keywords": [
+      "pierce"
+    ],
+    "unique": false,
+    "attack": 6,
+    "health": 5,
+    "range": 1,
+    "movement": 2
+  },
+  {
+    "id": "aguila-de-pohjola",
+    "name": "Águila de Pohjola",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Bestia",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Volador. Cuando ataca, hunde la unidad objetivo en lugar de dañarla si tienes 9 o más contadores de Runo (Canto).",
+    "flavor": "Louhi se convirtió en águila para recuperar el Sampo. No le hizo falta pedirle permiso a nadie.",
+    "keywords": [
+      "flying"
+    ],
+    "unique": true,
+    "attack": 5,
+    "health": 6,
+    "range": 1,
+    "movement": 3
+  },
+  {
+    "id": "vieja-madre-del-agua",
+    "name": "Vieja madre del agua",
+    "faction": "kalevala",
+    "type": "unit",
+    "subtype": "Espíritu",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 3,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Al comienzo de tu turno, ganas 2 contadores de Runo. Las unidades enemigas adyacentes tienen −1 de Ataque.",
+    "flavor": "Estaba antes del cielo. Dice que el cielo lo hizo un chico con prisa.",
+    "keywords": [],
+    "unique": true,
+    "attack": 4,
+    "health": 7,
+    "range": 2,
+    "movement": 1
+  },
+  {
+    "id": "verso-de-apertura",
+    "name": "Verso de apertura",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Canto",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 0
+      }
+    },
+    "rules": "Ganas 2 contadores de Runo y robas 1 carta.",
+    "flavor": "Primero se cuenta de dónde viene el hierro. Luego ya se le puede pedir algo.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "hundirlo-en-la-cienaga",
+    "name": "Hundirlo en la ciénaga",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Canto",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Canto: hunde una unidad enemiga.",
+    "flavor": "No perdió el duelo de versos. Perdió el suelo.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "saber-el-nombre",
+    "name": "Saber el nombre",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Canto",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Una unidad enemiga pierde todas sus habilidades hasta el final del turno. Ganas 1 contador de Runo.",
+    "flavor": "Para mandar en una cosa hay que saber de dónde vino, y decírselo.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "la-herida-de-hierro",
+    "name": "La herida de hierro",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Canto",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Cura 3 de Vida a una unidad aliada y ganas 1 contador de Runo. Si tienes 6 o más contadores, cura también a tu Nexo.",
+    "flavor": "La sangre se detiene cuando el hierro oye el relato de su propio nacimiento.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "la-barca-de-un-tronco",
+    "name": "La barca de un tronco",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Canto",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Mueve dos unidades aliadas hasta 3 casillas cada una. Ganas 1 contador de Runo.",
+    "flavor": "La hizo cantando. Le faltaban tres palabras y tuvo que ir a buscarlas al país de los muertos.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "canto-de-la-helada",
+    "name": "Canto de la helada",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Canto",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Canto: hunde hasta dos unidades enemigas adyacentes entre sí. Ganas 1 contador de Runo.",
+    "flavor": "Le cantó a la escarcha su genealogía entera. La escarcha obedeció a su abuela.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "el-duelo-de-versos",
+    "name": "El duelo de versos",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Canto",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Ganas 1 contador de Runo por cada hechizo que hayas lanzado este turno, y después robas 2 cartas.",
+    "flavor": "Empezaron por el origen del fuego. Tres días después iban por el origen del hierro.",
+    "keywords": [],
+    "unique": false
+  },
+  {
+    "id": "el-robo-del-sampo",
+    "name": "El robo del Sampo",
+    "faction": "kalevala",
+    "type": "instant",
+    "subtype": "Cataclismo",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Canto: hunde todas las unidades enemigas con 4 o menos de Vida. Ganas 3 contadores de Runo.",
+    "flavor": "Se lo llevaron en una barca. Louhi fue detrás convertida en águila. Al final se rompió y los pedazos cayeron al mar.",
+    "keywords": [],
+    "unique": true
+  },
+  {
+    "id": "casa-de-troncos",
+    "name": "Casa de troncos",
+    "faction": "kalevala",
+    "type": "structure",
+    "subtype": "Edificio",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, una unidad aliada dañada recupera 1 de Vida.",
+    "flavor": "Troncos sin un clavo, tejado de hierba viva. Dura más que quien la hizo.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "sauna-de-humo",
+    "name": "Sauna de humo",
+    "faction": "kalevala",
+    "type": "structure",
+    "subtype": "Edificio",
+    "rarity": "common",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, retira 1 efecto negativo de una unidad aliada.",
+    "flavor": "Aquí se nace, se cura y se amortaja. Lo demás pasa fuera.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 3
+  },
+  {
+    "id": "piedra-de-ofrendas",
+    "name": "Piedra de ofrendas",
+    "faction": "kalevala",
+    "type": "structure",
+    "subtype": "Altar",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Al comienzo de tu turno, ganas 1 contador de Runo.",
+    "flavor": "Se le deja comida al que vive debajo. Nadie ha preguntado nunca quién vive debajo.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 4
+  },
+  {
+    "id": "fragua-de-ilmarinen",
+    "name": "Fragua de Ilmarinen",
+    "faction": "kalevala",
+    "type": "structure",
+    "subtype": "Taller",
+    "rarity": "uncommon",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 1
+      }
+    },
+    "rules": "Tus unidades tienen +1 de Vida.",
+    "flavor": "Ha forjado el cielo, un sol falso y una esposa de oro. La esposa de oro fue un error.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 5
+  },
+  {
+    "id": "el-pino-que-llega-al-cielo",
+    "name": "El pino que llega al cielo",
+    "faction": "kalevala",
+    "type": "structure",
+    "subtype": "Árbol",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Tus unidades Volador tienen +1/+1. Guardia.",
+    "flavor": "Creció de una semilla en una noche. La luna se enganchó en las ramas de arriba.",
+    "keywords": [
+      "guard"
+    ],
+    "unique": false,
+    "resistance": 6
+  },
+  {
+    "id": "el-rio-de-tuonela",
+    "name": "El río de Tuonela",
+    "faction": "kalevala",
+    "type": "structure",
+    "subtype": "Frontera",
+    "rarity": "rare",
+    "cost": {
+      "generic": 1,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Las unidades enemigas hundidas por Canto vuelven con 1 de Vida menos de forma permanente.",
+    "flavor": "Tiene dos orillas y una barquera. Solo cobra la vuelta.",
+    "keywords": [],
+    "unique": false,
+    "resistance": 5
+  },
+  {
+    "id": "el-sampo",
+    "name": "El Sampo",
+    "faction": "kalevala",
+    "type": "structure",
+    "subtype": "Prodigio",
+    "rarity": "mythic",
+    "cost": {
+      "generic": 2,
+      "colored": {
+        "kalevala": 2
+      }
+    },
+    "rules": "Al comienzo de tu turno, ganas 1 de Esencia de Ámbar adicional y 1 contador de Runo. Cuando esta estructura es destruida, robas 3 cartas y ganas 3 contadores de Runo.",
+    "flavor": "Molía harina, sal y oro, cada cosa por un lado. Cuando se rompió, los pedazos siguieron moliendo.",
+    "keywords": [],
+    "unique": true,
+    "resistance": 6
+  }
+]

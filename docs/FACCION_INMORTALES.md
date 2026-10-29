@@ -395,3 +395,40 @@ pieza, así que necesita a los jinetes para no ceder el centro.
 - [ ] Dejar todo en una carpeta dentro de `tools/art-inbox/`.
 - [ ] Revisar que ninguna salga color arena ni gris: si parece Duna, repetirla.
 - [ ] Revisar que en toda lanza visible esté la **granada de oro** del regatón.
+
+## Nombres de archivo exactos
+
+```
+fuente-inmortales
+portador-de-manzana
+arquero-de-susa
+escudero-de-mimbre
+hondero-de-caria
+lancero-de-persepolis
+jinete-de-nisea
+arquero-a-caballo
+portaestandarte-real
+satrapa-de-lidia
+maestro-de-correos
+toro-alado-de-la-puerta
+general-de-los-diez-mil
+elefante-de-india
+inmortal-sin-nombre
+simurgh
+lluvia-de-flechas
+relevo-inmediato
+tributo-de-las-satrapias
+muro-de-mimbre
+azotar-el-mar
+decreto-inmutable
+camino-de-regreso
+las-flechas-taparan-el-sol
+puerta-de-todas-las-naciones
+puente-de-barcas
+altar-del-fuego
+jardin-cerrado
+friso-de-los-inmortales
+salon-de-las-cien-columnas
+arsenal-de-susa
+jerjes-rey-de-reyes
+```

@@ -1,5 +1,6 @@
 import { FACTION_BY_ID } from './factions';
 import { CardDefinitionSchema } from './schemas';
+import { READY_EXPANSION_CARDS } from './expansionCards';
 import type { CardDefinition, CardSfx, FactionId, ManaCost } from './types';
 
 type CardSeed = Omit<
@@ -4391,10 +4392,11 @@ export const CARDS = Object.freeze([
   ...plagaCards,
   ...mareaCards,
   ...forjaCards,
+  ...READY_EXPANSION_CARDS,
 ]) as readonly CardDefinition[];
 
-if (CARDS.length !== 424 || new Set(CARDS.map((card) => card.id)).size !== 424) {
-  throw new Error('El catálogo debe contener 424 cartas (90 de NEX-01, 24 de NEX-02 y 31 por cada uno de NEX-03 a NEX-12) con identificadores únicos.');
+if (CARDS.length !== 517 || new Set(CARDS.map((card) => card.id)).size !== 517) {
+  throw new Error('El catálogo debe contener 517 cartas con identificadores únicos.');
 }
 
 export const CARD_BY_ID: Readonly<Record<string, CardDefinition>> = Object.freeze(

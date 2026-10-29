@@ -48,6 +48,7 @@ const SOURCE_BY_FACTION: Record<FactionId, string> = {
   plaga: 'fuente-plaga',
   marea: 'fuente-marea',
   forja: 'fuente-forja',
+  goblins: 'fuente-goblin', tercios: 'fuente-tercios', kalevala: 'fuente-kalevala',
 };
 
 const resources = (faction: FactionId, count: number, exhausted = false): readonly ResourceState[] =>

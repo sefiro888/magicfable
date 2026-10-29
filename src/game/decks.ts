@@ -513,6 +513,30 @@ export const COMMANDERS = [
       effectId: 'commander-forja-power',
     },
   }) as CommanderDefinition,
+  CommanderDefinitionSchema.parse({
+    id: 'bromuro-el-afortunado', name: 'Bromuro', title: 'El Afortunado', faction: 'goblins', nexusHealth: 35,
+    rules: 'La primera Chispa de cada turno se lanza dos veces: te quedas con el resultado que prefieras.',
+    flavor: 'Ha perdido tres dedos, dos cejas y un ayudante. Dice que va ganando.',
+    art: { webp: '/assets/cards/art/bromuro-el-afortunado.webp', fallback: '/assets/cards/art/bromuro-el-afortunado.svg', alt: 'Bromuro ante su taller de chatarra' },
+    vfx: { impactEffect: 'goblins-impact' },
+    power: { name: '¿Y si…?', description: 'Todas tus unidades ganan Petardazo hasta el final del turno.', cost: { generic: 2, colored: { goblins: 1 } }, effects: [{ kind: 'grant-petardazo-all' }], effectId: 'goblins-power' },
+  }) as CommanderDefinition,
+  CommanderDefinitionSchema.parse({
+    id: 'farnesio-duque-de-parma', name: 'Alejandro Farnesio', title: 'Duque de Parma', faction: 'tercios', nexusHealth: 34,
+    rules: 'Tus unidades con Formación la mantienen con una sola aliada adyacente.',
+    flavor: 'No he perdido una plaza en veinte años. He perdido veinte años.',
+    art: { webp: '/assets/cards/art/farnesio-duque-de-parma.webp', fallback: '/assets/cards/art/farnesio-duque-de-parma.svg', alt: 'Alejandro Farnesio ante una ciudad sitiada' },
+    vfx: { impactEffect: 'tercios-impact' },
+    power: { name: 'El cuadro no se rompe', description: 'Tus unidades en Formación ganan un escudo de 3 y no pueden ser desplazadas durante un turno.', cost: { generic: 2, colored: { tercios: 1 } }, effects: [{ kind: 'formation-protection', amount: 3 }], effectId: 'tercios-power' },
+  }) as CommanderDefinition,
+  CommanderDefinitionSchema.parse({
+    id: 'vainamoinen-el-cantor-eterno', name: 'Väinämöinen', title: 'El Cantor Eterno', faction: 'kalevala', nexusHealth: 32,
+    rules: 'Tus hechizos generan 1 contador de Runo adicional la primera vez que lanzas uno cada turno.',
+    flavor: 'Nació viejo, con la barba crecida. No ha tenido tiempo de ser joven.',
+    art: { webp: '/assets/cards/art/vainamoinen-el-cantor-eterno.webp', fallback: '/assets/cards/art/vainamoinen-el-cantor-eterno.svg', alt: 'Väinämöinen, cantor de Pohjola' },
+    vfx: { impactEffect: 'kalevala-impact' },
+    power: { name: 'El canto que hunde', description: 'Hunde hasta dos unidades enemigas con Canto y gana 3 contadores de Runo.', cost: { generic: 2, colored: { kalevala: 1 } }, effects: [{ kind: 'choose-sinks', count: 2, adjacent: false }, { kind: 'gain-runo', amount: 3 }], effectId: 'kalevala-power' },
+  }) as CommanderDefinition,
 ] as const;
 
 export const COMMANDER_BY_ID: Readonly<Record<string, CommanderDefinition>> = Object.freeze(
@@ -1119,9 +1143,54 @@ const forjaDeck = DeckDefinitionSchema.parse({
   ],
 });
 
+const goblinsDeck = DeckDefinitionSchema.parse({
+  id: 'gremio-chispa', name: 'El Gremio de la Chispa', faction: 'goblins', commanderId: 'bromuro-el-afortunado',
+  cards: [
+    { cardId: 'fuente-goblin', count: 20 },
+    { cardId: 'pinche-de-polvora', count: 4 }, { cardId: 'buscachatarra', count: 2 },
+    { cardId: 'artillero-chapucero', count: 2 }, { cardId: 'jinete-de-jabali', count: 2 },
+    { cardId: 'mecanico-de-urgencia', count: 1 }, { cardId: 'lanzabombas', count: 2 },
+    { cardId: 'cuadrilla-de-sabotaje', count: 1 }, { cardId: 'probador-voluntario', count: 2 },
+    { cardId: 'coheteador', count: 1 }, { cardId: 'acorazado-de-latas', count: 1 },
+    { cardId: 'capataz-griton', count: 1 }, { cardId: 'ingeniera-jefa', count: 1 },
+    { cardId: 'maquina-andante', count: 1 }, { cardId: 'el-gran-petardo', count: 1 },
+    { cardId: 'chispazo', count: 2 }, { cardId: 'mecha-corta', count: 1 },
+    { cardId: 'rebusca-en-la-chatarra', count: 1 }, { cardId: 'remiendo-rapido', count: 1 },
+    { cardId: 'torreta-de-chatarra', count: 1 }, { cardId: 'barril-de-polvora', count: 2 },
+  ],
+}) as DeckDefinition;
+
+const terciosDeck = DeckDefinitionSchema.parse({
+  id: 'cuadro-tercios', name: 'El Cuadro de Picas', faction: 'tercios', commanderId: 'farnesio-duque-de-parma',
+  cards: [
+    { cardId: 'fuente-tercios', count: 20 }, { cardId: 'piquero-de-flandes', count: 4 }, { cardId: 'arcabucero-bisono', count: 4 },
+    { cardId: 'rodelero', count: 2 }, { cardId: 'mosquetero-veterano', count: 2 }, { cardId: 'cabo-de-escuadra', count: 2 },
+    { cardId: 'tambor-del-tercio', count: 1 }, { cardId: 'alferez-de-la-cruz', count: 1 }, { cardId: 'coselete', count: 2 },
+    { cardId: 'gastador', count: 1 }, { cardId: 'sargento-mayor', count: 1 }, { cardId: 'jinete-herreruelo', count: 1 },
+    { cardId: 'capitan-de-infanteria', count: 1 }, { cardId: 'maestre-de-campo', count: 1 }, { cardId: 'el-ultimo-cuadro', count: 1 },
+    { cardId: 'el-gran-capitan', count: 1 }, { cardId: 'descarga-cerrada', count: 1 }, { cardId: 'a-la-pica', count: 1 },
+    { cardId: 'cuerda-encendida', count: 1 }, { cardId: 'trinchera', count: 1 }, { cardId: 'camino-espanol', count: 1 },
+  ],
+}) as DeckDefinition;
+
+const kalevalaDeck = DeckDefinitionSchema.parse({
+  id: 'cantores-pohjola', name: 'Los Cantores de Pohjola', faction: 'kalevala', commanderId: 'vainamoinen-el-cantor-eterno',
+  cards: [
+    { cardId: 'fuente-kalevala', count: 20 }, { cardId: 'pescador-del-lago', count: 4 }, { cardId: 'cantor-de-aldea', count: 3 },
+    { cardId: 'tejedora-de-patrones', count: 2 }, { cardId: 'cazador-de-lapones', count: 2 }, { cardId: 'ilmarinen-el-herrero', count: 1 },
+    { cardId: 'lemminkainen', count: 1 }, { cardId: 'doncella-del-arcoiris', count: 1 }, { cardId: 'oso-otso', count: 2 },
+    { cardId: 'cisne-de-tuonela', count: 1 }, { cardId: 'louhi-senora-de-pohjola', count: 1 }, { cardId: 'kullervo', count: 1 },
+    { cardId: 'antero-vipunen', count: 1 }, { cardId: 'lucio-de-tuonela', count: 1 }, { cardId: 'aguila-de-pohjola', count: 1 },
+    { cardId: 'vieja-madre-del-agua', count: 1 }, { cardId: 'verso-de-apertura', count: 2 }, { cardId: 'hundirlo-en-la-cienaga', count: 2 },
+    { cardId: 'casa-de-troncos', count: 1 }, { cardId: 'piedra-de-ofrendas', count: 1 }, { cardId: 'fragua-de-ilmarinen', count: 1 },
+  ],
+}) as DeckDefinition;
+
 export const STARTER_DECKS = Object.freeze([
   furyDeck, arcaneDeck, natureDeck, orderDeck, shadowDeck, voidDeck,
   dunaDeck, fimbulDeck, samsaraDeck, jadeDeck, olimpoDeck, solDeck, bestiarioDeck, plagaDeck, mareaDeck, forjaDeck,
+  goblinsDeck,
+  terciosDeck, kalevalaDeck,
 ]) as readonly DeckDefinition[];
 
 export const DECK_BY_ID: Readonly<Record<string, DeckDefinition>> = Object.freeze(

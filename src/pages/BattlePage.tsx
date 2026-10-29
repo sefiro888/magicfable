@@ -63,6 +63,8 @@ import { ESSENCE_LABELS, PHASE_LABELS } from './battle/labels'
 import { MatchResultDialog } from './battle/MatchResultDialog'
 import { MulliganDialog } from './battle/MulliganDialog'
 import { ScryDialog } from './battle/ScryDialog'
+import { SparkDialog } from './battle/SparkDialog'
+import { TacticalDialog } from './battle/TacticalDialog'
 import { SelectionPanel } from './battle/SelectionPanel'
 import styles from './BattlePage.module.css'
 
@@ -584,7 +586,7 @@ export function BattlePage() {
   // ── Cursor de teclado sobre el tablero ────────────────────────────────────
   // Se apaga solo mientras haya un modal por encima (mulligan, escrutinio,
   // guía) o en modo foto: ahí las flechas pertenecen a esa otra interfaz.
-  const cursorEnabled = Boolean(match) && !match?.winner && !photoMode && !scryOpen && !howToOpen && !inspected
+  const cursorEnabled = Boolean(match) && !match?.pendingSpark && !match?.pendingDecisions?.length && !match?.winner && !photoMode && !scryOpen && !howToOpen && !inspected
     && !(match && canTakeMulligan(match, ME))
   const cursorHome = useMemo(() => {
     const own = match?.board.filter((piece) => piece.owner === ME) ?? []
@@ -862,7 +864,7 @@ export function BattlePage() {
             attackPreview={attackPreview}
             photoMode={photoMode}
             reducedMotion={preferences.reducedMotion}
-            renderPaused={Boolean(inspected || scryOpen || howToOpen || glossaryOpen || confirmAbandon || canTakeMulligan(match, ME))}
+            renderPaused={Boolean(inspected || scryOpen || howToOpen || glossaryOpen || confirmAbandon || match.pendingSpark || match.pendingDecisions?.length || canTakeMulligan(match, ME))}
             quality={preferences.graphicsQuality}
             scenario={scenario}
             activeEvent={visualEvent}
@@ -911,6 +913,7 @@ export function BattlePage() {
               <div className={styles.commanderIdentity}><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
             </div>
             {commander && <p className={styles.commanderRules}>{commander.rules}</p>}
+            {player.runo !== undefined && <p className={styles.commanderBoon}>Runo: {player.runo} · +{Math.floor(player.runo / 3)} Ataque a tus unidades</p>}
             {player.unitDiscountPending && <p className={styles.commanderBoon}>Pasiva activa: tu siguiente unidad cuesta 1 menos.</p>}
             {/* Poder del comandante: una vez por partida, y la única jugada
                 del juego que no sale de una carta. */}
@@ -1202,11 +1205,13 @@ export function BattlePage() {
           handBarRef={handBarRef}
           endTurnRef={endTurnRef}
           onFinish={() => setTutorialActive(false)}
-          suspended={photoMode}
+          suspended={photoMode || Boolean(match.pendingSpark) || Boolean(match.pendingDecisions?.length)}
         />
       )}
 
-      {canTakeMulligan(match, ME) && !match.winner && !howToOpen && (
+      {match.pendingSpark?.owner === ME && <SparkDialog key={match.pendingSpark.cardInstanceId} match={match} onChoose={doAction} />}
+      {match.pendingDecisions?.[0]?.owner === ME && !scryOpen && <TacticalDialog key={`${match.pendingDecisions[0].id}-${match.pendingDecisions[0].remaining}`} match={match} onChoose={doAction} />}
+      {canTakeMulligan(match, ME) && !match.pendingSpark && !match.pendingDecisions?.length && !match.winner && !howToOpen && (
         <MulliganDialog
           ownCommander={commander}
           rivalCommander={rivalCommander}

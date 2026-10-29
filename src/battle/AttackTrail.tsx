@@ -10,6 +10,7 @@ const STYLES: Readonly<Record<FactionId, TrailStyle>> = {
   fury: 'ember', arcane: 'crystal', nature: 'vine', order: 'radiant', shadow: 'shadow', void: 'shadow',
   duna: 'sand', fimbul: 'crystal', samsara: 'ember', jade: 'vine', olimpo: 'radiant',
   sol: 'radiant', bestiario: 'metal', plaga: 'vine', marea: 'tide', forja: 'metal',
+  goblins: 'ember', tercios: 'metal', kalevala: 'crystal',
 }
 
 interface AttackTrailProps {

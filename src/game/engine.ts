@@ -5,16 +5,20 @@ import { activeEffects, canPayOffering, isUnderJudgement, offeringCost, offering
 import { pushAll, pushOne, tidePhase } from './marea';
 import { assemblyBonus, countStructures, isAutomaton, isForgeStructure, structureEntryBonus, windUpAutomata } from './forja';
 import { isChallenge, isFurious } from './fimbul';
+import { gainRuno, returnSunkenUnits, runoAttackBonus, runoFromSpell, sinkUnit } from './kalevala';
+import { grantPetardazoAll, sparkEffects, startSpark, type SparkFace } from './goblins';
+import { continuousHealthBonus, dischargeLine, formationActive, formationAttackBonus, hasDischarge, hasFormation } from './tercios';
 import { payMana, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
 import { ELEMENTS } from './types';
 import type { ManaCost } from './types';
-import { deriveSeed, shuffleSeeded } from './random';
+import { deriveSeed, nextRandom, shuffleSeeded } from './random';
 import { validateDeck } from './deck-validation';
 import type {
   ActionResult,
   AnimationEvent,
   BoardPiece,
+  BoardDecision,
   CardDefinition,
   CardInstance,
   CommanderDefinition,
@@ -59,7 +63,10 @@ const fail = (state: MatchState, code: GameErrorCode, message: string): ActionRe
   error: { code, message },
 });
 
-const success = (state: MatchState): ActionResult => ({ ok: true, state });
+const success = (state: MatchState): ActionResult => {
+  const stable = stabilizeFormation(state);
+  return { ok: true, state: stable.phase === 'finished' ? { ...stable, pendingSpark: undefined, pendingDecisions: undefined } : stable };
+};
 
 const instantiateDeck = (
   deck: DeckDefinition,
@@ -97,6 +104,7 @@ const createPlayer = (
   return {
     id,
     commanderId: commander.id,
+    ...(commander.id === 'vainamoinen-el-cantor-eterno' ? { runo: 0 } : {}),
     nexusHealth: commander.nexusHealth,
     hand: shuffled.slice(0, OPENING_HAND_SIZE),
     deck: shuffled.slice(OPENING_HAND_SIZE),
@@ -229,7 +237,11 @@ export const reorderTopCards = (
   }));
 };
 
-const pieceDefinition = (piece: BoardPiece): CardDefinition | undefined => CARD_BY_ID[piece.cardId];
+const pieceDefinition = (piece: BoardPiece): CardDefinition | undefined => {
+  const card = CARD_BY_ID[piece.cardId];
+  if (card && piece.statuses.some((status) => status.kind === 'silenced')) return { ...card, effects: [], keywords: [] };
+  return card && piece.sparkFace ? { ...card, effects: sparkEffects(card.effects, piece.sparkFace) } : card;
+};
 const pieceAt = (state: MatchState, position: Position): BoardPiece | undefined =>
   state.board.find((piece) => piece.position.x === position.x && piece.position.y === position.y);
 const isFrozen = (state: MatchState, piece: BoardPiece): boolean =>
@@ -244,6 +256,7 @@ const pathIsClear = (
   from: Position,
   to: Position,
   ignoredPieceId?: string,
+  passAllyOwner?: PlayerId,
 ): boolean => {
   if (from.x !== to.x && from.y !== to.y) return false;
   const dx = Math.sign(to.x - from.x);
@@ -251,7 +264,7 @@ const pathIsClear = (
   let x = from.x + dx;
   let y = from.y + dy;
   while (x !== to.x || y !== to.y) {
-    if (state.board.some((piece) => piece.instanceId !== ignoredPieceId && piece.position.x === x && piece.position.y === y)) {
+    if (state.board.some((piece) => piece.instanceId !== ignoredPieceId && piece.position.x === x && piece.position.y === y && piece.owner !== passAllyOwner)) {
       return false;
     }
     // Las ruinas son parte del mapa: tapan el paso y cortan la línea de tiro
@@ -270,6 +283,7 @@ const pathIsClear = (
  * préstamos temporales no se notarían.
  */
 const hasKeyword = (piece: BoardPiece, keyword: Keyword): boolean => {
+  if (piece.statuses.some((status) => status.kind === 'silenced')) return false;
   const card = pieceDefinition(piece);
   if (card?.keywords.includes(keyword)) return true;
   if (piece.grantedKeywords?.includes(keyword)) return true;
@@ -348,6 +362,7 @@ const blockedByLowHybris = (state: MatchState, attacker: BoardPiece): boolean =>
 const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boolean => {
   const definition = pieceDefinition(piece);
   if (!definition || definition.type !== 'unit' || piece.owner !== state.activePlayer) return false;
+  if (definition.effects.some((effect) => effect.kind === 'passive' && effect.id === 'cannot-move')) return false;
   if (piece.movedThisTurn || isFrozen(state, piece) || !isInsideBoard(to) || pieceAt(state, to)) return false;
   // Ni siquiera los voladores aterrizan sobre escombros.
   if (isBlocked(state, to)) return false;
@@ -355,14 +370,18 @@ const canMovePiece = (state: MatchState, piece: BoardPiece, to: Position): boole
   // con Impulso, así que puede atacar el mismo turno en que se despliega.
   const tideImpulse = tidePhase(state) === 'low'
     && definition.effects.some((effect) => effect.kind === 'passive' && effect.id === 'entry-impulse-if-low-tide');
-  if (piece.enteredOnTurn === state.turn && !definition.keywords.includes('impulse') && !tideImpulse) return false;
+  if (piece.enteredOnTurn === state.turn && !definition.keywords.includes('impulse') && !tideImpulse && !piece.formationMarch) return false;
   // Horror Abisal: ralentiza a los enemigos que atacó, sin bajar de 0.
-  const movement = Math.max(0, (definition.movement ?? 1) - (piece.movementModifier ?? 0));
+  const movementAura = state.board.filter((ally) => ally.owner === piece.owner && !ally.statuses.some((status) => status.kind === 'silenced') &&
+    (ally.cardId === 'tobogan-de-tubos' || ally.cardId === 'camino-espanol' ||
+      (ally.cardId === 'tambor-del-tercio' && distance(ally.position, piece.position) === 1))).length;
+  const movement = piece.formationMarch ? 1 : Math.max(0, (definition.movement ?? 1) - (piece.movementModifier ?? 0) + movementAura);
   const travel = distance(piece.position, to);
   if (travel <= 0 || travel > movement) return false;
   // Volador: ignora las piezas del camino (pero no puede aterrizar en casilla ocupada).
   if (definition.keywords.includes('flying')) return true;
-  return pathIsClear(state, piece.position, to, piece.instanceId);
+  const bridge = state.board.some((ally) => ally.owner === piece.owner && ally.cardId === 'puente-sobre-el-escalda');
+  return pathIsClear(state, piece.position, to, piece.instanceId, bridge ? piece.owner : undefined);
 };
 
 export const getValidMoves = (state: MatchState, pieceId: string): readonly Position[] => {
@@ -378,16 +397,58 @@ export const getValidMoves = (state: MatchState, pieceId: string): readonly Posi
   return positions;
 };
 
+export interface DecisionOption {
+  readonly pieceId?: string;
+  readonly to?: Position;
+  readonly axis?: 'row' | 'column';
+  readonly index?: number;
+}
+
+export const decisionOptions = (state: MatchState, decision: BoardDecision): readonly DecisionOption[] => {
+  if (decision.kind === 'line') {
+    return (decision.rowsOnly ? ['row'] as const : ['row', 'column'] as const).flatMap((axis) =>
+      Array.from({ length: BOARD_SIZE }, (_, index) => ({ axis, index })));
+  }
+  const units = state.board.filter((piece) => pieceDefinition(piece)?.type === 'unit' && !decision.chosenIds.includes(piece.instanceId)
+    && (decision.kind === 'sink' ? piece.owner !== decision.owner : piece.owner === decision.owner));
+  const options: DecisionOption[] = [];
+  for (const piece of units) {
+    const card = pieceDefinition(piece)!;
+    if (decision.kind === 'sink') {
+      if (card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'enemy-spell-immune')) continue;
+      if (decision.adjacent && decision.anchor && distance(piece.position, decision.anchor) !== 1) continue;
+      options.push({ pieceId: piece.instanceId });
+    } else if (decision.kind === 'formation') options.push({ pieceId: piece.instanceId });
+    else if (!card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'cannot-move')) {
+      const bridge = state.board.some((ally) => ally.owner === piece.owner && ally.cardId === 'puente-sobre-el-escalda');
+      for (let y = 0; y < BOARD_SIZE; y += 1) for (let x = 0; x < BOARD_SIZE; x += 1) {
+        const to = { x, y };
+        const travel = distance(piece.position, to);
+        if (travel <= 0 || travel > (decision.distance ?? 1) || pieceAt(state, to) || isBlocked(state, to)) continue;
+        if (hasKeyword(piece, 'flying') || pathIsClear(state, piece.position, to, piece.instanceId, bridge ? piece.owner : undefined)) options.push({ pieceId: piece.instanceId, to });
+      }
+    }
+  }
+  return options;
+};
+
+const queueDecision = (state: MatchState, owner: PlayerId, sourceCardId: string, decision: Omit<BoardDecision, 'id' | 'owner' | 'sourceCardId' | 'chosenIds'>): MatchState => {
+  const queued: BoardDecision = { ...decision, id: `decision-${state.nextId}`, owner, sourceCardId, chosenIds: [] };
+  if (!decisionOptions(state, queued).length) return state;
+  return { ...state, nextId: state.nextId + 1, pendingDecisions: [...(state.pendingDecisions ?? []), queued] };
+};
+
 /** Espectro Siniestro: incorpóreo, ningún Guardia enemigo puede obligarlo a atacarlo a él. */
 const ignoresGuards = (definition: CardDefinition): boolean =>
   definition.effects.some((effect) => effect.kind === 'passive' && effect.id === 'unblockable-ghost');
 
 const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: BoardPiece): boolean => {
+  if (state.players[attacker.owner].attacksForbiddenThisTurn) return false;
   const definition = pieceDefinition(attacker);
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.owner === defender.owner || attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
   if (isStunned(state, attacker)) return false;
-  if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
+  if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike') && !attacker.formationMarch) return false;
   if (isPacified(state, attacker)) return false;
   if (blockedByLowHybris(state, attacker)) return false;
   // Guardia: si hay Guardias enemigos adyacentes, el objetivo debe ser uno de ellos (salvo incorpóreos).
@@ -401,15 +462,18 @@ const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: Board
     (effect) => effect.kind === 'passive' && effect.id === 'min-range',
   );
   if (minRange?.kind === 'passive' && targetDistance < (minRange.value ?? 2)) return false;
-  return targetDistance > 0 && targetDistance <= range && pathIsClear(state, attacker.position, defender.position, attacker.instanceId);
+  return targetDistance > 0 && targetDistance <= range && (hasDischarge(state, attacker)
+    ? dischargeLine(state, attacker, defender.position).clear
+    : pathIsClear(state, attacker.position, defender.position, attacker.instanceId));
 };
 
 const canAttackEnemyNexus = (state: MatchState, attacker: BoardPiece): boolean => {
+  if (state.players[attacker.owner].attacksForbiddenThisTurn) return false;
   const definition = pieceDefinition(attacker);
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
   if (attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
   if (isStunned(state, attacker)) return false;
-  if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike')) return false;
+  if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike') && !attacker.formationMarch) return false;
   if (isPacified(state, attacker)) return false;
   if (blockedByLowHybris(state, attacker)) return false;
   // Guardia: no se puede golpear el Nexo mientras un Guardia enemigo esté adyacente (salvo incorpóreos).
@@ -417,7 +481,8 @@ const canAttackEnemyNexus = (state: MatchState, attacker: BoardPiece): boolean =
   const enemy = opponentOf(attacker.owner);
   const target = { x: attacker.position.x, y: nexusRow(enemy) };
   const range = definition.range ?? 1;
-  return distance(attacker.position, target) <= range && pathIsClear(state, attacker.position, target, attacker.instanceId);
+  return distance(attacker.position, target) <= range && (pathIsClear(state, attacker.position, target, attacker.instanceId)
+    || (hasDischarge(state, attacker) && dischargeLine(state, attacker, target).clear));
 };
 
 export const getValidAttacks = (state: MatchState, pieceId: string): ValidAttacks => {
@@ -507,6 +572,9 @@ const damagePieceDetailed = (
 ): DamageOutcome => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
   if (!target || amount <= 0) return { state, dealt: 0, healthBefore: target?.currentHealth ?? 0 };
+  if (sourceOwner && sourceCard?.type === 'instant' && sourceCard.subtype === 'Cataclismo') {
+    amount += state.board.filter((piece) => piece.owner === sourceOwner && piece.cardId === 'maestranza-de-artilleria').length;
+  }
   const targetDefinition = pieceDefinition(target);
   const reduction = targetDefinition?.effects.find(
     (effect) => effect.kind === 'passive' && effect.id === 'first-damage-reduction',
@@ -517,7 +585,11 @@ const damagePieceDetailed = (
   }
   const shield = target.statuses.find((status) => status.kind === 'shielded');
   const absorbedByShield = shield?.kind === 'shielded' ? Math.min(amount - reducedBy, shield.amount) : 0;
-  const finalAmount = amount - reducedBy - absorbedByShield;
+  let finalAmount = amount - reducedBy - absorbedByShield;
+  const lastSquare = targetDefinition?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'last-square-indestructible')
+    && state.board.filter((ally) => ally.owner === target.owner && ally.instanceId !== target.instanceId && pieceDefinition(ally)?.type === 'unit' && distance(ally.position, target.position) === 1).length >= 2;
+  const protectedFormation = state.players[target.owner].formationInvulnerableTurn === state.turn && hasFormation(target) && formationActive(state, target);
+  if (lastSquare || protectedFormation) finalAmount = Math.min(finalAmount, Math.max(0, target.currentHealth - 1));
   let next: MatchState =
     reducedBy > 0
       ? updatePiece(state, pieceId, (piece) => ({ ...piece, reductionUsedOnTurn: state.turn }))
@@ -638,7 +710,7 @@ const damagePieceDetailed = (
     });
     // Devorador Entrópico: drena la Resistencia de una estructura enemiga destruida como Vida propia.
     for (const devourer of structureResistanceDrain) {
-      const maxHealth = pieceDefinition(devourer)?.health ?? devourer.currentHealth;
+      const maxHealth = (pieceDefinition(devourer)?.health ?? devourer.currentHealth) + (devourer.formationHealthApplied ?? 0);
       next = updatePiece(next, devourer.instanceId, (piece) => ({
         ...piece, currentHealth: Math.min(maxHealth, piece.currentHealth + (dyingDefinition?.resistance ?? 0)),
       }));
@@ -705,8 +777,34 @@ const damagePieceDetailed = (
         next = resolveDrawAndDiscard(next, target.owner, 1, 0);
       }
     }
+    const deathRuno = dyingDefinition?.effects.find((effect) => effect.kind === 'passive' && effect.id === 'death-gain-runo');
+    if (deathRuno?.kind === 'passive') next = gainRuno(next, target.owner, deathRuno.value ?? 1);
+    const deathDraw = dyingDefinition?.effects.find((effect) => effect.kind === 'passive' && effect.id === 'death-draw');
+    if (deathDraw?.kind === 'passive') next = resolveDrawAndDiscard(next, target.owner, deathDraw.value ?? 1, 0);
+    for (const survivor of next.board.filter((piece) => piece.owner === target.owner && distance(piece.position, target.position) === 1 && pieceDefinition(piece)?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'grow-on-adjacent-ally-death'))) {
+      if (dyingDefinition?.type === 'unit') next = updatePiece(next, survivor.instanceId, (piece) => ({ ...piece,
+        currentHealth: piece.currentHealth + 1, attackModifier: piece.attackModifier + 1,
+        permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + 1, permanentHealthBonus: (piece.permanentHealthBonus ?? 0) + 1,
+      }));
+    }
+    // La pérdida de apoyo se resuelve antes de la explosión para que una
+    // unidad sin cuadro no conserve Vida extra durante el daño en cadena.
+    next = stabilizeFormation(next);
+    // La pieza ya salió del tablero: una cadena de explosiones no puede
+    // volver a destruirla ni disparar su Petardazo dos veces.
+    const petardazo = dyingDefinition?.effects.find((effect) => effect.kind === 'passive' && effect.id === 'petardazo');
+    if (petardazo?.kind === 'passive' || (target.grantedPetardazo && !target.statuses.some((status) => status.kind === 'silenced'))) {
+      const splash = petardazo?.kind === 'passive' ? petardazo.value ?? 2 : 2;
+      const neighbors = next.board.filter((piece) => distance(piece.position, target.position) === 1
+        && pieceDefinition(piece)?.type === 'unit');
+      for (const neighbor of neighbors) {
+        next = damagePiece(next, neighbor.instanceId, splash, target.owner, 'goblin-petardazo', target.position, dyingDefinition);
+      }
+    }
+    const nexusBlast = dyingDefinition?.effects.find((effect) => effect.kind === 'passive' && effect.id === 'death-damage-enemy-nexus');
+    if (nexusBlast?.kind === 'passive' && dyingDefinition) next = damageEnemyNexus(next, target.owner, nexusBlast.value ?? 3, dyingDefinition, target.instanceId);
   }
-  return { state: next, dealt: finalAmount, healthBefore: target.currentHealth };
+  return { state: target.currentHealth - finalAmount <= 0 ? stabilizeFormation(next) : next, dealt: finalAmount, healthBefore: target.currentHealth };
 };
 
 const damagePiece = (
@@ -719,6 +817,32 @@ const damagePiece = (
   origin?: Position,
   sourceCard?: CardDefinition,
 ): MatchState => damagePieceDetailed(state, pieceId, amount, sourceOwner, effectId, origin, sourceCard).state;
+
+/** Los bonos de Vida no pueden quedar grabados al perder apoyos. La caída por
+ * pérdida de Vida máxima usa la ruta de muerte habitual para encadenar otras
+ * Formaciones y los disparadores de las piezas destruidas. */
+const stabilizeFormation = (state: MatchState): MatchState => {
+  if (!state.board.some((piece) => piece.currentHealth <= 0 || hasFormation(piece) || (piece.formationHealthApplied ?? 0) !== 0 || ['fragua-de-ilmarinen', 'el-pino-que-llega-al-cielo', 'fuerte-de-estrella'].includes(piece.cardId))) return state;
+  const collapsing: string[] = [];
+  const board = state.board.map((piece) => {
+    const applied = piece.formationHealthApplied ?? 0;
+    const wanted = continuousHealthBonus(state, piece);
+    const health = piece.currentHealth + wanted - applied;
+    if (applied === wanted && health > 0) return piece;
+    if (health <= 0) collapsing.push(piece.instanceId);
+    return { ...piece, currentHealth: Math.max(1, health), formationHealthApplied: wanted };
+  });
+  let next: MatchState = { ...state, board };
+  for (const id of collapsing) {
+    const victim = next.board.find((piece) => piece.instanceId === id);
+    if (!victim) continue;
+    // Escudos y reducción de daño no evitan que el máximo de Vida disminuya.
+    next = updatePiece(next, id, (piece) => ({ ...piece, reductionUsedOnTurn: next.turn,
+      statuses: piece.statuses.filter((status) => status.kind !== 'shielded') }));
+    next = damagePiece(next, id, 1, undefined, 'formation-collapse');
+  }
+  return next;
+};
 
 /**
  * Daño al Nexo de un bando, con su contabilidad completa: estadística de daño
@@ -758,6 +882,14 @@ const damageNexus = (
     effectId: card.vfx.impactEffect ?? `${card.faction}-nexus-impact`, durationMs: 440,
   });
   return { state: next, lethal: target.nexusHealth - amount <= 0 };
+};
+
+const damageEnemyNexus = (state: MatchState, owner: PlayerId, amount: number, card: CardDefinition, actorId: string): MatchState => {
+  if (state.phase === 'finished') return state;
+  const enemy = opponentOf(owner);
+  const hit = damageNexus(state, enemy, amount, owner, actorId, card);
+  if (!hit.lethal) return hit.state;
+  return enqueue({ ...hit.state, phase: 'finished', winner: owner }, { type: 'victory', actorId: owner, targetId: `${enemy}-nexus`, effectId: `${card.faction}-victory`, durationMs: 900 });
 };
 
 /** Paladín Glorioso: sus aliados adyacentes no pueden ser congelados por ninguna vía. */
@@ -875,9 +1007,10 @@ const applySialuDraw = (state: MatchState, playerId: PlayerId, pieceId: string):
  * tampoco sabía que hacía falta apuntar.
  */
 export const spellNeedsPiece = (card: CardDefinition): boolean =>
-  card.effects.some(
+  !card.effects.some((effect) => effect.kind === 'spark') && card.effects.some(
     (effect) =>
       effect.kind === 'damage' ||
+      effect.kind === 'sink' ||
       effect.kind === 'freeze' ||
       effect.kind === 'scorch' ||
       effect.kind === 'refresh-move' ||
@@ -885,9 +1018,11 @@ export const spellNeedsPiece = (card: CardDefinition): boolean =>
       effect.kind === 'stun' ||
       effect.kind === 'push-target' ||
       effect.kind === 'grant-keyword' ||
+      effect.kind === 'grant-formation' || effect.kind === 'heal-unit' || effect.kind === 'silence-unit' || effect.kind === 'mine-structure' ||
       (effect.kind === 'passive' && effect.id === 'curse-drain-health') ||
       (effect.kind === 'passive' && effect.id === 'target-attack-until-end') ||
       (effect.kind === 'passive' && effect.id === 'target-permanent-buff') ||
+      (effect.kind === 'passive' && (effect.id === 'target-shield' || effect.id === 'target-petardazo')) ||
       (effect.kind === 'passive' && effect.id === 'sacrifice-return-buffed'),
   );
 
@@ -923,18 +1058,80 @@ const resolveSpell = (
   let draws = 0;
   let discards = 0;
   let damageDealt = 0;
+  const alliedUnitIdsAtCast = state.board.filter((piece) => piece.owner === caster && pieceDefinition(piece)?.type === 'unit').map((piece) => piece.instanceId);
   // Duna: las ramas de Ofrenda y Juicio se podan aquí, así que el bucle no se
   // entera de que existen.
   for (const effect of activeEffects(card, { offered, judged: isUnderJudgement(next, caster), hasMandate: next.mandate === caster, tide: tidePhase(next), structures: countStructures(next, caster) })) {
+    if (next.phase === 'finished') break;
     const targetPiece = requireTargetPiece(next, target);
-    if (effect.kind === 'damage' && targetPiece) {
+    if (effect.kind === 'grant-formation' && targetPiece) {
+      const already = hasFormation(targetPiece);
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({ ...piece, grantedFormation: true,
+        currentHealth: piece.currentHealth + (already ? 2 : 0), permanentHealthBonus: (piece.permanentHealthBonus ?? 0) + (already ? 2 : 0),
+      }));
+      next = stabilizeFormation(next);
+    } else if (effect.kind === 'heal-unit' && targetPiece) {
+      const maximum = (pieceDefinition(targetPiece)?.health ?? targetPiece.currentHealth) + (targetPiece.formationHealthApplied ?? 0) + (targetPiece.permanentHealthBonus ?? 0) - (targetPiece.permanentHealthPenalty ?? 0);
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({ ...piece, currentHealth: Math.max(piece.currentHealth, Math.min(maximum, piece.currentHealth + effect.amount)) }));
+      if (effect.nexusRunoThreshold !== undefined && (next.players[caster].runo ?? 0) >= effect.nexusRunoThreshold) next = healNexus(next, caster, effect.amount);
+    } else if (effect.kind === 'silence-unit' && targetPiece) {
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({ ...piece, statuses: [...piece.statuses.filter((status) => status.kind !== 'silenced'), { kind: 'silenced', expiresOnTurn: next.turn + 1 }] }));
+      next = stabilizeFormation(next);
+    } else if (effect.kind === 'mine-structure' && targetPiece) {
+      const center = targetPiece.position;
+      const shield = targetPiece.statuses.find((status) => status.kind === 'shielded');
+      const reduction = pieceDefinition(targetPiece)?.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'first-damage-reduction');
+      const lethal = targetPiece.currentHealth + (shield?.amount ?? 0) + (reduction?.kind === 'passive' && targetPiece.reductionUsedOnTurn !== next.turn ? reduction.value ?? 1 : 0);
+      next = damagePiece(next, targetPiece.instanceId, lethal, caster, card.vfx.impactEffect, undefined, card);
+      for (const victim of next.board.filter((piece) => pieceDefinition(piece)?.type === 'unit' && distance(piece.position, center) === 1)) next = damagePiece(next, victim.instanceId, effect.splash, caster, card.vfx.impactEffect, center, card);
+    } else if (effect.kind === 'boost-discharge') {
+      next = withPlayer(next, caster, { ...next.players[caster], dischargeDamageBonusThisTurn: (next.players[caster].dischargeDamageBonusThisTurn ?? 0) + effect.amount });
+    } else if (effect.kind === 'forbid-own-attacks') {
+      next = withPlayer(next, caster, { ...next.players[caster], attacksForbiddenThisTurn: true });
+    } else if (effect.kind === 'rocroi') {
+      next = withPlayer(next, caster, { ...next.players[caster], formationInvulnerableTurn: next.turn, rocroiEndDamage: (next.players[caster].rocroiEndDamage ?? 0) + 2 });
+    } else if (effect.kind === 'formation-march' || effect.kind === 'formation-protection') {
+      for (const unit of next.board.filter((piece) => piece.owner === caster && hasFormation(piece) && formationActive(next, piece))) {
+        if (effect.kind === 'formation-march') next = updatePiece(next, unit.instanceId, (piece) => ({ ...piece, formationMarch: true, movedThisTurn: false, attackedThisTurn: false }));
+        else next = updatePiece(next, unit.instanceId, (piece) => ({ ...piece, statuses: [
+          ...piece.statuses.filter((status) => status.kind !== 'shielded' && status.kind !== 'anchored'),
+          { kind: 'shielded', amount: Math.max(effect.amount, piece.statuses.find((status) => status.kind === 'shielded')?.amount ?? 0) },
+          { kind: 'anchored', expiresOnTurn: next.turn + 2 },
+        ] }));
+      }
+    } else if (effect.kind === 'choose-formation') {
+      next = queueDecision(next, caster, card.id, { kind: 'formation', remaining: effect.count, optional: false });
+    } else if (effect.kind === 'choose-moves') {
+      next = queueDecision(next, caster, card.id, { kind: 'move', remaining: effect.count, optional: true, distance: effect.distance });
+    } else if (effect.kind === 'choose-sinks') {
+      next = queueDecision(next, caster, card.id, { kind: 'sink', remaining: effect.count, optional: true, adjacent: effect.adjacent });
+    } else if (effect.kind === 'choose-line') {
+      next = queueDecision(next, caster, card.id, { kind: 'line', remaining: 1, optional: false, amount: effect.amount, enemiesOnly: effect.enemiesOnly, unitsOnly: effect.unitsOnly, rowsOnly: effect.rowsOnly });
+    } else if (effect.kind === 'passive' && effect.id === 'draw-own-casualties') {
+      draws += alliedUnitIdsAtCast.filter((id) => !next.board.some((piece) => piece.instanceId === id)).length;
+    } else if (effect.kind === 'damage-enemy-nexus') {
+      next = damageEnemyNexus(next, caster, effect.amount, card, caster);
+    } else if (effect.kind === 'passive' && effect.id === 'gain-runo-per-spell') {
+      next = gainRuno(next, caster, next.players[caster].spellsCastThisTurn);
+    } else if (effect.kind === 'gain-runo') {
+      next = gainRuno(next, caster, effect.amount);
+    } else if (effect.kind === 'sink-low-health') {
+      for (const victim of next.board.filter((piece) => piece.owner !== caster && pieceDefinition(piece)?.type === 'unit' && piece.currentHealth <= effect.maximumHealth)) {
+        next = sinkUnit(next, victim);
+      }
+      next = stabilizeFormation(next);
+    } else if (effect.kind === 'grant-petardazo-all') {
+      next = grantPetardazoAll(next, caster);
+    } else if (effect.kind === 'sink' && targetPiece) {
+      next = stabilizeFormation(sinkUnit(next, targetPiece));
+    } else if (effect.kind === 'damage' && targetPiece) {
       const bonus = frozenAtCast
         ? card.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'frozen-bonus-damage')
         : undefined;
       // Marea — la sal escuece sobre lo ya abierto: si el objetivo llega herido
       // (menos Vida de la que tiene la carta), el daño sube.
       const targetDefinition = pieceDefinition(targetPiece);
-      const alreadyWounded = targetDefinition ? targetPiece.currentHealth < (targetDefinition.health ?? targetDefinition.resistance ?? 0) : false;
+      const alreadyWounded = targetDefinition ? targetPiece.currentHealth < (targetDefinition.health ?? targetDefinition.resistance ?? 0) + (targetPiece.formationHealthApplied ?? 0) : false;
       const woundBonus = alreadyWounded
         ? card.effects.find((candidate) => candidate.kind === 'passive' && candidate.id === 'bonus-damage-wounded-target')
         : undefined;
@@ -1015,9 +1212,9 @@ const resolveSpell = (
         }),
       };
     } else if (effect.kind === 'push-target' && targetPiece) {
-      next = pushOne(next, caster, targetPiece.instanceId, effect.amount, effect.toward ?? 'away');
+      next = stabilizeFormation(pushOne(next, caster, targetPiece.instanceId, effect.amount, effect.toward ?? 'away'));
     } else if (effect.kind === 'push-all-enemies') {
-      const pushed = pushAll(next, caster, effect.amount, effect.toward);
+      const pushed = pushAll(next, caster, effect.amount, effect.toward, stabilizeFormation);
       next = pushed.state;
       if (effect.stunIfBlocked) {
         // Las que no tuvieron hueco donde ir quedan aturdidas: el remolino no
@@ -1270,6 +1467,8 @@ const resolveSpell = (
           return r - l || left.instanceId.localeCompare(right.instanceId);
         })[0];
       if (victim) next = damagePiece(next, victim.instanceId, effect.value ?? 1, caster, card.vfx.impactEffect, undefined, card);
+    } else if (effect.kind === 'passive' && effect.id === 'target-petardazo' && targetPiece?.owner === caster) {
+      next = updatePiece(next, targetPiece.instanceId, (piece) => ({ ...piece, grantedPetardazo: 'permanent' }));
     } else if (effect.kind === 'passive' && effect.id === 'target-attack-until-end' && targetPiece?.owner === caster) {
       next = updatePiece(next, targetPiece.instanceId, (piece) => ({
         ...piece,
@@ -1291,6 +1490,7 @@ const resolveSpell = (
         attackModifier: piece.attackModifier + value,
         currentHealth: piece.currentHealth + value,
         permanentAttackBonus: (piece.permanentAttackBonus ?? 0) + value,
+        permanentHealthBonus: (piece.permanentHealthBonus ?? 0) + value,
       }));
     } else if (effect.kind === 'passive' && effect.id === 'sacrifice-return-buffed' && targetPiece?.owner === caster) {
       // Rueda que Gira (Samsara): destruye a la propia y la trae de vuelta a
@@ -1379,7 +1579,19 @@ const resolveEntryEffects = (
   let next = state;
   const resolvedEffects = activeEffects(card, { offered, judged: isUnderJudgement(next, piece.owner), hasMandate: next.mandate === piece.owner, tide: tidePhase(next), structures: countStructures(next, piece.owner) });
   for (const effect of resolvedEffects) {
-    if (effect.kind === 'adjacent-damage') {
+    if (effect.kind === 'choose-formation') {
+      next = queueDecision(next, piece.owner, card.id, { kind: 'formation', remaining: effect.count, optional: false });
+    } else if (effect.kind === 'passive' && effect.id === 'entry-draw-structure') {
+      const player = next.players[piece.owner];
+      const index = player.deck.findIndex((instance) => CARD_BY_ID[instance.cardId]?.type === 'structure');
+      const found = player.deck[index];
+      if (found) {
+        next = withPlayer(next, piece.owner, { ...player, deck: player.deck.filter((_, i) => i !== index), hand: [...player.hand, found] });
+        next = enqueue(next, { type: 'draw', actorId: piece.owner, targetId: found.instanceId, cardId: found.cardId, durationMs: 300 });
+      }
+    } else if (effect.kind === 'gain-runo') {
+      next = gainRuno(next, piece.owner, effect.amount);
+    } else if (effect.kind === 'adjacent-damage') {
       if (effect.trigger === 'attack') continue;
       const targets = next.board.filter(
         (candidate) =>
@@ -1605,6 +1817,7 @@ const applyMalacharDrain = (state: MatchState, attackerOwner: PlayerId): MatchSt
 };
 
 const validateTurn = (state: MatchState, playerId: PlayerId): ActionResult | undefined => {
+  if (state.pendingSpark || state.pendingDecisions?.length) return fail(state, 'wrong-phase', 'Resuelve la elección pendiente antes de continuar.');
   if (state.phase === 'finished') return fail(state, 'game-finished', 'La partida ya ha terminado.');
   if (state.activePlayer !== playerId) return fail(state, 'wrong-turn', 'No es el turno de ese jugador.');
   if (state.phase !== 'main' && state.phase !== 'combat') {
@@ -1661,7 +1874,17 @@ const cardTargetRejectionReason = (
   if (!spellNeedsPiece(card)) return undefined;
   const piece = requireTargetPiece(state, target);
   if (!piece) return 'Selecciona una ficha del tablero como objetivo.';
+  if (card.effects.some((effect) => effect.kind === 'grant-formation' || effect.kind === 'heal-unit') && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) return 'Selecciona una unidad aliada.';
+  if (card.effects.some((effect) => effect.kind === 'silence-unit') && (piece.owner === playerId || pieceDefinition(piece)?.type !== 'unit')) return 'Selecciona una unidad enemiga.';
+  if (card.effects.some((effect) => effect.kind === 'mine-structure') && (piece.owner === playerId || pieceDefinition(piece)?.type !== 'structure')) return 'Selecciona una estructura enemiga.';
+  if (piece.owner !== playerId && card.type === 'instant' && pieceDefinition(piece)?.effects.some((effect) => effect.kind === 'passive' && effect.id === 'enemy-spell-immune')) {
+    return 'Esta unidad no puede ser objetivo de hechizos enemigos.';
+  }
   const pushes = card.effects.some((effect) => effect.kind === 'push-target');
+  const sinks = card.effects.some((effect) => effect.kind === 'sink');
+  if (sinks && (piece.owner === playerId || pieceDefinition(piece)?.type !== 'unit')) {
+    return 'Solo puede apuntar a una unidad enemiga.';
+  }
   if (pushes && (piece.owner === playerId || pieceDefinition(piece)?.type !== 'unit')) {
     return 'Solo puede apuntar a una unidad enemiga.';
   }
@@ -1702,10 +1925,10 @@ const cardTargetRejectionReason = (
   }
   const friendlyBuff = card.effects.some(
     (effect) => effect.kind === 'passive' && (
-      effect.id === 'target-attack-until-end' || effect.id === 'target-permanent-buff' || effect.id === 'sacrifice-return-buffed'
+      effect.id === 'target-attack-until-end' || effect.id === 'target-permanent-buff' || effect.id === 'sacrifice-return-buffed' || effect.id === 'target-shield' || effect.id === 'target-petardazo'
     ),
   );
-  if (friendlyBuff && piece.owner !== playerId) return 'Solo puede apuntar a una unidad aliada.';
+  if (friendlyBuff && (piece.owner !== playerId || pieceDefinition(piece)?.type !== 'unit')) return 'Solo puede apuntar a una unidad aliada.';
   const sacrificeReturn = card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'sacrifice-return-buffed');
   if (sacrificeReturn && pieceDefinition(piece)?.type !== 'unit') return 'Solo puede apuntar a una unidad, no a una estructura.';
   const refreshMove = card.effects.some((effect) => effect.kind === 'refresh-move' || effect.kind === 'refresh-attack');
@@ -1790,13 +2013,15 @@ export const playCard = (
   position?: Position,
   target?: SpellTarget,
   offering = false,
+  sparkFace?: SparkFace,
 ): ActionResult => {
   const turnError = validateTurn(state, playerId);
   if (turnError) return turnError;
   const player = state.players[playerId];
   const instance = player.hand.find((card) => card.instanceId === cardInstanceId);
   if (!instance) return fail(state, 'card-not-found', 'La carta no está en la mano.');
-  const card = CARD_BY_ID[instance.cardId];
+  const originalCard = CARD_BY_ID[instance.cardId];
+  const card = originalCard && sparkFace ? { ...originalCard, effects: sparkEffects(originalCard.effects, sparkFace) } : originalCard;
   if (!card) return fail(state, 'card-not-found', 'La definición de la carta no existe.');
   if (card.type === 'mana') return fail(state, 'invalid-card-type', 'Usa la acción de jugar fuente.');
 
@@ -1813,7 +2038,7 @@ export const playCard = (
     }
   } else {
     const rejection = cardTargetRejectionReason(state, playerId, card, target);
-    if (rejection) return fail(state, 'target-required', rejection);
+    if (rejection && !(sparkFace && !target && validSpellTargets(state, playerId, card).length === 0)) return fail(state, 'target-required', rejection);
   }
 
   // Quinto Sol — Sacrificio: coste OBLIGATORIO, a diferencia de la Ofrenda de
@@ -1839,6 +2064,11 @@ export const playCard = (
   const cost = totalDiscount > 0 ? { ...baseCost, generic: baseCost.generic - totalDiscount } : baseCost;
   const payment = payMana(player.resources, cost);
   if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay Esencia disponible suficiente.');
+  if (card.effects.some((effect) => effect.kind === 'spark') && sparkFace === undefined) {
+    const rolled = startSpark(state, playerId);
+    return success(enqueue({ ...rolled.state, pendingSpark: { owner: playerId, cardInstanceId, position, offering, faces: rolled.roll.faces } },
+      { type: 'spell', actorId: playerId, cardId: card.id, effectId: 'goblins-spark-roll', durationMs: 360 }));
+  }
   const receivesForgeBuff =
     card.type === 'unit' &&
     !player.forgeBuffUsedThisTurn &&
@@ -1860,6 +2090,9 @@ export const playCard = (
     nexusHealth: player.nexusHealth - offeringToll,
     offeringsPaidThisTurn: (player.offeringsPaidThisTurn ?? 0) + (paysOffering ? 1 : 0),
     spellsCastThisTurn: card.type === 'instant' ? player.spellsCastThisTurn + 1 : player.spellsCastThisTurn,
+    ...(card.type === 'instant' && player.runo !== undefined ? {
+      runo: player.runo + runoFromSpell(player.spellsCastThisTurn, player.commanderId === 'vainamoinen-el-cantor-eterno'),
+    } : {}),
     forgeBuffUsedThisTurn: player.forgeBuffUsedThisTurn || receivesForgeBuff,
     unitDiscountPending: player.unitDiscountPending && !usedUnitDiscount,
     firstCardDiscountUsedThisTurn: player.firstCardDiscountUsedThisTurn || xiwangmuDiscount > 0,
@@ -1979,6 +2212,7 @@ export const playCard = (
       : 0;
     const permanentBonus = renacerBonusAttack + elementBonus + hordaPermanentBonus + forjaAssembly + forjaAnvilBonus;
     const piece: BoardPiece = {
+      sparkFace,
       instanceId: instance.instanceId,
       cardId: card.id,
       owner: playerId,
@@ -1992,7 +2226,7 @@ export const playCard = (
       ...(permanentBonus > 0 ? { permanentAttackBonus: permanentBonus } : {}),
       ...(instance.renacerSpent ? { renacerSpent: true } : {}),
     };
-    next = { ...next, board: [...next.board, piece] };
+    next = stabilizeFormation({ ...next, board: [...next.board, piece] });
     // Forja — la Remachadora repara al entrar: la estructura aliada más
     // maltrecha recupera Resistencia.
     const rivetHeal = card.effects.find(
@@ -2181,6 +2415,21 @@ const applyOnAttackExtras = (
   defenderPosition?: Position,
 ): MatchState => {
   let next = state;
+  const sourcePiece = state.board.find((piece) => piece.instanceId === attackerId);
+  for (const effect of card.effects) {
+    if (effect.kind !== 'passive' || !sourcePiece) continue;
+    if (effect.id === 'spark-ally-backfire') {
+      const ally = next.board.filter((piece) => piece.owner === playerId && piece.instanceId !== attackerId && pieceDefinition(piece)?.type === 'unit' && distance(piece.position, sourcePiece.position) === 1)
+        .sort((a, b) => a.instanceId.localeCompare(b.instanceId))[0];
+      if (ally) next = damagePiece(next, ally.instanceId, effect.value ?? 1, playerId, 'goblins-backfire', sourcePiece.position, card);
+    } else if (effect.id === 'spark-target-splash' || effect.id === 'spark-self-splash') {
+      const center = effect.id === 'spark-self-splash' ? sourcePiece.position : defenderPosition;
+      if (center) {
+        const victims = next.board.filter((piece) => pieceDefinition(piece)?.type === 'unit' && distance(piece.position, center) === 1);
+        for (const victim of victims) next = damagePiece(next, victim.instanceId, effect.value ?? 1, playerId, 'goblins-bomb', center, card);
+      }
+    }
+  }
   const defender = defenderId ? next.board.find((piece) => piece.instanceId === defenderId) : undefined;
   const defenderIsUnit = defender ? pieceDefinition(defender)?.type === 'unit' : false;
 
@@ -2192,7 +2441,7 @@ const applyOnAttackExtras = (
   const attackerPiece = next.board.find((piece) => piece.instanceId === attackerId);
   const challenged = Boolean(
     attackerPiece && defender && defenderIsUnit
-    && isChallenge(attackerPiece, card, defender, pieceDefinition(defender)!),
+    && isChallenge(attackerPiece, card, defender, pieceDefinition(defender)!, next),
   );
   if (challenged) {
     // El Skald mira si ALGUNA unidad propia ganó un Desafío este turno, no
@@ -2260,7 +2509,7 @@ const applyOnAttackExtras = (
   // Marea — el Lanzarredes aparta a quien golpea en vez de rematarlo.
   const netPush = card.effects.find((effect) => effect.kind === 'passive' && effect.id === 'push-on-attack');
   if (netPush?.kind === 'passive' && defenderId) {
-    next = pushOne(next, playerId, defenderId, netPush.value ?? 1);
+    next = stabilizeFormation(pushOne(next, playerId, defenderId, netPush.value ?? 1));
   }
   // Marea — la Mensajera de Espuma solo trae noticias con el agua baja.
   const foamDraw = card.effects.find(
@@ -2322,7 +2571,7 @@ const applyOnAttackExtras = (
   if (firstAttackHeal?.kind === 'passive') {
     const attackerPiece = next.board.find((piece) => piece.instanceId === attackerId);
     if (attackerPiece && !attackerPiece.firstAttackHealUsed) {
-      const maxHealth = pieceDefinition(attackerPiece)?.health ?? attackerPiece.currentHealth;
+      const maxHealth = (pieceDefinition(attackerPiece)?.health ?? attackerPiece.currentHealth) + (attackerPiece.formationHealthApplied ?? 0);
       next = updatePiece(next, attackerId, (piece) => ({
         ...piece, firstAttackHealUsed: true, currentHealth: Math.min(maxHealth, piece.currentHealth + (firstAttackHeal.value ?? 1)),
       }));
@@ -2369,7 +2618,7 @@ const computeAttackAmount = (
     defender
     && defenderCardForJarl
     && card.id !== 'jarl-de-la-costa'
-    && isChallenge(attacker, card, defender, defenderCardForJarl)
+    && isChallenge(attacker, card, defender, defenderCardForJarl, state)
     && state.board.some((piece) => piece.owner === attacker.owner && piece.cardId === 'jarl-de-la-costa')
       ? 1
       : 0;
@@ -2401,9 +2650,15 @@ const computeAttackAmount = (
           ),
       ).length
     : 0;
-  return Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
+  const dischargeTarget = defender?.position ?? { x: attacker.position.x, y: nexusRow(opponentOf(attacker.owner)) };
+  const dischargeBonus = hasDischarge(state, attacker) && dischargeLine(state, attacker, dischargeTarget).throughAlly
+    ? 2 + (card.id === 'mosquetero-veterano' ? 1 : 0) : 0;
+  const dischargeSpellBonus = hasDischarge(state, attacker) ? state.players[attacker.owner].dischargeDamageBonusThisTurn ?? 0 : 0;
+  const total = Math.max(0, (card.attack ?? 0) + attacker.attackModifier +
     (attackBuff?.kind === 'buff-self-on-attack' ? attackBuff.attack : 0) +
-    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus + mandateBonus + generalBonus + danzanteBonus + hordaBonus - shielded);
+    attackBonus(state, attacker, card, defender) + furorBonus + jarlBonus + mandateBonus + generalBonus + danzanteBonus + hordaBonus +
+    (card.type === 'unit' ? runoAttackBonus(state.players[attacker.owner].runo ?? 0) : 0) + formationAttackBonus(state, attacker) + dischargeBonus + dischargeSpellBonus - shielded);
+  return defender && pieceDefinition(defender)?.type === 'structure' && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'double-structure-damage') ? total * 2 : total;
 };
 
 export const attackPiece = (
@@ -2430,8 +2685,12 @@ export const attackPiece = (
   });
   const defenderPosition = defender.position;
   const defenderCard = pieceDefinition(defender);
+  if (defenderCard?.type === 'unit' && (state.players[playerId].runo ?? 0) >= 9 && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'attack-canto-at-nine')) {
+    return success(enqueue(stabilizeFormation(sinkUnit(next, defender)), { type: 'spell', actorId: attackerId, targetId: defenderId, to: defender.position, cardId: card.id, effectId: 'kalevala-canto', durationMs: 400 }));
+  }
   const hit = damagePieceDetailed(next, defenderId, amount, playerId, card.vfx.impactEffect, attacker.position, card);
   next = hit.state;
+  if (next.phase === 'finished') return success(next);
   // Vínculo vital: el Nexo propio se cura por el daño que llegó de verdad, no
   // por el anunciado — escudos y reducciones lo recortan antes.
   if (hit.dealt > 0 && hasLifelink(next, attacker, playerId)) {
@@ -2470,6 +2729,15 @@ export const attackPiece = (
   // primer disparador de «cuando destruye» del juego, así que se comprueba
   // aquí, donde ya se sabe si la defensora sigue en el tablero.
   const defensoraCayo = !next.board.some((piece) => piece.instanceId === defenderId);
+  if (defensoraCayo && defenderCard?.type === 'unit' && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'kill-random-ally-damage')) {
+    const allies = next.board.filter((piece) => piece.owner === playerId && pieceDefinition(piece)?.type === 'unit').sort((a, b) => a.instanceId.localeCompare(b.instanceId));
+    if (allies.length) {
+      const random = nextRandom(next.combatRandomState ?? deriveSeed(next.seed, 733));
+      const victim = allies[Math.floor(random.value * allies.length)]!;
+      next = { ...next, combatRandomState: random.state };
+      next = damagePiece(next, victim.instanceId, 2, playerId, card.vfx.impactEffect, attacker.position, card);
+    }
+  }
   const scrapper = card.effects.find(
     (effect) => effect.kind === 'passive' && effect.id === 'on-kill-self-attack-buff',
   );
@@ -2521,7 +2789,8 @@ export const attackPiece = (
   // distancia (Alcance 2+) no reciben este contragolpe, ni las
   // estructuras (no tienen Ataque).
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
-    const retaliation = Math.max(0, defenderCard.attack + defender.attackModifier);
+    const retaliation = Math.max(0, defenderCard.attack + defender.attackModifier +
+      (defenderCard.type === 'unit' ? runoAttackBonus(next.players[defender.owner].runo ?? 0) : 0) + formationAttackBonus(next, defender));
     next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition, defenderCard);
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount, defenderId, defenderPosition);
@@ -2818,7 +3087,8 @@ export const previewAttackPiece = (
   // Mismo criterio que el combate real: la defensora devuelve el golpe si es
   // cuerpo a cuerpo, incluso si el ataque recibido la mata.
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
-    const raw = Math.max(0, defenderCard.attack + defender.attackModifier);
+    const raw = Math.max(0, defenderCard.attack + defender.attackModifier +
+      (defenderCard.type === 'unit' ? runoAttackBonus(state.players[defender.owner].runo ?? 0) : 0) + formationAttackBonus(state, defender));
     const back = damagePieceDetailed(state, attackerId, raw, defender.owner, defenderCard.vfx.impactEffect, defender.position, defenderCard);
     retaliationToAttacker = back.dealt;
     attackerHealthAfter = Math.max(0, attacker.currentHealth - back.dealt);
@@ -2920,7 +3190,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
           .filter((piece) => {
             if (piece.owner !== playerId) return false;
             const definition = pieceDefinition(piece);
-            return definition?.type === 'unit' && piece.currentHealth < (definition.health ?? 0);
+            return definition?.type === 'unit' && piece.currentHealth < (definition.health ?? 0) + (piece.formationHealthApplied ?? 0);
           })
           .slice()
           .sort((a, b) => a.currentHealth - b.currentHealth)[0];
@@ -2942,7 +3212,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
           .filter((piece) => piece.owner === enemyId && pieceDefinition(piece)?.type === 'unit')
           .slice()
           .sort((a, b) => Math.abs(a.position.y - ownNexusRow) - Math.abs(b.position.y - ownNexusRow))[0];
-        if (closest) next = pushOne(next, playerId, closest.instanceId, value);
+        if (closest) next = stabilizeFormation(pushOne(next, playerId, closest.instanceId, value));
       } else if (effect.id === 'upkeep-drain-nexus') {
         // Drena y cura en el mismo gesto, como la pasiva de Malachar.
         const result = damageNexus(next, enemyId, value, playerId, structure.instanceId, card);
@@ -3098,7 +3368,7 @@ const resolveStructureUpkeep = (state: MatchState, playerId: PlayerId): MatchSta
       } else if (effect.id === 'metamorphosis-grow-if-wounded' && card.type === 'unit') {
         // Hidra de Lerna (Olimpo): si sigue en pie herida al final del turno, +N/+N. Se repite cada turno.
         const self = next.board.find((piece) => piece.instanceId === structure.instanceId);
-        if (self && self.currentHealth > 0 && self.currentHealth < (card.health ?? 0)) {
+        if (self && self.currentHealth > 0 && self.currentHealth < (card.health ?? 0) + (self.formationHealthApplied ?? 0)) {
           next = updatePiece(next, self.instanceId, (piece) => ({
             ...piece,
             attackModifier: piece.attackModifier + value,
@@ -3164,6 +3434,71 @@ const elementGeneratorOf = (element: (typeof ELEMENTS)[number]): (typeof ELEMENT
   return ELEMENTS[(index - 1 + ELEMENTS.length) % ELEMENTS.length]!;
 };
 
+/** Los textos de la nueva oleada dicen «al comienzo»: se resuelven tras el
+ * robo y antes de dar control al jugador, independientemente del mantenimiento
+ * histórico que se cobra al terminar el turno. */
+const resolveExpansionStart = (state: MatchState, owner: PlayerId): MatchState => {
+  let next = state;
+  for (const source of state.board.filter((piece) => piece.owner === owner)) {
+    if (!next.board.some((piece) => piece.instanceId === source.instanceId)) continue;
+    const effects = pieceDefinition(source)?.effects ?? [];
+    for (const effect of effects) {
+      if (effect.kind !== 'passive') continue;
+      const value = effect.value ?? 1;
+      if (effect.id === 'start-sampo') {
+        const id = `sampo-mana-${next.nextId}`;
+        next = { ...next, nextId: next.nextId + 1 };
+        next = withPlayer(next, owner, { ...next.players[owner], resources: [...next.players[owner].resources, { instanceId: id, cardId: 'fuente-kalevala', faction: 'kalevala', exhausted: false, temporary: true }] });
+        next = gainRuno(next, owner, 1);
+        next = enqueue(next, { type: 'resource', actorId: owner, targetId: id, faction: 'kalevala', effectId: 'kalevala-sampo', amount: 1, durationMs: 300 });
+      } else if (effect.id === 'start-canto-adjacent') {
+        if ((next.players[owner].runo ?? 0) >= value) next = queueDecision(next, owner, source.cardId, { kind: 'sink', remaining: 1, optional: false, adjacent: true, anchor: source.position });
+      } else if (effect.id === 'start-choose-move') next = queueDecision(next, owner, source.cardId, { kind: 'move', remaining: 1, optional: true, distance: value });
+      else if (effect.id === 'start-gain-runo') next = gainRuno(next, owner, value);
+      else if (effect.id === 'start-scry') next = enqueue(next, { type: 'spell', actorId: owner, amount: value, effectId: 'scry-top-cards', durationMs: 300 });
+      else if (effect.id === 'start-draw-if-three-units') {
+        if (next.board.filter((piece) => piece.owner === owner && pieceDefinition(piece)?.type === 'unit').length >= 3) next = resolveDrawAndDiscard(next, owner, value, 0);
+      } else if (effect.id === 'start-heal-unit' || effect.id === 'start-repair-structure' || effect.id === 'start-heal-and-form') {
+        const structure = effect.id === 'start-repair-structure';
+        const maximum = (piece: BoardPiece): number => {
+          const card = pieceDefinition(piece);
+          return (structure ? card?.resistance ?? 0 : card?.health ?? 0) + (piece.formationHealthApplied ?? 0);
+        };
+        const target = next.board.filter((piece) => piece.owner === owner && pieceDefinition(piece)?.type === (structure ? 'structure' : 'unit') && piece.currentHealth < maximum(piece))
+          .sort((a, b) => (maximum(b) - b.currentHealth) - (maximum(a) - a.currentHealth) || a.instanceId.localeCompare(b.instanceId))[0];
+        if (target) {
+          next = updatePiece(next, target.instanceId, (piece) => ({ ...piece,
+            currentHealth: Math.min(maximum(piece), piece.currentHealth + value),
+            grantedFormation: piece.grantedFormation || effect.id === 'start-heal-and-form',
+          }));
+          next = stabilizeFormation(next);
+        }
+      } else if (effect.id === 'start-cleanse-unit') {
+        const negative = new Set(['frozen', 'stunned', 'cursed', 'infected', 'silenced']);
+        const target = next.board.filter((piece) => piece.owner === owner && pieceDefinition(piece)?.type === 'unit' && piece.statuses.some((status) => negative.has(status.kind)))
+          .sort((a, b) => a.instanceId.localeCompare(b.instanceId))[0];
+        if (target) {
+          let removed = false;
+          next = updatePiece(next, target.instanceId, (piece) => ({ ...piece, statuses: piece.statuses.filter((status) => {
+            if (!removed && negative.has(status.kind)) { removed = true; return false; }
+            return true;
+          }) }));
+        }
+      } else if (effect.id === 'start-grant-petardazo') {
+        const target = next.board.filter((piece) => piece.owner === owner && pieceDefinition(piece)?.type === 'unit' && !piece.grantedPetardazo && !pieceDefinition(piece)?.effects.some((candidate) => candidate.kind === 'passive' && candidate.id === 'petardazo'))
+          .sort((a, b) => (pieceDefinition(b)?.attack ?? 0) - (pieceDefinition(a)?.attack ?? 0) || a.instanceId.localeCompare(b.instanceId))[0];
+        if (target) next = updatePiece(next, target.instanceId, (piece) => ({ ...piece, grantedPetardazo: 'permanent' }));
+      } else if (effect.id === 'start-damage-nearest') {
+        const target = next.board.filter((piece) => piece.owner !== owner && pieceDefinition(piece)?.type === 'unit')
+          .sort((a, b) => distance(a.position, source.position) - distance(b.position, source.position) || a.instanceId.localeCompare(b.instanceId))[0];
+        if (target) next = damagePiece(next, target.instanceId, value, owner, 'goblins-start-shot', source.position, pieceDefinition(source));
+      }
+    }
+    if (next.phase === 'finished') break;
+  }
+  return next;
+};
+
 export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => {
   const turnError = validateTurn(state, playerId);
   if (turnError) return turnError;
@@ -3176,6 +3511,14 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
   // dos turnos, no solo el de quien lo termina.
   state = resolveContagionDrain(state);
   if (state.phase === 'finished') return success(state);
+  const rocDamage = state.players[playerId].rocroiEndDamage ?? 0;
+  if (rocDamage > 0) {
+    const targets = state.board.filter((enemy) => enemy.owner !== playerId && pieceDefinition(enemy)?.type === 'unit'
+      && state.board.some((ally) => ally.owner === playerId && pieceDefinition(ally)?.type === 'unit' && distance(ally.position, enemy.position) === 1));
+    for (const target of targets) state = damagePiece(state, target.instanceId, rocDamage, playerId, 'tercios-rocroi', undefined, CARD_BY_ID['rocroi']);
+    if (state.phase === 'finished') return success(state);
+  }
+  state = returnSunkenUnits(state, playerId);
   // Jade: el Mandato Celestial se cae solo si terminas tu turno sin ninguna
   // unidad propia en el tablero — el Cielo no respalda a quien no tiene nada.
   if (state.mandate === playerId && !state.board.some((piece) => piece.owner === playerId)) {
@@ -3194,8 +3537,14 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
       ...state.players,
       [playerId]: {
         ...outgoing,
+        resources: outgoing.resources.filter((resource) => !resource.temporary),
         resourcePlayedThisTurn: false,
         spellsCastThisTurn: 0,
+        sparkRolledThisTurn: false,
+        dischargeDamageBonusThisTurn: 0,
+        attacksForbiddenThisTurn: false,
+        formationInvulnerableTurn: undefined,
+        rocroiEndDamage: 0,
         towerLootUsedThisTurn: false,
         forgeBuffUsedThisTurn: false,
         nexusDamagedThisTurn: false,
@@ -3219,6 +3568,7 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
         ...incoming,
         resources: restoreMana(incoming.resources),
         resourcePlayedThisTurn: false,
+        sparkRolledThisTurn: false,
         nexusDamagedThisTurn: false,
         firstUnitDeployedThisTurn: false,
         commanderKillHealUsedThisTurn: false,
@@ -3245,14 +3595,15 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
       attackModifier: piece.owner === playerId ? (piece.permanentAttackBonus ?? 0) : piece.attackModifier,
       // Las palabras clave prestadas caducan con el turno de quien las recibió.
       grantedKeywords: piece.owner === playerId ? undefined : piece.grantedKeywords,
+      grantedPetardazo: piece.owner === playerId && piece.grantedPetardazo === 'turn' ? undefined : piece.grantedPetardazo,
+      formationMarch: piece.owner === playerId ? undefined : piece.formationMarch,
       // Horror Abisal: la ralentización dura exactamente el siguiente turno del enemigo.
       movementModifier: piece.owner === playerId ? 0 : piece.movementModifier,
-      statuses: piece.statuses.filter((status) =>
-        (status.kind !== 'frozen' && status.kind !== 'stunned') || status.expiresOnTurn > nextTurn,
-      ),
+      statuses: piece.statuses.filter((status) => !('expiresOnTurn' in status) || status.expiresOnTurn > nextTurn),
     })),
     tileEffects: state.tileEffects.filter((tile) => tile.expiresOnTurn > nextTurn),
   };
+  next = stabilizeFormation(next);
   // Maldición Sombra: cada unidad maldita pierde Vida al final de cada turno.
   for (const cursed of state.board.filter((piece) => piece.statuses.some((status) => status.kind === 'cursed'))) {
     const curse = cursed.statuses.find((status) => status.kind === 'cursed');
@@ -3263,6 +3614,7 @@ export const endTurn = (state: MatchState, playerId: PlayerId): ActionResult => 
   });
   next = { ...next, phase: 'draw' };
   next = drawInternal(next, nextPlayerId);
+  if (next.phase !== 'finished') next = resolveExpansionStart(next, nextPlayerId);
   if (next.phase !== 'finished') next = { ...next, phase: 'main' };
   return success(next);
 };
@@ -3313,8 +3665,70 @@ export const mulliganOpeningHand = (
   }));
 };
 
+const sinkChosenUnits = (state: MatchState, decision: BoardDecision): MatchState => {
+  let next = state;
+  for (const id of decision.chosenIds) {
+    const unit = next.board.find((piece) => piece.instanceId === id);
+    if (!unit) continue;
+    next = sinkUnit(next, unit);
+    next = enqueue(next, { type: 'spell', actorId: decision.owner, targetId: id, to: unit.position, cardId: decision.sourceCardId, effectId: 'kalevala-canto', durationMs: 400 });
+  }
+  return stabilizeFormation(next);
+};
+
+const resolveBoardChoice = (state: MatchState, action: Extract<GameAction, { type: 'resolve-choice' }>): ActionResult => {
+  const decision = state.pendingDecisions?.[0];
+  if (state.phase === 'finished' || !decision || decision.id !== action.decisionId || decision.owner !== action.playerId) return fail(state, 'wrong-phase', 'La elección ya no está disponible.');
+  const rest = state.pendingDecisions!.slice(1);
+  const options = decisionOptions(state, decision);
+  if (action.skip) {
+    if (!decision.optional && options.length) return fail(state, 'target-required', 'Debes completar esta elección.');
+    const skipped = { ...state, pendingDecisions: rest };
+    return success(decision.kind === 'sink' ? sinkChosenUnits(skipped, decision) : skipped);
+  }
+  const option = options.find((candidate) => candidate.pieceId === action.pieceId && candidate.axis === action.axis && candidate.index === action.index
+    && (candidate.to ? candidate.to.x === action.to?.x && candidate.to.y === action.to?.y : action.to === undefined));
+  if (!option) return fail(state, 'target-required', 'La opción elegida no es válida.');
+  let next: MatchState = { ...state, pendingDecisions: rest };
+  const piece = action.pieceId ? state.board.find((candidate) => candidate.instanceId === action.pieceId) : undefined;
+  const source = CARD_BY_ID[decision.sourceCardId];
+  if (decision.kind === 'sink' && piece) {
+    const updated = { ...decision, remaining: decision.remaining - 1, chosenIds: [...decision.chosenIds, piece.instanceId], anchor: decision.anchor ?? piece.position };
+    if (updated.remaining > 0 && decisionOptions(state, updated).length) return success({ ...state, pendingDecisions: [updated, ...rest] });
+    return success(sinkChosenUnits(next, updated));
+  }
+  if (decision.kind === 'formation' && piece) next = updatePiece(next, piece.instanceId, (unit) => ({ ...unit, grantedFormation: true }));
+  else if (decision.kind === 'move' && piece && action.to) {
+    const to = action.to;
+    next = updatePiece(next, piece.instanceId, (unit) => ({ ...unit, position: to }));
+    next = enqueue(next, { type: 'move', actorId: piece.instanceId, from: piece.position, to, effectId: 'card-slide', durationMs: 360 });
+  } else if (decision.kind === 'line' && source) {
+    const victims = next.board.filter((unit) => (action.axis === 'row' ? unit.position.y : unit.position.x) === action.index
+      && (!decision.enemiesOnly || unit.owner !== decision.owner) && (!decision.unitsOnly || pieceDefinition(unit)?.type === 'unit'));
+    for (const victim of victims) {
+      next = damagePiece(next, victim.instanceId, decision.amount ?? 0, decision.owner, source.vfx.impactEffect, undefined, source);
+      if (next.phase === 'finished') break;
+    }
+  }
+  next = stabilizeFormation(next);
+  if (decision.remaining > 1) {
+    const updated: BoardDecision = { ...decision, remaining: decision.remaining - 1, chosenIds: [...decision.chosenIds, ...(piece ? [piece.instanceId] : [])], anchor: decision.anchor ?? piece?.position };
+    if (decisionOptions(next, updated).length) next = { ...next, pendingDecisions: [updated, ...rest] };
+  }
+  return success(next);
+};
+
 export const applyAction = (state: MatchState, action: GameAction): ActionResult => {
+  if (state.pendingSpark && action.type !== 'choose-spark') return fail(state, 'wrong-phase', 'Resuelve la Chispa antes de continuar.');
+  if (state.pendingDecisions?.length && action.type !== 'resolve-choice') return fail(state, 'wrong-phase', 'Resuelve la elección pendiente antes de continuar.');
   switch (action.type) {
+    case 'resolve-choice': return resolveBoardChoice(state, action);
+    case 'choose-spark': {
+      const pending = state.pendingSpark;
+      if (!pending || pending.owner !== action.playerId || !pending.faces.includes(action.face)) return fail(state, 'wrong-phase', 'La elección no corresponde a esta Chispa.');
+      const chosen = playCard({ ...state, pendingSpark: undefined }, action.playerId, pending.cardInstanceId, pending.position, action.target, pending.offering, action.face);
+      return chosen.ok ? chosen : { ...chosen, state };
+    }
     case 'draw':
       return drawCard(state, action.playerId ?? state.activePlayer);
     case 'play-resource':

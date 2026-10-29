@@ -32,6 +32,9 @@ const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonl
   plaga: { color: '#b8481f', glow: 'ember' },
   marea: { color: '#2f8f9d', glow: 'arcane' },
   forja: { color: '#ffb347', glow: 'ember' },
+  goblins: { color: '#ffd34d', glow: 'ember' },
+  tercios: { color: '#d9b775', glow: 'gold' },
+  kalevala: { color: '#dfa448', glow: 'arcane' },
 }
 
 /**

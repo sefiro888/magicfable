@@ -5,6 +5,8 @@ import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePers
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight, Texture } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
+import { runoAttackBonus } from '../game/kalevala'
+import { formationAttackBonus } from '../game/tercios'
 import type { GraphicsQuality, ScenarioId } from '../store/preferences'
 import { withBase } from '../utils/assets'
 import { GameIcon } from '../components/GameIcon'
@@ -595,8 +597,9 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
+const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
+  const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
   const group = useRef<Group>(null)
   const presentation = useRef<Group>(null)
@@ -792,7 +795,7 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
     event.stopPropagation()
     onInspect?.(piece.cardId, piece.instanceId)
   }
-  const maxHealth = card.health ?? card.resistance ?? 1
+  const maxHealth = Math.max(1, (card.health ?? card.resistance ?? 1) + (piece.formationHealthApplied ?? 0) + (piece.permanentHealthBonus ?? 0) - (piece.permanentHealthPenalty ?? 0))
   const damaged = piece.currentHealth < maxHealth
   // El marco distingue "mía" de "del rival" a simple vista (a petición del
   // usuario: costaba distinguirlas) — dorado/bronce para las propias, rojo
@@ -941,11 +944,11 @@ const BoardCard = memo(function BoardCard({ piece, selected, targetable, ready, 
         {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
             propaga los data-* al div que crea, así que el atributo tiene que
             vivir aquí dentro para que el CSS pueda usarlo. */}
-        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={stackSafe && (piece.currentHealth >= 10 || (card.attack ?? 0) + piece.attackModifier >= 10) || undefined}>
+        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={stackSafe && (piece.currentHealth >= 10 || displayedAttack >= 10) || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats} data-unique={card.unique || undefined}>
           {card.unique && <span className={styles.uniqueMark} role="img" aria-label="Carta única">◆</span>}
-          {card.attack !== undefined && <span className={styles.attackStat} aria-label={`Ataque ${Math.max(0, card.attack + piece.attackModifier)}`}><GameIcon name="attack" /> {Math.max(0, card.attack + piece.attackModifier)}</span>}
+          {card.attack !== undefined && <span className={styles.attackStat} aria-label={`Ataque ${displayedAttack}`}><GameIcon name="attack" /> {displayedAttack}</span>}
           <span className={damaged ? styles.damagedStat : styles.healthStat} aria-label={`Vida ${piece.currentHealth}`}><GameIcon name="health" /> {piece.currentHealth}</span>
         </div>
         {/* Estados: solo aparecen cuando los hay, en su propia fila para que no
@@ -1585,6 +1588,8 @@ function Scene(props: Board3DProps) {
           <BoardCard
             key={piece.instanceId}
             piece={piece}
+            runo={props.state.players[piece.owner].runo ?? 0}
+            formationBonus={formationAttackBonus(props.state, piece)}
             selected={piece.instanceId === props.selectedPieceId}
             targetable={targetSet.has(piece.instanceId)}
             ready={props.readyPieceIds.has(piece.instanceId)}

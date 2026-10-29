@@ -51,6 +51,13 @@ describe('integración de los hechizos de empuje dirigido', () => {
 });
 
 describe('IA: valor del reposicionamiento real', () => {
+  it('reconoce como letal una Descarga que atraviesa una aliada', () => {
+    const shooter = { ...piece('tirador', 'tejedora-escarcha', 'ai', 2, 6), grantedDischarge: true };
+    const ally = { ...piece('aliada', 'oso-forestal', 'ai', 2, 7), attackedThisTurn: true, movedThisTurn: true };
+    const base = scenario([], [shooter, ally]);
+    const state = { ...base, players: { ...base.players, player: { ...base.players.player, nexusHealth: 4 } } };
+    expect(chooseNextAiAction(state, new Set(), 'hard')).toEqual({ type: 'attack-nexus', playerId: 'ai', attackerId: 'tirador' });
+  });
   it.each(['ai', 'player'] as const)('en el asiento %s aparta la amenaza cercana aunque otra tenga más ataque', (me) => {
     const rival = me === 'ai' ? 'player' : 'ai';
     const mirror = (y: number) => me === 'ai' ? y : 7 - y;
