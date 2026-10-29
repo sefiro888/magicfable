@@ -6,7 +6,52 @@ yo doy de alta las cartas.
 
 ---
 
-## ⚠️ ANTES DE GENERAR NADA: cómo se nombran los archivos
+## 0. ANTES DE GENERAR NADA
+
+### Qué generador usar
+
+**ChatGPT.** Con Inmortales se probó en paralelo con Gemini y no hay color: con
+los mismos prompts, ChatGPT devuelve el color saturado y poses con energía,
+mientras que Gemini se atasca en gris y plano medio e **ignora las
+instrucciones de cámara** aunque se las repitas.
+
+### Instrucción permanente — pégala UNA VEZ al empezar la conversación
+
+Esto es obligatorio: **los 31 prompts de abajo terminan en «Paleta Goblins»**, y
+si no has pegado esto antes, el generador no tiene ni idea de qué significa.
+Con Inmortales se perdieron seis ilustraciones por dar por supuesta una
+dirección artística que el generador no podía ver.
+
+> A partir de ahora voy a pedirte una serie de ilustraciones para cartas de un
+> juego de fantasía. Todas comparten esta dirección artística y **no quiero que
+> la cambies entre una y otra**. Cuando yo escriba «Paleta Goblins» me refiero a
+> todo esto:
+>
+> **Color**: verde cetrino de piel y latón sucio como base; amarillo de chispa y
+> blanco incandescente de soplete como única luz; hollín y grasa negra en las
+> sombras, muy oscuras; rojo de pintura de aviso y cobre como acentos. Nada de
+> gris plano, nada de marrón apagado.
+>
+> **Luz**: la luz sale casi siempre **de dentro de la escena** — una explosión,
+> un soplete, una mecha, un arco eléctrico, un brasero — y es naranja o amarilla,
+> baja y dura, dejando media figura en negro. Chispas y pavesas volando. Humo
+> iluminado por detrás. Si hay sol, es un atardecer sucio de polvo y hollín,
+> nunca mediodía.
+>
+> **Tono**: divertido y peligroso, nunca asqueroso ni cruel. Un goblin mirando su
+> invento con orgullo justo antes de que estalle. Si la imagen da asco en vez de
+> risa, está mal.
+>
+> **Formas**: todo asimétrico y remachado mal, parches soldados encima de parches,
+> nada nivelado. Cuerpos pequeños manejando máquinas desproporcionadas. Orejas
+> largas, dientes afilados, ojos enormes, muchas veces detrás de gafas de
+> soldador.
+>
+> Contraste alto, colores saturados, movimiento desatado, composición
+> **cinematográfica en formato vertical 2:3**, mínimo 1024 × 1536. Arte de carta
+> de fantasía.
+
+### Cómo se nombran los archivos
 
 **Cada imagen tiene que guardarse con el identificador de su carta, tal cual:**
 
@@ -371,6 +416,19 @@ los Inmortales, si no cierras pronto, no cierras.
 ---
 
 ## 6. Checklist de entrega
+
+Nombres de archivo exactos (sin extensión):
+
+```
+bromuro-el-afortunado fuente-goblin pinche-de-polvora buscachatarra
+artillero-chapucero jinete-de-jabali mecanico-de-urgencia lanzabombas
+cuadrilla-de-sabotaje probador-voluntario coheteador acorazado-de-latas
+capataz-griton ingeniera-jefa maquina-andante el-gran-petardo chispazo
+a-ver-que-pasa remiendo-rapido doble-o-nada mecha-corta rebusca-en-la-chatarra
+sabotaje invento-sin-probar fiesta-de-la-polvora torreta-de-chatarra
+taller-de-remiendos barril-de-polvora montana-de-chatarra tobogan-de-tubos
+maquina-de-la-suerte la-fabrica
+```
 
 - [ ] 32 ilustraciones (31 cartas + retrato del comandante).
 - [ ] **Cada archivo nombrado con el id de su carta**, en minúsculas y con guiones: `pinche-de-polvora.png`, `fuente-goblin.png`, etc. Nada de nombres automáticos.
