@@ -139,6 +139,44 @@ Decir lo que **no** debe aparecer funciona mejor que describir solo lo que sí.
 
 ---
 
+## 8 bis. Cada facción puede tener su propio acabado
+
+**Decisión del usuario, 29 oct 2026. No la deshagas unificando el estilo.**
+
+Las primeras de Goblins salieron con un acabado de render 3D muy detallado,
+distinto del tratamiento más pictórico de Inmortales. Se planteó si había que
+igualarlas y la respuesta fue que no: con dieciséis facciones, que cada una
+tenga su propia esencia visual es una ventaja.
+
+Y además funciona. El render hiperdetallado le va a Goblins porque la facción
+es chatarra, remaches y metal abollado, y ahí se nota la textura; a Kalevala,
+que es bruma y agua quieta, le irá lo contrario.
+
+Lo que **sí** hay que mantener uniforme es el formato (vertical 2:3) y la
+coherencia **dentro** de cada facción.
+
+---
+
+## 8 ter. Varía también el escenario, no solo el encuadre
+
+La regla 5 habla del encuadre, pero hay un segundo modo de que salgan treinta y
+una cartas iguales: **repetir el decorado**. En las primeras de Goblins, dos de
+tres compartían empalizada de madera con banderolas rojas al atardecer; la
+tercera pasaba en un taller en penumbra y se notaba la diferencia al instante.
+
+Si el prompt no dice dónde pasa la escena, el generador reutiliza el último
+decorado que le funcionó. Dos remedios:
+
+- Situar explícitamente cada carta: interior, bajo tierra, de noche, en el agua,
+  a cielo abierto.
+- Añadir al final de los prompts que no lo digan: *«Cambia el escenario respecto
+  a las imágenes anteriores»*.
+
+Lo mismo con la hora y el color de la luz. Si todas llevan atardecer cálido, la
+facción acaba siendo monócroma aunque cada carta por separado esté bien.
+
+---
+
 ## 9. Nombres de archivo: el id de la carta, y una lista al final
 
 Las 32 imágenes de Enjambre llegaron llamadas `exec-a1bf5c0b-1143.png`, sin
