@@ -1,5 +1,35 @@
 # Estado del proyecto y por dónde seguir
 
+## Revisión de continuidad — 30 de octubre de 2026
+
+**Empieza por el [README actualizado](../README.md).** Las cifras y prioridades
+del traspaso del 22 de octubre conservado debajo son históricas. El catálogo
+actual integra **19 facciones, 517 cartas, 25 comandantes, 19 mazos y 12
+escenarios**. Goblins, Tercios y Kalevala ya son jugables; no deben tratarse
+como diseños pendientes de integrar.
+
+La última entrega de juego subida a `main` antes de esta revisión es `5dd7e15`:
+incorpora también correcciones de las nuevas mecánicas y avisos de pérdida de
+Vida y muerte por romper Formación al mover. El registro de esa entrega está
+en [ESTADO-INTEGRACION-FACCIONES](../tools/ESTADO-INTEGRACION-FACCIONES.md).
+Su última validación registrada fue de 697 unitarias correctas y 5 omitidas,
+compilación y lint correctos, más comprobaciones de la interfaz afectada.
+
+El desarrollo quedó **en pausa por petición del propietario**; actualizar esta
+documentación no lo reanuda. La renovación visual mantiene 11 tareas terminadas
+y 39 con avances pendientes de revisión global. Hay cambios y recursos locales
+de tablero sin publicar: comprobar `git status` y
+[RENOVACION-VISUAL](RENOVACION-VISUAL.md) antes de continuar. No confundir esos
+prototipos con contenido disponible en un clon limpio.
+
+Este documento sigue siendo útil por sus advertencias técnicas. Las propuestas
+antiguas que piden crear escenarios ya integrados o añadir Goblins, Tercios y
+Kalevala están superadas. Para resolver contradicciones, consultar el código,
+el README y las notas posteriores de cada registro; no borrar trabajo ajeno ni
+alterar los dosieres del propietario.
+
+---
+
 Documento de traspaso. Está escrito para que un agente que llega de cero pueda
 continuar sin preguntar nada. Última actualización: **22 de octubre de 2026**.
 
