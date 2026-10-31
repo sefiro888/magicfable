@@ -71,6 +71,7 @@ import { ScryDialog } from './battle/ScryDialog'
 import { SparkDialog } from './battle/SparkDialog'
 import { TacticalDialog } from './battle/TacticalDialog'
 import { TurnBanner } from './battle/TurnBanner'
+import { RecentPlays } from './battle/RecentPlays'
 import { SelectionPanel } from './battle/SelectionPanel'
 import styles from './BattlePage.module.css'
 
@@ -917,6 +918,7 @@ export function BattlePage() {
               reducedMotion={preferences.reducedMotion}
             />
           )}
+          {!photoMode && <RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} />}
           {director.exchange && !photoMode && (
             <CombatDuel
               exchange={director.exchange}

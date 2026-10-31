@@ -15,7 +15,7 @@ import {
 
 const CUES: readonly SoundCue[] = [
   'draw', 'resource', 'summon', 'spell', 'move', 'attack', 'impact',
-  'destroy', 'freeze', 'shield', 'reveal', 'turn', 'victory', 'defeat', 'ui',
+  'destroy', 'freeze', 'shield', 'reveal', 'spotlight', 'land', 'trait', 'turn', 'victory', 'defeat', 'ui',
 ]
 
 afterEach(() => {

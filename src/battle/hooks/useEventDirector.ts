@@ -5,7 +5,7 @@ import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
 import { ARRIVAL_LANDING } from '../arrivalMotion'
 import { eventDuration } from '../eventTiming'
-import { clashExchange, duelIntroDuration, endsExchange, foldExchange, openExchange, spotlightFor, type CombatExchange, type Spotlight } from '../presentation'
+import { clashExchange, duelIntroDuration, endsExchange, foldExchange, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
 const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
@@ -84,6 +84,8 @@ export interface EventDirector {
   exchange?: CombatExchange
   /** Sacudida de pantalla: clave nueva por golpe y su fuerza. */
   impact?: { readonly key: string; readonly strength: 'light' | 'heavy' }
+  /** Últimas jugadas de ambos bandos, la más reciente primero. */
+  recentPlays: readonly RecentPlay[]
   /** Limpia los avisos al empezar una partida nueva (revancha o repetición). */
   resetBanners: () => void
 }
@@ -117,6 +119,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   const [exchange, setExchange] = useState<CombatExchange>()
   const [impact, setImpact] = useState<{ readonly key: string; readonly strength: 'light' | 'heavy' }>()
   const [duelHold, setDuelHold] = useState<{ readonly key: string; readonly durationMs: number }>()
+  const [recentPlays, setRecentPlays] = useState<readonly RecentPlay[]>([])
 
   // 1) Si no hay evento en reproducción, avanza la cola. Antes de una carta
   // lanzada se detiene a presentarla: es el único momento en que ambos bandos
@@ -171,7 +174,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
 
   useEffect(() => {
     if (!spotlight) return
-    if (!preferences.muted) playSynthCue('reveal')
+    if (!preferences.muted) playSynthCue('spotlight')
     const timer = window.setTimeout(() => setSpotlight(undefined), spotlight.durationMs)
     return () => window.clearTimeout(timer)
   }, [spotlight, preferences.muted])
@@ -223,6 +226,8 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       } else {
         setExchange((open) => (open ? foldExchange(open, currentEvent) : open))
       }
+      const play = recentPlayFor(currentEvent, state.match?.board ?? [])
+      if (play) setRecentPlays((list) => pushRecentPlay(list, play))
       const amount = currentEvent.amount ?? 0
       if (currentEvent.type === 'destroy' || currentEvent.type === 'nexus-damage' || (currentEvent.type === 'damage' && amount > 0)) {
         const heavy = currentEvent.type === 'destroy' || currentEvent.type === 'nexus-damage' || amount >= 4
@@ -235,7 +240,10 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     })
     // La sacudida de una invocación llega al aterrizar, no al empezar a caer.
     const landing = currentEvent.type === 'summon' && !preferences.reducedMotion
-      ? window.setTimeout(() => setImpact({ key: `${currentEvent.id}-land`, strength: currentEvent.cast ? 'heavy' : 'light' }), duration * ARRIVAL_LANDING)
+      ? window.setTimeout(() => {
+        setImpact({ key: `${currentEvent.id}-land`, strength: currentEvent.cast ? 'heavy' : 'light' })
+        if (!preferences.muted) playSynthCue('land')
+      }, duration * ARRIVAL_LANDING)
       : undefined
     const timer = window.setTimeout(() => useMatchStore.getState().finishEvent(), duration)
     return () => {
@@ -244,6 +252,17 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       window.clearTimeout(landing)
     }
   }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, preferences.presentationPace, me])
+
+  // Cada habilidad que se enciende en el duelo suena una vez: el brillo
+  // dorado se ve, pero entre el golpe y el daño se perdía sin un aviso sonoro.
+  const triggeredRef = useRef({ key: '', count: 0 })
+  useEffect(() => {
+    if (!exchange) return
+    const count = exchange.attacker.triggered.length + exchange.defender.triggered.length
+    const seen = triggeredRef.current
+    if (seen.key === exchange.key && count > seen.count && !preferences.muted) playSynthCue('trait')
+    triggeredRef.current = { key: exchange.key, count }
+  }, [exchange, preferences.muted])
 
   // El rótulo de combate se apaga poco después de vaciarse la cola: dejarlo
   // fijo ensuciaba el tablero mientras el jugador piensa su turno.
@@ -337,6 +356,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     setExchange(undefined)
     setDuelHold(undefined)
     pendingResultRef.current = undefined
+    setRecentPlays([])
   }
 
   const dismissSpotlight = () => setSpotlight(undefined)
@@ -358,6 +378,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     dismissDuel,
     exchange,
     impact,
+    recentPlays,
     resetBanners,
   }
 }

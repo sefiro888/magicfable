@@ -335,3 +335,61 @@ export const combatTraits = (side: CombatSide, role: 'attacker' | 'defender'): r
   }
   return traits
 }
+
+// ── Historial de jugadas ─────────────────────────────────────────────────────
+
+/** Añade una jugada al historial sin repetir la misma invocación ni el mismo evento. */
+export const pushRecentPlay = (list: readonly RecentPlay[], play: RecentPlay): readonly RecentPlay[] => {
+  if (list.some((entry) => entry.id === play.id || (play.pieceId && entry.pieceId === play.pieceId))) return list
+  return [play, ...list].slice(0, RECENT_PLAYS_LIMIT)
+}
+
+export interface RecentPlay {
+  readonly id: string
+  readonly kind: 'spell' | 'structure' | 'power' | 'summon' | 'attack'
+  readonly owner: PlayerId
+  readonly cardId?: string
+  readonly commanderId?: string
+  readonly targetCardId?: string
+  readonly targetLabel?: string
+  /** Pieza invocada: una misma entrada puede traer dos 'summon' (sello y aura). */
+  readonly pieceId?: string
+}
+
+/** Cuántas jugadas guarda la tira: más no cabe a 1366 × 768 sin tapar el tablero. */
+export const RECENT_PLAYS_LIMIT = 7
+
+/**
+ * Convierte un evento del motor en una jugada para el historial. Solo las
+ * acciones que alguien decidió: cartas, poderes, invocaciones y ataques. Los
+ * daños, robos y fuentes son consecuencias y llenarían la tira de ruido.
+ */
+export const recentPlayFor = (event: AnimationEvent, board: readonly BoardPiece[]): RecentPlay | undefined => {
+  if (event.cast) {
+    const owner = event.actorId as PlayerId
+    if (owner !== 'player' && owner !== 'ai') return undefined
+    if (event.cast.kind === 'power') {
+      return { id: event.id, kind: 'power', owner, commanderId: event.cast.sourceId, targetCardId: event.targetCardId }
+    }
+    return {
+      id: event.id, kind: event.cast.kind, owner, cardId: event.cast.sourceId, targetCardId: event.targetCardId,
+      targetLabel: event.targetId?.endsWith('-nexus') && !event.targetCardId ? 'Nexo' : undefined,
+    }
+  }
+  if (event.type === 'summon' && event.targetId) {
+    const piece = board.find((candidate) => candidate.instanceId === event.targetId)
+    // Las auras de comandante también llegan como 'summon' sobre la misma
+    // pieza; solo cuenta la invocación con sello de facción propio.
+    if (!piece || event.effectId?.startsWith('commander-')) return undefined
+    return { id: event.id, kind: 'summon', owner: piece.owner, cardId: piece.cardId, pieceId: piece.instanceId }
+  }
+  if (event.type === 'attack' && event.actorId && event.cardId) {
+    const attacker = board.find((candidate) => candidate.instanceId === event.actorId)
+    if (!attacker) return undefined
+    return {
+      id: event.id, kind: 'attack', owner: attacker.owner, cardId: event.cardId, targetCardId: event.targetCardId,
+      targetLabel: event.targetId?.endsWith('-nexus') ? 'Nexo' : undefined,
+    }
+  }
+  return undefined
+}

@@ -10,6 +10,9 @@ export type SoundCue =
   | 'freeze'
   | 'shield'
   | 'reveal'
+  | 'spotlight'
+  | 'land'
+  | 'trait'
   | 'turn'
   | 'victory'
   | 'defeat'
@@ -125,6 +128,30 @@ export const voicesForCue = (cue: SoundCue): readonly Voice[] => {
       return [
         { wave: 'sine', freq: 780, toFreq: 1170, at: 0, duration: 0.24, gain: 0.26, attack: 0.02 },
         { wave: 'noise', freq: 5200, toFreq: 2600, at: 0, duration: 0.2, gain: 0.16, q: 2.2 },
+      ]
+    case 'spotlight':
+      // Carta en grande: golpe grave que abre espacio y un brillo que sube,
+      // como un telón. Más largo que 'reveal' porque la presentación dura 5 s
+      // y un pitido corto sonaba a error de interfaz.
+      return [
+        { wave: 'sine', freq: 70, toFreq: 48, at: 0, duration: 0.6, gain: 0.55 },
+        { wave: 'noise', freq: 600, toFreq: 2400, at: 0, duration: 0.5, gain: 0.22, q: 0.9, attack: 0.08 },
+        { wave: 'sine', freq: step(440, 7), toFreq: step(440, 12), at: 0.12, duration: 0.7, gain: 0.18, attack: 0.12 },
+        { wave: 'triangle', freq: step(880, 7), at: 0.3, duration: 0.6, gain: 0.1, attack: 0.05 },
+      ]
+    case 'land':
+      // Aterrizaje: el sub-grave es el peso; el ruido corto, la losa.
+      return [
+        { wave: 'sine', freq: 95, toFreq: 38, at: 0, duration: 0.32, gain: 0.7 },
+        { wave: 'noise', freq: 500, toFreq: 140, at: 0, duration: 0.26, gain: 0.4, q: 0.6 },
+      ]
+    case 'trait':
+      // Habilidad que actúa: dos notas brillantes en quinta, cortas, para que
+      // se distingan del golpe que las acompaña.
+      return [
+        { wave: 'triangle', freq: step(660, 0), at: 0, duration: 0.18, gain: 0.24, attack: 0.005 },
+        { wave: 'triangle', freq: step(660, 7), at: 0.07, duration: 0.24, gain: 0.22, attack: 0.005 },
+        { wave: 'noise', freq: 7000, toFreq: 4000, at: 0, duration: 0.14, gain: 0.1, q: 3 },
       ]
     case 'turn':
       // Dos notas de aviso, como una campana de sala.

@@ -12,7 +12,7 @@ import {
   type PlayerId,
 } from '../game'
 import { eventDuration } from './eventTiming'
-import { clashExchange, combatTraits, duelIntroDuration, endsExchange, foldExchange, openExchange, spotlightFor, spotlightHeading } from './presentation'
+import { clashExchange, combatTraits, duelIntroDuration, endsExchange, foldExchange, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, spotlightHeading } from './presentation'
 
 const freshMatch = (): MatchState => ({ ...createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 42), terrain: [] })
 
@@ -219,5 +219,28 @@ describe('rótulo de combate', () => {
     expect(endsExchange(attack)).toBe(true)
     expect(endsExchange({ id: 'c', type: 'spell', cast: { kind: 'spell', sourceId: 'x' }, durationMs: 1 })).toBe(true)
     expect(endsExchange({ id: 'd', type: 'damage', durationMs: 1 })).toBe(false)
+  })
+})
+
+describe('historial de jugadas', () => {
+  const unit = CARDS.find((card) => card.type === 'unit')!
+  const piece = { ...enemyUnit(unit.id), instanceId: 'nueva' }
+
+  it('registra cartas lanzadas, invocaciones y ataques con su dueño', () => {
+    const spell = recentPlayFor({ id: 'a', type: 'spell', actorId: 'ai', cast: { kind: 'spell', sourceId: 'x' }, targetCardId: unit.id, durationMs: 1 }, [])
+    expect(spell).toMatchObject({ kind: 'spell', owner: 'ai', cardId: 'x', targetCardId: unit.id })
+    expect(recentPlayFor({ id: 'b', type: 'summon', targetId: 'nueva', durationMs: 1 }, [piece])).toMatchObject({ kind: 'summon', owner: 'ai', cardId: unit.id })
+    expect(recentPlayFor({ id: 'c', type: 'attack', actorId: 'nueva', cardId: unit.id, targetId: 'player-nexus', durationMs: 1 }, [piece])).toMatchObject({ kind: 'attack', targetLabel: 'Nexo' })
+  })
+
+  it('una misma invocación no aparece dos veces', () => {
+    const first = recentPlayFor({ id: 'f', type: 'summon', targetId: 'nueva', durationMs: 1 }, [piece])!
+    const second = recentPlayFor({ id: 'g', type: 'summon', targetId: 'nueva', effectId: 'otro-sello', durationMs: 1 }, [piece])!
+    expect(pushRecentPlay(pushRecentPlay([], first), second)).toHaveLength(1)
+  })
+
+  it('ignora consecuencias y auras de comandante', () => {
+    expect(recentPlayFor({ id: 'd', type: 'damage', targetId: 'nueva', amount: 2, durationMs: 1 }, [piece])).toBeUndefined()
+    expect(recentPlayFor({ id: 'e', type: 'summon', targetId: 'nueva', effectId: 'commander-void-aura', durationMs: 1 }, [piece])).toBeUndefined()
   })
 })

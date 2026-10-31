@@ -1,0 +1,108 @@
+/* Tira vertical en el borde izquierdo del marco del tablero, bajo la cabecera.
+   Las jugadas más nuevas arriba; las viejas se apagan para que el ojo vaya
+   primero a lo último que ha pasado. */
+.strip {
+  position: absolute;
+  z-index: 30;
+  top: 64px;
+  left: 10px;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.strip li {
+  --side: #7fc8ff;
+  animation: playIn 420ms cubic-bezier(.2, 1.3, .4, 1) both;
+}
+.strip li[data-owner='rival'] { --side: #ff7a66; }
+.strip li:nth-child(n + 4) { opacity: 0.72; }
+.strip li:nth-child(n + 6) { opacity: 0.5; }
+
+.chip {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #120f0c;
+  box-shadow: 0 0 0 2px var(--side), 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent), 0 6px 14px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+.chip img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.chip:focus-visible { outline: 2px solid #ffd76a; outline-offset: 3px; }
+
+.kind {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #1a120a;
+  background: var(--side);
+  box-shadow: 0 0 0 2px #120f0c;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Ficha ampliada al pasar: nombre, tipo y a quién afectó. */
+.tip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  display: grid;
+  gap: 2px;
+  min-width: 170px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--side);
+  border-radius: 4px;
+  background: rgba(8, 10, 16, 0.94);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  color: #f4e8c8;
+  text-align: left;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-6px, -50%);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.chip:hover .tip, .chip:focus-visible .tip { opacity: 1; transform: translate(0, -50%); }
+.tip small {
+  color: var(--side);
+  font: 700 10px var(--display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.tip strong { font: 600 14px var(--display); }
+.tip em {
+  color: #b8ad92;
+  font: italic 500 12px var(--display);
+}
+
+@keyframes playIn {
+  from { opacity: 0; transform: translateX(-20px) scale(0.6); }
+  to { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .strip li { animation: none; }
+}
+
+/* En móvil el borde del tablero ya va justo: la tira se reduce y solo
+   muestra las cuatro últimas. */
+@media (max-width: 760px) {
+  .strip { top: 56px; left: 6px; gap: 6px; }
+  .chip { width: 34px; height: 34px; }
+  .strip li:nth-child(n + 5) { display: none; }
+  .tip { display: none; }
+}
