@@ -32,7 +32,17 @@ omitidas en cada pasada) y tras revisarlo en el navegador.
    dos fichas mientras se presenta el duelo, y en el objetivo de un hechizo
    cuando llega su efecto), y **acercamiento de cámara** del 7 % en cada
    ataque (`CombatPunch` en `Board3D.tsx`, con `camera.zoom` para no pelear
-   con el encuadre ni con la sacudida).
+   con el encuadre ni con la sacudida). Publicado en `d168ea4`.
+5. `03e742b` — **Pantalla final con el comandante que gana**
+   (`ResultHero.module.css`): rayos, brasas y título en oro si ganas; el
+   retrato del rival agrietado y título en rojo si pierdes. Sonda de Tercios
+   añadida al informe de equilibrio.
+6. **Botón de ritmo en la propia partida** (esquina superior izquierda del
+   tablero, sobre el historial): cambia entre Cinemático, Normal y Rápido sin
+   ir a Ajustes. **Vida del Nexo en el duelo** cuando el objetivo es un
+   Nexo: se muestra la vida antes del golpe, sumando los daños al Nexo que
+   aún esperan en la cola (el motor ya los ha restado cuando el duelo se
+   presenta).
 
 ### Pendiente, por prioridad
 

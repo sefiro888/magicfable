@@ -111,6 +111,15 @@
   color: #b8ad92;
   font: 600 12px var(--display);
 }
+.nexusLife {
+  margin-top: 4px;
+  padding: 2px 12px;
+  border-radius: 20px;
+  color: #fff;
+  background: rgba(150, 30, 25, 0.75);
+  box-shadow: 0 0 14px rgba(255, 80, 60, 0.5);
+  font: 800 18px var(--display);
+}
 
 /* El daño entra como un sello grande que rebota; el escudo, en cian. */
 .damage {

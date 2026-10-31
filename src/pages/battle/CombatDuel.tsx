@@ -11,16 +11,19 @@ interface CombatDuelProps {
   readonly me: PlayerId
   /** Comandante de cada bando, para poner cara al Nexo cuando es el objetivo. */
   readonly commanderIds: Readonly<Record<PlayerId, string>>
+  /** Vida actual de cada Nexo: si el objetivo es un Nexo, cuánto le queda importa más que su nombre. */
+  readonly nexusHealth: Readonly<Record<PlayerId, number>>
   /** El golpe aún no ha caído: se puede adelantar con un clic. */
   readonly holding: boolean
   readonly onSkip: () => void
 }
 
-function Fighter({ side, role, me, commanderIds, phase, holding }: {
+function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding }: {
   side: CombatSide
   role: 'attacker' | 'defender'
   me: PlayerId
   commanderIds: CombatDuelProps['commanderIds']
+  nexusHealth: CombatDuelProps['nexusHealth']
   phase: CombatExchange['phase']
   holding: boolean
 }) {
@@ -52,6 +55,7 @@ function Fighter({ side, role, me, commanderIds, phase, holding }: {
               {commander && <img src={withBase(commander.art.webp)} alt="" />}
               <strong>Nexo</strong>
               <small>{commander?.name}</small>
+              <span className={styles.nexusLife}>♥ {nexusHealth[side.owner]}</span>
             </div>
           )}
         {side.damage > 0 && <span key={side.damage} className={styles.damage}>−{side.damage}</span>}
@@ -79,7 +83,7 @@ function Fighter({ side, role, me, commanderIds, phase, holding }: {
  * diminutos donde los nombres salían cortados y no se veía qué carta era ni
  * qué habilidades entraban en juego.
  */
-export function CombatDuel({ exchange, me, commanderIds, holding, onSkip }: CombatDuelProps) {
+export function CombatDuel({ exchange, me, commanderIds, nexusHealth, holding, onSkip }: CombatDuelProps) {
   const { attacker, defender } = exchange
 
   useEffect(() => {
@@ -107,8 +111,8 @@ export function CombatDuel({ exchange, me, commanderIds, holding, onSkip }: Comb
       <p className={styles.srOnly} role="status" aria-live="polite">{summary}</p>
       {/* Sin emblema central: arriba en el centro está el Nexo rival, que es
           justo lo que hay que ver cuando es el objetivo. */}
-      <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} phase={exchange.phase} holding={holding} />
-      <Fighter side={defender} role="defender" me={me} commanderIds={commanderIds} phase={exchange.phase} holding={holding} />
+      <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} phase={exchange.phase} holding={holding} />
+      <Fighter side={defender} role="defender" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} phase={exchange.phase} holding={holding} />
     </div>
   )
 }

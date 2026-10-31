@@ -57,7 +57,7 @@ import { opponentForFloor, towerMaxHealth, useTower } from '../store/tower'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
-import { AI_GAP_SCALE } from '../battle/presentation'
+import { AI_GAP_SCALE, PACE_LABELS, PRESENTATION_PACES } from '../battle/presentation'
 import { TYPE_LABELS } from '../utils/cardLabels'
 import { CastSpotlight } from './battle/CastSpotlight'
 import { CombatDuel } from './battle/CombatDuel'
@@ -151,6 +151,15 @@ export function BattlePage() {
       en el tablero y en la píldora inferior, así que se oculta por defecto para dejar
       sitio al tablero. En PC siempre está visible, este estado no se usa ahí. */
   const [ownPanelOpenMobile, setOwnPanelOpenMobile] = useState(false)
+  /** Aviso breve tras cambiar el ritmo desde la propia partida. */
+  const [paceHint, setPaceHint] = useState<string>()
+  // Con temporizador y no con el fin de la animación: con movimiento reducido
+  // no hay animación y el aviso se quedaba para siempre.
+  useEffect(() => {
+    if (!paceHint) return
+    const timer = window.setTimeout(() => setPaceHint(undefined), 2600)
+    return () => window.clearTimeout(timer)
+  }, [paceHint])
 
   const match = store.match
   const currentEvent = store.currentEvent
@@ -193,6 +202,18 @@ export function BattlePage() {
   // cartas de los costados no se asociaban a ninguna pieza concreta. Solo
   // durante la pausa, cuando el propio duelo intercepta los clics y un
   // objetivo falso no puede provocar una jugada.
+  // El motor ya ha restado el golpe cuando el duelo se presenta: se suman
+  // los daños al Nexo que aún esperan en la cola para que la cifra baje
+  // cuando el golpe se ve caer, no antes.
+  const displayedNexusHealth = useMemo(() => {
+    const pending = (owner: PlayerId) => store.pendingAnimations
+      .filter((event) => event.type === 'nexus-damage' && event.targetId === `${owner}-nexus`)
+      .reduce((total, event) => total + (event.amount ?? 0), 0)
+    return {
+      player: (store.match?.players.player.nexusHealth ?? 0) + pending('player'),
+      ai: (store.match?.players.ai.nexusHealth ?? 0) + pending('ai'),
+    }
+  }, [store.match, store.pendingAnimations])
   const duelOnBoard = director.duelHolding && director.exchange
     ? { attacker: director.exchange.attacker.id, defender: director.exchange.defender.id }
     : undefined
@@ -931,12 +952,35 @@ export function BattlePage() {
               reducedMotion={preferences.reducedMotion}
             />
           )}
+          {/* Ritmo a mano, sin salir a Ajustes: cinco segundos por carta se
+              disfrutan en una partida tranquila y pesan en una de cincuenta
+              turnos; el jugador decide en el momento. */}
+          <button
+            className={styles.paceButton}
+            type="button"
+            data-pace={preferences.presentationPace}
+            onClick={() => {
+              const next = PRESENTATION_PACES[(PRESENTATION_PACES.indexOf(preferences.presentationPace) + 1) % PRESENTATION_PACES.length]!
+              preferences.setPresentationPace(next)
+              setPaceHint(`Ritmo ${PACE_LABELS[next].name.toLowerCase()}: ${PACE_LABELS[next].hint}`)
+            }}
+            aria-label={`Ritmo de la partida: ${PACE_LABELS[preferences.presentationPace].name}. Pulsa para cambiarlo`}
+            title={`Ritmo: ${PACE_LABELS[preferences.presentationPace].name}. ${PACE_LABELS[preferences.presentationPace].hint}`}
+          >
+            {preferences.presentationPace === 'cinematic' ? '🎬' : preferences.presentationPace === 'normal' ? '▶' : '⏩'}
+          </button>
+          {paceHint && !photoMode && (
+            <div key={paceHint} className={styles.paceHint} role="status">
+              {paceHint}
+            </div>
+          )}
           {!photoMode && <RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} />}
           {director.exchange && !photoMode && (
             <CombatDuel
               exchange={director.exchange}
               me={ME}
               commanderIds={{ player: match.players.player.commanderId, ai: match.players.ai.commanderId }}
+              nexusHealth={displayedNexusHealth}
               holding={director.duelHolding}
               onSkip={director.dismissDuel}
             />

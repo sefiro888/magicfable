@@ -577,6 +577,26 @@
 .photoModeButton:hover { color: var(--gold-bright); border-color: var(--gold); transform: scale(1.08); }
 .photoModeButton:focus-visible { outline: 2px solid #fff1b8; outline-offset: 2px; }
 .photoModeButton[data-active] { background: var(--gold); border-color: var(--gold-bright); color: #221604; }
+/* Con la forma del botón de foto, pero en la esquina del tablero sobre el
+   historial: en la cabecera tapaba los contadores del rival a 1366 px. */
+.paceButton {
+  position: absolute; z-index: 45; top: 14px; left: 16px;
+  width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer;
+  font-size: 15px; color: #e6d9b6;
+  border: 1px solid var(--line-bright); border-radius: 50%;
+  background: rgba(11,13,20,.84); backdrop-filter: blur(8px);
+  transition: color .15s ease, border-color .15s ease, transform .15s ease;
+}
+.paceButton:hover { color: var(--gold-bright); border-color: var(--gold); transform: scale(1.08); }
+.paceButton:focus-visible { outline: 2px solid #fff1b8; outline-offset: 2px; }
+.paceButton[data-pace='cinematic'] { border-color: var(--gold); }
+.paceHint {
+  position: absolute; z-index: 44; top: 14px; left: 60px; max-width: 320px;
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line-bright);
+  background: rgba(11,13,20,.92); color: #e6d9b6; font-size: 12px; line-height: 1.4;
+  animation: paceHintLife 2.6s ease forwards;
+}
+@keyframes paceHintLife { 0% { opacity: 0; transform: translateY(-6px); } 10%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .photoModeHint {
   position: absolute; z-index: 44; top: 54px; left: 50%; transform: translateX(-50%);
   padding: 6px 16px; border-radius: 20px; border: 1px solid var(--line-bright);
@@ -759,6 +779,8 @@
   .helpButton { right: 6px; }
   .glossaryButton { right: 52px; }
   .photoModeButton { right: 98px; }
+  .paceButton { top: 10px; left: 8px; }
+  .paceHint { top: 10px; left: 48px; right: 8px; }
   .photoModeHint { top: auto; bottom: 252px; }
 
   /* Descargar el registro es un botón de verdad y medía 32 px de alto. */
