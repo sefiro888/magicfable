@@ -51,6 +51,10 @@ seguir. Resumen:
 - Cartas lanzadas en grande durante 5 s (`CastSpotlight`), duelo de combate con
   las dos cartas y sus habilidades (`CombatDuel`) y ajuste «Ritmo de la partida».
 - Los cambios locales de texturas del tablero que Codex dejó el 29 oct se
-  guardaron en `1e959b3` y se **publicaron** por decisión del propietario, sin
-  revisar 8 de los 11 suelos. Revisarlos queda pendiente dentro de la
-  renovación visual.
+  guardaron en `1e959b3` y se **publicaron** por decisión del propietario.
+  Los 8 suelos sin revisar se comprobaron después (`a9914f3`): se reforzaron
+  los tintes de bando de Santuario, Bestiario y Rompiente.
+- Sesión autónoma posterior (13:15–16:00): caída con impacto de las unidades,
+  aviso de turno con comandante, historial de jugadas, sonidos, anillos del
+  duelo en el tablero, acercamiento de cámara e informe de equilibrio sin
+  tocar cartas. Detalle en `docs/ESTADO-Y-SIGUIENTE.md`.

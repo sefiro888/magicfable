@@ -188,6 +188,19 @@ export function BattlePage() {
   // Reproducción de la cola de animaciones, avisos y canales laterales
   // (escrutinio, revelaciones): todo eso vive en su propio hook.
   const director = useEventDirector(ME, preferences)
+  // Mientras el duelo enseña las dos cartas, el tablero señala qué fichas son
+  // con los mismos anillos de selección y objetivo del juego: sin esto las
+  // cartas de los costados no se asociaban a ninguna pieza concreta. Solo
+  // durante la pausa, cuando el propio duelo intercepta los clics y un
+  // objetivo falso no puede provocar una jugada.
+  const duelOnBoard = director.duelHolding && director.exchange
+    ? { attacker: director.exchange.attacker.id, defender: director.exchange.defender.id }
+    : undefined
+  // Lo mismo para el objetivo de una carta lanzada mientras su efecto llega
+  // al tablero: la carta grande ya se ha cerrado y el anillo dice dónde mirar.
+  const castTargetOnBoard = store.currentEvent?.cast && store.currentEvent.targetId && store.currentEvent.cast.kind !== 'power'
+    ? store.currentEvent.targetId
+    : undefined
   const scryOpen = director.scryAmount > 0
 
   // Escenario efectivo: con «Según tu facción» lo decide el mazo con el que
@@ -878,13 +891,13 @@ export function BattlePage() {
           <Board3D
             state={match}
             localPlayerId={ME}
-            selectedPieceId={store.selectedPieceId}
+            selectedPieceId={duelOnBoard?.attacker ?? store.selectedPieceId}
             validCells={validCells}
             movementHazards={movementHazards}
             cellIntent={selectedCard ? 'deploy' : 'move'}
             colorblindMode={preferences.colorblindMode}
             boardTextScale={preferences.boardTextScale}
-            validTargets={boardTargets}
+            validTargets={duelOnBoard ? [duelOnBoard.defender] : castTargetOnBoard ? [castTargetOnBoard] : boardTargets}
             readyPieceIds={readyPieceIds}
             onCell={onCell}
             onPiece={onPiece}

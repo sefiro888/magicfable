@@ -1421,6 +1421,44 @@ function CameraRig({ event, reducedMotion }: { event?: AnimationEvent; reducedMo
 }
 
 /**
+ * Acercamiento breve de cámara en cada ataque. Usa `camera.zoom` y no la
+ * posición: así no pelea con el encuadre calculado por ResponsiveCamera ni
+ * con la sacudida de CameraRig, que sí mueven la posición. Un 7 % basta para
+ * que el golpe «tire» de la vista; con un 15 % las esquinas del tablero se
+ * salían de cuadro a 1366 × 768.
+ */
+const COMBAT_PUNCH = 0.07
+function CombatPunch({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
+  const start = useRef<{ at: number; durationMs: number } | null>(null)
+  useEffect(() => {
+    if (event?.type === 'attack') start.current = { at: performance.now(), durationMs: Math.max(200, event.durationMs) }
+  }, [event])
+  useFrame(({ camera }) => {
+    if (!(camera instanceof ThreePerspectiveCamera)) return
+    const run = start.current
+    if (reducedMotion || !run) {
+      if (camera.zoom !== 1) {
+        camera.zoom = 1
+        camera.updateProjectionMatrix()
+      }
+      return
+    }
+    const progress = (performance.now() - run.at) / run.durationMs
+    if (progress >= 1) {
+      start.current = null
+      camera.zoom = 1
+      camera.updateProjectionMatrix()
+      return
+    }
+    // Entra rápido y sale despacio: el pico coincide con la embestida.
+    const shape = progress < 0.35 ? Math.sin((progress / 0.35) * Math.PI / 2) : Math.cos(((progress - 0.35) / 0.65) * Math.PI / 2)
+    camera.zoom = 1 + COMBAT_PUNCH * shape
+    camera.updateProjectionMatrix()
+  }, -0.55)
+  return null
+}
+
+/**
  * Casilla sobre la que se está soltando una carta arrastrada desde la mano.
  *
  * Lo calcula por su cuenta en vez de fiarse del `hover` de las casillas: el
@@ -1693,6 +1731,7 @@ function Scene(props: Board3DProps) {
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
+      <CombatPunch event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ResponsiveCamera />
       <NexusFocus event={props.activeEvent} localPlayerId={props.localPlayerId} reducedMotion={props.reducedMotion} photoMode={props.photoMode} />
       {props.onCellHover && (

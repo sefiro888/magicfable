@@ -1,5 +1,56 @@
 # Estado del proyecto y por dónde seguir
 
+## Sesión autónoma del 31 de octubre de 2026, 13:15–16:00 (Claude Code)
+
+**Si llegas ahora (Codex o Claude), empieza por aquí.** El propietario se fue
+y pidió trabajo continuo por bloques: cada bloque se publicó en `main` solo
+tras pasar `test`, `build`, `lint` y `test:e2e` completos (104 correctas y 43
+omitidas en cada pasada) y tras revisarlo en el navegador.
+
+### Publicado hoy, en orden
+
+1. `8375876` — **Las unidades caen al tablero.** `arrivalMotion.ts`: caída
+   con gravedad desde 2,6 m, aterrizaje en `ARRIVAL_LANDING` (0,58 del
+   evento), aplastamiento y dos rebotes. En `EventEffects.tsx`,
+   `LandingShock` añade onda en el suelo, polvo, columna de luz de facción y
+   sacudida, sincronizados con el aterrizaje. Las facciones de crecimiento
+   brotan de la losa y las de velo bajan girando. La invocación dura ×2,4 en
+   cinemático.
+   **Aviso de turno** nuevo (`TurnBanner`): franja de facción con el retrato
+   del comandante. La sombra de contacto ya reaccionaba a la altura; no hubo
+   que tocarla.
+2. `6e4abe4` — **Historial de jugadas** (`RecentPlays`): tira a la izquierda
+   del tablero con las 7 últimas cartas, poderes, invocaciones y ataques;
+   ficha al pasar el ratón y clic para inspeccionar. **Sonidos nuevos**
+   `spotlight`, `land` y `trait` en `audio.ts`. **Informe de equilibrio**
+   en [EQUILIBRIO-2026-10-31](EQUILIBRIO-2026-10-31.md).
+3. `a9914f3` — **Revisados los 8 suelos de Codex** que faltaban. Duna, Jade,
+   Escalinata, Gremio y el Claro, bien. En Santuario, Bestiario y Rompiente
+   no se distinguían las dos mitades: se reforzaron los tintes de bando
+   (`moss`, `tide`, `forest`), sin tocar el material.
+4. **El tablero señala quién pelea** (anillos de selección y objetivo en las
+   dos fichas mientras se presenta el duelo, y en el objetivo de un hechizo
+   cuando llega su efecto), y **acercamiento de cámara** del 7 % en cada
+   ataque (`CombatPunch` en `Board3D.tsx`, con `camera.zoom` para no pelear
+   con el encuadre ni con la sacudida).
+
+### Pendiente, por prioridad
+
+- **Que el propietario pruebe el ritmo.** Cinco segundos por carta (pedido
+  por él) y 1,8 s de presentación por ataque pueden pesar en partidas de 50
+  turnos. Todo se ajusta en `presentation.ts` (`SPOTLIGHT_MS`,
+  `DUEL_INTRO_MS`, `PACE_SCALE`).
+- **Goblins al 2 %**: la sonda apunta a la IA (Petardazo daña a los aliados
+  que coloca juntos y no llega a golpear el Nexo). El propietario pidió
+  **no tocar cartas**; corregir la IA está permitido solo si él lo pide.
+  Detalle en el informe de equilibrio.
+- **Tercios al 15 %**: requiere la misma sonda.
+- La carta en grande no marca el objetivo en el tablero 3D mientras se
+  muestra (el fondo se oscurece); se descartó porque la propia carta ya
+  enseña el objetivo como carta unida por un haz.
+- Las 50 tareas de la renovación visual de Codex siguen como estaban
+  (`docs/RENOVACION-VISUAL.md`).
+
 ## Presentación de jugadas — 31 de octubre de 2026 (Claude Code)
 
 El propietario pidió que hechizos, estructuras y poderes se vieran en grande
@@ -32,12 +83,8 @@ tocar reglas:
 **Publicado el 31 de octubre a petición del propietario, junto con el
 prototipo de texturas del tablero** (`1e959b3`). Codex había dejado ese
 prototipo en local, y el propietario decidió subirlo para probarlo. Está en la
-web, pero **sigue sin revisar en 8 de los 11 suelos**: solo se comprobaron
-Ciudadela, Caldera y Fiordo. Al retomar la renovación visual, revisar en
-partida Santuario, Duna, Claro, Bestiario, Rompiente, Gremio, Jade y
-Escalinata, a 1920 × 1080 y 1366 × 768, antes de darlas por buenas. Si alguno
-desentona, corregirlo en `NATURAL_TILE_MAPS` o en los tintes de bando de
-`Board3D.tsx`; no hace falta revertir el commit.
+web. Los 8 suelos que faltaban se revisaron después, el mismo día (ver la
+sesión autónoma de arriba, punto 3).
 
 ## Revisión de continuidad — 30 de octubre de 2026
 
