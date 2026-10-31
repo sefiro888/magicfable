@@ -2295,6 +2295,9 @@ export const playCard = (
     next = enqueue(next, {
       type: 'summon', actorId: playerId, targetId: piece.instanceId, to: position,
       effectId: card.vfx.summonEffect, faction: card.faction, durationMs: 440,
+      // Las unidades ya se presentan solas al aparecer en su casilla; una
+      // estructura cambia reglas del tablero y conviene leerla antes.
+      ...(card.type === 'structure' ? { cast: { kind: 'structure' as const, sourceId: card.id } } : {}),
     });
     if (verdaniaBonus > 0) {
       next = enqueue(next, {
@@ -2325,7 +2328,8 @@ export const playCard = (
     next = enqueue(next, {
       type: 'spell', actorId: playerId, targetId: target?.kind === 'piece' ? target.pieceId : target?.kind === 'nexus' ? `${target.playerId}-nexus` : undefined,
       to: spellTargetPiece?.position,
-      cardId: card.id, faction: card.faction,
+      cardId: card.id, faction: card.faction, targetCardId: spellTargetPiece?.cardId,
+      cast: { kind: 'spell', sourceId: card.id },
       effectId: card.vfx.impactEffect ?? card.vfx.persistentEffect, durationMs: 420,
     });
     next = resolveSpell(next, playerId, card, target, paysOffering);
@@ -2856,8 +2860,10 @@ export const activateCommanderPower = (
     actorId: playerId,
     targetId: target?.kind === 'piece' ? target.pieceId : `${playerId}-nexus`,
     to: powerTargetPiece?.position,
+    targetCardId: powerTargetPiece?.cardId,
     effectId: power.effectId,
     faction: commander.faction,
+    cast: { kind: 'power', sourceId: commander.id },
     durationMs: 460,
   });
   // Carta virtual: solo existe para pasar por `resolveSpell`.

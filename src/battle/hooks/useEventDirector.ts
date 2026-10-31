@@ -4,6 +4,7 @@ import { playSynthCue, type SoundCue } from '../../services/audio'
 import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
 import { eventDuration } from '../eventTiming'
+import { clashExchange, duelIntroDuration, endsExchange, foldExchange, openExchange, spotlightFor, type CombatExchange, type Spotlight } from '../presentation'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
 const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
@@ -70,6 +71,18 @@ export interface EventDirector {
   scryOrder: readonly string[]
   setScryAmount: (amount: number) => void
   setScryOrder: React.Dispatch<React.SetStateAction<readonly string[]>>
+  /** Carta lanzada que se presenta en grande antes de resolverse. */
+  spotlight?: Spotlight
+  /** Cierra la presentación antes de tiempo (clic, Espacio o Escape). */
+  dismissSpotlight: () => void
+  /** Si el duelo está detenido enseñando las cartas antes del golpe. */
+  duelHolding: boolean
+  /** Deja caer el golpe sin esperar a que acabe la presentación del duelo. */
+  dismissDuel: () => void
+  /** Quién golpea a quién en el intercambio que se está reproduciendo. */
+  exchange?: CombatExchange
+  /** Sacudida de pantalla: clave nueva por golpe y su fuerza. */
+  impact?: { readonly key: string; readonly strength: 'light' | 'heavy' }
   /** Limpia los avisos al empezar una partida nueva (revancha o repetición). */
   resetBanners: () => void
 }
@@ -95,13 +108,72 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   const [scryOrder, setScryOrder] = useState<readonly string[]>([])
   /** Última referencia de `history` ya anunciada: evita reanunciar entradas viejas al recargar una partida guardada. */
   const lastHistoryRef = useRef(history)
+  const [spotlight, setSpotlight] = useState<Spotlight>()
+  /** Resultado de la jugada presentada; se anuncia cuando su efecto ya se ha visto. */
+  const pendingResultRef = useRef<string | undefined>(undefined)
+  /** Eventos ya presentados: al cerrar la carta, la cola debe avanzar y no volver a enseñarla. */
+  const presentedRef = useRef(new Set<string>())
+  const [exchange, setExchange] = useState<CombatExchange>()
+  const [impact, setImpact] = useState<{ readonly key: string; readonly strength: 'light' | 'heavy' }>()
+  const [duelHold, setDuelHold] = useState<{ readonly key: string; readonly durationMs: number }>()
 
-  // 1) Si no hay evento en reproducción, avanza la cola.
+  // 1) Si no hay evento en reproducción, avanza la cola. Antes de una carta
+  // lanzada se detiene a presentarla: es el único momento en que ambos bandos
+  // pueden leer qué se ha jugado antes de que el tablero cambie.
   useEffect(() => {
-    if (!currentEvent && pendingCount > 0) {
-      useMatchStore.getState().advanceEvent()
+    if (currentEvent || pendingCount === 0 || spotlight || duelHold) return
+    const state = useMatchStore.getState()
+    const next = state.pendingAnimations[0]
+    // Antes de un ataque, las dos cartas se presentan frente a frente; el
+    // golpe cae al terminar. Sin esta pausa la embestida duraba menos de lo
+    // que se tarda en encontrar las dos fichas en el tablero.
+    const introMs = duelIntroDuration(preferences.presentationPace, preferences.animationSpeed)
+    if (next?.type === 'attack' && introMs > 0 && !preferences.reducedMotion && !presentedRef.current.has(next.id)) {
+      const attacker = state.match?.board.find((piece) => piece.instanceId === next.actorId)
+      const opened = openExchange(next, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
+      if (opened) {
+        const deferred = window.setTimeout(() => {
+          presentedRef.current.add(next.id)
+          setExchange(opened)
+          setDuelHold({ key: next.id, durationMs: introMs })
+        }, 0)
+        return () => window.clearTimeout(deferred)
+      }
     }
-  }, [currentEvent, pendingCount])
+    if (next?.cast && !presentedRef.current.has(next.id)) {
+      const shown = spotlightFor(next, state.match, me, {
+        pace: preferences.presentationPace, animationSpeed: preferences.animationSpeed,
+      })
+      if (shown) {
+        const latest = state.history[state.history.length - 1]
+        // Se marca como presentado al mostrarse, no antes: si el efecto se
+        // relanza en este mismo tic, el temporizador cancelado no debe dejar
+        // la carta por presentada sin haberse visto.
+        const deferred = window.setTimeout(() => {
+          presentedRef.current.add(next.id)
+          setSpotlight(shown)
+          pendingResultRef.current = latest
+          setExchange(undefined)
+        }, 0)
+        return () => window.clearTimeout(deferred)
+      }
+    }
+    state.advanceEvent()
+    return undefined
+  }, [currentEvent, pendingCount, spotlight, duelHold, me, preferences.presentationPace, preferences.animationSpeed, preferences.reducedMotion])
+
+  useEffect(() => {
+    if (!duelHold) return
+    const timer = window.setTimeout(() => setDuelHold(undefined), duelHold.durationMs)
+    return () => window.clearTimeout(timer)
+  }, [duelHold])
+
+  useEffect(() => {
+    if (!spotlight) return
+    if (!preferences.muted) playSynthCue('reveal')
+    const timer = window.setTimeout(() => setSpotlight(undefined), spotlight.durationMs)
+    return () => window.clearTimeout(timer)
+  }, [spotlight, preferences.muted])
 
   // 2) Reproduce el evento actual: sonido, canales laterales y temporización.
   useEffect(() => {
@@ -133,16 +205,66 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       if (currentEvent.type === 'nexus-damage' && (currentEvent.amount ?? 0) > 0) {
         setNexusFlash(currentEvent.targetId === `${me}-nexus` ? 'self' : 'rival')
       }
+      // Rótulo de combate: el ataque lo abre y el daño o la muerte que llegan
+      // detrás se suman a él, de modo que el contragolpe queda en el mismo
+      // intercambio y no parece otro ataque distinto.
+      if (currentEvent.type === 'attack') {
+        // El dueño se lee de la pieza: el turno activo falla con golpes que
+        // ocurren fuera de turno (represalias, efectos al inicio del turno).
+        const attacker = state.match?.board.find((piece) => piece.instanceId === currentEvent.actorId)
+        setExchange((open) => {
+          if (open?.key === currentEvent.id) return clashExchange(open)
+          const opened = openExchange(currentEvent, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
+          return opened ? clashExchange(opened) : undefined
+        })
+      } else if (endsExchange(currentEvent)) {
+        setExchange(undefined)
+      } else {
+        setExchange((open) => (open ? foldExchange(open, currentEvent) : open))
+      }
+      const amount = currentEvent.amount ?? 0
+      if (currentEvent.type === 'destroy' || currentEvent.type === 'nexus-damage' || (currentEvent.type === 'damage' && amount > 0)) {
+        const heavy = currentEvent.type === 'destroy' || currentEvent.type === 'nexus-damage' || amount >= 4
+        setImpact({ key: currentEvent.id, strength: heavy ? 'heavy' : 'light' })
+      }
     }, 0)
     const duration = eventDuration(currentEvent, {
       animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
+      presentationPace: preferences.presentationPace,
     })
     const timer = window.setTimeout(() => useMatchStore.getState().finishEvent(), duration)
     return () => {
       window.clearTimeout(sideChannel)
       window.clearTimeout(timer)
     }
-  }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, me])
+  }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, preferences.presentationPace, me])
+
+  // El rótulo de combate se apaga poco después de vaciarse la cola: dejarlo
+  // fijo ensuciaba el tablero mientras el jugador piensa su turno.
+  useEffect(() => {
+    if (!exchange || currentEvent || pendingCount > 0) return
+    const timer = window.setTimeout(() => setExchange(undefined), 1800)
+    return () => window.clearTimeout(timer)
+  }, [exchange, currentEvent, pendingCount])
+
+  // Con la cola vacía, el efecto de la carta presentada ya se ha visto en el
+  // tablero: ahora sí se cuenta qué ha hecho.
+  useEffect(() => {
+    if (spotlight || currentEvent || pendingCount > 0 || !pendingResultRef.current) return
+    const text = pendingResultRef.current
+    const deferred = window.setTimeout(() => {
+      pendingResultRef.current = undefined
+      setEventBanner(text)
+      setEventBannerKind(bannerKindFor(text))
+    }, 0)
+    return () => window.clearTimeout(deferred)
+  }, [spotlight, currentEvent, pendingCount])
+
+  useEffect(() => {
+    if (!impact) return
+    const timer = window.setTimeout(() => setImpact(undefined), 520)
+    return () => window.clearTimeout(timer)
+  }, [impact])
 
   useEffect(() => {
     if (!banner) return
@@ -169,6 +291,10 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     const latest = history[history.length - 1]
     lastHistoryRef.current = history
     if (!latest || latest === 'Has cedido el turno.' || latest === 'Se cede el turno.') return undefined
+    // Si la jugada se va a presentar en grande, su resultado viaja dentro de
+    // la carta; el aviso central contaba el final antes de verse el hechizo.
+    const queue = useMatchStore.getState().pendingAnimations
+    if (queue.some((event) => event.cast) && preferences.presentationPace !== 'fast') return undefined
     // setState se difiere fuera del cuerpo del efecto: mismo patrón que ya usa
     // el director de animaciones un poco más arriba para sus canales laterales.
     const sideChannel = window.setTimeout(() => {
@@ -176,7 +302,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       setEventBannerKind(bannerKindFor(latest))
     }, 0)
     return () => window.clearTimeout(sideChannel)
-  }, [history])
+  }, [history, preferences.presentationPace])
 
   useEffect(() => {
     if (!eventBanner) return
@@ -200,7 +326,14 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     lastHistoryRef.current = []
     setEventBanner(undefined)
     setNexusFlash(undefined)
+    setSpotlight(undefined)
+    setExchange(undefined)
+    setDuelHold(undefined)
+    pendingResultRef.current = undefined
   }
+
+  const dismissSpotlight = () => setSpotlight(undefined)
+  const dismissDuel = () => setDuelHold(undefined)
 
   return {
     banner,
@@ -212,6 +345,12 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     scryOrder,
     setScryAmount,
     setScryOrder,
+    spotlight,
+    dismissSpotlight,
+    duelHolding: Boolean(duelHold),
+    dismissDuel,
+    exchange,
+    impact,
     resetBanners,
   }
 }

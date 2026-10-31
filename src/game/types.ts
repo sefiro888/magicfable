@@ -511,6 +511,12 @@ export interface AnimationEvent {
    * effectId: los impactos genéricos se comparten entre cartas muy distintas.
    */
   readonly faction?: FactionId;
+  /**
+   * Marca el evento que abre la jugada de una carta o poder que merece
+   * presentarse en grande. La interfaz no puede deducirlo: hay muchos 'spell'
+   * secundarios (escrutinio, Canto, botín) que no son una carta lanzada.
+   */
+  readonly cast?: { readonly kind: 'spell' | 'structure' | 'power'; readonly sourceId: string };
   readonly durationMs: number;
 }
 

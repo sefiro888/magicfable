@@ -57,7 +57,10 @@ import { opponentForFloor, towerMaxHealth, useTower } from '../store/tower'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
+import { AI_GAP_SCALE } from '../battle/presentation'
 import { TYPE_LABELS } from '../utils/cardLabels'
+import { CastSpotlight } from './battle/CastSpotlight'
+import { CombatDuel } from './battle/CombatDuel'
 import { DevPanel } from './battle/DevPanel'
 import { DragGhost } from './battle/DragGhost'
 import { EnemyPanel } from './battle/EnemyPanel'
@@ -152,8 +155,9 @@ export function BattlePage() {
   const visualEvent = useMemo(() => currentEvent ? {
     ...currentEvent, durationMs: eventDuration(currentEvent, {
       animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
+      presentationPace: preferences.presentationPace,
     }),
-  } : undefined, [currentEvent, preferences.animationSpeed, preferences.reducedMotion])
+  } : undefined, [currentEvent, preferences.animationSpeed, preferences.reducedMotion, preferences.presentationPace])
   const pendingCount = store.pendingAnimations.length
   const queueBusy = Boolean(currentEvent) || pendingCount > 0
 
@@ -221,8 +225,10 @@ export function BattlePage() {
     // invitado): este bot nunca debe jugar por él.
     enabled: !room && !rejoining,
     difficulty: preferences.aiDifficulty,
-    delayMs: preferences.aiDelayMs,
-    blocked: queueBusy || scryOpen,
+    // En ritmo cinemático la IA respira entre jugadas: si encadena una carta
+    // detrás de otra, la segunda tapa el resultado de la primera.
+    delayMs: preferences.aiDelayMs * AI_GAP_SCALE[preferences.presentationPace],
+    blocked: queueBusy || scryOpen || Boolean(director.spotlight),
   })
 
   useEffect(() => {
@@ -851,9 +857,22 @@ export function BattlePage() {
       </header>
 
       {enemyPanelOpen && <EnemyPanel rival={rival} onClose={() => setEnemyPanelOpen(false)} />}
+      {director.spotlight && !photoMode && (
+        <CastSpotlight
+          key={director.spotlight.eventId}
+          spotlight={director.spotlight}
+          me={ME}
+          reducedMotion={preferences.reducedMotion}
+          onDismiss={director.dismissSpotlight}
+        />
+      )}
 
       <div className={styles.arena}>
-        <div className={styles.boardFrame}>
+        <div
+          className={styles.boardFrame}
+          data-impact={!preferences.reducedMotion && director.impact ? director.impact.strength : undefined}
+          data-impact-key={director.impact?.key}
+        >
           <Board3D
             state={match}
             localPlayerId={ME}
@@ -888,14 +907,23 @@ export function BattlePage() {
           <p className={styles.srOnly} role="status" aria-live="polite">{boardCursor.announcement}</p>
           {!photoMode && !queueBusy && !inspected && <MovementHazardWarning hazards={movementHazards} focused={hoveredCell ?? boardCursor.cell} />}
           {director.banner && <div className={styles.turnBanner} role="status">{director.banner}</div>}
-          {director.eventBanner && (
+          {director.exchange && !photoMode && (
+            <CombatDuel
+              exchange={director.exchange}
+              me={ME}
+              commanderIds={{ player: match.players.player.commanderId, ai: match.players.ai.commanderId }}
+              holding={director.duelHolding}
+              onSkip={director.dismissDuel}
+            />
+          )}
+          {director.eventBanner && !director.exchange && (
             <div key={director.eventBanner} className={styles.eventBanner} data-kind={director.eventBannerKind} role="status">
               {director.eventBanner}
             </div>
           )}
           {director.nexusFlash && <div className={styles.nexusFlash} data-who={director.nexusFlash} aria-hidden="true" />}
           {queueBusy && pendingCount >= 2 && (
-            <button className={styles.skipQueue} onClick={() => store.skipAnimations()}>
+            <button className={styles.skipQueue} onClick={() => { director.dismissSpotlight(); director.dismissDuel(); store.skipAnimations() }}>
               Saltar animaciones ({pendingCount})
             </button>
           )}

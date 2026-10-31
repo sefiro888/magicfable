@@ -951,3 +951,26 @@
   .contextRules { font-size: 11px; }
   .context h3 { font-size: 16px; }
 }
+
+/* Sacudida al encajar un golpe. Se mueve el marco entero (lienzo y rótulos)
+   y no la cámara 3D: así no pelea con el encuadre calculado ni con
+   OrbitControls, y se apaga sola con movimiento reducido. El golpe pesado
+   (muerte, Nexo, 4 o más) se distingue del roce para que la escala del daño
+   se sienta antes de leer la cifra. */
+.boardFrame[data-impact='light'] { animation: impactLight 260ms cubic-bezier(.3, .8, .4, 1); }
+.boardFrame[data-impact='heavy'] { animation: impactHeavy 460ms cubic-bezier(.3, .8, .4, 1); }
+@keyframes impactLight {
+  0%, 100% { transform: none; }
+  25% { transform: translate(-3px, 2px); }
+  55% { transform: translate(2px, -1px); }
+}
+@keyframes impactHeavy {
+  0%, 100% { transform: none; }
+  12% { transform: translate(-8px, 5px) rotate(-0.25deg); }
+  28% { transform: translate(7px, -4px) rotate(0.2deg); }
+  46% { transform: translate(-4px, 3px); }
+  66% { transform: translate(2px, -1px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boardFrame[data-impact] { animation: none; }
+}

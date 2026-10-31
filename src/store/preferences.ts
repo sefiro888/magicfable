@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { PresentationPace } from '../battle/presentation'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high'
 /**
@@ -38,6 +39,12 @@ export interface PreferencesState {
   /** Multiplicador de velocidad de las animaciones de partida (1 = normal). */
   animationSpeed: 1 | 1.5 | 2
   /**
+   * Cuánto se detiene la partida para enseñar lo que ocurre: cartas lanzadas
+   * en grande y golpes a cámara lenta. Va aparte de `animationSpeed` porque
+   * decide QUÉ se presenta, no solo a qué velocidad corre.
+   */
+  presentationPace: PresentationPace
+  /**
    * Sustituye el verde de "casilla de despliegue" por ámbar. El rojo de
    * "casilla amenazada" (una unidad rival ya la alcanza) puede aparecer en
    * el tablero a la vez que el verde de despliegue, en casillas distintas
@@ -66,6 +73,7 @@ export interface PreferencesState {
   setGraphicsQuality: (quality: GraphicsQuality) => void
   setScenario: (scenario: ScenarioId) => void
   setAnimationSpeed: (speed: 1 | 1.5 | 2) => void
+  setPresentationPace: (pace: PresentationPace) => void
   setColorblindMode: (enabled: boolean) => void
   setBoardTextScale: (scale: 1 | 1.2 | 1.4) => void
   setConfirmEndTurn: (enabled: boolean) => void
@@ -86,6 +94,7 @@ const defaults = {
   graphicsQuality: 'medium' as GraphicsQuality,
   scenario: 'auto' as ScenarioId,
   animationSpeed: 1 as const,
+  presentationPace: 'cinematic' as PresentationPace,
   colorblindMode: false,
   boardTextScale: 1 as const,
   confirmEndTurn: true,
@@ -107,6 +116,7 @@ export const usePreferences = create<PreferencesState>()(
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
       setScenario: (scenario) => set({ scenario }),
       setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
+      setPresentationPace: (presentationPace) => set({ presentationPace }),
       setColorblindMode: (colorblindMode) => set({ colorblindMode }),
       setBoardTextScale: (boardTextScale) => set({ boardTextScale }),
       setConfirmEndTurn: (confirmEndTurn) => set({ confirmEndTurn }),

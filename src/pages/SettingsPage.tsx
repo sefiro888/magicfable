@@ -1,3 +1,4 @@
+import { PACE_LABELS, PRESENTATION_PACES, type PresentationPace } from '../battle/presentation'
 import { SCENARIO_OPTIONS } from '../battle/scenarioCatalog'
 import { playSynthCue, resumeAudio } from '../services/audio'
 import { usePreferences, type AiDifficulty, type GraphicsQuality, type ScenarioId } from '../store/preferences'
@@ -101,6 +102,20 @@ export function SettingsPage() {
               ))}
             </select>
             <output>×{settings.animationSpeed}</output>
+          </div>
+          <div className={styles.control}>
+            <label htmlFor="presentationPace">Ritmo de la partida</label>
+            <select
+              id="presentationPace"
+              className={styles.select}
+              value={settings.presentationPace}
+              onChange={(event) => settings.setPresentationPace(event.target.value as PresentationPace)}
+            >
+              {PRESENTATION_PACES.map((pace) => (
+                <option key={pace} value={pace}>{PACE_LABELS[pace].name}</option>
+              ))}
+            </select>
+            <output>{PACE_LABELS[settings.presentationPace].hint}</output>
           </div>
         </section>
         <section className={styles.section}>

@@ -1,5 +1,38 @@
 # Estado del proyecto y por dónde seguir
 
+## Presentación de jugadas — 31 de octubre de 2026 (Claude Code)
+
+El propietario pidió que hechizos, estructuras y poderes se vieran en grande
+para los dos bandos y que los golpes fueran más lentos y legibles. Hecho sin
+tocar reglas:
+
+- El motor marca con `cast` el evento que abre una jugada presentable
+  (hechizo inmediato, estructura, poder de comandante). Las unidades no lo
+  llevan: ya se presentan solas al aparecer. Los `spell` secundarios
+  (escrutinio, Canto, botín, tirada de Chispa) tampoco.
+- `useEventDirector` detiene la cola ante un `cast` y muestra
+  `CastSpotlight`: carta, objetivo como carta unida por un haz, brillo según
+  rareza y franjas de cine para los poderes. Dura 5 s en cinemático, propia
+  y rival por igual (petición expresa del propietario). El resultado de la
+  crónica se anuncia después, con la cola vacía, para no adelantarlo. La IA
+  no actúa mientras dura. Se cierra con clic, Espacio, Intro o Escape.
+- `CombatDuel` presenta antes de cada ataque las dos cartas a los costados
+  del tablero (1,8 s en cinemático) y deja caer el golpe después. Marca daño,
+  escudo absorbido y «Destruida», y enciende en dorado las habilidades que
+  actúan: Perforar (daño al Nexo), Vínculo vital y Aturdir (al entrar el
+  golpe) y Escudo (evento `shield`). Se omite con movimiento reducido. El
+  marco del tablero tiembla en los golpes.
+- Ajuste nuevo «Ritmo de la partida» (`presentationPace`): Cinemático (por
+  defecto), Normal y Rápido. La lógica pura está en
+  `src/battle/presentation.ts`, con pruebas.
+- Un panel de navegador oculto no avanza las animaciones CSS: la carta queda
+  en su fotograma inicial, con opacidad 0. Para revisarla así, activar
+  «Reducir movimiento», que la muestra quieta.
+
+El prototipo de texturas del tablero que Codex dejó en local está guardado
+aparte en `1e959b3`, sin revisar todos los suelos. Nada de esto está
+publicado.
+
 ## Revisión de continuidad — 30 de octubre de 2026
 
 **Empieza por el [README actualizado](../README.md).** Las cifras y prioridades
