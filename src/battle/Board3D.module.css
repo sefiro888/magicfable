@@ -61,8 +61,12 @@
 }
 /* En filas juntas el texto ampliado conservaba el relleno ancho de la chapa:
    dos cifras vecinas se tapaban. Recortar espacio ornamental mantiene la letra. */
-.labelInner[data-compact] .cardStats { gap: 1px; }
-.labelInner[data-compact] .cardStats > span:not(.uniqueMark) { min-width: 0; gap: 2px; padding-inline: 1px; }
+.labelInner[data-compact] .cardStats { gap: 0; }
+.labelInner[data-compact] .cardStats > span:not(.uniqueMark) { min-width: 0; gap: 0; padding-inline: 0; }
+/* Con dos filas de piezas y cifras grandes, los iconos a tamaño de letra
+   dejaban menos espacio que el ancho proyectado de cada casilla. La cifra
+   conserva el tamaño solicitado y el símbolo sigue visible. */
+.labelInner[data-compact] .cardStats svg { width: 0.6em; height: 0.6em; }
 /* Dos dígitos a texto grande invadían la casilla vecina. Solo se apila cuando
    no hay fichas en filas contiguas: en dos filas sus chapas se tapaban. */
 .labelInner[data-crowded][data-wide] .cardStats { flex-direction: column; align-items: center; }

@@ -2,13 +2,53 @@
 
 ## Retoma del 28 de octubre de 2026
 
+**Fiordo, prototipo pendiente.** Hielo original generado e integrado
+localmente: primera sonda en alta 2/2 verde, pero la textura resultaba muy
+cargada en juego. Atenuada: capturas alta/baja 4/4 y selección 2/2 verdes;
+revisadas imagen y selección a 1366. Falta ejecutar el gate completo. Maestro original en
+`tools/art-inbox/board` (ignorado).
+Último gate: lint verde; 598 unitarias verdes/5 omitidas y dos fallos del
+checklist de Inmortales. El dosier cambió externamente durante esta fase y su
+lista anterior quedó desactualizada; conservar la edición ajena en curso y
+repetir pruebas cuando se estabilice. Falta e2e tras el hielo.
+Compilación tras integrar hielo: verde. E2e completo `42951`: 85 verdes y
+43 omitidas. Sin procesos de navegador pendientes; la prueba unitaria completa
+sigue a la espera de que se estabilice el dosier de Inmortales.
+
+**29 oct, tablero en curso.** El mármol original de Ciudadela y Sol, el
+marco y el bisel quedaron incluidos en `7d9c971` por una intervención externa;
+ese commit ya está publicado. La distribución de 24 recortes girados para
+reducir vetas repetidas sigue como cambio local en `Board3D.tsx`. Ciudadela
+alta revisada a 1920 y 1366; Fiordo sin marco metálico, 2/2 capturas altas
+verdes, revisada a 1366. El resto de materiales del tablero todavía requiere
+renovación y comparación visual; no marcar el tablero como terminado.
+Gate con el cambio local: 592 unitarias verdes/5 omitidas, compilación y lint
+verdes; e2e completo 85 verdes/43 omitidas. El ajuste de caducidad de hollín
+ya está en `7d9c971`, pero falta una comprobación específica de su caducidad
+con render bajo demanda; no darlo por verificado solo por el gate general.
+El maestro de mármol generado se conserva en `tools/art-inbox/board` (ignorado).
+Prototipo posterior de basalto original para Caldera integrado localmente:
+4/4 capturas en alta/baja a ambas resoluciones, revisada la alta de 1366. Falta revisar
+contraste de selección y completar nuevamente el gate antes de
+considerarlo validado. Maestro en `tools/art-inbox/board` (ignorado).
+Sonda de estados/selección 6/6 verde para Ciudadela, Caldera y Fiordo. El azul
+de movimiento sobre basalto era demasiado oscuro: una veladura translúcida
+recupera el contraste conservando la textura, comprobada a 1366 y 1920;
+sonda repetida 2/2 verde. Pendiente gate completo tras el último ajuste.
+Gate relanzado: lint verde; unitarias 596 verdes, 5 omitidas y 4 fallos en
+`dossiers.test.ts` tras la llegada externa de los dosieres Goblins e Inmortales
+(`b6f3b83`/`65e84d6`): se completaron las listas de identificadores y la
+prueba específica pasa 60/60 y el conjunto unitario 600/5 omitidas. Inmortales
+describe 32 cartas aunque su lista de entrega dice 31; no alterar el diseño
+sin revisión.
+Compilación y lint posteriores al ajuste de contraste: verdes. E2e completo
+`50208`: 85 verdes/43 omitidas. Sin procesos de prueba pendientes. Siguen
+pendientes el resto de materiales y la revisión concreta de hollín.
+
 Prioridad explícita del 29 de octubre: renovar las casillas y superficie del
 tablero de forma claramente perceptible, realista y profesional, conservando
 legibilidad, piezas y rendimiento. Revisar materiales, geometría y unión con
 cada entorno en cámara de juego; contrastar antes/después a ambas resoluciones.
-El cambio previo de expiración de hollín bajo render a demanda está incompleto
-y sin verificar en `CardFinish.tsx` y `burnAppearance.ts`; conservarlo y
-terminar sus pruebas antes de integrarlo como trabajo final.
 
 Retoma posterior: el usuario pide fases largas que agrupen varias mejoras y
 continuar hasta completar el listado. La automatización vuelve a estar activa;

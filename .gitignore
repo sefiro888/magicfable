@@ -25,3 +25,4 @@ balance-decks.txt
 
 # Capturas de revisión visual del tablero (RUN_SHOTS=1)
 e2e/__shots__/
+tools/__pycache__/

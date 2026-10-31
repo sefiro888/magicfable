@@ -212,12 +212,11 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#efddc9', '#e7d1bd', '#d8c3b1'],
     enemy: ['#adb3c8', '#a0a9c3', '#949db6'],
   },
-  // Sobre celadón el reto es que los dos bandos se sigan leyendo como esmalte
-  // verde. El propio tira al oro de la greca y el rival al azul de la
-  // porcelana: son los dos colores que ya viven en esta cerámica, así que
-  // ninguno de los dos parece un filtro puesto encima.
+  // El celadón ya contiene cálidos de su esmalte; el dorado anterior volvía
+  // amarilla toda la mitad propia. Un crema apagado preserva el jade, con
+  // la mitad rival más fría para que el límite siga leyéndose.
   glaze: {
-    own: ['#ffe0ac', '#f7d49f', '#eac894'],
+    own: ['#eee9d6', '#e5e1cb', '#dad8c1'],
     // Azul de porcelana, un punto más saturado que en las otras escenas: la
     // luz de este patio es de amanecer y se come los tintes fríos suaves.
     enemy: ['#9db6e2', '#90a9d8', '#859ecd'],
@@ -229,11 +228,11 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#ffd9a0', '#f5cc93', '#e8c088'],
     enemy: ['#b6c2d2', '#a9b6c8', '#9eabbe'],
   },
-  // Sobre roca mojada el bando propio se marca con el ámbar cálido de la
-  // lámpara del faro, y el rival con el azul del mar abierto: los dos tienen
-  // que seguir leyéndose como piedra empapada, no como plástico de color.
+  // La pizarra ya aporta azul verdoso. El ámbar anterior se multiplicaba
+  // sobre ella y convertía el bando propio en una veta amarilla de madera;
+  // un gris cálido discreto mantiene la separación del rival más azulado.
   tide: {
-    own: ['#f2ddb8', '#e8d2ac', '#dcc79f'],
+    own: ['#f0f0e5', '#e6e8da', '#dce0d0'],
     enemy: ['#a8c4d8', '#9cb8cd', '#93aec4'],
   },
   // El tablero de Duna quedaba EXACTAMENTE del mismo tono que la arena del
@@ -315,29 +314,47 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
 const tileVariantFor = (position: Position): number =>
   (position.x * 5 + position.y * 11) % BOARD_TILE_VARIANTS
 
-const marbleVariants = new WeakMap<Texture, readonly Texture[]>()
-function MarbleTileMaterial({ variant, material }: { variant: number; material: ThreeElements['meshStandardMaterial'] }) {
-  const source = useTexture(withBase('/assets/terrain/marmol-ciudadela-v1.webp'))
+const photographicTileVariants = new WeakMap<Texture, readonly Texture[]>()
+const NATURAL_TILE_MAPS = {
+  stone: '/assets/terrain/marmol-ciudadela-v1.webp',
+  basalt: '/assets/terrain/basalto-caldera-v1.webp',
+  ice: '/assets/terrain/hielo-fiordo-v1.webp',
+  moss: '/assets/terrain/granito-santuario-v1.webp',
+  sand: '/assets/terrain/arenisca-duna-v1.webp',
+  forest: '/assets/terrain/suelo-bosque-v1.webp',
+  bestiary: '/assets/terrain/piedra-bestiario-v1.webp',
+  tide: '/assets/terrain/pizarra-rompiente-v1.webp',
+  forge: '/assets/terrain/hierro-gremio-v1.webp',
+  glaze: '/assets/terrain/celadon-jade-v1.webp',
+  sandstone: '/assets/terrain/arenisca-escalinata-v2.webp',
+} as const
+function DetailedTileMaterial({ variant, material, terrainStyle }: { variant: number; material: ThreeElements['meshStandardMaterial']; terrainStyle: keyof typeof NATURAL_TILE_MAPS }) {
+  const source = useTexture(withBase(NATURAL_TILE_MAPS[terrainStyle]))
   const maps = useMemo(() => {
-    let cached = marbleVariants.get(source)
+    let cached = photographicTileVariants.get(source)
     if (!cached) {
-      cached = Array.from({ length: BOARD_TILE_VARIANTS }, (_, index) => {
+      cached = Array.from({ length: 24 }, (_, index) => {
         const map = source.clone()
         map.colorSpace = SRGBColorSpace
         map.anisotropy = 4
         map.repeat.set(0.48, 0.48)
-        map.offset.set((index % 3) * 0.26, Math.floor(index / 3) * 0.52)
+        // Girar el recorte dentro de la textura evita que las vetas de las
+        // 64 casillas formen diagonales repetidas. No se cruza el borde del
+        // mapa, de modo que no aparecen costuras en mitad de una losa.
+        map.center.set(0.5, 0.5)
+        map.rotation = Math.floor(index / 6) * Math.PI / 2
+        map.offset.set((index % 3) * 0.26 - 0.26, (Math.floor(index / 3) % 2) * 0.52 - 0.26)
         map.needsUpdate = true
         return map
       })
-      marbleVariants.set(source, cached)
+      photographicTileVariants.set(source, cached)
     }
     return cached
   }, [source])
   return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={maps[variant]} />
 }
 
-const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -393,9 +410,15 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
         : <boxGeometry args={[TILE_SIZE, height, TILE_SIZE]} />}
       {/* La normal se genera aparte: el color claro de una veta no debe
           convertirse en un relieve falso. El resplandor conserva el dibujo. */}
-      {terrainStyle === 'stone' ? <Suspense fallback={<meshStandardMaterial {...material} />}>
-        <MarbleTileMaterial variant={variant} material={material} />
-      </Suspense> : <meshStandardMaterial {...material} />}
+      <Suspense fallback={<meshStandardMaterial {...material} />}>
+        <DetailedTileMaterial terrainStyle={terrainStyle === 'forest' && !organicForest ? 'bestiary' : terrainStyle} variant={((Math.imul(position.x + 1, 73856093) ^ Math.imul(position.y + 1, 19349663)) >>> 0) % 24} material={material} />
+      </Suspense>
+      {(terrainStyle === 'basalt' || terrainStyle === 'forest') && valid && !hazard && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, height / 2 + 0.003, 0]} raycast={() => null}>
+        <planeGeometry args={[TILE_SIZE * 0.94, TILE_SIZE * 0.94]} />
+        {/* El azul desaparecía al multiplicarse por superficies oscuras.
+            La veladura conserva el material y distingue el destino. */}
+        <meshBasicMaterial color={validColor} transparent opacity={0.32} depthWrite={false} toneMapped={false} />
+      </mesh>}
       {hazard && <MovementHazardMarker hazard={hazard} surfaceY={height / 2 + .016} />}
       <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
       {scorched && <ScorchMarks position={position} reducedMotion={reducedMotion} />}
@@ -1572,6 +1595,7 @@ function Scene(props: Board3DProps) {
             rubble={rubbleSet.has(key)}
             cover={coverSet.has(key)}
             terrainStyle={terrainStyle}
+            organicForest={props.scenario === 'grove'}
             own={isOwnHalf(position.y, props.localPlayerId)}
             deployRow={position.y === ownDeployRow}
             threatened={!occupiedSet.has(key) && threatenedSet.has(key)}

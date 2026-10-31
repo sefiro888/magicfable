@@ -39,3 +39,5 @@ El usuario aclaró que jugaba con Tercios contra Fractura del Vacío y perdía V
 - Cambio guardado localmente, sin publicar. El usuario pidió parar después de cerrar este aviso; las 50 mejoras y las demás revisiones siguen pendientes hasta que pida continuar.
 
 Estado de continuidad: PAUSA solicitada por el usuario tras cerrar este aviso. No retomar las 50 mejoras ni publicar hasta una nueva petición humana.
+
+Peticion posterior de publicar y parar: 5dd7e15 subido a origin/main; GitHub compilo y paso sus pruebas. En la ultima consulta el despliegue seguia en curso (Actions 40933625884). Usuario confirma que no desea continuar tareas: automatizacion comprobada PAUSED; sin procesos de pruebas o servidor local. No reanudar ni lanzar nuevas verificaciones sin peticion humana. Los prototipos visuales no terminados se conservan localmente.

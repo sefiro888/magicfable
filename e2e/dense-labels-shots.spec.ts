@@ -41,11 +41,10 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       })
     }))
     await page.screenshot({ path: `e2e/__shots__/etiquetas-densas-${width}x${height}.png` })
-    test.fail(width === 1366, 'pendiente resolver colisiones de cifras entre filas en cámara real')
     for (let a = 0; a < boxes.length; a += 1) for (let b = a + 1; b < boxes.length; b += 1) {
       for (const left of boxes[a]!) for (const right of boxes[b]!) {
         const overlap = left.x < right.right && right.x < left.right && left.y < right.bottom && right.y < left.bottom
-        expect(overlap, `etiquetas ${a} y ${b}`).toBe(false)
+        expect(overlap, `etiquetas ${a} y ${b}: ${JSON.stringify([left, right])}`).toBe(false)
       }
     }
   })

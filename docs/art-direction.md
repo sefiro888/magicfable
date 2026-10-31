@@ -2,6 +2,17 @@
 
 ## Propósito visual
 
+La superficie de mármol de Ciudadela y Sol usa una textura original generada
+con ImageGen el 29 de octubre de 2026. El juego consume
+`public/assets/terrain/marmol-ciudadela-v1.webp`; el maestro PNG se conserva
+en `tools/art-inbox/board/marmol-ciudadela-v1.png`, ignorado por Git.
+El prototipo local de basalto de Caldera también es original de ImageGen del
+29 de octubre de 2026: `public/assets/terrain/basalto-caldera-v1.webp`, con
+maestro en `tools/art-inbox/board/basalto-caldera-v1.png` (ignorado por Git).
+El prototipo de hielo de Fiordo deriva de un original de ImageGen del mismo
+día, atenuado para mejorar la lectura: `public/assets/terrain/hielo-fiordo-v1.webp`;
+su maestro se conserva en `tools/art-inbox/board/hielo-fiordo-v1.png`.
+
 Los cinco emblemas de relieve nuevos (Forja, Marea, Bestiario, Plaga y Quinto
 Sol) completan los huecos de la interfaz. Procedencia y conservación de los
 originales: [arte de interfaz](arte-interfaz.md). Mantener sus siluetas enteras.
