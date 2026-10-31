@@ -58,9 +58,15 @@ facciones); sirven para ver tendencias, no para comparar puntos sueltos.
    **Siguiente paso recomendado:** que la IA evite colocar o atacar con una
    pieza de Petardazo junto a aliados que el estallido mataría, y volver a
    medir. Corregir la IA antes de tocar las cartas, como pide la guía.
-2. **Tercios (15 %)** depende de Formación, que premia apelotonarse, y el
-   resto del juego castiga eso con daño de área. Puede ser también la IA
-   (no busca formar cuadros). Requiere la misma sonda que Goblins.
+2. **Tercios (15 %) repite el patrón de Goblins.** Sonda Tercios contra
+   Furia, semilla 3: la IA arma su bloque en la esquina izquierda (columnas
+   0 a 2, filas 3 a 7), vacía la mano hacia el turno 14 y **en 44 turnos no
+   hace ni un punto de daño al Nexo rival**. Formación la lleva a apelotonarse
+   lejos del centro, y nadie empuja hacia el Nexo.
+   **Patrón común de las dos facciones nuevas más flojas:** mano vacía antes
+   del turno 15 y ninguna presión sobre el Nexo. Antes de tocar sus cartas,
+   comprobar si la IA sabe avanzar con ellas: es muy probable que gran parte
+   de su cifra sea de la IA, como ya se vio con Marea.
 3. **Samsara sube a 92 %.** Ya estaba marcado como techo estructural (su
    comandante y Renacer) y el propietario decidió no recortarla sin
    playtesting humano. Kalevala (Canto, que hunde sin matar) debía ser su

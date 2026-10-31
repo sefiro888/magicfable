@@ -1298,6 +1298,7 @@ export function BattlePage() {
         <MatchResultDialog
           match={match}
           me={ME}
+          reducedMotion={preferences.reducedMotion}
           stats={player.stats}
           elapsedSeconds={store.elapsedSeconds}
           tally={tally}

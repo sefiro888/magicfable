@@ -1,10 +1,13 @@
-import { CARD_BY_ID, type MatchState, type PlayerId, type PlayerStats } from '../../game'
+import type { CSSProperties } from 'react'
+import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, type MatchState, type PlayerId, type PlayerStats } from '../../game'
 import type { Achievement } from '../../store/achievements'
 import type { DailyChallenge } from '../../store/dailyChallenge'
 import type { BestPlay, HealthSnapshot } from '../../store/match'
 import type { RecordSummary } from '../../store/records'
 import { HealthChart } from './HealthChart'
+import { withBase } from '../../utils/assets'
 import styles from '../BattlePage.module.css'
+import heroStyles from './ResultHero.module.css'
 
 interface MatchResultDialogProps {
   match: MatchState
@@ -27,6 +30,47 @@ interface MatchResultDialogProps {
   onRepeat: () => void
   onHome: () => void
   onDownloadLog: () => void
+  reducedMotion?: boolean
+}
+
+/** Brasas fijas por índice: aleatorias cambiarían en cada render y temblarían. */
+const EMBERS = Array.from({ length: 18 }, (_, index) => ({
+  x: `${(index * 53) % 100}%`, delay: `${(index * 0.37) % 3.2}s`, size: `${3 + (index % 3)}px`,
+}))
+
+/**
+ * Cabecera con el comandante que ha ganado: el propio, con rayos y brasas,
+ * si se gana; el rival, apagado y con el retrato agrietado, si se pierde.
+ */
+function ResultHero({ match, me, won, reducedMotion }: { match: MatchState; me: PlayerId; won: boolean; reducedMotion?: boolean }) {
+  const winner = match.winner ?? me
+  const commander = COMMANDER_BY_ID[match.players[winner].commanderId]
+  if (!commander) return null
+  const accent = FACTION_BY_ID[commander.faction].accentColor
+  return (
+    <div
+      className={heroStyles.hero}
+      data-outcome={won ? 'victory' : 'defeat'}
+      data-reduced-motion={reducedMotion || undefined}
+      style={{ '--accent': accent } as CSSProperties}
+      aria-hidden="true"
+    >
+      {won && (
+        <span className={heroStyles.embers}>
+          {EMBERS.map((ember, index) => (
+            <i key={index} style={{ '--x': ember.x, '--d': ember.delay, '--s': ember.size } as CSSProperties} />
+          ))}
+        </span>
+      )}
+      <span className={heroStyles.portraitWrap}>
+        {won && <span className={heroStyles.rays} />}
+        <span className={heroStyles.halo} />
+        <img className={heroStyles.portrait} src={withBase(commander.art.webp)} alt="" />
+        {!won && <span className={heroStyles.crack} />}
+      </span>
+      <span className={heroStyles.caption}>{won ? `${commander.name} triunfa` : `${commander.name} se impone`}</span>
+    </div>
+  )
 }
 
 /** Pantalla final: resultado, estadísticas de la partida y qué hacer después. */
@@ -46,7 +90,8 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
   const won = props.match.winner === props.me
   return (
     <div className={styles.resultBackdrop}>
-      <section className={styles.result}>
+      <section className={styles.result} data-outcome={won ? 'victory' : 'defeat'}>
+        <ResultHero match={props.match} me={props.me} won={won} reducedMotion={props.reducedMotion} />
         <small>La crónica ha concluido</small>
         <h2>{won ? 'Victoria' : 'Derrota'}</h2>
         <p>{won ? 'El Nexo rival se quiebra bajo tu voluntad.' : 'Tu Nexo se desvanece. La siguiente crónica aún puede cambiar.'}</p>

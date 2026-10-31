@@ -44,7 +44,9 @@ omitidas en cada pasada) y tras revisarlo en el navegador.
   que coloca juntos y no llega a golpear el Nexo). El propietario pidió
   **no tocar cartas**; corregir la IA está permitido solo si él lo pide.
   Detalle en el informe de equilibrio.
-- **Tercios al 15 %**: requiere la misma sonda.
+- **Tercios al 15 %**: la sonda muestra el mismo patrón que Goblins (mano
+  vacía antes del turno 15 y ningún daño al Nexo rival en 44 turnos).
+  Probablemente sea la IA, igual que con Goblins.
 - La carta en grande no marca el objetivo en el tablero 3D mientras se
   muestra (el fondo se oscurece); se descartó porque la propia carta ya
   enseña el objetivo como carta unida por un haz.

@@ -509,6 +509,13 @@
 .result { width: 530px; padding: 40px; border: 1px solid var(--line-bright); background: linear-gradient(145deg,#191b26,#0e1017); box-shadow: 0 35px 100px #000; text-align: center; animation: resultFadeIn .4s ease; }
 .result small { color: var(--gold-bright); font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
 .result h2 { margin: 13px 0 10px; font-family: var(--display); font-size: 48px; font-weight: 500; color: var(--ivory); }
+/* Victoria en oro con un brillo que la recorre; derrota en rojo apagado. El
+   título era el mismo marfil en los dos casos y no se sentía ninguno. */
+.result[data-outcome='victory'] h2 { background: linear-gradient(100deg, #c9932e 20%, #fff3c4 45%, #e8b84d 60%, #c9932e 80%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .06em; animation: victoryShine 2.6s ease-in-out infinite; }
+.result[data-outcome='defeat'] h2 { color: #c97a70; letter-spacing: .06em; text-shadow: 0 0 24px rgba(160, 40, 30, .45); }
+.result[data-outcome='victory'] { border-color: rgba(232, 184, 77, .55); box-shadow: 0 35px 100px #000, 0 0 60px rgba(232, 184, 77, .18); }
+@keyframes victoryShine { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .result[data-outcome='victory'] h2 { animation: none; } }
 .result > p { color: #a39f97; font-size: 11px; line-height: 1.6; }
 @keyframes resultFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 /* Gráfica de Vida de la pantalla final: dos polilíneas, sin librería externa. */
