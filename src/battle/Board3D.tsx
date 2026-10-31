@@ -202,9 +202,12 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
     own: ['#ffd9b0', '#ffcc9c', '#f7c28e'],
     enemy: ['#c9c4d6', '#bcb8cc', '#b2aec4'],
   },
+  // Con el granito musgoso fotográfico (oscuro y verde) el azul pálido
+  // anterior se perdía y las dos mitades se leían iguales: el rival baja a
+  // un azul pizarra claramente más frío y el propio sube a crema.
   moss: {
-    own: ['#f2ecd2', '#e8e2c4', '#ded9bb'],
-    enemy: ['#cbdaea', '#bfcfe2', '#b6c6da'],
+    own: ['#fff5dc', '#f6ecd0', '#ece2c4'],
+    enemy: ['#9fb6d6', '#94abcc', '#8aa1c2'],
   },
   // La piedra rosada ya calienta el bando propio: un tinte azafrán fuerte
   // convertía toda la terraza en óxido. El rival conserva el índigo del río.
@@ -231,9 +234,12 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
   // La pizarra ya aporta azul verdoso. El ámbar anterior se multiplicaba
   // sobre ella y convertía el bando propio en una veta amarilla de madera;
   // un gris cálido discreto mantiene la separación del rival más azulado.
+  // La pizarra fotográfica es verdosa y oscura: el rival necesita un azul
+  // más hondo para separarse. El propio sigue en gris cálido (el ámbar la
+  // volvía madera).
   tide: {
-    own: ['#f0f0e5', '#e6e8da', '#dce0d0'],
-    enemy: ['#a8c4d8', '#9cb8cd', '#93aec4'],
+    own: ['#fbf8ec', '#f1efe0', '#e7e6d6'],
+    enemy: ['#8fb2d2', '#84a7c8', '#7b9dbe'],
   },
   // El tablero de Duna quedaba EXACTAMENTE del mismo tono que la arena del
   // patio, asi que la zona de juego no se separaba del fondo. Los tintes bajan
@@ -251,9 +257,12 @@ const ZONE_TINTS_BY_STYLE: Readonly<Record<BoardTileStyle, { readonly own: reado
   },
   // En el claro, «cálido» es la luz del sol que entra por el dosel y «frío»
   // la penumbra verde de debajo de los árboles.
+  // Bestiario usa este estilo con su piedra musgosa oscura; el verde pálido
+  // del rival desaparecía sobre ella. Un verde azulado más frío separa las
+  // mitades también en el Claro, que ya se leía bien y sigue haciéndolo.
   forest: {
-    own: ['#fbf0cf', '#f2e6c2', '#e8dcb6'],
-    enemy: ['#d3e2c8', '#c6d7bb', '#bccfb1'],
+    own: ['#fff3d2', '#f6e9c4', '#ecdfb8'],
+    enemy: ['#a9c6c4', '#9dbab9', '#93afae'],
   },
 }
 
