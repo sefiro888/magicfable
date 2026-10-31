@@ -19,12 +19,13 @@ export const PACE_LABELS: Readonly<Record<PresentationPace, { readonly name: str
  * Multiplicador por tipo de evento. El combate es lo que más se estira: un
  * golpe a 380 ms se leía como un parpadeo y no se sabía quién pegó a quién.
  * La contabilidad (robos, fuentes) no se toca para que el turno no se haga
- * pesado entre jugadas.
+ * pesado entre jugadas. La invocación sube a ×2,4 (~1 s) porque ahora es una
+ * caída con aterrizaje: con ×1,35 la pieza tocaba suelo en un parpadeo.
  */
 const PACE_SCALE: Readonly<Record<PresentationPace, Partial<Record<AnimationEvent['type'], number>>>> = {
   cinematic: {
     attack: 2.1, damage: 1.9, destroy: 2, 'nexus-damage': 1.9,
-    spell: 1.6, summon: 1.35, move: 1.2, shield: 1.4, freeze: 1.4,
+    spell: 1.6, summon: 2.4, move: 1.2, shield: 1.4, freeze: 1.4,
   },
   normal: {},
   fast: { attack: 0.75, damage: 0.75, destroy: 0.75, spell: 0.75, summon: 0.75, move: 0.8 },

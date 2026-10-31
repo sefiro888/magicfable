@@ -3,6 +3,7 @@ import type { AnimationEvent, PlayerId } from '../../game'
 import { playSynthCue, type SoundCue } from '../../services/audio'
 import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
+import { ARRIVAL_LANDING } from '../arrivalMotion'
 import { eventDuration } from '../eventTiming'
 import { clashExchange, duelIntroDuration, endsExchange, foldExchange, openExchange, spotlightFor, type CombatExchange, type Spotlight } from '../presentation'
 
@@ -232,10 +233,15 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
       presentationPace: preferences.presentationPace,
     })
+    // La sacudida de una invocación llega al aterrizar, no al empezar a caer.
+    const landing = currentEvent.type === 'summon' && !preferences.reducedMotion
+      ? window.setTimeout(() => setImpact({ key: `${currentEvent.id}-land`, strength: currentEvent.cast ? 'heavy' : 'light' }), duration * ARRIVAL_LANDING)
+      : undefined
     const timer = window.setTimeout(() => useMatchStore.getState().finishEvent(), duration)
     return () => {
       window.clearTimeout(sideChannel)
       window.clearTimeout(timer)
+      window.clearTimeout(landing)
     }
   }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, preferences.presentationPace, me])
 
@@ -268,7 +274,8 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
 
   useEffect(() => {
     if (!banner) return
-    const timer = window.setTimeout(() => setBanner(undefined), 1400)
+    // 2 s: el telón de facción necesita abrirse, mostrarse y cerrarse.
+    const timer = window.setTimeout(() => setBanner(undefined), 2000)
     return () => window.clearTimeout(timer)
   }, [banner])
 

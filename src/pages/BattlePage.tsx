@@ -70,6 +70,7 @@ import { MulliganDialog } from './battle/MulliganDialog'
 import { ScryDialog } from './battle/ScryDialog'
 import { SparkDialog } from './battle/SparkDialog'
 import { TacticalDialog } from './battle/TacticalDialog'
+import { TurnBanner } from './battle/TurnBanner'
 import { SelectionPanel } from './battle/SelectionPanel'
 import styles from './BattlePage.module.css'
 
@@ -906,7 +907,16 @@ export function BattlePage() {
               es un lienzo WebGL, así que su contenido no existe como texto. */}
           <p className={styles.srOnly} role="status" aria-live="polite">{boardCursor.announcement}</p>
           {!photoMode && !queueBusy && !inspected && <MovementHazardWarning hazards={movementHazards} focused={hoveredCell ?? boardCursor.cell} />}
-          {director.banner && <div className={styles.turnBanner} role="status">{director.banner}</div>}
+          {director.banner && !photoMode && (
+            <TurnBanner
+              key={`${match.turn}-${director.banner}`}
+              text={director.banner}
+              mine={director.banner === 'Tu turno'}
+              commander={director.banner === 'Tu turno' ? commander : rivalCommander}
+              turn={match.turn}
+              reducedMotion={preferences.reducedMotion}
+            />
+          )}
           {director.exchange && !photoMode && (
             <CombatDuel
               exchange={director.exchange}

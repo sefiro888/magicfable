@@ -1,0 +1,95 @@
+.banner {
+  position: absolute;
+  z-index: 40;
+  top: 18%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  height: 92px;
+  pointer-events: none;
+  animation: bannerLife 2s cubic-bezier(.2, .9, .3, 1) forwards;
+}
+
+/* Franja de lado a lado con el color de la facción: se abre desde el centro
+   como un telón y deja ver el tablero por los bordes. */
+.band {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 38%, rgba(8, 10, 16, 0.92)) 22%, rgba(8, 10, 16, 0.94) 50%, color-mix(in srgb, var(--accent) 38%, rgba(8, 10, 16, 0.92)) 78%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 30%, transparent);
+  transform-origin: center;
+  animation: bandOpen 2s cubic-bezier(.2, .9, .3, 1) forwards;
+}
+
+.portrait {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px var(--accent), 0 0 26px var(--accent);
+  animation: portraitIn 2s cubic-bezier(.2, 1.3, .4, 1) forwards;
+}
+.portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.copy {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  animation: copyIn 2s cubic-bezier(.2, .9, .3, 1) forwards;
+}
+.copy strong {
+  color: #f8ebc4;
+  font: 700 clamp(26px, 2.8vw, 38px) var(--display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 80%, transparent), 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+.banner[data-side='rival'] .copy strong { color: #ffd9cf; }
+.copy small {
+  color: color-mix(in srgb, var(--accent) 70%, #fff);
+  font: 600 13px var(--display);
+  letter-spacing: 0.12em;
+}
+
+@keyframes bannerLife {
+  0%, 82% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes bandOpen {
+  0% { transform: scaleX(0); opacity: 0; }
+  16% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); }
+}
+@keyframes portraitIn {
+  0%, 8% { opacity: 0; transform: scale(0.3) rotate(-25deg); }
+  24% { opacity: 1; transform: scale(1.08); }
+  32%, 100% { opacity: 1; transform: none; }
+}
+@keyframes copyIn {
+  0%, 12% { opacity: 0; transform: translateX(-24px); letter-spacing: 0.4em; }
+  30%, 100% { opacity: 1; transform: none; }
+}
+
+/* El ajuste de la partida manda igual que el del sistema. */
+.banner[data-reduced-motion], .banner[data-reduced-motion] .band, .banner[data-reduced-motion] .portrait, .banner[data-reduced-motion] .copy { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .banner, .band, .portrait, .copy { animation: none; }
+}
+
+@media (max-width: 760px) {
+  .banner { top: 12%; height: 66px; gap: 10px; }
+  .portrait { width: 52px; height: 52px; }
+  .copy strong { font-size: 20px; }
+  .copy small { font-size: 11px; }
+}

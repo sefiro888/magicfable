@@ -13,6 +13,7 @@ import { glowTexture, type GlowTint } from './textures'
 import { RitualSeal } from './RitualSeal'
 import { AttackTrail } from './AttackTrail'
 import { ImpactDebris, materialOf } from './ImpactDebris'
+import { ARRIVAL_LANDING } from './arrivalMotion'
 
 /** Color y textura de brillo por facción — a juego con `accentColor` en `factions.ts`. */
 const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonly glow: GlowTint }>> = {
@@ -104,6 +105,85 @@ function SummonRitual({ cell, tone, timing, faction }: { cell: Position; tone: s
       <pointLight ref={light} position={[0, 0.6, 0]} color={tone} intensity={0} distance={2.5} decay={2} />
     </group>
     </>
+  )
+}
+
+/** Direcciones fijas del polvo: aleatorias cambiarían en cada render y temblarían. */
+const DUST = Array.from({ length: 16 }, (_, index) => {
+  const angle = (index / 16) * Math.PI * 2 + (index % 2) * 0.2
+  return { x: Math.cos(angle), z: Math.sin(angle), reach: 0.75 + (index % 3) * 0.22, rise: 0.18 + (index % 4) * 0.07 }
+})
+
+/**
+ * Aterrizaje de una unidad: onda en el suelo, polvo que se abre en corona,
+ * columna de luz de su facción y un destello corto. Todo arranca en
+ * `ARRIVAL_LANDING`, el instante en que la pieza toca la losa; antes de eso
+ * solo se ve la caída, para que el golpe se sienta como consecuencia de ella.
+ */
+function LandingShock({ cell, tone, timing, heavy }: { cell: Position; tone: string; timing: TimedProps; heavy: boolean }) {
+  const progress = useProgress(timing)
+  const ring = useRef<Mesh>(null)
+  const ring2 = useRef<Mesh>(null)
+  const pillar = useRef<Mesh>(null)
+  const dust = useRef<Group>(null)
+  const light = useRef<PointLight>(null)
+  const glow = useMemo(() => glowFor(tone), [tone])
+  const dustTexture = useMemo(() => glowTexture('gold'), [])
+  const size = heavy ? 1.35 : 1
+  useFrame(() => {
+    const local = (progress.current - ARRIVAL_LANDING) / (1 - ARRIVAL_LANDING)
+    const on = local >= 0 && local <= 1
+    const value = MathUtils.clamp(local, 0, 1)
+    const fade = 1 - value
+    if (ring.current) {
+      ring.current.visible = on
+      ring.current.scale.setScalar((0.3 + Math.pow(value, 0.6) * 2.1) * size)
+      ;(ring.current.material as MeshBasicMaterial).opacity = fade * fade * 0.95
+    }
+    if (ring2.current) {
+      ring2.current.visible = on && value > 0.08
+      ring2.current.scale.setScalar((0.2 + Math.pow(Math.max(0, value - 0.08), 0.7) * 1.4) * size)
+      ;(ring2.current.material as MeshBasicMaterial).opacity = fade * 0.6
+    }
+    if (pillar.current) {
+      pillar.current.visible = on
+      pillar.current.scale.set(1 - value * 0.6, 0.4 + value * 1.6, 1 - value * 0.6)
+      ;(pillar.current.material as MeshBasicMaterial).opacity = Math.pow(fade, 2.5) * 0.55
+    }
+    if (light.current) light.current.intensity = on ? Math.pow(fade, 3) * (heavy ? 7 : 5) : 0
+    dust.current?.children.forEach((puff, index) => {
+      const spec = DUST[index]!
+      const reach = Math.pow(value, 0.45) * spec.reach * size
+      puff.visible = on
+      puff.position.set(spec.x * reach, 0.05 + spec.rise * Math.sin(value * Math.PI * 0.8), spec.z * reach)
+      puff.scale.setScalar((0.16 + value * 0.32) * size)
+      ;(puff as Sprite).material.opacity = fade * 0.55
+    })
+  })
+  if (timing.reducedMotion) return null
+  return (
+    <group position={[boardX(cell.x), 0.14, boardZ(cell.y)]}>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+        <ringGeometry args={[0.36, 0.46, 48]} />
+        <meshBasicMaterial color={tone} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      <mesh ref={ring2} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+        <ringGeometry args={[0.4, 0.44, 48]} />
+        <meshBasicMaterial color="#fff4d8" transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      <mesh ref={pillar} position={[0, 0.7, 0]} visible={false}>
+        <cylinderGeometry args={[0.32, 0.42, 1.4, 24, 1, true]} />
+        <meshBasicMaterial color={tone} map={glow} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      <group ref={dust}>
+        {DUST.map((_, index) => (
+          <sprite key={index} visible={false}>
+            <spriteMaterial map={dustTexture} color="#b7a588" transparent opacity={0} depthWrite={false} />
+          </sprite>
+        ))}
+      </group>
+      <pointLight ref={light} position={[0, 0.45, 0]} color={tone} intensity={0} distance={3.4} decay={2} />
+    </group>
   )
 }
 
@@ -312,7 +392,12 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
   const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
   switch (event.type) {
     case 'summon':
-      return event.to ? <SummonRitual cell={event.to} tone={tone} timing={timing} faction={event.faction} /> : null
+      return event.to ? (
+        <>
+          <SummonRitual cell={event.to} tone={tone} timing={timing} faction={event.faction} />
+          <LandingShock cell={event.to} tone={tone} timing={timing} heavy={Boolean(event.cast)} />
+        </>
+      ) : null
     case 'attack': {
       if (reducedMotion) return null
       const target = event.targetId ? NEXUS_POSITION[event.targetId] : undefined
