@@ -29,9 +29,15 @@ tocar reglas:
   en su fotograma inicial, con opacidad 0. Para revisarla así, activar
   «Reducir movimiento», que la muestra quieta.
 
-El prototipo de texturas del tablero que Codex dejó en local está guardado
-aparte en `1e959b3`, sin revisar todos los suelos. Nada de esto está
-publicado.
+**Publicado el 31 de octubre a petición del propietario, junto con el
+prototipo de texturas del tablero** (`1e959b3`). Codex había dejado ese
+prototipo en local, y el propietario decidió subirlo para probarlo. Está en la
+web, pero **sigue sin revisar en 8 de los 11 suelos**: solo se comprobaron
+Ciudadela, Caldera y Fiordo. Al retomar la renovación visual, revisar en
+partida Santuario, Duna, Claro, Bestiario, Rompiente, Gremio, Jade y
+Escalinata, a 1920 × 1080 y 1366 × 768, antes de darlas por buenas. Si alguno
+desentona, corregirlo en `NATURAL_TILE_MAPS` o en los tintes de bando de
+`Board3D.tsx`; no hace falta revertir el commit.
 
 ## Revisión de continuidad — 30 de octubre de 2026
 

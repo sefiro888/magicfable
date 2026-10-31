@@ -41,3 +41,16 @@ El usuario aclaró que jugaba con Tercios contra Fractura del Vacío y perdía V
 Estado de continuidad: PAUSA solicitada por el usuario tras cerrar este aviso. No retomar las 50 mejoras ni publicar hasta una nueva petición humana.
 
 Peticion posterior de publicar y parar: 5dd7e15 subido a origin/main; GitHub compilo y paso sus pruebas. En la ultima consulta el despliegue seguia en curso (Actions 40933625884). Usuario confirma que no desea continuar tareas: automatizacion comprobada PAUSED; sin procesos de pruebas o servidor local. No reanudar ni lanzar nuevas verificaciones sin peticion humana. Los prototipos visuales no terminados se conservan localmente.
+
+## 31 oct 2026 — Claude Code: presentación de jugadas y texturas publicadas
+
+Trabajo hecho con Claude Code mientras Codex estaba en pausa; leer
+`docs/ESTADO-Y-SIGUIENTE.md`, sección «Presentación de jugadas», antes de
+seguir. Resumen:
+
+- Cartas lanzadas en grande durante 5 s (`CastSpotlight`), duelo de combate con
+  las dos cartas y sus habilidades (`CombatDuel`) y ajuste «Ritmo de la partida».
+- Los cambios locales de texturas del tablero que Codex dejó el 29 oct se
+  guardaron en `1e959b3` y se **publicaron** por decisión del propietario, sin
+  revisar 8 de los 11 suelos. Revisarlos queda pendiente dentro de la
+  renovación visual.
